@@ -1,5 +1,5 @@
 ## compare_shells: dash bash zsh mksh ash yash
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 # forked from spec/ble-idioms
 # the IFS= eval 'local x' bug

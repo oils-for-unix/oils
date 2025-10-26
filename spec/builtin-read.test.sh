@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 ## compare_shells: bash mksh zsh ash
 
 #### read line from here doc
@@ -653,6 +653,54 @@ status=2
 ## OK bash/zsh STDOUT:
 status=1
 ## END
+
+#### read -u -s
+case $SH in dash|mksh) exit ;; esac
+
+# file descriptor
+read -s -u 3 3<<EOF
+hi
+EOF
+echo reply=$REPLY
+## STDOUT:
+reply=hi
+## END
+## N-I dash/mksh stdout-json: ""
+
+#### read -u 3 -d 5
+case $SH in dash|mksh) exit ;; esac
+
+# file descriptor
+read -u 3 -d 5 3<<EOF
+123456789
+EOF
+echo reply=$REPLY
+## STDOUT:
+reply=1234
+## END
+## N-I dash/mksh stdout-json: ""
+
+#### read -u 3 -d b -N 6
+case $SH in ash|zsh) exit ;; esac
+
+# file descriptor
+read -u 3 -d b -N 4 3<<EOF
+ababababa
+EOF
+echo reply=$REPLY
+# test end on EOF
+read -u 3 -d b -N 6 3<<EOF
+ab
+EOF
+echo reply=$REPLY
+## STDOUT:
+reply=abab
+reply=ab
+## END
+## N-I ash/zsh stdout-json: ""
+## BUG mksh stdout-json: ""
+## BUG mksh status: 2
+
 
 #### read -N doesn't respect delimiter, while read -n does
 case $SH in dash|zsh|ash) exit ;; esac

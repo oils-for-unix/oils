@@ -43,15 +43,7 @@ Note that `build/dev-shell.sh` puts some executables in `$PATH`.
 
 TODO:
 
-- We should `--mount type=bind` "wedges" into say `/wedge/foo`
-  - These can be either data or executable tools
-  - I suppose `/home/uke/{oil,oil_DEPS}` are also wedges? They are meant not to conflict
-  - But we want wedges to work OUTSIDE containers too.
-- We should also be able to COPY wedges into an image, for easier deployment on
-  cloud services like Github Actions and fly.io
-- Then run an arbitrary shell command that uses the code and data
-- Outputs can go back into `/wedge`
-  - Problems: absolute paths, root, `make install`, etc.
+- Remove `/wedge` and `~/wedge`
 
 Dir structure:
 

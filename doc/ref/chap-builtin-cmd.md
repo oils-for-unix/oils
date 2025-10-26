@@ -934,22 +934,60 @@ issues][].
 
 ### trap
 
-    trap FLAG* CMD SIGNAL*
+The `trap` builtin lets you run shell code when events happen.  Events are
+signals or interpreter hooks.
 
-Registers the shell string CMD to be run after the SIGNALs are received.  If
-the CMD is empty, then the signal is ignored.
+    trap -l          # List all events and their number
+    trap -p          # Print the current trap state: events and handlers
+    trap CMD EVENT*  # Register handlers
+    trap - EVENT*    # Remove handlers
 
-Flags:
+Examples:
 
-    -l  Lists all signals and their signal number
-    -p  Prints a list of the installed signal handlers
+    trap 'echo hi' EXIT INT   # Register
+    trap - EXIT INT           # Remove
 
-Tip:
+OSH also support legacy syntax, which is not recommended:
 
-Prefer passing the name of a shell function to `trap`.
+    trap 'echo hi' 0   # 0 is the exit trap
+    trap INT           # remove signal handler
+    trap 0             # remove exit trap
+    trap 0 INT         # remove both
 
-See [Chapter: Plugins and Hooks > Traps](chap-plugin.html#Traps) for a list of
+<!--
+    trap '' EVENT*   # TODO Ignore events
+-->
+
+Tips:
+
+- Prefer passing the name of a shell function to `trap`.
+  - See [ysh-trap](#ysh-trap) for even nicer idioms.
+- See [Chapter: Plugins and Hooks > Traps](chap-plugin.html#Traps) for a list of
 traps, like `trap '' EXIT`.
+
+### ysh-trap
+
+The `trap` builtin lets you run shell code when events happen.  
+
+YSH improves the syntax of the trap builtin, and removes legacy.
+
+    trap -l          # List all events and their number
+    trap -p          # Print the current trap state: events and handlers
+    trap --add EVENT* BLOCK  # Register handlers
+    trap --remove EVENT*     # Remove handlers
+
+Examples:
+
+    trap --add EXIT INT {
+      echo 'either exit'
+      echo 'or int'
+    }
+
+    trap --remove EXIT INT
+
+Note: the block argument to `trap --add` doesn't capture variables -- it's not
+a closure.  So YSH behaves like OSH, but the syntax doesn't encourage putting
+source code in strings.
 
 ## Set Options
 
@@ -1265,9 +1303,40 @@ If no JOB is specified, use the latest job.
 
 ### kill
 
-UNIMPLEMENTED
+The `kill` builtin sends a signal to one or more processes.  Usage:
 
-<!-- Note: 'kill' accepts job specs like %2 -->
+    kill (-s SIG | -SIG)? WHAT+  # send SIG to the given processes
+
+where
+
+    SIG  = NAME | NUMBER   # e.g. USR1 or 10
+    WHAT = PID  | JOBSPEC  # e.g. 789 or %%
+
+Examples:
+
+    kill -s USR1 789       # send SIGUSR1 to PID 789
+
+    kill -s USR1 789 %%    # send signal to PID 789 and the current job
+    kill -s 10   789 %%    # specify SIGUSR1 by number instead
+
+    kill -USR1   789 %%    # shortcut syntax
+    kill -10     789 %%    # shortcut using a number
+
+    kill -n USR1 789 %%    # -n is a synonym for -s
+    kill         789 %%    # if not specified, the default is SIGTERM
+
+---
+
+It can also list signals:
+
+    kill -L                # List all signals
+    kill -L SIG+           # Translate signals from name to number, and vice versa
+
+Examples:
+
+    kill -l                # List all signals; -l is a synonym for -L
+    kill -L USR1 USR2      # prints '10 12'
+    kill -L USR1 15        # prints '10 TERM'
 
 ## External
 

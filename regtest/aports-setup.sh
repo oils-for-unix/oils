@@ -68,10 +68,37 @@ checkout-stable() {
   popd > /dev/null
 }
 
-download-oils() {
-  local job_id=${1:-10172}  # 2025-09-16, after adding 'chdir'
+patch-aports() {
+  local cur_dir=$PWD
+  pushd ../../alpinelinux/aports
 
-  local url="https://op.oilshell.org/uuu/github-jobs/$job_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
+  # Add our patches alongside Alpine's own patches
+  # abuild's default_prepare() applies all patches inside $srcdir, but they
+  # also need to be specified in the 'source=' and 'sha512sums=' lists in APKBUILD
+  for patch_dir in $cur_dir/regtest/patches/*; do
+      local patch_dir=$(basename $patch_dir)
+      for patch in $cur_dir/regtest/patches/$patch_dir/*; do
+          cp $patch main/$patch_dir/
+          local patch_name=$(basename $patch)
+          local shasum=$(sha512sum $patch | cut -d " " -f1)
+          local apkbuild=main/$patch_dir/APKBUILD
+          git restore $apkbuild
+          sed -i "/source='*/ a $patch_name" $apkbuild
+          sed -i "/sha512sums='*/ a $shasum  $patch_name" $apkbuild
+      done
+  done
+
+  popd >/dev/null
+}
+
+
+# 2025-10-22, after $(false) and (( fixes
+readonly TARBALL_ID='10439'
+
+download-oils() {
+  local tarball_id=${1:-$TARBALL_ID}
+
+  local url="https://op.oilshell.org/uuu/github-jobs/$tarball_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
 
   rm -f -v _tmp/oils-for-unix.tar
 
@@ -159,13 +186,16 @@ change-perms() {
 }
 
 copy-aports() {
-  local dest=$CHROOT_HOME_DIR/aports/main/
+  # 'main' and 'community' are two "Alpine repos" stored the 'aports' git repo
+  for a_repo in main community; do
+    local dest=$CHROOT_HOME_DIR/aports/$a_repo/
 
-  sudo mkdir -p $dest
-  sudo rsync --archive --verbose \
-    ../../alpinelinux/aports/main/ $dest
+    sudo mkdir -p $dest
+    sudo rsync --archive --verbose \
+      ../../alpinelinux/aports/$a_repo/ $dest
 
-  change-perms $dest
+    change-perms $dest
+  done
 }
 
 _patch-yash-to-disable-tests() {
@@ -280,12 +310,16 @@ keygen() {
 
 apk-manifest() {
   # 1643 files - find a subset to build
-  local out=$PWD/_tmp/apk-manifest.txt
-  mkdir -p _tmp
 
-  pushd $CHROOT_HOME_DIR/aports/main >/dev/null
-  find . -name 'APKBUILD' -a -printf '%P\n' | LANG=C sort | tee $out
-  popd >/dev/null
+  for a_repo in main community; do
+    local out=$PWD/_tmp/apk-${a_repo}-manifest.txt
+    mkdir -p _tmp
+
+    pushd $CHROOT_HOME_DIR/aports/$a_repo >/dev/null
+    find . -name 'APKBUILD' -a -printf '%P\n' | sed 's,/APKBUILD$,,g' | LANG=C sort | tee $out
+    popd >/dev/null
+  done
+  wc -l _tmp/apk-*-manifest.txt
 }
 
 build-oils() {
@@ -366,8 +400,23 @@ create-package-dirs() {
   mkdir -v -p _chroot/package.overlay/{merged,work}
 }
 
+archived-distfiles() {
+  local a_repo=$1  # 'main' or 'community'
+
+  local tar=_chroot/distfiles-${a_repo}.tar
+  tar --create --file $tar --directory $CHROOT_DIR/var/cache/distfiles .
+
+  tar --list < $tar
+  echo
+  ls -l --si $tar
+  echo
+}
+
 unpack-distfiles() {
-  sudo tar --verbose -x --directory $CHROOT_DIR/var/cache/distfiles < _chroot/distfiles.tar
+  local a_repo=$1  # 'main' or 'community'
+
+  local tar=_chroot/distfiles-${a_repo}.tar
+  sudo tar --verbose -x --directory $CHROOT_DIR/var/cache/distfiles < $tar
 }
 
 show-distfiles() {
@@ -420,10 +469,14 @@ remove-all() {
 }
 
 fetch-all() {
+  local tarball_id=${1:-$TARBALL_ID}
+
   clone-aports
   clone-aci
   checkout-stable
-  download-oils
+  patch-aports
+
+  download-oils "$tarball_id"
 }
 
 prepare-all() {

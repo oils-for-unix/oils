@@ -243,6 +243,51 @@ When the shell process exists, print GC stats to this file descriptor.
 
 Suppress the warning about `libc` locales that are not UTF-8.
 
+## libc locale
+
+### osh-locale
+
+At startup, reads these env vars and sets global vars in `libc`:
+
+- `LC_CTYPE`
+  - Affects how certain `libc` string functions handle bytes versus code
+    points.  For example, what do `?` in globs and `.` in regexes mean?
+- `LC_COLLATE`
+  - Affects [glob][osh-glob] sort order.
+
+This is done with libc's `setlocale()` function.
+
+[osh-glob]: chap-word-lang.html#osh-glob
+
+### ysh-locale
+
+At startup, reads these env vars and sets global vars in `libc`:
+
+- `LC_CTYPE`
+
+This is done with libc's `setlocale()` function.
+
+[ysh-glob]: chap-word-lang.html#ysh-glob
+
+## Interactive
+
+### OILS_COMP_UI
+
+Set which completion UI to use. Defaults to `minimal`.
+
+- `minimal` - a UI that approximates the default behavior of GNU readline.
+- `nice` - a UI with a fancy pager and a prompt with horizontal scrolling instead of wrapping.
+
+This variable is currently only checked once during shell initialization.
+
+### HISTFILE
+
+Override the default OSH history location.
+
+### YSH_HISTFILE
+
+Override the default YSH history location.
+
 ## Float
 
 ### NAN
@@ -428,27 +473,6 @@ An array of partial command arguments to complete.  Preferred over COMP_WORDS.
 The compadjust builtin uses this variable.
 
 (An OSH extension to bash.)
-
-## History
-
-### HISTFILE
-
-Override the default OSH history location.
-
-### YSH_HISTFILE
-
-Override the default YSH history location.
-
-## Interactive
-
-### OILS_COMP_UI
-
-Set which completion UI to use. Defaults to `minimal`.
-
-- `minimal` - a UI that approximates the default behavior of GNU readline.
-- `nice` - a UI with a fancy pager and a prompt with horizontal scrolling instead of wrapping.
-
-This variable is currently only checked once during shell initialization.
 
 ## cd
 

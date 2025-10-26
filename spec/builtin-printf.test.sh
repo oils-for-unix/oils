@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 ## compare_shells: dash bash mksh zsh ash
 
 # printf
@@ -1402,4 +1402,196 @@ printf '%b' '\0007' | show_bytes
  07
  07
  07
+## END
+
+#### printf %d %X support hex 0x5 and octal 055
+
+echo hex
+printf '%d\n' 0x55
+printf '%X\n' 0x55
+
+echo hex CAPS
+printf '%d\n' 0X55
+printf '%X\n' 0X55
+
+echo octal 3
+printf '%d\n' 055
+printf '%X\n' 055
+
+echo octal 4
+printf '%d\n' 0055
+printf '%X\n' 0055
+
+echo octal 5
+printf '%d\n' 00055
+printf '%X\n' 00055
+
+## STDOUT:
+hex
+85
+55
+hex CAPS
+85
+55
+octal 3
+45
+2D
+octal 4
+45
+2D
+octal 5
+45
+2D
+## END
+
+## BUG zsh STDOUT:
+hex
+85
+55
+hex CAPS
+85
+55
+octal 3
+55
+37
+octal 4
+55
+37
+octal 5
+55
+37
+## END
+
+#### printf %d with + prefix (positive sign)
+
+echo decimal
+printf '%d\n' +42
+
+echo octal
+printf '%d\n' +077
+
+echo hex lowercase
+printf '%d\n' +0xab
+
+echo hex uppercase
+printf '%d\n' +0XAB
+
+## STDOUT:
+decimal
+42
+octal
+63
+hex lowercase
+171
+hex uppercase
+171
+## END
+
+## BUG zsh STDOUT:
+decimal
+42
+octal
+77
+hex lowercase
+171
+hex uppercase
+171
+## END
+
+#### leading spaces are accepted in value given to %d %X, but not trailing spaces
+
+case $SH in zsh) exit ;; esac
+
+# leading space is allowed
+printf '%d\n' ' -123'
+echo status=$?
+printf '%d\n' ' -123 '
+echo status=$?
+
+echo ---
+
+printf '%d\n' ' +077'
+echo status=$?
+
+printf '%d\n' ' +0xff'
+echo status=$?
+
+printf '%X\n' ' +0xff'
+echo status=$?
+
+printf '%x\n' ' +0xff'
+echo status=$?
+
+## STDOUT:
+-123
+status=0
+-123
+status=1
+---
+63
+status=0
+255
+status=0
+FF
+status=0
+ff
+status=0
+## END
+
+## OK osh STDOUT:
+-123
+status=0
+status=1
+---
+63
+status=0
+255
+status=0
+FF
+status=0
+ff
+status=0
+## END
+
+## BUG ash STDOUT:
+-123
+status=0
+0
+status=1
+---
+63
+status=0
+255
+status=0
+FF
+status=0
+ff
+status=0
+## END
+
+## BUG-2 zsh STDOUT:
+## END
+
+
+#### Arbitrary base 64#a is rejected (unlike in shell arithmetic)
+
+printf '%d\n' '64#a'
+echo status=$?
+
+# bash, dash, and mksh print 64 and return status 1
+# zsh and ash print 0 and return status 1
+# OSH rejects it completely (prints nothing) and returns status 1
+
+## STDOUT:
+status=1
+## END
+
+## OK dash/bash/mksh STDOUT:
+64
+status=1
+## END
+
+## OK zsh/ash STDOUT:
+0
+status=1
 ## END

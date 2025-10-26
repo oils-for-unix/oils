@@ -196,10 +196,8 @@ def GetCType(t: Type) -> str:
         c_type = 'void'
 
     elif isinstance(t, PartialType):
-        # I removed the last instance of this!  It was dead code in comp_ui.py.
+        # Should be rejected in conversion_pass.py
         raise AssertionError()
-        #c_type = 'void'
-        #is_pointer = True
 
     elif isinstance(t,
                     NoneTyp):  # e.g. a function that doesn't return anything

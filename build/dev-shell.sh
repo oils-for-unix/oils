@@ -4,9 +4,9 @@
 # Usage:
 #   source build/dev-shell.sh
 #
-# Note: assumes that $REPO_ROOT is $PWD.
-#
-# IMPORTANT: sourced by _build/oils.sh, so it must remain POSIX SHELL
+# Notes:
+# - assumes that $REPO_ROOT is $PWD.
+# - build/py2.sh is a slimmer version, for just python2
 
 ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
 # Also in build/deps.sh
@@ -51,7 +51,7 @@ if test -d $WEDGE_SOUFFLE_DIR; then
   export PATH="$WEDGE_SOUFFLE_DIR:$PATH"
 fi
 
-# test/spec-bin.sh builds binaries
+# OBSOLETE
 # This takes precedence over $ASH_SYMLINK_DIR
 readonly SPEC_DIR="$PWD/../oil_DEPS/spec-bin"
 
@@ -84,9 +84,15 @@ if test -d $MKSH_WEDGE_DIR; then
   export PATH="$MKSH_WEDGE_DIR:$PATH"
 fi
 
-readonly ZSH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/zsh/5.1.1/bin
-if test -d $ZSH_WEDGE_DIR; then
-  export PATH="$ZSH_WEDGE_DIR:$PATH"
+readonly ZSH_NEW_WEDGE_DIR=$USER_WEDGE_DIR/pkg/zsh/5.9/bin
+if test -d $ZSH_NEW_WEDGE_DIR; then
+  export PATH="$ZSH_NEW_WEDGE_DIR:$PATH"
+fi
+
+# Old version comes first
+readonly ZSH_OLD_WEDGE_DIR=$USER_WEDGE_DIR/pkg/zsh/5.1.1/bin
+if test -d $ZSH_OLD_WEDGE_DIR; then
+  export PATH="$ZSH_OLD_WEDGE_DIR:$PATH"
 fi
 
 readonly BUSYBOX_WEDGE_DIR=$USER_WEDGE_DIR/pkg/busybox/1.35.0

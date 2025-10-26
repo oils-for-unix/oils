@@ -332,6 +332,7 @@ def Main(
         # 2025-09: bash 5.3 is the latest version; can increase this with
         # future Oils releases
         state.SetGlobalString(mem, 'BASH_VERSION', '5.3')
+        state.SetGlobalArray(mem, 'BASH_VERSINFO', ['5', '3', '0', '0', 'release', 'unknown']) # major minor patch build release-status machine-type
 
     sh_init.CopyVarsFromEnv(exec_opts, environ, mem)
 
@@ -646,7 +647,8 @@ def Main(
                                         environ)
 
     b[builtin_i.hash] = pure_osh.Hash(search_path)  # not really pure
-    b[builtin_i.trap] = trap_osh.Trap(trap_state, parse_ctx, tracer, errfmt)
+    b[builtin_i.trap] = trap_osh.Trap(trap_state, parse_ctx, exec_opts, tracer,
+                                      errfmt)
 
     b[builtin_i.shvar] = pure_ysh.Shvar(mem, search_path, cmd_ev)
     b[builtin_i.ctx] = pure_ysh.Ctx(mem, cmd_ev)

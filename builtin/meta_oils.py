@@ -35,9 +35,6 @@ from mycpp.mylib import log, print_stderr, NewDict
 from pylib import os_path
 from osh import cmd_eval
 
-import posix_ as posix
-from posix_ import X_OK  # translated directly to C macro
-
 import libc
 
 _ = log
@@ -692,13 +689,13 @@ class RunProc(vm._Builtin):
         argv, locs = arg_r.Rest2()
 
         if len(argv) == 0:
-            raise error.Usage('requires arguments', loc.Missing)
+            raise error.Usage('requires arguments', cmd_val.arg_locs[0])
 
         name = argv[0]
         proc, _ = self.procs.GetInvokable(name)
         if not proc:
-            # note: should runproc be invoke?
-            self.errfmt.PrintMessage('runproc: no invokable named %r' % name)
+            self.errfmt.Print_('runproc: no invokable named %r' % name,
+                               locs[0])
             return 1
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
@@ -929,8 +926,7 @@ def _ResolveName(
 
     # See if it's external
     for path in search_path.LookupReflect(name, do_all):
-        if posix.access(path, X_OK):
-            results.append((name, 'file', path))
+        results.append((name, 'file', path))
 
     # Private builtins after externals
     if do_private and consts.LookupPrivateBuiltin(name) != 0:

@@ -42,7 +42,7 @@ Oils uses regex-based lexers, which are turned into efficient C code with
 strings char-by-char, since that strategy is error prone; it's inevitable that
 rare cases will be mishandled.
 
-The list of lexers can be found by looking at [native/fastlex.c]($oils-src).
+The list of lexers can be found by looking at [pyext/fastlex.c]($oils-src).
 
 - The large, modal OSH/YSH lexer in [frontend/lexer_def.py]($oils-src).
 - Lexers for OSH sublanguages

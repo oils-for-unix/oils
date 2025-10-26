@@ -55,4 +55,12 @@ bool isdir(BigStr* path) {
   return S_ISDIR(st.st_mode);
 }
 
+bool isfile(BigStr* path) {
+  struct stat st;
+  if (::stat(path->data_, &st) < 0) {
+    return false;
+  }
+  return S_ISREG(st.st_mode);
+}
+
 }  // namespace path_stat

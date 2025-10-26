@@ -19,6 +19,7 @@ def DefineTargets(ru):
         'mycpp/mycpp_main.py',
         deps_base_dir='prebuilt/ninja',
         template='mycpp',
+        implicit=['_bin/datalog/dataflow'],
     )
 
     # Note: could move bin/mycpp_main_{souffle,nosouffle}.sh to mycpp/ dir, so
@@ -387,9 +388,9 @@ def MycppExamples(ru, ph):
 
         ## Translate the example 2 ways, and benchmark and test it
 
-        for translator in ['mycpp', 'mycpp-nosouffle']:
+        for translator in ['mycpp', 'mycpp-souffle', 'mycpp-nosouffle']:
 
-            matrix = (NOSOUFFLE_MATRIX if translator == 'mycpp-nosouffle' else
+            matrix = (NOSOUFFLE_MATRIX if 'souffle' in translator else
                       COMPILERS_VARIANTS)
             phony_prefix = 'mycpp-examples' if translator == 'mycpp' else None
             py_inputs = TRANSLATE_FILES.get(ex)
@@ -443,6 +444,8 @@ def MycppExamples(ru, ph):
                 impl = 'C++'
                 if translator == 'mycpp-nosouffle':
                     impl = 'C++-NoSouffle'
+                elif translator == 'mycpp-souffle':
+                    impl = 'C++-Souffle'
 
                 n.build([task_out, cc_log_out],
                         'example-task', [b_example],

@@ -175,6 +175,10 @@ class PosixTest(unittest.TestCase):
       print('x'*65537, file=f)
       log('2: done')
 
+  def testFcntl(self):
+      from posix_ import F_DUPFD_CLOEXEC
+      print(F_DUPFD_CLOEXEC)
+
 
 def _Handler(x, y):
   log('Got signal %s %s', x, y)

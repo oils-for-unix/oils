@@ -139,6 +139,7 @@ X [Unsupported]   enable
 <!-- linkify_stop_col is 33 -->
 
 ```chapter-links-word-lang_33
+  [Glob]          osh-glob      *.py
   [Joining]       osh-word-join 'single'\'$myvar"double $x"
   [Quotes]        osh-string    'abc'  $'line\n'  "$var"
   [Substitutions] command-sub   $(date)   `date`
@@ -204,8 +205,9 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-special-var
-  [Interactive]   OILS_COMP_UI
   [Oils VM]       OILS_VERSION      LIB_OSH
+  [libc locale]   osh-locale
+  [Interactive]   OILS_COMP_UI      HISTFILE
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
   [Shell Vars]    IFS             X LANG       X GLOBIGNORE
   [Shell Options] SHELLOPTS       X BASHOPTS
@@ -221,7 +223,6 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
   [Completion]   @COMP_WORDS        COMP_CWORD    COMP_LINE   COMP_POINT
                   COMP_WORDBREAKS  @COMPREPLY   X COMP_KEY
                 X COMP_TYPE         COMP_ARGV
-  [History]       HISTFILE
   [cd]            PWD               OLDPWD      X CDPATH
   [getopts]       OPTIND            OPTARG      X OPTERR
   [read]          REPLY

@@ -684,6 +684,7 @@ def main(argv):
     index_out = argv[2]
     run_index_out = argv[3]
     run_id = argv[4]  # looks like git-0101abab
+    num_to_show = int(argv[5])
 
     assert run_id.startswith('git-'), run_id
     commit_hash = run_id[4:]
@@ -696,7 +697,7 @@ def main(argv):
     # - Group by commit HASH, because 'git rebase' can crate different commits
     #   with the same date.
     jobs.sort(key=ByCommitDate, reverse=True)
-    jobs = jobs[:NUM_JOBS]
+    jobs = jobs[:num_to_show]
 
     groups = GroupJobs(jobs, ByCommitHash)
 

@@ -40,6 +40,7 @@ from frontend import match
 from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, probe, tagswitch, iteritems
+from pylib import path_stat
 
 import posix_ as posix
 from posix_ import (
@@ -60,6 +61,7 @@ from posix_ import (
     O_RDWR,
     O_WRONLY,
     O_TRUNC,
+    F_DUPFD_CLOEXEC,  # OSH patch - this didn't appear until Python 3.2
 )
 
 from typing import IO, List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
@@ -130,6 +132,8 @@ def InitInteractiveShell(signal_safe):
     iolib.RegisterSignalInterest(SIGWINCH)
 
 
+_ = F_DUPFD_CLOEXEC  # shut up lint for now
+
 def SaveFd(fd):
     # type: (int) -> int
 
@@ -138,6 +142,9 @@ def SaveFd(fd):
 
     # Bug fix: make sure we never leak the saved descriptor to child processes
     fcntl_.fcntl(saved, F_SETFD, FD_CLOEXEC)
+
+    # TODO: use this
+    #saved = fcntl_.fcntl(fd, F_DUPFD_CLOEXEC, _SHELL_MIN_FD)  # type: int
 
     return saved
 
@@ -376,25 +383,44 @@ class FdState(object):
         # type: (Process) -> None
         self.cur_frame.need_wait.append(proc)
 
-    def _ApplyRedirect(self, r):
-        # type: (RedirValue) -> None
+    def _ApplyRedirect(self, r, err_out):
+        # type: (RedirValue, List[int]) -> None
         arg = r.arg
         UP_arg = arg
         with tagswitch(arg) as case:
 
             if case(redirect_arg_e.Path):
                 arg = cast(redirect_arg.Path, UP_arg)
+
+                # noclobber: don't overwrite existing files (except for special
+                # files like /dev/null)
+                noclobber = self.exec_opts.noclobber()
+
+                # Only > and &> actually follow noclobber. See
+                # spec/redirect.test.sh
+                op_respects_noclobber = r.op_id in (Id.Redir_Great, Id.Redir_AndGreat)
+
                 # noclobber flag is OR'd with other flags when allowed
-                noclobber_mode = O_EXCL if self.exec_opts.noclobber() else 0
+                noclobber_mode = 0
+                if noclobber and op_respects_noclobber:
+                    if not path_stat.exists(arg.filename):
+                        # File doesn't currently exist, open with O_EXCL (open
+                        # will fail is EEXIST if arg.filename exists when we
+                        # call open(2)).
+                        noclobber_mode = O_EXCL
+                    elif path_stat.isfile(arg.filename):
+                        # If the file exists, and is not a special file like
+                        # /dev/null, then immediately return with an error.
+                        err_out.append(EEXIST)
+                        return
+
                 if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
-                    # NOTE: This is different than >| because it respects noclobber, but
-                    # that option is almost never used.  See test/wild.sh.
-                    mode = O_CREAT | O_WRONLY | O_TRUNC | noclobber_mode
+                    mode = O_CREAT | O_WRONLY | O_TRUNC
                 elif r.op_id == Id.Redir_Clobber:  # >|
                     mode = O_CREAT | O_WRONLY | O_TRUNC
                 elif r.op_id in (Id.Redir_DGreat,
                                  Id.Redir_AndDGreat):  # >>   &>>
-                    mode = O_CREAT | O_WRONLY | O_APPEND | noclobber_mode
+                    mode = O_CREAT | O_WRONLY | O_APPEND
                 elif r.op_id == Id.Redir_Less:  # <
                     mode = O_RDONLY
                 elif r.op_id == Id.Redir_LessGreat:  # <>
@@ -402,11 +428,13 @@ class FdState(object):
                 else:
                     raise NotImplementedError(r.op_id)
 
+                mode |= noclobber_mode
+
                 # NOTE: 0666 is affected by umask, all shells use it.
                 try:
                     open_fd = posix.open(arg.filename, mode, 0o666)
                 except (IOError, OSError) as e:
-                    if e.errno == EEXIST and self.exec_opts.noclobber():
+                    if e.errno == EEXIST and noclobber:
                         extra = ' (noclobber)'
                     else:
                         extra = ''
@@ -414,7 +442,7 @@ class FdState(object):
                         "Can't open %r: %s%s" %
                         (arg.filename, pyutil.strerror(e), extra),
                         blame_loc=r.op_loc)
-                    raise  # redirect failed
+                    raise
 
                 new_fd = self._PushDup(open_fd, r.loc)
                 if new_fd != NO_FD:
@@ -504,7 +532,7 @@ class FdState(object):
                     posix.close(write_fd)
 
     def Push(self, redirects, err_out):
-        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        # type: (List[RedirValue], List[int]) -> None
         """Apply a group of redirects and remember to undo them."""
 
         #log('> fd_state.Push %s', redirects)
@@ -516,9 +544,14 @@ class FdState(object):
             #log('apply %s', r)
             with ui.ctx_Location(self.errfmt, r.op_loc):
                 try:
-                    self._ApplyRedirect(r)
+                    # _ApplyRedirect reports errors in 2 ways:
+                    #  1. Raising an IOError or OSError from posix.* calls
+                    #  2. Returning errors in err_out from checks like noclobber
+                    self._ApplyRedirect(r, err_out)
                 except (IOError, OSError) as e:
-                    err_out.append(e)
+                    err_out.append(e.errno)
+
+                if len(err_out):
                     # This can fail too
                     self.Pop(err_out)
                     return  # for bad descriptor, etc.
@@ -540,7 +573,7 @@ class FdState(object):
         return True
 
     def Pop(self, err_out):
-        # type: (List[error.IOError_OSError]) -> None
+        # type: (List[int]) -> None
         frame = self.stack.pop()
         #log('< Pop %s', frame)
         for rf in reversed(frame.saved):
@@ -549,7 +582,7 @@ class FdState(object):
                 try:
                     posix.close(rf.orig_fd)
                 except (IOError, OSError) as e:
-                    err_out.append(e)
+                    err_out.append(e.errno)
                     log('Error closing descriptor %d: %s', rf.orig_fd,
                         pyutil.strerror(e))
                     return
@@ -557,7 +590,7 @@ class FdState(object):
                 try:
                     posix.dup2(rf.saved_fd, rf.orig_fd)
                 except (IOError, OSError) as e:
-                    err_out.append(e)
+                    err_out.append(e.errno)
                     log('dup2(%d, %d) error: %s', rf.saved_fd, rf.orig_fd,
                         pyutil.strerror(e))
                     #log('fd state:')
@@ -1282,7 +1315,7 @@ class Process(Job):
 class ctx_Pipe(object):
 
     def __init__(self, fd_state, fd, err_out):
-        # type: (FdState, int, List[error.IOError_OSError]) -> None
+        # type: (FdState, int, List[int]) -> None
         fd_state.PushStdinFromPipe(fd)
         self.fd_state = fd_state
         self.err_out = err_out
@@ -1516,13 +1549,13 @@ class Pipeline(Job):
         # a pipeline.
         cmd_flags |= cmd_eval.NoErrTrap
 
-        io_errors = []  # type: List[error.IOError_OSError]
+        io_errors = []  # type: List[int]
         with ctx_Pipe(fd_state, r, io_errors):
             cmd_ev.ExecuteAndCatch(last_node, cmd_flags)
 
         if len(io_errors):
             e_die('Error setting up last part of pipeline: %s' %
-                  pyutil.strerror(io_errors[0]))
+                  posix.strerror(io_errors[0]))
 
         # We won't read anymore.  If we don't do this, then 'cat' in 'cat
         # /dev/urandom | sleep 1' will never get SIGPIPE.

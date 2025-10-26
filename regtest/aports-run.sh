@@ -13,23 +13,25 @@
 #
 # Also useful:
 #
-#   $0 fetch-packages fetch PKG_FILTER
+#   $0 fetch-packages fetch $pkg_filter $a_repo  # alpine repo is 'main' or 'community'
 #
 #   $0 fetch-packages fetch 100,300p   # packages 100-300
 #   $0 fetch-packages fetch '.*'       # all packages
 #
 # Look for results in _tmp/aports-build/
 #
-# Build both baseline/ and osh-as-sh/
+# Build many packages:
 #
-#   $0 build-many-configs PKG_FILTER          # build a single shard
-#                                             # e.g. 'shard3': build packages 301 to 400
+#   $0 build-packages-overlayfs osh-as-sh shard9 community
+#   $0 build-packages-overlayfs osh-as-sh shardA   # main is default $a_repo
 #
-# Build an individual config like baseline:
+# Build a single package:
 #
-#   $0 set-osh-as-sh                          # or set-baseline
-#   $0 build-packages PKG_FILTER osh-as-sh
-#   $0 build-packages '.*'       osh-as-sh    # 310 MB, 251 K files
+#   $0 build-package-overlayfs osh-as-sh userspace-rcu
+#   $0 build-package-overlayfs osh-as-sh xterm          community  # community repo
+#
+# Drop into a shell:
+#   INTERACTIVE=1 $0 build-package-overlayfs osh-as-sh userspace-rcu
 #
 # PKG_FILTER
 #   shard[0-9]+      - shard3 is packages 301 to 400
@@ -38,6 +40,10 @@
 #   ALL              - all packages
 #   .*               - egrep pattern matching all packages
 #   curl             - egrep pattern matching 'curl'
+#
+# Preview packages:
+#
+#   $0 package-dirs shard9 community
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -113,6 +119,7 @@ package-dirs() {
   # mpfr4: OSH bug, and big log
   # yash: make sure it doesn't hang
   local package_filter=${1:-'lz|mpfr|yash'}
+  local a_repo=${2:-main}  # or 'community'
 
   local -a prefix
 
@@ -148,35 +155,71 @@ package-dirs() {
   # shardA, shardB For testing the combined report
   elif [[ $package_filter =~ ^shard([A-Z]+)$ ]]; then
     local shard_name=${BASH_REMATCH[1]}
-    case $shard_name in
-      A) package_filter='^gzip' ;;    # failure
-      B) package_filter='^xz' ;;      # failure
-      C) package_filter='^lz' ;;      # 3 packages
-      *) package_filter='^perl-http-daemon' ;;   # test out perl
+    case $a_repo in
+      main)
+        case $shard_name in
+          A) package_filter='^gzip' ;;  # failure
+          B) package_filter='^xz' ;;    # failure
+          C) package_filter='^lz' ;;    # 3 packages
+          D) package_filter='^jq$' ;;   # produces autotools test-suite.log
+          *) package_filter='^perl-http-daemon' ;;   # test out perl
+        esac
+        ;;
+      community)
+        case $shard_name in
+          A) package_filter='^py3-zulip' ;;  # one Python package
+          B) package_filter='^xterm' ;;      # one C package
+          C) package_filter='^shfmt' ;;      # one Go package
+          D) package_filter='^shellspec' ;;  # OSH disagreement because of 'var'
+          *) package_filter='^shell' ;;      # a bunch of packages
+        esac
+        ;;
+      *)
+        die "Invalid a_repo $a_repo"
+        ;;
     esac
 
     prefix=( egrep "$package_filter" )
+
+  elif [[ $package_filter =~ ^disagree-(.*)+$ ]]; then
+    local filename=${BASH_REMATCH[1]}
+    # A file of EXACT package names, not patterns
+    # See copy-disagree
+    local package_file="_tmp/$package_filter.txt"
+    comm -1 -2 <(sort $package_file) <(sort _tmp/apk-${a_repo}-manifest.txt)
+    return
 
   else
     prefix=( egrep "$package_filter" )
 
   fi
    
-  "${prefix[@]}" _tmp/apk-manifest.txt | sed 's,/APKBUILD$,,g'
+  "${prefix[@]}" _tmp/apk-${a_repo}-manifest.txt
+}
+
+copy-disagree() {
+  ### Determine what to run
+
+  local epoch=${1:-2025-09-18-bash}
+  cp -v \
+    _tmp/aports-report/$epoch/disagree-packages.txt \
+    _tmp/disagree-$epoch.txt
 }
 
 do-packages() {
   ### Download sources - abuild puts it in /var/cahe/distfiles
   local action=${1:-fetch}
   local package_filter=${2:-}
+  local a_repo=${3:-main}
   # flags to pass to the inner shell
-  local sh_flags=${3:-'-e -u'}  # -u to disable -e
+  local sh_flags=${4:-'-e -u'}  # -u to disable -e
 
   # 6 seconds for 10 packages
   # There are ~1600 packages
   # So if there are 20 shards, each shard could have 10?
 
-  local -a package_dirs=( $(package-dirs "$package_filter") )
+  local -a package_dirs
+  package_dirs=( $(package-dirs "$package_filter" "$a_repo") )
 
   echo "${dirs[@]}"
   #return
@@ -184,18 +227,20 @@ do-packages() {
   time enter-rootfs-user sh $sh_flags -c '
 
   action=$1
-  shift
+  a_repo=$2
+  shift 2
   for dir in "$@"; do
-    time abuild -r -C aports/main/$dir "$action"
+    time abuild -r -C aports/$a_repo/$dir "$action"
   done
-  ' dummy0 "$action" "${package_dirs[@]}"
+  ' dummy0 "$action" "$a_repo" "${package_dirs[@]}"
 }
 
 fetch-packages() {
   local package_filter=${1:-}
+  local a_repo=${2:-main}
 
   # -u means we don't pass -e (and it's non-empty)
-  do-packages fetch "$package_filter" '-u'
+  do-packages fetch "$package_filter" "$a_repo" '-u'
 }
 
 banner() {
@@ -204,34 +249,10 @@ banner() {
   echo
 }
 
-build-packages() {
-  local package_filter=${1:-}
-  local config=${2:-baseline}
-  local overlay_dir=${3:-}
-
-  local -a package_dirs=( $(package-dirs "$package_filter") )
-
-  banner "Building ${#package_dirs[@]} packages (filter $package_filter)"
-
-  local -a prefix
-  if test -n "$overlay_dir"; then
-    prefix=( enter-overlayfs-user "$overlay_dir" )
-  else
-    prefix=( enter-rootfs-user )
-  fi
-
-  "${prefix[@]}" sh -c '
-  config=$1
-  shift
-
-  cd oils
-  regtest/aports-guest.sh build-packages "$config" "$@"
-  ' dummy0 "$config" "${package_dirs[@]}"
-}
-
 build-package-overlayfs() {
   local config=${1:-baseline}
   local pkg=${2:-lua5.4}
+  local a_repo=${3:-main}
 
   # baseline stack:
   #   _chroot/aports-build
@@ -274,12 +295,12 @@ build-package-overlayfs() {
   # show the effect of the overlay
   #ls -l /bin/sh
 
-  regtest/aports-guest.sh build-package2 "$@"
-  ' dummy0 "$pkg"
+  regtest/aports-guest.sh build-one-package "$@"
+  ' dummy0 "$pkg" "$a_repo"
 
   if test -n "$INTERACTIVE"; then
-    echo "Starting interactive shell in overlayfs environment for package $pkg"
-    echo "Rebuild: abuild -f -r -C ~/aports/main/$pkg"
+    echo "Starting interactive shell in overlayfs environment for package $a_repo/$pkg"
+    echo "Rebuild: abuild -f -r -C ~/aports/$a_repo/$pkg"
     echo "   Help: abuild -h"
     # If the last command in the child shell exited non-zero then ctrl-d/exit
     # will report that error code to the parent. If we don't ignore that error
@@ -292,16 +313,18 @@ build-package-overlayfs() {
   unmount-loop $merged
 }
 
-build-packages2() {
+build-many-packages-overlayfs() {
   local package_filter=${1:-}
   local config=${2:-baseline}
+  local a_repo=${3:-main}
 
-  local -a package_dirs=( $(package-dirs "$package_filter") )
+  local -a package_dirs
+  package_dirs=( $(package-dirs "$package_filter" "$a_repo") )
 
-  banner "Building ${#package_dirs[@]} packages (filter $package_filter)"
+  banner "Building ${#package_dirs[@]} packages (filter=$package_filter a_repo=$a_repo)"
 
   for pkg in "${package_dirs[@]}"; do
-    build-package-overlayfs "$config" "$pkg"
+    build-package-overlayfs "$config" "$pkg" "$a_repo"
   done 
 }
 
@@ -317,112 +340,16 @@ clean-guest() {
 
 readonly -a CONFIGS=( baseline osh-as-sh ) 
 
-abridge-logs() {
-  local config=${1:-baseline}
-  local dest_dir=$2
-
-  # local threshold=$(( 1 * 1000 * 1000 ))  # 1 MB
-  local threshold=$(( 500 * 1000 ))  # 500 KB
-
-  local guest_dir=$CHROOT_HOME_DIR/oils/_tmp/aports-guest/$config 
-
-  local log_dir="$dest_dir/$config/log"
-  mkdir -v -p $log_dir
-
-  find $guest_dir -name '*.log.txt' -a -printf '%s\t%P\n' |
-  while read -r size path; do
-    local src=$guest_dir/$path
-    local dest=$log_dir/$path
-
-    if test "$size" -lt "$threshold"; then
-      cp -v $src $dest
-    else
-      { echo "*** This log is abridged to its last 1000 lines:"; echo; } > $dest
-      tail -n 1000 $src >> $dest
-    fi
-  done
-
-  # From 200 MB -> 96 MB uncompressed
-  #
-  # Down to 10 MB compressed.  So if we have 4 configs, that's 40 MB of logs,
-  # which is reasonable.
-
-  # 500K threshold: 76 MB
-  du --si -s $dest_dir
-}
-
-_move-apk() {
-  local config=${1:-baseline}
-  local dest_dir=$2
-
-  local guest_dir=$CHROOT_HOME_DIR/packages/main/x86_64
-
-  local apk_dir="$dest_dir/$config/apk"
-  mkdir -v -p $apk_dir
-
-  # Maintain consistent state by removing the index too
-  mv -v \
-    $guest_dir/*.apk $guest_dir/APKINDEX.tar.gz \
-    $apk_dir
-}
-
-copy-results() {
-  local config=$1
-  local dest_dir=$2
-
-  #copy-logs "$config"
-
-  abridge-logs "$config" "$dest_dir"
-
-  local dest=$dest_dir/$config/tasks.tsv
-  mkdir -p $(dirname $dest)
-  concat-task-tsv "$config" > $dest
-}
-
 APORTS_EPOCH="${APORTS_EPOCH:-}"
 # default epoch
 if test -z "$APORTS_EPOCH"; then
   APORTS_EPOCH=$(date '+%Y-%m-%d')
 fi
 
-_build-many-configs() {
+_build-many-configs-overlayfs() {
   local package_filter=${1:-}
   local epoch=${2:-$APORTS_EPOCH}
-
-  if test -z "$package_filter"; then
-    die "Package filter is required (e.g. shard3, ALL)"
-  fi
-
-  clean-guest
-
-  # See note about /etc/sudoers.d at top of file
-
-  local dest_dir="$BASE_DIR/$epoch/$package_filter"
-
-  for config in "${CONFIGS[@]}"; do
-    # this uses enter-chroot to modify the chroot
-    # should we have a separate one?  But then fetching packages is different
-    banner "$epoch: Set config to $config"
-    set-$config
-
-    # this uses enter-chroot -u
-    build-packages "$package_filter" "$config"
-
-    copy-results "$config" "$dest_dir"
-
-    # This is allowed to fail: we count .apk packages build, and we recorded the
-    # 'abuild' exit status
-    sudo $0 _move-apk "$config" "$dest_dir" || true
-
-    # Put .apk in a text file, which is easier to rsync than the whole list
-    md5sum $dest_dir/$config/apk/*.apk > $dest_dir/$config/apk.txt
-
-  done
-}
-
-_build-many-configs2() {
-  local package_filter=${1:-}
-  local epoch=${2:-$APORTS_EPOCH}
+  local a_repo=${3:-main}
 
   if test -z "$package_filter"; then
     die "Package filter is required (e.g. shard3, ALL)"
@@ -437,41 +364,7 @@ _build-many-configs2() {
   for config in "${CONFIGS[@]}"; do
     banner "$epoch: Using config $config"
 
-    build-packages2 "$package_filter" "$config"
-  done
-}
-
-build-baseline() {
-  local epoch=${1:-$APORTS_EPOCH}
-  shift
-
-  sudo -k
-
-  set-baseline
-
-  for package_filter in "$@"; do
-    clean-guest  # prevent logs from accumulating
-
-    build-packages "$package_filter" baseline
-    local dest_dir="$BASE_DIR/$epoch/$package_filter"
-    copy-results baseline "$dest_dir"
-  done
-}
-
-build-many-configs() {
-  # clear credentials first
-  sudo -k
-
-  _build-many-configs "$@"
-}
-
-build-many-shards() {
-  sudo -k
-
-  banner "$APORTS_EPOCH: building shards: $*"
-
-  time for package_filter in "$@"; do
-    _build-many-configs "$package_filter" "$APORTS_EPOCH"
+    build-many-packages-overlayfs "$package_filter" "$config" "$a_repo"
   done
 }
 
@@ -489,24 +382,26 @@ remove-shard-files() {
   # rm: cannot remove '_chroot/shard6/baseline/llvm19/home/udu/aports/main/llvm19/src/llvm-project-19.1.7.src/build/lib': Directory not empty
   # real    1041m46.464s
 
-  sudo rm -r -f $shard_dir/*/*/home/udu/aports/main/ || true
+  sudo rm -r -f $shard_dir/*/*/home/udu/aports/ || true
 }
 
-build-many-shards2() {
+build-many-shards-overlayfs() {
   sudo -k
 
-  # Clean up old runs
-  sudo rm -r -f _chroot/shard*
+  local a_repo=${A_REPO:-main}  # env var like $APORTS_EPOCH
 
-  banner "$APORTS_EPOCH: building shards: $*"
+  # Clean up old runs
+  sudo rm -r -f _chroot/shard* _chroot/disagree*
+
+  banner "$APORTS_EPOCH $a_repo: building shards: $*"
 
   time for shard_name in "$@"; do
-    _build-many-configs2 "$shard_name" "$APORTS_EPOCH"
+    _build-many-configs-overlayfs "$shard_name" "$APORTS_EPOCH" "$a_repo"
 
     # Move to _chroot/shard10, etc.
     mv -v --no-target-directory _chroot/package-layers _chroot/$shard_name
 
-    make-shard-tree $shard_name
+    make-shard-tree $shard_name $a_repo
 
     remove-shard-files _chroot/$shard_name
   done
@@ -526,53 +421,65 @@ make-shard-tree() {
   #         log/
   #           gzip.log.txt
   #           xz.log.txt
+  #         test-suite/  # autotools dir
+  #           gzip/
+  #             test-suite.log.txt
   #       osh-as-sh/
   #         apk.txt
   #         tasks.tsv
   #         log/
   #           gzip.log.txt
   #           xz.log.txt
+  #         test-suite/
+  #           gzip/
+  #             test-suite.log.txt
   #     shard1/
   #       ...
   #     shard16/
   #       ...
 
   local shard_name=$1
-  local epoch=${2:-$APORTS_EPOCH}
+  local a_repo=${2:-main}
+  local epoch=${3:-$APORTS_EPOCH}
 
   local shard_dir=_chroot/$shard_name
 
   for config in baseline osh-as-sh; do
     local dest_dir=$BASE_DIR/$epoch/$shard_name/$config
-    local log_dest_dir=$dest_dir/log
-    mkdir -v -p $log_dest_dir
+    mkdir -p $dest_dir
     #ls -l $shard_dir/$config
 
     time python3 devtools/tsv_concat.py \
       $shard_dir/$config/*/home/udu/oils/_tmp/aports-guest/*.task.tsv > $dest_dir/tasks.tsv
 
     # Allowed to fail if zero .apk are built
-    time md5sum $shard_dir/$config/*/home/udu/packages/main/x86_64/*.apk > $dest_dir/apk.txt \
+    time md5sum $shard_dir/$config/*/home/udu/packages/$a_repo/x86_64/*.apk > $dest_dir/apk.txt \
       || true
 
-    abridge-logs2 $shard_dir/$config $log_dest_dir
+    abridge-logs2 $shard_dir/$config $dest_dir
 
   done
 }
 
 abridge-logs2() {
-  local config_src_dir=${1:-_chroot/shardB/baseline}
-  local log_dest_dir=${2:-$BASE_DIR/shardB/baseline/log}
-  mkdir -p $log_dest_dir
+  local config_src_dir=${1:-_chroot/shardD/osh-as-sh}
+  local dest_dir=${2:-$BASE_DIR/shardD/osh-as-sh}
+
+  local log_dest_dir=$dest_dir/log
+  local test_suite_dest_dir=$dest_dir/test-suite
+  mkdir -p $log_dest_dir $test_suite_dest_dir
 
   local threshold=$(( 500 * 1000 ))  # 500 KB
 
   # this assumes the build process doesn't create *.log.txt
+  # test-suite.log is the name used by the autotools test runner - we want to save those too
   # ignore permission errors with || true
   { find $config_src_dir -name '*.log.txt' -a -printf '%s\t%P\n' || true; } |
   while read -r size path; do
     local src=$config_src_dir/$path
-    local filename=${src##*/}  # pure bash basename, since we're in a loop
+    # Remove text until last slash (shortest match)
+    # like $(basename $path) but in bash, for speed
+    local filename=${path##*/}
     local dest=$log_dest_dir/$filename
 
     if test "$size" -lt "$threshold"; then
@@ -585,19 +492,20 @@ abridge-logs2() {
     fi
   done
 
-  # 500K threshold: 76 MB
-  du --si -s $log_dest_dir
+  { find $config_src_dir -name 'test-suite.log' -a -printf '%P\n' || true; } |
+  while read -r path; do
+    local src=$config_src_dir/$path
 
-  return
+    # Remove text after the first slash (shortest match)
+    local package_name=${path%%/*}
+    local dest=$test_suite_dest_dir/$package_name/test-suite.log.txt
 
-  for layer_dir in $shard_dir/$config/*; do
-    # TODO: should be abridge-logs!
-    # Without it, the logs are 115 MB for less than half the shards
-    cp -v \
-      $layer_dir/home/udu/oils/_tmp/aports-guest/*.log.txt \
-      $log_dest_dir
+    mkdir -p "$(dirname $dest)"
+    cp -v --no-target-directory $src $dest
   done
 
+  # 500K threshold: 76 MB
+  du --si -s $log_dest_dir
 }
 
 compare-speed() {

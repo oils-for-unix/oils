@@ -306,7 +306,7 @@ class Wait(vm._Builtin):
                 #log('WAIT JOB %r', job)
 
             if job is None:
-                self.errfmt.Print_("Job %s was't found" % job_id,
+                self.errfmt.Print_("Job %s wasn't found" % job_id,
                                    blame_loc=location)
                 return 127
 

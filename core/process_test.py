@@ -173,11 +173,11 @@ class ProcessTest(_Common):
 
         err_out = []
         self.fd_state.Push([r], err_out)
-        line1, _ = read_osh._ReadPortion(pyos.NEWLINE_CH, -1, False, cmd_ev)
+        line1, _ = read_osh._ReadPortion(0, pyos.NEWLINE_CH, -1, False, cmd_ev)
         self.fd_state.Pop(err_out)
 
         self.fd_state.Push([r], err_out)
-        line2, _ = read_osh._ReadPortion(pyos.NEWLINE_CH, -1, False, cmd_ev)
+        line2, _ = read_osh._ReadPortion(0, pyos.NEWLINE_CH, -1, False, cmd_ev)
         self.fd_state.Pop(err_out)
 
         # sys.stdin.readline() would erroneously return 'two' because of buffering.

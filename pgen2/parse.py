@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 # Duplicated to avoid dependency
 # from pgen2 import token
 
-NT_OFFSET = 256
+NT_OFFSET = 512
 
 
 class ParseError(Exception):

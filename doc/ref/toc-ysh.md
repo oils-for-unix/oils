@@ -152,6 +152,7 @@ X [Wok]           _field()
                   write                  Like echo, with --, --sep, --end
                   fork         forkwait  Replace & and (), and takes a block
                   redir                  Run a block, with redirects
+  [Run Code]      ysh-trap
   [Private]       cat          rm        POSIX-compatible
                   sleep
   [Hay Config]    hay          haynode   For DSLs and config files
@@ -294,8 +295,8 @@ X [External Lang] BEGIN   END   when (awk)
                   block-expr    ^(echo $PWD)
                   expr-literal  ^[1 + 2*3]
                   str-template  ^"$a and $b" for Str.replace()
-                X expr-sub      $[myobj]
-                X expr-splice   @[myobj]
+                  expr-sub      $[myobj]
+                  expr-splice   @[myobj]
   [Operators]     op-precedence Like Python
                   concat        s1 ++ s2,  L1 ++ L2
                   ysh-equals    ===   !==   ~==   is, is not
@@ -303,6 +304,7 @@ X [External Lang] BEGIN   END   when (awk)
                   ysh-compare   <  <=  >  >=  (numbers only)
                   ysh-logical   not  and  or
                   ysh-arith     +  -  *  /  //  %   ** 
+                  ysh-unary     +  -
                   ysh-bitwise   ~  &  |  ^  <<  >>
                   ysh-ternary   '+' if x >= 0 else '-'
                   ysh-index     s[0]  mylist[3]  mydict['key']
@@ -332,6 +334,7 @@ X [External Lang] BEGIN   END   when (awk)
 <!-- linkify_stop_col is 34 -->
 
 ```chapter-links-word-lang_34
+  [Glob]          ysh-glob         *.py
   [Joining]       ysh-word-join    --flag='value'  PATH="value"
   [Quotes]        ysh-string       "x is $x"  $"x is $x"  r'[a-z]\n'
                                    u'line\n'  b'byte \yff'
@@ -379,12 +382,12 @@ X [External Lang] BEGIN   END   when (awk)
                   _pipeline_status    _process_sub_status
   [YSH Tracing]   SHX_indent          SHX_punct             SHX_pid_str
   [YSH read]      _reply
-  [History]       YSH_HISTFILE
-  [Interactive]   OILS_COMP_UI
   [Oils VM]       OILS_VERSION        LIB_YSH
                   OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
                   OILS_GC_STATS       OILS_GC_STATS_FD
                   OILS_LOCALE_OK
+  [libc locale]   ysh-locale
+  [Interactive]   OILS_COMP_UI        YSH_HISTFILE
   [Float]         NAN                 INFINITY
   [Module]        __provide__ 
   [Other Env]     HOME                PATH

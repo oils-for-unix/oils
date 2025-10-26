@@ -378,6 +378,10 @@ osh-bugs() {
   test/spec-py.sh run-file osh-bugs "$@"
 }
 
+paren-ambiguity() {
+  test/spec-py.sh run-file paren-ambiguity "$@"
+}
+
 parse-errors() {
   test/spec-py.sh run-file parse-errors "$@"
 }
@@ -616,6 +620,10 @@ ysh-builtin-process() {
 
 ysh-builtin-shopt() {
   test/spec-py.sh run-file ysh-builtin-shopt "$@"
+}
+
+ysh-builtin-trap() {
+  test/spec-py.sh run-file ysh-builtin-trap "$@"
 }
 
 ysh-builtins() {

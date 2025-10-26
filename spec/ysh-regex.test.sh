@@ -396,7 +396,7 @@ shopt --set ysh:upgrade
 var pat = / ['-'] /
 #echo PAT=$pat
 if ('-' ~ pat) { echo hyphen }
-if ($'\\' ~ pat) { echo FAIL }
+if (b'\\' ~ pat) { echo FAIL }
 
 var pat = / [ \\ ] /
 [[ '\' =~ $pat ]] && echo backslash
@@ -550,7 +550,7 @@ if ('n' ~ backslash3) {
   echo 'match n'
 }
 
-if ($'\\' ~ backslash3) {
+if (b'\\' ~ backslash3) {
   echo 'match backslash'
 }
 
@@ -584,3 +584,59 @@ match n
 match backslash
 ## END
 
+
+#### character class with digit [\\0] should not crash (issue #2380)
+shopt -s ysh:all
+
+var pat = /[\\0]/
+echo "pattern: $pat"
+
+# Test matching  
+pp test_ ('0' ~ pat)
+pp test_ ('1' ~ pat)
+pp test_ (b'\\' ~ pat)
+
+echo ---
+
+# Also test other digits in character class
+var digits = /[0-9]/
+echo $digits
+pp test_ ('5' ~ digits)
+pp test_ ('x' ~ digits)
+
+
+## STDOUT:
+pattern: [0\\]
+(Bool)   true
+(Bool)   false
+(Bool)   true
+---
+[0-9]
+(Bool)   true
+(Bool)   false
+## END
+
+#### Multiple digits like [25] are invalid
+
+# synonyms
+var pat = /[2 5]/
+echo $pat
+var pat = /[2 '5']/
+echo $pat
+
+var pat = /[25]/
+echo $pat
+
+## status: 2
+## STDOUT:
+[25]
+[25]
+## END
+
+#### Negation of digit not allowed
+
+var digits = /[!2]/
+
+## status: 2
+## STDOUT:
+## END

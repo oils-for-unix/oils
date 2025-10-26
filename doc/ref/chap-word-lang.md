@@ -21,11 +21,35 @@ strings, or arrays of strings.
 <div id="dense-toc">
 </div>
 
+## Glob
+
+### osh-glob
+
+Glob expansion in OSH respects `LC_COLLATE` (like bash and zsh):
+
+    $ touch foo-bar foo_bar
+    $ echo foo*   # foo_bar MAY come first
+
+Related: [osh-locale][]
+
+[osh-locale]: chap-special-var.html#osh-locale
+
+### ysh-glob
+
+Glob expansion in YSH is always done with the default libc collation:
+
+    ysh$ touch foo-bar foo_bar
+    ysh$ echo foo*   # foo-bar always comes first
+
+Related: [ysh-locale][]
+
+[ysh-locale]: chap-special-var.html#ysh-locale
+
 <h2 id="expression">Expressions to Words</h2>
 
 ### expr-sub
 
-Try to turn an expression into a string.  Examples:
+Turn an expression into a string.  Examples:
 
     $ echo $[3 * 2]
     6
@@ -50,11 +74,18 @@ You can explicitly use `toJson8` or `toJson()`:
 
 ### expr-splice
 
-Splicing puts the elements of a `List` into a string array context:
+Splicing turns each element of a `List` into a string, and puts those strings
+into an array:
 
-    $ var foods = ['ale', 'bean', 'corn']
+    $ var foods = ['ale', 'bean', 42]
     $ echo pizza @[foods[1:]] worm
-    pizza bean corn worm
+    pizza bean 42 worm
+
+It also works in arays:
+
+    $ var myarray = :| prefix @[foods]] |
+    $ echo @myarray
+    prefix ale bean 42
 
 This syntax is enabled by `shopt --set` [parse_at][], which is part of YSH.
 

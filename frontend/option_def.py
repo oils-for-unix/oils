@@ -65,6 +65,7 @@ class _OptionDef(object):
 _OTHER_SET_OPTIONS = [
     # NOTE: set -i and +i is explicitly disallowed.  Only osh -i or +i is valid
     # https://unix.stackexchange.com/questions/339506/can-an-interactive-shell-become-non-interactive-or-vice-versa
+    ('a', 'allexport'),
     ('n', 'noexec'),
     ('x', 'xtrace'),
     ('v', 'verbose'),  # like xtrace, but prints unevaluated commands
@@ -85,6 +86,7 @@ _STRICT_OPTS = [
     # These are RUNTIME strict options.
     'strict_argv',  # empty argv not allowed
     'strict_arith',  # string to integer conversions, e.g. x=foo; echo $(( x ))
+    'strict_arg_parse',  # disallow additional arguments, e.g. cd / /
 
     # No implicit conversions between string and array.
     # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
@@ -138,19 +140,15 @@ _UPGRADE_RUNTIME_OPTS = [
     ('for_loop_frames', False),
 ]
 
-# TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
-# valid, because it has an extra argument.  Builtins are inconsistent about
-# checking this.
-
 _YSH_RUNTIME_OPTS = [
     ('no_exported', False),  # don't initialize or use exported variables
     ('no_init_globals', False),  # don't initialize PWD, COMP_WORDBREAKS, etc.
     ('no_osh_builtins', False),  # disable 'set' builtin, etc.
     ('simple_echo', False),  # echo takes 0 or 1 arguments
     ('simple_eval_builtin', False),  # eval takes exactly 1 argument
-
-    # only file tests (no strings), remove [, status 2
+    # test only does file ops (no strings ops), remove [, status 2
     ('simple_test_builtin', False),
+    ('simple_trap_builtin', False),  # trap doesn't take code strings, etc.
 
     # TODO: simple_trap
 

@@ -25,3 +25,13 @@ def isdir(s):
     except posix.error:
         return False
     return stat.S_ISDIR(st.st_mode)
+
+
+def isfile(path):
+    # type: (str) -> bool
+    """Return true if the pathname refers to an existing file."""
+    try:
+        st = posix.stat(path)
+    except posix.error:
+        return False
+    return stat.S_ISREG(st.st_mode)

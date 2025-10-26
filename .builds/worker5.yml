@@ -1,6 +1,6 @@
 # https://man.sr.ht/builds.sr.ht/compatibility.md#fedora-linux
 
-image: fedora/40
+image: fedora/42
 
 packages:
   # Same package names as Ubuntu

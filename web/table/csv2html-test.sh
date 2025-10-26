@@ -108,6 +108,28 @@ EOF
   write-html prec
 }
 
+# NOTE: This combination doesn't work, but the default precision of 1 is OK?
+test-precision-href() {
+  cat >_tmp/prec-href.csv <<EOF
+name,age,age_HREF
+andy,1.2345,http://example.com/foo
+bob,2.3456789,http://example.com/bar
+EOF
+
+  # NOTE: Columns are out of order, which is OK.
+
+  # type: could be html-anchor:shell-id, html-href:shell-id
+
+  cat >_tmp/prec.schema.csv <<EOF
+column_name,type,precision
+name,string,1
+age,double,2
+age_HREF,string,0
+EOF
+
+  write-html prec-href
+}
+
 test-timestamp() {
   cat >_tmp/timestamp.csv <<EOF
 name,start_time,end_time

@@ -18,8 +18,8 @@ from builtin import assign_osh
 from core import error
 from core.error import e_usage
 from core import state
-from display import ui
 from core import vm
+from display import ui
 from data_lang import j8_lite
 from frontend import args
 from frontend import consts
@@ -55,6 +55,11 @@ class Boolean(vm._Builtin):
         return self.status
 
 
+def _PrintAlias(name, alias_exp):
+    # type: (str, str) -> None
+    print('alias %s=%s' % (name, j8_lite.ShellEncode(alias_exp)))
+
+
 class Alias(vm._Builtin):
 
     def __init__(self, aliases, errfmt):
@@ -65,13 +70,12 @@ class Alias(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         _, arg_r = flag_util.ParseCmdVal('alias', cmd_val)
-        argv = arg_r.Rest()
+        argv, locs = arg_r.Rest2()
 
         if len(argv) == 0:
             for name in sorted(self.aliases):
                 alias_exp = self.aliases[name]
-                # This is somewhat like bash, except we use %r for ''.
-                print('alias %s=%r' % (name, alias_exp))
+                _PrintAlias(name, alias_exp)
             return 0
 
         status = 0
@@ -81,10 +85,10 @@ class Alias(vm._Builtin):
                 alias_exp = self.aliases.get(name)
                 if alias_exp is None:
                     self.errfmt.Print_('No alias named %r' % name,
-                                       blame_loc=cmd_val.arg_locs[i])
+                                       blame_loc=locs[i])
                     status = 1
                 else:
-                    print('alias %s=%r' % (name, alias_exp))
+                    _PrintAlias(name, alias_exp)
             else:
                 self.aliases[name] = alias_exp
 
@@ -109,10 +113,10 @@ class UnAlias(vm._Builtin):
             self.aliases.clear()
             return 0
 
-        argv = arg_r.Rest()
+        argv, locs = arg_r.Rest2()
 
         if len(argv) == 0:
-            e_usage('requires an argument', loc.Missing)
+            raise error.Usage('requires an argument', cmd_val.arg_locs[0])
 
         status = 0
         for i, name in enumerate(argv):
@@ -120,7 +124,7 @@ class UnAlias(vm._Builtin):
                 mylib.dict_erase(self.aliases, name)
             else:
                 self.errfmt.Print_('No alias named %r' % name,
-                                   blame_loc=cmd_val.arg_locs[i])
+                                   blame_loc=locs[i])
                 status = 1
         return status
 

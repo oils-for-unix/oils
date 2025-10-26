@@ -980,37 +980,55 @@ unquoted-builtin_getopts() {
   getopts 'a:' varname
 }
 
-builtin_printf() {
+builtin-printf() {
+  _osh-error-here-X 1 <<'EOF'
   printf '%s %d\n' foo not_a_number
-  echo status=$?
+EOF
 
   # bad arg recycling.  This is really a runtime error.
+  _osh-error-here-X 1 <<'EOF'
   printf '%s %d\n' foo 3 bar
-  echo status=$?
+EOF
 
   # invalid width
+  _osh-error-here-X 1 <<'EOF'
   printf '%*d\n' foo foo
-  echo status=$?
+EOF
 
-  # precision can't be specified
+  # invalid precision on %d
+  _osh-error-here-X 1 <<'EOF'
   printf '%.*d\n' foo foo
-  echo status=$?
+EOF
 
-  # precision can't be specified
+  # invalid precision on %s
+  _osh-error-here-X 1 <<'EOF'
   printf '%.*s\n' foo foo
-  echo status=$?
+EOF
 
   # invalid time
+  _osh-error-here-X 1 <<'EOF'
   printf '%(%Y)T\n' z
-  echo status=$?
+EOF
 
-  # invalid time with no SPID
+  # no time specified
+  _osh-should-run-here <<'EOF'
   printf '%(%Y)T\n' 
-  echo status=$?
+EOF
 
   # invalid integer with no SPID
+  _osh-error-here-X 1 <<'EOF'
   printf '%d %d %d\n' 1 2 
-  echo status=$?
+EOF
+
+  # trailing data on integer
+  _osh-error-here-X 1 <<'EOF'
+  printf '%d\n' 12x
+EOF
+
+  # integer overflow
+  _osh-error-here-X 1 <<'EOF'
+  printf '%d\n' 12345678901234567890
+EOF
 }
 
 unquoted-builtin_wait() {
@@ -1212,7 +1230,8 @@ test-int-overflow() {
   _osh-error-1 'printf %d'" $neg"
 
   _osh-error-2 "trap $pos ERR"
-  _osh-error-2 "trap -- $neg ERR"
+  # ACCEPTED - integer must be "unsigned" according to posix
+  _osh-should-run "trap -- $neg ERR"
 
   _osh-error-2 "ulimit $pos"
   _osh-error-2 "ulimit -- $neg"

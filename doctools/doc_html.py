@@ -1,8 +1,18 @@
 #!/usr/bin/env python2
-"""doc_html.py."""
+"""doc_html.py.
+
+Note: this file is also run with python3, by the Soil CI, when imported via
+doctools/html_head.py
+
+Because outside containers we don't have python2.
+"""
 from __future__ import print_function
 
-import cgi
+try:
+    import html
+except ImportError:
+    # only for cgi.escape -> html.escape
+    import cgi as html  # type: ignore
 
 # Used by html_head.py
 JS_FMT = '<script type="text/javascript" src="%s"></script>\n'
@@ -16,7 +26,7 @@ def Header(meta, f, draft_warning=False):
     meta['css_links'] = ''.join(CSS_FMT % url for url in css_files)
 
     # CSS links are NOT escaped
-    meta['title'] = cgi.escape(meta['title'])
+    meta['title'] = html.escape(meta['title'])
 
     # NOTE: 'meta viewport' so it's not small on mobile browsers
     f.write('''\
