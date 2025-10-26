@@ -114,6 +114,9 @@ BEGIN {
   # zfs
   patterns["#2441"] = "Token starting at column"
 
+  # 2025-10-26: demo for updating cause.awk, already fixed
+  patterns["#2477"] = "printf expected an integer, got"
+
   found = 0
 }
 { 
