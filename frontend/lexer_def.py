@@ -1,7 +1,7 @@
 """
-lexer_def.py - Lexing for OSH, YSH, and J8 Notation.
+lexer_def.py - Lexer for OSH, YSH, and J8 Notation.
 
-The OSH/YSH lexer has lexer modes, each with a regex -> Id mapping.
+This lexer has lexer MODES, each with a regex -> Id mapping.
 
 After changing this file, run:
 
@@ -26,7 +26,7 @@ If this rule isn't followed, we would read uninitialized memory past the
 sentinel.  Python's regex engine knows where the end of the input string is, so
 it doesn't require need a sentinel like \0.
 
-The frontend/lexer_gen.py generator adds a pattern mapping \0 to Id.Eol_Tok.
+The generator frontend/lexer_gen.py adds a pattern mapping \0 to Id.Eol_Tok.
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
@@ -76,14 +76,9 @@ _BACKSLASH = [
     C('\\\n', Id.Ignored_LineCont),
 ]
 
-_DQ_ESCAPED_CHAR = R(r'\\[$`"\\]', Id.Lit_EscapedChar)
-
 # Only 4 characters are backslash escaped inside "".
 # https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
-_DQ_BACKSLASH = [
-    _DQ_ESCAPED_CHAR,
-    C('\\', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
-]
+_DQ_ESCAPED_CHAR = R(r'\\[$`"\\]', Id.Lit_EscapedChar)
 
 VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
@@ -402,8 +397,10 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     R(r'[^\0]', Id.Lit_Other),  # like _UNQUOTED, any other byte is literal
 ] + _BACKSLASH  # These have to come after RegexMeta
 
-LEXER_DEF[lex_mode_e.DQ] = _DQ_BACKSLASH + [
+LEXER_DEF[lex_mode_e.DQ] = [
+    _DQ_ESCAPED_CHAR,
     C('\\\n', Id.Ignored_LineCont),
+    C('\\', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
 ] + _LEFT_SUBS + _VARS + [
     R(r'[^$`"\0\\]+', Id.Lit_Chars),  # matches a line at most
     C('$', Id.Lit_Dollar),  # completion of var names relies on this
@@ -444,16 +441,13 @@ LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
     R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
-_DQ_VSUB_ARG_BACKSLASH = [
+# Kind.{Lit,Ignored,VSub,Left,Right,Eof}
+LEXER_DEF[lex_mode_e.VSub_ArgDQ] = [
     _DQ_ESCAPED_CHAR,
     C(r'\}', Id.Lit_EscapedChar),  # For "${var-\}}"
-    R(r'\\[^\n}]', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
     C('\\\n', Id.Ignored_LineCont),
-]
-
-# Kind.{Lit,Ignored,VSub,Left,Right,Eof}
-LEXER_DEF[lex_mode_e.VSub_ArgDQ] = \
-  _DQ_VSUB_ARG_BACKSLASH +  _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
+    C('\\', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
+] + _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
     R(r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
 
     # Weird wart: even in double quoted state, double quotes are allowed
