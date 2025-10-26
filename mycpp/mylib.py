@@ -14,6 +14,7 @@ except ImportError:
 
 import math
 import sys
+from stat import S_ISREG
 
 from pylib import collections_
 try:
@@ -508,3 +509,35 @@ class File:
     fine-grained types is nicer.  And there will be very few casts.
     """
     pass
+
+
+def stat(filename):
+    # type: (str) -> StatResult
+    try:
+        stat_result = posix.stat(filename)
+    except posix.error:
+        return None
+
+    return StatResult(stat_result)
+
+
+class StatResult:
+    def __init__(self, stat_result):
+        # type: (posix.stat_result) -> None
+        self.n_fields = stat_result.n_fields
+        self.n_sequence_fields = stat_result.n_sequence_fields
+        self.n_unnamed_fields = stat_result.n_unnamed_fields
+        self.st_mode = stat_result.st_mode
+        self.st_ino = stat_result.st_ino
+        self.st_dev = stat_result.st_dev
+        self.st_nlink = stat_result.st_nlink
+        self.st_uid = stat_result.st_uid
+        self.st_gid = stat_result.st_gid
+        self.st_size = stat_result.st_size
+        self.st_atime = stat_result.st_atime
+        self.st_mtime = stat_result.st_mtime
+        self.st_ctime = stat_result.st_ctime
+
+    def isreg(self):
+        # type: () -> bool
+        return S_ISREG(self.st_mode)

@@ -8,6 +8,8 @@
 #include "mycpp/gc_mops.h"
 #include "mycpp/gc_tuple.h"
 
+#include <sys/stat.h>
+
 template <class K, class V>
 class Dict;
 
@@ -372,6 +374,26 @@ class UniqueObjects {
   // address -> small integer ID
   Dict<void*, int> addresses_;
 };
+
+
+class StatResult {
+public:
+  StatResult(struct stat stat_result);
+  bool isreg();
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(StatResult));
+  }
+
+  static constexpr uint32_t field_mask() {
+    return kZeroMask;
+  }
+
+private:
+  struct stat stat_result;
+};
+
+StatResult* stat(BigStr* filename);
 
 }  // namespace mylib
 

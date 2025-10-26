@@ -392,28 +392,6 @@ class FdState(object):
             if case(redirect_arg_e.Path):
                 arg = cast(redirect_arg.Path, UP_arg)
 
-                # noclobber: don't overwrite existing files (except for special
-                # files like /dev/null)
-                noclobber = self.exec_opts.noclobber()
-
-                # Only > and &> actually follow noclobber. See
-                # spec/redirect.test.sh
-                op_respects_noclobber = r.op_id in (Id.Redir_Great, Id.Redir_AndGreat)
-
-                # noclobber flag is OR'd with other flags when allowed
-                noclobber_mode = 0
-                if noclobber and op_respects_noclobber:
-                    if not path_stat.exists(arg.filename):
-                        # File doesn't currently exist, open with O_EXCL (open
-                        # will fail is EEXIST if arg.filename exists when we
-                        # call open(2)).
-                        noclobber_mode = O_EXCL
-                    elif path_stat.isfile(arg.filename):
-                        # If the file exists, and is not a special file like
-                        # /dev/null, then immediately return with an error.
-                        err_out.append(EEXIST)
-                        return
-
                 if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
                     mode = O_CREAT | O_WRONLY | O_TRUNC
                 elif r.op_id == Id.Redir_Clobber:  # >|
@@ -428,7 +406,32 @@ class FdState(object):
                 else:
                     raise NotImplementedError(r.op_id)
 
-                mode |= noclobber_mode
+                # noclobber: don't overwrite existing files (except for special
+                # files like /dev/null)
+                noclobber = self.exec_opts.noclobber()
+
+                # Only > and &> actually follow noclobber. See
+                # spec/redirect.test.sh
+                op_respects_noclobber = r.op_id in (Id.Redir_Great, Id.Redir_AndGreat)
+
+                if noclobber and op_respects_noclobber:
+                    stat = mylib.stat(arg.filename)
+                    if not stat:
+                        # File doesn't currently exist, open with O_EXCL (open
+                        # will fail is EEXIST if arg.filename exists when we
+                        # call open(2)). This guards against a race where the
+                        # file may be created *after* we check it with stat.
+                        mode |= O_EXCL
+
+                    elif stat.isreg():
+                        # This is a regular file, opening it would clobber,
+                        # so raise an error.
+                        err_out.append(EEXIST)
+                        return
+
+                    # Otherwise, the file exists and is a special file like
+                    # /dev/null, we can open(2) it without O_EXCL. (Note,
+                    # there is a race here. See demo/noclobber-race.sh)
 
                 # NOTE: 0666 is affected by umask, all shells use it.
                 try:
