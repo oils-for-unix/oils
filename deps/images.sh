@@ -331,7 +331,7 @@ mount-test() {
     argv=( "${@:2}" )  # index 2 not 1, weird shell behavior
   fi
 
-  # mount Oil directory as /app
+  # mount 'oil' directory as /app.  TODO: Oils
   sudo $DOCKER run \
     --mount "type=bind,source=$PWD,target=/home/uke/oil" \
     oilshell/$name "${argv[@]}"

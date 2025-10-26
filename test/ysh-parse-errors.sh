@@ -1578,12 +1578,12 @@ test-ysh-dq-strings() {
   _assert-sh-status 2 "$OSH" $0 \
     -o no_parse_backslash -n -c 'echo test-no_parse_backslash "\z"'
 
-  _ysh-parse-error 'echo "\z"'  # not in Oil
+  _ysh-parse-error 'echo "\z"'  # not in YSH
   _ysh-parse-error 'const bad = "\z"'  # not in expression mode
 
   # C style escapes not respected
   _osh-should-parse 'echo "\u1234"'  # ok in OSH
-  _ysh-parse-error 'echo "\u1234"'  # not in Oil
+  _ysh-parse-error 'echo "\u1234"'  # not in YSH
   _ysh-parse-error 'const bad = "\u1234"'
 
   _osh-should-parse 'echo "`echo hi`"'

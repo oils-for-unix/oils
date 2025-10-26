@@ -174,17 +174,14 @@ test-array-literal() {
 }
 
 test-arith-context() {
-  # Disable Oil stuff for osh_{parse,eval}.asan
-  if false; then
-    # Non-standard arith sub $[1 + 2]
-    _osh-parse-error 'echo $[ 1 + 2 ;'
+  # Non-standard arith sub $[1 + 2]
+  _osh-parse-error 'echo $[ 1 + 2 ;'
 
-    # What's going on here?   No location info?
-    _osh-parse-error 'echo $[ 1 + 2 /'
+  # What's going on here?   No location info?
+  _osh-parse-error 'echo $[ 1 + 2 /'
 
-    _osh-parse-error 'echo $[ 1 + 2 / 3'
-    _osh-parse-error 'echo $['
-  fi
+  _osh-parse-error 'echo $[ 1 + 2 / 3'
+  _osh-parse-error 'echo $['
 
   # this is currently dynamic arithmetic
   _osh-parse-error 'a[x+]=1'
@@ -566,10 +563,6 @@ test-args-parse-builtin() {
 
   # not implemented yet
   #_osh-parse-error 'read -t x'  # expected floating point number
-
-  # TODO:
-  # - invalid choice
-  # - Oil flags: invalid long flag, boolean argument, etc.
 }
 
 test-args-parse-more() {

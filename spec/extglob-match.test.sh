@@ -6,7 +6,6 @@
 # Test extended glob matching with [[, case, etc.
 
 #### @ matches exactly one
-shopt -s extglob  # needed for Oil, not bash
 [[ --verbose == --@(help|verbose) ]] && echo TRUE
 [[ --oops == --@(help|verbose) ]] || echo FALSE
 ## STDOUT:
@@ -15,7 +14,6 @@ FALSE
 ## END
 
 #### @() with variable arms
-shopt -s extglob  # needed for Oil, not bash
 choice1='help'
 choice2='verbose'
 [[ --verbose == --@($choice1|$choice2) ]] && echo TRUE
@@ -101,7 +99,6 @@ TRUE
 ## END
 
 #### ? matches 0 or 1
-shopt -s extglob  # needed for Oil, not bash
 [[ -- == --?(help|verbose) ]] && echo TRUE
 [[ --oops == --?(help|verbose) ]] || echo FALSE
 ## STDOUT:
@@ -110,7 +107,6 @@ FALSE
 ## END
 
 #### + matches 1 or more
-shopt -s extglob  # needed for Oil, not bash
 [[ --helphelp == --+(help|verbose) ]] && echo TRUE
 [[ -- == --+(help|verbose) ]] || echo FALSE
 ## STDOUT:
@@ -119,7 +115,6 @@ FALSE
 ## END
 
 #### * matches 0 or more
-shopt -s extglob  # needed for Oil, not bash
 [[ -- == --*(help|verbose) ]] && echo TRUE
 [[ --oops == --*(help|verbose) ]] || echo FALSE
 ## STDOUT:
@@ -128,7 +123,6 @@ FALSE
 ## END
 
 #### simple repetition with *(foo) and +(Foo)
-shopt -s extglob  # needed for Oil, not bash
 [[ foofoo == *(foo) ]] && echo TRUE
 [[ foofoo == +(foo) ]] && echo TRUE
 ## STDOUT:
@@ -137,7 +131,6 @@ TRUE
 ## END
 
 #### ! matches none
-shopt -s extglob  # needed for Oil, not bash
 [[ --oops == --!(help|verbose) ]] && echo TRUE
 [[ --help == --!(help|verbose) ]] || echo FALSE
 ## STDOUT:
@@ -146,7 +139,6 @@ FALSE
 ## END
 
 #### match is anchored
-shopt -s extglob  # needed for Oil, not bash
 [[ foo_ == @(foo) ]] || echo FALSE
 [[ _foo == @(foo) ]] || echo FALSE
 [[ foo == @(foo) ]] && echo TRUE
@@ -157,7 +149,6 @@ TRUE
 ## END
 
 #### repeated match is anchored
-shopt -s extglob  # needed for Oil, not bash
 [[ foofoo_ == +(foo) ]] || echo FALSE
 [[ _foofoo == +(foo) ]] || echo FALSE
 [[ foofoo == +(foo) ]] && echo TRUE
@@ -168,8 +159,6 @@ TRUE
 ## END
 
 #### repetition with glob
-shopt -s extglob  # needed for Oil, not bash
-
 # NOTE that * means two different things here
 [[ foofoo_foo__foo___ == *(foo*) ]] && echo TRUE
 [[ Xoofoo_foo__foo___ == *(foo*) ]] || echo FALSE
@@ -179,8 +168,6 @@ FALSE
 ## END
 
 #### No brace expansion in ==
-shopt -s extglob  # needed for Oil, not bash
-
 [[ --X{a,b}X == --@(help|X{a,b}X) ]] && echo TRUE
 [[ --oops == --@(help|X{a,b}X) ]] || echo FALSE
 ## STDOUT:
@@ -189,8 +176,6 @@ FALSE
 ## END
 
 #### adjacent extglob
-shopt -s extglob  # needed for Oil, not bash
-
 [[ --help == @(--|++)@(help|verbose) ]] && echo TRUE
 [[ ++verbose == @(--|++)@(help|verbose) ]] && echo TRUE
 ## STDOUT:
@@ -199,8 +184,6 @@ TRUE
 ## END
 
 #### nested extglob
-shopt -s extglob  # needed for Oil, not bash
-
 [[ --help == --@(help|verbose=@(1|2)) ]] && echo TRUE
 [[ --verbose=1 == --@(help|verbose=@(1|2)) ]] && echo TRUE
 [[ --verbose=2 == --@(help|verbose=@(1|2)) ]] && echo TRUE

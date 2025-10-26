@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Use sys.setprofile() and maybe sys.settrace() to trace Oil execution.
+# Use sys.setprofile() and maybe sys.settrace() to trace Oils execution.
 #
 # Problem: Python callbacks for sys.setprofile() are too slow I think.
 #

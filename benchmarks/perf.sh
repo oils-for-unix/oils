@@ -295,7 +295,7 @@ stat-osh-parse() {
 # 5%   PyObject_Malloc.
 
 # More benchmarks:
-# OPy running under OVM, compiling itself, compiling Oil, compiling OPy ports,
+# OPy running under OVM, compiling itself, compiling Oils, compiling OPy ports,
 # etc.
 
 # Parsing abuild, the optimized version.

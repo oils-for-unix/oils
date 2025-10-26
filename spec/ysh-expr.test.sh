@@ -9,7 +9,7 @@ x=hi y=default
 ## END
 
 
-#### Set $HOME using 'var' (i.e. Oil string var in word evaluator)
+#### Set $HOME using 'var' (i.e. YSH string var in word evaluator)
 var HOME = "foo"
 echo $HOME
 echo ~
@@ -18,7 +18,7 @@ foo
 foo
 ## END
 
-#### Use shell var in Oil expression
+#### Use shell var in YSH expression
 x='abc'
 var length = len(x)  # length in BYTES, unlike ${#x}
 echo $length

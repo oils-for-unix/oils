@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Proof of concept for pgen2 and Oil syntax.
+# Proof of concept for pgen2 and YSH syntax.
 #
 # Usage:
 #   ./pgen2-test.sh <function name>
@@ -19,7 +19,7 @@ grammar-gen() {
   PYTHONPATH=. ysh/grammar_gen.py "$@"
 }
 
-# Build the grammar and parse code.  Outside of the Oil binary.
+# Build the grammar and parse code.  Outside of the Oils binary.
 parse() {
   grammar-gen parse "$@"
 }
@@ -42,9 +42,6 @@ parse-exprs() {
   )
   for expr in "${exprs[@]}"; do
     parse pgen2/oil.grammar eval_input "$expr"
-
-    # TODO: switch to Oil
-    #parse $OIL_GRAMMAR test_input "$expr"
   done
 }
 
@@ -95,8 +92,7 @@ parse-types() {
     # aha!  Tokenizer issue
     #'Dict<str, Tuple<int, int>>'
 
-    # Must be like this!  That's funny.  Oil will have lexer modes to solve
-    # this problem!
+    # Must be like this!  That's funny.
     'Dict<str, Tuple<int, int> >'
   )
   for expr in "${types[@]}"; do

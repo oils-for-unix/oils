@@ -40,10 +40,10 @@ src() {
   cat > $prog
 
   case $lang in
-    (oil)
-      $REPO_ROOT/bin/oil $prog | tee output/$lang.txt
+    ysh)
+      $REPO_ROOT/bin/ysh $prog | tee output/$lang.txt
       ;;
-    (shpp)
+    shpp)
       ~/git/languages/shell-plus-plus/build/shell/shpp $prog | tee output/$lang.txt
       ;;
     (*)
@@ -63,8 +63,8 @@ CASE-hello() {
   # - show output in the HTML too
   #   - save that in a dir and then escape it
 
-  src oil <<'EOF'
-# oil requires quotes
+  src ysh <<'EOF'
+# ysh requires quotes
 echo 'hello world'
 
 const name = 'world'
@@ -85,7 +85,7 @@ CASE-pipeline() {
 
   touch src{1,2,3,4,5}
 
-  src oil <<EOF
+  src ysh <<EOF
 ls src* | sort -r | head -n 3
 EOF
 
@@ -98,10 +98,10 @@ EOF
 CASE-try() {
   desc 'Error Handling'
 
-  src oil <<'EOF'
-# TODO: Oil could expose strerror() like shpp
+  src ysh <<'EOF'
+# TODO: Oils could expose strerror() like shpp
 
-try zzz
+try { zzz }
 if (_status === 127) {
   echo "zzz not installed"
 }
@@ -119,7 +119,7 @@ EOF
 CASE-read() {
   desc 'Read User Input'
 
-  src oil <<'EOF'
+  src ysh <<'EOF'
 echo hello | read --line
 
 # _line starts with _, so it's a
@@ -141,13 +141,13 @@ CASE-ZZ-array() {
 
   touch {foo,bar}.py
 
-  src oil <<'EOF'
+  src ysh <<'EOF'
 const array1 = ['physics', 'chemistry', 1997, 2000]
 const array2 = [1, 2, 3, 4, 5, 6, 7]
 
 write -- "array1[0]: $[array1[0]]"
 
-# TODO: Oil needs @[]
+# TODO: Oils needs @[]
 const slice = array2[1:5]
 write -- "array2[1:5]" @slice
 
@@ -169,7 +169,7 @@ EOF
 CASE-path() {
   desc 'Test if path exists'
 
-  src oil <<'EOF'
+  src ysh <<'EOF'
 if test --exists /bin/grep {
   echo 'file exists'
 }
@@ -269,17 +269,16 @@ _html-all() {
 
 This is a friendly comparison of the syntax of different shells!
 
-- Oil: <https://github.com/oilshell/oil>
-  - [A Tour of the Oil
-    Language](https://www.oilshell.org/release/latest/doc/oil-language-tour.html)
+- Oils: <https://github.com/oils-for-unix/oils>
+  - [A Tour of YSH](https://oils.pub/release/latest/doc/ysh-tour.html)
 - Shell++: <https://github.com/alexst07/shell-plus-plus>
   - [Shell++ Language Basics](https://alexst07.github.io/shell-plus-plus/lang-basics/)
 
 &nbsp;
 
-- More shells: <https://github.com/oilshell/oil/wiki/Alternative-Shells>
+- More shells: <https://github.com/oils-for-unix/oils/wiki/Alternative-Shells>
 - Script that generates this file:
-  <https://github.com/oilshell/oil/blob/master/test/shell-vs-shell.sh>
+  <https://github.com/oils-for-unix/oils/blob/master/test/shell-vs-shell.sh>
 
 &nbsp;
 

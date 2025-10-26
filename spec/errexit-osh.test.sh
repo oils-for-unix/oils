@@ -585,7 +585,7 @@ echo done
 done
 ## END
 
-#### errexit is silent (verbose_errexit for Oil)
+#### errexit is silent (verbose_errexit for Oils)
 shopt -u verbose_errexit 2>/dev/null || true
 set -e
 false
