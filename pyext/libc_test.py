@@ -122,6 +122,11 @@ class LibcTest(unittest.TestCase):
 
   def testFnmatchExtglob(self):
     # NOTE: We always use FNM_EXTMATCH when available
+    
+    # Skip this test if FNM_EXTMATCH is not available (e.g., on macOS/BSD)
+    if libc.HAVE_FNM_EXTMATCH == 0:
+      print('Skipping testFnmatchExtglob: FNM_EXTMATCH not available')
+      return
 
     # With GNU extension.
     cases = [
