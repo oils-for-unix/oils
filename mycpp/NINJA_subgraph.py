@@ -15,11 +15,11 @@ _ = log
 def DefineTargets(ru):
 
     # Creates _bin/shwrap/mycpp_main
+    # This isn't used directly - see SHWRAP in build/ninja_lib.py
     ru.py_binary(
         'mycpp/mycpp_main.py',
         deps_base_dir='prebuilt/ninja',
         template='mycpp',
-        implicit=['_bin/datalog/dataflow'],
     )
 
     # Note: could move bin/mycpp_main_{souffle,nosouffle}.sh to mycpp/ dir, so
