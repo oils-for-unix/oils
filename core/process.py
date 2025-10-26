@@ -40,7 +40,6 @@ from frontend import match
 from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, probe, tagswitch, iteritems
-from pylib import path_stat
 
 import posix_ as posix
 from posix_ import (
