@@ -120,6 +120,8 @@ _UPGRADE_RUNTIME_OPTS = [
     # Don't reparse program data as globs
     ('no_dash_glob', False),  # do globs return files starting with - ?
 
+    ('no_parse_dollar_in_expression_sub', False),  # disallow $var in $[] (synonym for $(( )) in bash, but expression sub in ysh)
+
     # TODO: Should these be in strict mode?
     # The logic was that strict_errexit improves your bash programs, but these
     # would lead you to remove error handling.  But the same could be said for
