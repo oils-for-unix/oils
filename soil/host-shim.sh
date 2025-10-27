@@ -6,7 +6,8 @@
 #   soil/host-shim.sh <function name>
 #
 # Examples:
-#   soil/host-shim.sh local-test-uke cpp-spec
+#   soil/host-shim.sh local-test-uke cpp-spec       # run a job
+#   soil/host-shim.sh local-test-uke cpp-spec '' T  # get  shell
 
 set -o nounset
 set -o pipefail
@@ -31,8 +32,9 @@ live-image-tag() {
       echo 'v-2025-04-30b'
       ;;
     bloaty)
-      # update to Debian 12
-      echo 'v-2025-05-01'
+      # wedges 2025
+      echo 'v-2025-10-27'
+      #echo 'v-2025-05-01'
       ;;
     benchmarks)
       # Add 'pyte' terminal emulator library to py3-libs, for testing

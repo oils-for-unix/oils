@@ -33,9 +33,8 @@
 #
 # (6) Push Everything you Built
 #
-#     $0 push wedge-bootstrap-debian-12  # pushes both $LATEST_TAG and latest
-#     $0 push soil-debian-12             # ditto
-#     $0 push soil-test-image            # ditto
+#     # pushes both $LATEST_TAG and latest
+#     $0 push-many wedge-bootstrap-debian-12 soil-debian-12 soil-test-image
 #
 # More
 # ----
@@ -56,7 +55,7 @@ source deps/podman.sh
 
 DOCKER=${DOCKER:-docker}
 
-readonly LATEST_TAG='v-2025-09-23'  # add libreadline-dev to wedge-bootstrap-debian-12
+readonly LATEST_TAG='v-2025-10-27'  # get rid of /wedge and ~/wedge
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'

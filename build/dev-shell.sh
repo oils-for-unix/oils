@@ -123,8 +123,8 @@ fi
 # 2025 WEDGES
 #
 
-# TODO:
-# This command: deps/wedge.sh make-bin-dir 
+# Note:
+# Should we have a command: deps/wedge.sh make-bin-dir 
 # - happens in each docker build
 # - happens in the contributor setup: build/deps.sh install-wedges
 
