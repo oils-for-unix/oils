@@ -10,11 +10,6 @@ set -o errexit
 WEDGE_NAME='R-libs'
 WEDGE_VERSION='2023-04-18'
 
-# We are installing into /home/wedge-makeer, and we want to use it from
-# /home/andy or /home/uke
-#
-# WEDGE_IS_ABSOLUTE=1
-
 # R hits the network
 WEDGE_LEAKY_BUILD=1
 

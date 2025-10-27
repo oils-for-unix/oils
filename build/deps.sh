@@ -1078,21 +1078,27 @@ R-libs-host() {
 # Wedges built inside a container, for copying into a container
 #
 
+boxed-clean() {
+  # Source dir is _build/deps-source
+  time sudo rm -r -f _build/wedge/
+}
+
 boxed-wedges() {
+  time $0 _boxed-wedges "$@"
+}
+
+_boxed-wedges() {
   #### host _build/wedge/binary -> guest container /wedge or ~/wedge
 
-  #export-podman
+  # This is in contrast
 
   # TODO:
-  #
-  # - Add equivalents of spec-bin
   # - Use the same manifest as install-wedges
   #   - so then you can delete the _build/wedge dir to re-run it
   #   - use xargs -n 1 so it's done serially
-  #
-  # Pass --network none to docker when possible
-
   # - Do these lazily like we do in install-wedges
+  # - Migrate to podman
+  #   - Pass --network=none where possible
 
   # We can test if the dir _build/wedge/binary/oils-for-unix.org/pkg/FOO exists
   # if wedge-exists "$name" "$version" "$wedge_dir"; then
@@ -1100,16 +1106,20 @@ boxed-wedges() {
   #  return
   # fi
 
-  if true; then
+  local resume1=${1:-}
+
+  if test -z "$resume1"; then
+    boxed-spec-bin
+
     deps/wedge.sh boxed deps/source.medo/python2/ '' debian-12
   fi
 
-  if false; then
+  if true; then
     deps/wedge.sh boxed deps/source.medo/python3/ '' debian-12
     deps/wedge.sh boxed deps/source.medo/time-helper '' debian-12
   fi
 
-  if false; then
+  if true; then
     # soil-benchmarks
     deps/wedge.sh boxed deps/source.medo/uftrace/ '' debian-12
 
@@ -1117,27 +1127,24 @@ boxed-wedges() {
     deps/wedge.sh boxed deps/source.medo/re2c/ '' debian-12
   fi
 
-  if false; then
+  if true; then
     # debian 10 for now
     deps/wedge.sh boxed deps/source.medo/bloaty/ '' # debian-12
   fi
 
-  if false; then
+  if true; then
     # Used in {benchmarks,benchmarks2,other-tests}
     deps/wedge.sh boxed deps/source.medo/R-libs/ '' debian-12
   fi
 }
 
 boxed-spec-bin() {
-  if false; then
+  if true; then
     deps/wedge.sh boxed deps/source.medo/bash '4.4'
-  fi
-
-  if false; then
     deps/wedge.sh boxed deps/source.medo/bash '5.2.21'
   fi
 
-  if false; then
+  if true; then
     deps/wedge.sh boxed deps/source.medo/dash
     deps/wedge.sh boxed deps/source.medo/mksh
   fi
@@ -1148,7 +1155,7 @@ boxed-spec-bin() {
     deps/wedge.sh boxed deps/source.medo/zsh $ZSH_NEW_VER
   fi
 
-  if false; then
+  if true; then
     deps/wedge.sh boxed deps/source.medo/busybox
 
     # Problem with out of tree build, as above.  Skipping for now

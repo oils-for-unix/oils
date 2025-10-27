@@ -68,6 +68,6 @@ wedge-smoke-test() {
 
   # Create symlinks for use in spec tests
   pushd $install_dir/bin
-  ln -s -v zsh zsh-$WEDGE_VERSION
+  ln -s -f -v zsh zsh-$WEDGE_VERSION
   popd
 }
