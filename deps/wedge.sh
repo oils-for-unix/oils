@@ -144,7 +144,11 @@ install-dir() {
   #
   # And then provide a flag to select them?
 
-  echo "$prefix/pkg/$WEDGE_NAME/$WEDGE_VERSION"
+  if test -n "$WEDGE_2025"; then
+    echo "$prefix/$WEDGE_NAME/$WEDGE_VERSION"
+  else
+    echo "$prefix/pkg/$WEDGE_NAME/$WEDGE_VERSION"
+  fi
 }
 
 smoke-test-dir() {
@@ -497,7 +501,7 @@ boxed-2025() {
 
   # Boxed wedges are put in this HOST dir, as opposed to as opposed to
   # ../oils.DEPS for unboxed wedges
-  local wedge_host_dir=_build/wedge/boxed/
+  local wedge_host_dir=_build/boxed/wedge
   local wedge_guest_dir=/home/uke0/oils.DEPS
 
   mkdir -v -p $wedge_host_dir

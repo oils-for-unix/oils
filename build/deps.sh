@@ -117,7 +117,9 @@ readonly SOUFFLE_VERSION=2.4.1
 readonly SOUFFLE_URL=https://github.com/souffle-lang/souffle/archive/refs/tags/2.4.1.tar.gz
 
 readonly WEDGE_LOG_DIR=_build/wedge/logs
-readonly BOXED_WEDGE_DIR=_build/wedge/boxed
+
+readonly BOXED_WEDGE_DIR=_build/boxed/wedge
+readonly BOXED_LOG_DIR=_build/boxed/logs
 
 log() {
   echo "$@" >& 2
@@ -579,7 +581,7 @@ wedge-exists() {
   local version=$2
   local wedge_dir=${3:-/wedge/oils-for-unix.org}
 
-  local installed=$wedge_dir/pkg/$name/$version
+  local installed=$wedge_dir/$name/$version
 
   if test -d $installed; then
     log "$installed already exists"
@@ -598,7 +600,7 @@ boxed-wedge-exists() {
   # NOT USED for now
   local distro=${3:-debian-12}
 
-  local installed=$BOXED_WEDGE_DIR/pkg/$name/$version
+  local installed=$BOXED_WEDGE_DIR/$name/$version
 
   if test -d $installed; then
     log "$installed already exists"
@@ -1145,7 +1147,7 @@ R-libs-host() {
 
 boxed-clean() {
   # Source dir is _build/deps-source
-  time sudo rm -r -f _build/wedge/
+  time sudo rm -r -f _build/boxed
 }
 
 boxed-spec-bin() {
@@ -1235,8 +1237,8 @@ maybe-boxed-wedge() {
   local version=$2
   local distro=$3  # e.g. debian-12 or empty
 
-  local task_file=$BOXED_WEDGE_DIR/logs/$name-$version.task.tsv
-  local log_file=$BOXED_WEDGE_DIR/logs/$name-$version.log.txt
+  local task_file=$BOXED_LOG_DIR/$name-$version.task.tsv
+  local log_file=$BOXED_LOG_DIR/$name-$version.log.txt
 
   echo "  TASK  $(timestamp)  $name $version > $log_file"
 
@@ -1281,7 +1283,7 @@ do-boxed-wedge-list() {
   ### Reads task rows from stdin
   local parallel=${1:-}
 
-  mkdir -p $BOXED_WEDGE_DIR/logs
+  mkdir -p $BOXED_LOG_DIR
 
   local -a flags
   if test -n "$parallel"; then
