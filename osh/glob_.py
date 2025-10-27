@@ -6,6 +6,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (CompoundWord, Token, word_part_e,
                                        glob_part, glob_part_e, glob_part_t,
                                        loc_t)
+from _devbuild.gen.value_asdl import value
 from core import pyos, pyutil, error
 from frontend import match
 from mycpp import mylib
@@ -475,7 +476,7 @@ class Globber(object):
         if val.tag() != value_e.Str:
             return None
         
-        globignore = val.s  # type: str
+        globignore = cast(value.Str, val).s  # type: str
         if not globignore:  # Empty string
             return None
         
@@ -556,11 +557,11 @@ class Globber(object):
                 n = len(results)
 
             if globignore_patterns is not None:
-                tmp = []  # type: List[str]
+                filtered = []  # type: List[str]
                 for s in results:
                     if not self._MatchesGlobIgnore(s, globignore_patterns):
-                        tmp.append(s)
-                results = tmp
+                        filtered.append(s)
+                results = filtered
                 n = len(results)
             else:
                 # XXX: libc's glob function can return '.' and '..', which
@@ -569,11 +570,11 @@ class Globber(object):
                 # setting of 'setopt -s globskipdots'. Supporting that
                 # option fully would require more than simply wrapping
                 # this in an if statement.
-                tmp = []  # type: List[str]
+                dotfile_filtered = []  # type: List[str]
                 for s in results:
                     if s not in ('.', '..'):
-                        tmp.append(s)
-                results = tmp
+                        dotfile_filtered.append(s)
+                results = dotfile_filtered
                 n = len(results)
             
             out.extend(results)
