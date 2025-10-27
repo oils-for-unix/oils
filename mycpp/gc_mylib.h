@@ -378,7 +378,6 @@ class UniqueObjects {
 
 class StatResult {
 public:
-  StatResult(struct stat stat_result);
   bool isreg();
 
   static constexpr ObjHeader obj_header() {
@@ -389,7 +388,6 @@ public:
     return kZeroMask;
   }
 
-private:
   struct stat stat_result_;
 };
 
