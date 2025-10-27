@@ -320,4 +320,16 @@ BigStr* BufWriter::getvalue() {
   }
 }
 
+bool StatResult::isreg() {
+  return S_ISREG(stat_result_.st_mode);
+}
+
+StatResult* stat(BigStr* filename) {
+  auto* st = Alloc<StatResult>();
+  if (::stat(filename->data_, &st->stat_result_) < 0) {
+    return nullptr;
+  }
+  return st;
+}
+
 }  // namespace mylib
