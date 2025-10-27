@@ -708,27 +708,12 @@ class Kill(vm._Builtin):
             signal_name = signal_name[3:]
         return signal_def.GetNumber(signal_name)
 
-    # sigspec can either be in the form 15, TERM, or SIGTERM (case insensitive)
-    # raises error if sigspec is in invalid format
-    def _ParseSigspec(self, sigspec_arg, sigspec_arg_loc):
-        # type: (str, loc_t) -> int
-        signal = signal_def.NO_SIGNAL
-        if sigspec_arg.isdigit():
-            signal = int(sigspec_arg)
-        else:
-            signal = self._SignameToSignum(sigspec_arg)
-        if signal == signal_def.NO_SIGNAL:
-            e_usage("invalid signal specification %r" % sigspec_arg,
-                    sigspec_arg_loc)
-        return signal
-
     def _ParsePid(self, pid_arg, pid_arg_loc):
         # type: (str, loc_t) -> int
         if pid_arg.startswith("%"):
             job = self.job_list.JobFromSpec(pid_arg)
             if job is None:
-                e_usage("invalid signal specification %r" % pid_arg,
-                        pid_arg_loc)
+                e_usage("got invalid job id %r" % pid_arg, pid_arg_loc)
             else:
                 return job.ProcessGroupId()
         else:
@@ -736,13 +721,24 @@ class Kill(vm._Builtin):
                 target_pid = int(pid_arg)
                 return target_pid
             except ValueError:
-                e_usage("invalid process id specification %r" % pid_arg,
-                        pid_arg_loc)
+                e_usage("got invalid process id %r" % pid_arg, pid_arg_loc)
+
+    # sigspec can either be in the form 15, TERM, or SIGTERM (case insensitive)
+    # raises error if sigspec is in invalid format
+    def _ParseSigspecArg(self, sigspec_arg, sigspec_arg_loc):
+        # type: (str, loc_t) -> int
+        signal = signal_def.NO_SIGNAL
+        if sigspec_arg.isdigit():
+            signal = int(sigspec_arg)
+        else:
+            signal = self._SignameToSignum(sigspec_arg)
+        if signal == signal_def.NO_SIGNAL:
+            e_usage("got invalid signal  %r" % sigspec_arg, sigspec_arg_loc)
+        return signal
 
     def _ParseTargetArgs(self, arg_r, signal):
         # type: (args.Reader, int) -> int
-        arg_pid, arg_pid_loc = arg_r.ReadRequired2(
-            "you must provide a process id")
+        arg_pid, arg_pid_loc = arg_r.ReadRequired2("expected a PID")
         pid = self._ParsePid(arg_pid, arg_pid_loc)
         posix.kill(pid, signal)
         while not arg_r.AtEnd():
@@ -752,19 +748,19 @@ class Kill(vm._Builtin):
         return 0
 
     def _ParsePrintArgs(self, arg_r):
-        # type: (args.Reader, int) -> int
+        # type: (args.Reader) -> int
         done_listing = False  # type: bool
         while not arg_r.AtEnd():
             arg_l, arg_loc = arg_r.Peek2()
             if arg_l.isdigit():
                 signal = signal_def.GetName(int(arg_l))
                 if signal is None:
-                    e_usage("invalid signal specification %r" % arg_l, arg_loc)
+                    e_usage("got invalid signal %r" % arg_l, arg_loc)
                 print(signal[3:])
             else:
                 num = self._SignameToSignum(arg_l)
                 if num < signal_def.NO_SIGNAL:
-                    e_usage("invalid signal specification %r" % arg_l, arg_loc)
+                    e_usage("got invalid signal %r" % arg_l, arg_loc)
                 print(str(num))
             done_listing = True
             arg_r.Next()
@@ -784,8 +780,8 @@ class Kill(vm._Builtin):
         # checking for -sigspec argument
         if first_positional.startswith('-') and (
                 first_positional[1:].isdigit() or len(first_positional) > 2):
-            signal_to_send = self._ParseSigspec(first_positional[1:],
-                                                first_positional_loc)
+            signal_to_send = self._ParseSigspecArg(first_positional[1:],
+                                                   first_positional_loc)
             return self._ParseTargetArgs(arg_r, signal_to_send)
 
         attrs, arg_r = flag_util.ParseCmdVal('kill',
@@ -798,9 +794,9 @@ class Kill(vm._Builtin):
 
         _, arg_loc = arg_r.Peek2()
         if arg.n is not None:
-            signal_to_send = self._ParseSigspec(arg.n, arg_loc)
+            signal_to_send = self._ParseSigspecArg(arg.n, arg_loc)
         if arg.s is not None:
-            signal_to_send = self._ParseSigspec(arg.s, arg_loc)
+            signal_to_send = self._ParseSigspecArg(arg.s, arg_loc)
         return self._ParseTargetArgs(arg_r, signal_to_send)
 
 
