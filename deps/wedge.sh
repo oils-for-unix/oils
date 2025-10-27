@@ -21,7 +21,7 @@
 #
 # Host dir structure:
 #
-# ~/git/oilshell/oil
+# ~/git/oils-for-unix/oils/
 #   deps/
 #     source.medo/     # Source Files
 #       MEDO           # points to silo
@@ -87,10 +87,19 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
-OILS_ABSOLUTE_ROOT='/wedge/oils-for-unix.org'
+if test -n "${WEDGE_2025:-}"; then
+  # We don't have any absolute/relative distinction
+  OILS_ABSOLUTE_ROOT="$HOME/oils.DEPS"
+  OILS_RELATIVE_ROOT="$HOME/oils.DEPS"
+  OILS_GUEST_DIR=/home/uke0/oils
+else
+  OILS_ABSOLUTE_ROOT='/wedge/oils-for-unix.org'
 
-# The user may build a wedge outside a container here
-OILS_RELATIVE_ROOT="$HOME/wedge/oils-for-unix.org"
+  # The user may build a wedge outside a container here
+  OILS_RELATIVE_ROOT="$HOME/wedge/oils-for-unix.org"
+
+  OILS_GUEST_DIR=/home/uke0/oil  # old dir
+fi
 
 log() {
   echo "$@" >&2
@@ -326,10 +335,14 @@ _unboxed-install() {
 unboxed-install() {
   local wedge=$1  # e.g. re2.wedge.sh
 
-  if test -n "${WEDGE_IS_ABSOLUTE:-}"; then
-    sudo $0 _unboxed-install "$@"
-  else
+  if test -n "${WEDGE_2025:-}"; then
     _unboxed-install "$@"
+  else
+    if test -n "${WEDGE_IS_ABSOLUTE:-}"; then
+      sudo $0 _unboxed-install "$@"
+    else
+      _unboxed-install "$@"
+    fi
   fi
 }
 
@@ -464,6 +477,69 @@ boxed() {
     "${args[@]}"
 }
 
+boxed-2025() {
+  ### Build inside a container, and put output in a specific place.
+
+  # TODO: Specify the container OS, CPU like x86-64, etc.
+
+  local wedge=$1
+  local version_requested=${2:-}
+  local distro=${3:-$DEFAULT_DISTRO}
+
+  local bootstrap_image=oilshell/wedge-bootstrap-$distro
+
+  echo "*** boxed-2025 $wedge $version_requested $distro"
+  echo
+
+  load-wedge $wedge "$version_requested"
+
+  # Permissions will be different, so we separate the two
+
+  # Boxed wedges are put in this HOST dir, as opposed to as opposed to
+  # ../oils.DEPS for unboxed wedges
+  local wedge_host_dir=_build/wedge/boxed/
+  local wedge_guest_dir=/home/uke0/oils.DEPS
+
+  mkdir -v -p $wedge_host_dir
+
+  # TODO: 
+  #
+  # Mount
+  #  INPUTS: the PKG.wedge.sh, and the tarball
+  #  CODE: this script: deps/wedge.sh
+  #  OUTPUT: /wedge/oils-for-unix.org
+  #    TODO: Also put logs and symbols somewhere
+
+  # Run unboxed-{build,install,smoke-test} INSIDE the container
+  local -a args=(
+      sh -c 'cd ~/oils; deps/wedge.sh unboxed "$1" "$2"'
+      dummy "$wedge" "$version_requested"
+  )
+
+  local -a docker_flags=()
+  if test -n "${WEDGE_LEAKY_BUILD:-}"; then
+    :
+  else
+    # Disable network for hermetic builds.  TODO: Add automated test
+    docker_flags=( --network none )
+  fi
+
+  # TODO:
+  # - Don't mount the whole REPO_ROOT
+  #   - We want the bare minimum of files, for cache invalidation
+  # - Maybe make it read only
+  # - Bind mount WEDGE_DEPS='', space separated list of paths
+  #   - py3-libs depends on python3 and mypy wedges!
+
+  # -E to preserve CONTAINERS_REGISTRIES_CONF
+  sudo -E $DOCKER run "${docker_flags[@]}" \
+    --env WEDGE_2025=1 \
+    --mount "type=bind,source=$REPO_ROOT,target=/home/uke0/oils" \
+    --mount "type=bind,source=$PWD/$wedge_host_dir,target=$wedge_guest_dir" \
+    $bootstrap_image \
+    "${args[@]}"
+}
+
 smoke-test() {
   local wedge_dir=$1
   local wedge_out_dir=${2:-_build/wedge/binary}  # TODO: rename to /boxed
@@ -476,7 +552,7 @@ smoke-test() {
   local bootstrap_image=oilshell/wedge-bootstrap-$distro
 
   local -a args=(
-      sh -c 'cd ~/oil; deps/wedge.sh unboxed-smoke-test $1' dummy "$wedge_dir"
+      sh -c 'cd "$1"; deps/wedge.sh unboxed-smoke-test $2' dummy "$OILS_GUEST_DIR" "$wedge_dir"
   )
   local -a docker_flags=()
   if test -n "$debug_shell"; then
@@ -490,10 +566,9 @@ smoke-test() {
   else
     wedge_mount_dir=/home/uke0/wedge
   fi
-
   sudo $DOCKER run "${docker_flags[@]}" \
     --network none \
-    --mount "type=bind,source=$REPO_ROOT,target=/home/uke0/oil" \
+    --mount "type=bind,source=$REPO_ROOT,target=$OILS_GUEST_DIR" \
     --mount "type=bind,source=$PWD/$wedge_out_dir,target=$wedge_mount_dir" \
     $bootstrap_image \
     "${args[@]}"
@@ -515,7 +590,7 @@ case $1 in
   unboxed|\
   unboxed-make|unboxed-install|_unboxed-install|\
   unboxed-smoke-test|unboxed-stats|\
-  boxed|smoke-test)
+  boxed|boxed-2025|smoke-test)
     "$@"
     ;;
 

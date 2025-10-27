@@ -117,6 +117,7 @@ readonly SOUFFLE_VERSION=2.4.1
 readonly SOUFFLE_URL=https://github.com/souffle-lang/souffle/archive/refs/tags/2.4.1.tar.gz
 
 readonly WEDGE_LOG_DIR=_build/wedge/logs
+readonly BOXED_WEDGE_DIR=_build/wedge/boxed
 
 log() {
   echo "$@" >& 2
@@ -588,6 +589,25 @@ wedge-exists() {
   fi
 }
 
+boxed-wedge-exists() {
+  ### Does an installed wedge already exist?
+
+  local name=$1
+  local version=$2
+
+  # NOT USED for now
+  local distro=${3:-debian-12}
+
+  local installed=$BOXED_WEDGE_DIR/pkg/$name/$version
+
+  if test -d $installed; then
+    log "$installed already exists"
+    return 0
+  else
+    return 1
+  fi
+}
+
 #
 # Install
 #
@@ -720,25 +740,40 @@ install-py3-libs() {
   #
   # I think the ./configure is out of sync with the actual build?
 
-
 # TODO:
 # - $ROOT_WEDGE_DIR vs. $USER_WEDGE_DIR is duplicating information that's
 # already in each WEDGE file
 
 py-wedges() {
   ### for build/py.sh all
+  local boxed=${1:-}
 
-  echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR
-  echo re2c $RE2C_VERSION $ROOT_WEDGE_DIR
-  echo python2 $PY2_VERSION $ROOT_WEDGE_DIR
-  echo pyflakes $PYFLAKES_VERSION $USER_WEDGE_DIR
+  if test -n "$boxed"; then
+    local distro='debian-12'
+    echo cmark $CMARK_VERSION $distro
+    echo re2c $RE2C_VERSION $distro
+    echo python2 $PY2_VERSION $distro
+    echo pyflakes $PYFLAKES_VERSION $distro
+  else
+    echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR
+    echo re2c $RE2C_VERSION $ROOT_WEDGE_DIR
+    echo python2 $PY2_VERSION $ROOT_WEDGE_DIR
+    echo pyflakes $PYFLAKES_VERSION $USER_WEDGE_DIR
+  fi
 }
 
 cpp-wedges() {
   ### for ninja / mycpp translation
+  local boxed=${1:-}
 
-  echo python3 $PY3_VERSION $ROOT_WEDGE_DIR
-  echo mypy $MYPY_VERSION $USER_WEDGE_DIR
+  if test -n "$boxed"; then
+    local distro='debian-12'
+    echo python3 $PY3_VERSION $distro
+    echo mypy $MYPY_VERSION $distro
+  else
+    echo python3 $PY3_VERSION $ROOT_WEDGE_DIR
+    echo mypy $MYPY_VERSION $USER_WEDGE_DIR
+  fi
 
   # py3-libs has a built time dep on both python3 and MyPy, so we're doing it
   # separately for now
@@ -747,35 +782,65 @@ cpp-wedges() {
 
 spec-bin-wedges() {
   ### for test/spec-py.sh osh-all
+  local boxed=${1:-}
 
-  echo dash $DASH_VERSION $USER_WEDGE_DIR
-  echo bash $BASH_VER $USER_WEDGE_DIR
-  echo bash $BASH5_VER $USER_WEDGE_DIR
-  echo mksh $MKSH_VERSION $USER_WEDGE_DIR
-  echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR
-  echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR
-  echo busybox $BUSYBOX_VERSION $USER_WEDGE_DIR
-  echo yash $YASH_VERSION $USER_WEDGE_DIR
+  if test -n "$boxed"; then
+    local distro='debian-12'
+    echo dash $DASH_VERSION $distro
+    echo bash $BASH_VER $distro
+    echo bash $BASH5_VER $distro
+    echo mksh $MKSH_VERSION $distro
+    echo zsh $ZSH_OLD_VER $distro
+    echo zsh $ZSH_NEW_VER $distro
+    echo busybox $BUSYBOX_VERSION $distro
+    echo yash $YASH_VERSION $distro
+  else
+    echo dash $DASH_VERSION $USER_WEDGE_DIR
+    echo bash $BASH_VER $USER_WEDGE_DIR
+    echo bash $BASH5_VER $USER_WEDGE_DIR
+    echo mksh $MKSH_VERSION $USER_WEDGE_DIR
+    echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR
+    echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR
+    echo busybox $BUSYBOX_VERSION $USER_WEDGE_DIR
+    echo yash $YASH_VERSION $USER_WEDGE_DIR
+  fi
 }
 
 zsh-wedges() {
-  echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR
-  echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR
+  local boxed=${1:-}
+
+  if test -n "$boxed"; then
+    local distro='debian-12'
+    echo zsh $ZSH_OLD_VER $distro
+    echo zsh $ZSH_NEW_VER $distro
+  else
+    echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR
+    echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR
+  fi
 }
 
 contributor-wedges() {
-  py-wedges
-  cpp-wedges
-  spec-bin-wedges
+  local boxed=${1:-}
+
+  py-wedges "$boxed"
+  cpp-wedges "$boxed"
+  spec-bin-wedges "$boxed"
 }
 
 extra-wedges() {
   # Contributors don't need uftrace, bloaty, and probably R-libs
   # Although R-libs could be useful for benchmarks
 
-  # Test both outside the contianer, as well as inside?
-  echo uftrace $UFTRACE_VERSION $ROOT_WEDGE_DIR
-  echo bloaty $BLOATY_VERSION $ROOT_WEDGE_DIR
+  local boxed=${1:-}
+
+  if test -n "$boxed"; then
+    local distro='debian-12'
+    echo uftrace $UFTRACE_VERSION $distro
+    echo bloaty $BLOATY_VERSION debian-10  # It works on Debian 10, not 12
+  else
+    echo uftrace $UFTRACE_VERSION $ROOT_WEDGE_DIR
+    echo bloaty $BLOATY_VERSION $ROOT_WEDGE_DIR
+  fi
 
   #echo souffle $SOUFFLE_VERSION $USER_WEDGE_DIR
 }
@@ -1043,13 +1108,13 @@ install-wedges() {
   write-task-report
 }
 
-install-wedges-soil() {
-  install-wedges extra
-}
-
 install-wedges-fast() {
   ### Alias for compatibility
   install-wedges "$@"
+}
+
+install-wedges-soil() {
+  install-wedges extra
 }
 
 #
@@ -1083,8 +1148,30 @@ boxed-clean() {
   time sudo rm -r -f _build/wedge/
 }
 
-boxed-wedges() {
-  time $0 _boxed-wedges "$@"
+boxed-spec-bin() {
+  if true; then
+    deps/wedge.sh boxed deps/source.medo/bash '4.4'
+    deps/wedge.sh boxed deps/source.medo/bash '5.2.21'
+  fi
+
+  if true; then
+    deps/wedge.sh boxed deps/source.medo/dash
+    deps/wedge.sh boxed deps/source.medo/mksh
+  fi
+
+  if true; then
+    # Note: zsh requires libncursesw5-dev
+    deps/wedge.sh boxed deps/source.medo/zsh $ZSH_OLD_VER
+    deps/wedge.sh boxed deps/source.medo/zsh $ZSH_NEW_VER
+  fi
+
+  if true; then
+    deps/wedge.sh boxed deps/source.medo/busybox
+
+    # Problem with out of tree build, as above.  Skipping for now
+    deps/wedge.sh boxed deps/source.medo/yash
+    echo
+  fi
 }
 
 _boxed-wedges() {
@@ -1138,31 +1225,125 @@ _boxed-wedges() {
   fi
 }
 
-boxed-spec-bin() {
-  if true; then
-    deps/wedge.sh boxed deps/source.medo/bash '4.4'
-    deps/wedge.sh boxed deps/source.medo/bash '5.2.21'
+boxed-wedges() {
+  time $0 _boxed-wedges "$@"
+}
+
+
+maybe-boxed-wedge() {
+  local name=$1
+  local version=$2
+  local distro=$3  # e.g. debian-12 or empty
+
+  local task_file=$BOXED_WEDGE_DIR/logs/$name-$version.task.tsv
+  local log_file=$BOXED_WEDGE_DIR/logs/$name-$version.log.txt
+
+  echo "  TASK  $(timestamp)  $name $version > $log_file"
+
+  # python3 because it's OUTSIDE the container
+  # Separate columns that could be joined: number of files, total size
+  my-time-tsv --print-header \
+    --field xargs_slot \
+    --field wedge \
+    --field wedge_HREF \
+    --field version \
+    --output $task_file
+
+  if boxed-wedge-exists "$name" "$version" "$distro"; then
+    echo "CACHED  $(timestamp)  $name $version"
+    return
   fi
 
-  if true; then
-    deps/wedge.sh boxed deps/source.medo/dash
-    deps/wedge.sh boxed deps/source.medo/mksh
-  fi
+  #local -a cmd=( deps/wedge.sh boxed-2025 _build/deps-source/$name/ $version)
+  local -a cmd=( deps/wedge.sh boxed-2025 deps/source.medo/$name/ "$version" "$distro")
 
-  if true; then
-    # Note: zsh requires libncursesw5-dev
-    deps/wedge.sh boxed deps/source.medo/zsh $ZSH_OLD_VER
-    deps/wedge.sh boxed deps/source.medo/zsh $ZSH_NEW_VER
-  fi
+  set +o errexit
+  my-time-tsv \
+    --field "$XARGS_SLOT" \
+    --field "$name" \
+    --field "$name-$version.log.txt" \
+    --field "$version" \
+    --append \
+    --output $task_file \
+    -- \
+    "${cmd[@]}" "$@" >$log_file 2>&1
+  local status=$?
+  set -o errexit
 
-  if true; then
-    deps/wedge.sh boxed deps/source.medo/busybox
-
-    # Problem with out of tree build, as above.  Skipping for now
-    deps/wedge.sh boxed deps/source.medo/yash
-    echo
+  if test "$status" -eq 0; then
+    echo "    OK  $(timestamp)  $name $version"
+  else
+    echo "  FAIL  $(timestamp)  $name $version"
   fi
 }
+
+do-boxed-wedge-list() {
+  ### Reads task rows from stdin
+  local parallel=${1:-}
+
+  mkdir -p $BOXED_WEDGE_DIR/logs
+
+  local -a flags
+  if test -n "$parallel"; then
+    log ""
+    log "=== Building boxed wedges with $NPROC jobs in parallel"
+    log ""
+    flags=( -P $NPROC )
+  else
+    log ""
+    log "=== Building boxed wedges serially"
+    log ""
+  fi
+
+  # Reads from stdin
+  # Note: --process-slot-var requires GNU xargs!  busybox args doesn't have it.
+  #
+  # $name $version $wedge_dir
+  xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 maybe-boxed-wedge
+
+  #xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 dummy-task-wrapper
+}
+
+
+_boxed-wedges-2025-TEST() {
+  # fastest one
+  deps/wedge.sh boxed-2025 deps/source.medo/time-helper '' debian-12
+
+  if true; then
+    # debian 10 for now
+    deps/wedge.sh boxed-2025 deps/source.medo/bloaty/ '' # debian-12
+  fi
+}
+
+_boxed-wedges-2025() {
+  local extra=${1:-}
+  local do_test=${2:-}
+
+  # For contributor setup: we need to use this BEFORE running build/py.sh all
+  #build/py.sh time-helper
+
+  echo " START  $(timestamp)"
+
+  # Do all of them in parallel
+  if test -n "$extra"; then
+    { contributor-wedges T; extra-wedges T; } | do-boxed-wedge-list
+  elif test -n "$do_test"; then
+    { zsh-wedges T; } | do-boxed-wedge-list
+  else
+    contributor-wedges T | do-boxed-wedge-list
+  fi
+
+  # TODO
+  #fake-py3-libs-wedge
+  echo "   END  $(timestamp)"
+
+  write-task-report
+}
+
+boxed-wedges-2025() {
+  time $0 _boxed-wedges-2025 "$@"
+}
+
 
 #
 # Report
