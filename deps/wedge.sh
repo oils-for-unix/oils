@@ -144,7 +144,7 @@ install-dir() {
   #
   # And then provide a flag to select them?
 
-  if test -n "$WEDGE_2025"; then
+  if test -n "${WEDGE_2025:-}"; then
     echo "$prefix/$WEDGE_NAME/$WEDGE_VERSION"
   else
     echo "$prefix/pkg/$WEDGE_NAME/$WEDGE_VERSION"

@@ -1,12 +1,26 @@
 # Sets $PATH to the locations of some precompiled binaries.
 # An alternative to nix-shell.
 #
+# Also sets PYTHONPATH and R_LIBS_USER
+#
 # Usage:
 #   source build/dev-shell.sh
 #
 # Notes:
 # - assumes that $REPO_ROOT is $PWD.
 # - build/py2.sh is a slimmer version, for just python2
+
+#
+# OLD WEDGES 
+#
+
+# TODO: to avoid breaking contributor machines, all PATH modifications to this
+# file, after we rebuild all containers
+
+OLD_WEDGES=build/old-wedges.sh
+#if test -f $OLD_WEDGES; then
+#  . $OLD_WEDGES
+#fi
 
 ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
 # Also in build/deps.sh
@@ -105,6 +119,24 @@ if test -d $YASH_WEDGE_DIR; then
   export PATH="$YASH_WEDGE_DIR:$PATH"
 fi
 
+#
+# 2025 WEDGES
+#
+
+# TODO:
+# This command: deps/wedge.sh make-bin-dir 
+# - happens in each docker build
+# - happens in the contributor setup: build/deps.sh install-wedges
+
+readonly DEPS_BIN_DIR=../oils.DEPS/bin
+if test -d $DEPS_BIN_DIR; then
+  export PATH="$DEPS_BIN_DIR:$PATH"
+fi
+
+#
+# Libraries: PYTHONPATH and R_LIBS_USER
+#
+
 if test -d ~/R; then
   # 2023-07: Hack to keep using old versions on lenny.local
   # In 2023-04, dplyr stopped supporting R 3.4.4 on Ubuntu Bionic
@@ -114,6 +146,7 @@ else
   R_LIBS_WEDGE=~/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
   export R_LIBS_USER=$R_LIBS_WEDGE
 fi
+
 
 # So we can run Python 2 scripts directly, e.g. asdl/asdl_main.py
 export PYTHONPATH='.'
@@ -142,10 +175,8 @@ MYPY_VERSION=0.780
 
 # Containers copy it here
 readonly MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
-#echo "MYPY_WEDGE $MYPY_WEDGE"
 if test -d "$MYPY_WEDGE"; then
   export PYTHONPATH="$MYPY_WEDGE:$PYTHONPATH"
-  #echo "PYTHONPATH $PYTHONPATH"
 fi
 
 # Hack for misconfigured RC cluster!  Some machines have the empty string in
