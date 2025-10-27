@@ -1,6 +1,5 @@
-from _devbuild.gen.syntax_asdl import source_t, Token, SourceLine, loc
+from _devbuild.gen.syntax_asdl import source_t, Token, SourceLine
 from asdl import runtime
-from core import error
 from mycpp.mylib import log
 
 from typing import List, Dict, Any
@@ -142,12 +141,6 @@ class Arena(object):
 
     def NewToken(self, id_, col, length, src_line):
         # type: (int, int, int, SourceLine) -> Token
-
-        # 2**32 - token length is stored in an int (32 bits)
-        if length >= 4294967296:
-            raise error.Parse(
-                '',  # ignored message
-                loc.TokenTooLong(src_line, id_, length, col))
 
         tok = Token(id_, length, col, src_line, None)
         if self.save_tokens:

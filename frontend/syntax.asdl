@@ -111,8 +111,6 @@ module syntax
   | Arith(arith_expr a)
     # e.g. for errexit blaming
   | Command(command c)
-    # the location of a token that's too long
-  | TokenTooLong(SourceLine line, id id, int length, int col)
 
   # debug_frame_t is an EXECUTION stack (proc func source use eval), while
   # source_t (in some cases) is like a PARSING stack (files, strings from vars,
