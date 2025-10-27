@@ -321,10 +321,10 @@ BigStr* BufWriter::getvalue() {
 }
 
 StatResult::StatResult(struct stat stat_result)
-  : stat_result(stat_result) {}
+  : stat_result_(stat_result) {}
 
 bool StatResult::isreg() {
-  return S_ISREG(stat_result.st_mode);
+  return S_ISREG(stat_result_.st_mode);
 }
 
 StatResult* stat(BigStr* filename) {

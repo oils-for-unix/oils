@@ -390,7 +390,7 @@ public:
   }
 
 private:
-  struct stat stat_result;
+  struct stat stat_result_;
 };
 
 StatResult* stat(BigStr* filename);
