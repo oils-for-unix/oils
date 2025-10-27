@@ -512,7 +512,7 @@ class Umask(vm._Builtin):
                 return 0
 
             print_stderr(
-                "oils warning: `%c` is an invalid symbolic mode operator" %
+                "oils warning: `%s` is an invalid symbolic mode operator" %
                 first_arg[0])
             return 1
 
@@ -528,17 +528,17 @@ class Umask(vm._Builtin):
             return None
         elif arg_component[0] not in "ugoa":
             print_stderr(
-                "oils warning: `%c` is an invalid symbolic mode operator" %
+                "oils warning: `%s` is an invalid symbolic mode operator" %
                 arg_component[0])
             return None
         elif len(arg_component) == 1:
             print_stderr(
-                "oils warning: expected `=+-` after `%c` in symbolic mode operator"
+                "oils warning: expected `=+-` after `%s` in symbolic mode operator"
                 % arg_component[0])
             return None
         elif arg_component[1] not in "=+-":
             print_stderr(
-                "oils warning: `%c` is an invalid symbolic mode operator" %
+                "oils warning: `%s` is an invalid symbolic mode operator" %
                 arg_component[1])
             return None
 
@@ -552,7 +552,7 @@ class Umask(vm._Builtin):
                 mask_digit &= int("110", 2)
             else:
                 print_stderr(
-                    "oils warning: `%c` is an invalid symbolic mode character"
+                    "oils warning: `%s` is an invalid symbolic mode character"
                     % ch)
                 return None
 
