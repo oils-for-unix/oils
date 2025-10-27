@@ -18,7 +18,12 @@ COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
   /wedge/oils-for-unix.org/pkg/cmark/0.29.0
 
-# debian-12
+#RUN echo 123 > /tmp/cache-bust.txt
+
+#COPY --chown=uke \
+#  _build/boxed/wedge/uftrace/0.13 \
+#  /home/uke/oils.DEPS/wedge/uftrace/0.13
+
 COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/uftrace/0.13 \
   /wedge/oils-for-unix.org/pkg/uftrace/0.13
@@ -26,5 +31,8 @@ COPY --chown=uke \
 COPY --chown=uke \
   _build/wedge/relative/oils-for-unix.org/pkg/R-libs/2023-04-18 \
   /home/uke/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
+
+RUN mkdir -p /home/uke/oils.DEPS/bin && \
+    ln -s --relative /home/uke/oils.DEPS/wedge/uftrace/0.13/bin/uftrace /home/uke/oils.DEPS/bin
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-debian-12'"]

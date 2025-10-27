@@ -21,6 +21,10 @@ COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
   /wedge/oils-for-unix.org/pkg/re2c/3.0
 
+#COPY --chown=uke \
+#  _build/boxed/wedge/uftrace/0.13 \
+#  /home/uke/oils.DEPS/wedge/uftrace/0.13
+
 COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/uftrace/0.13 \
   /wedge/oils-for-unix.org/pkg/uftrace/0.13
@@ -57,5 +61,8 @@ COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
 # Ideally py3-libs would be created a BUILD TIME with wedge-builder, not at
 # RUNTIME with uke!
 RUN build/deps.sh install-py3-libs /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+
+RUN mkdir -p /home/uke/oils.DEPS/bin && \
+    ln -s --relative /home/uke/oils.DEPS/wedge/uftrace/0.13/bin/uftrace /home/uke/oils.DEPS/bin
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-benchmarks'"]

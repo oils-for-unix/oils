@@ -38,17 +38,11 @@ readonly WEDGE_PY3_DIR=$ROOT_WEDGE_DIR/pkg/python3/3.10.4/bin
 # work
 export PATH="$WEDGE_PY3_DIR:$PATH"
 
-readonly WEDGE_BLOATY_DIR=$ROOT_WEDGE_DIR/pkg/bloaty/1.1  # not in bin
-if test -d $WEDGE_BLOATY_DIR; then
-  export PATH="$WEDGE_BLOATY_DIR:$PATH"
-fi
-
 readonly WEDGE_RE2C_DIR=$ROOT_WEDGE_DIR/pkg/re2c/3.0/bin
 if test -d $WEDGE_RE2C_DIR; then
   export PATH="$WEDGE_RE2C_DIR:$PATH"
 fi
 
-# uftrace must be installed by wedge?
 readonly UFTRACE_WEDGE_DIR=$ROOT_WEDGE_DIR/pkg/uftrace/0.13/bin
 if test -d $UFTRACE_WEDGE_DIR; then
   export PATH="$UFTRACE_WEDGE_DIR:$PATH"

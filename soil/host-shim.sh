@@ -37,12 +37,12 @@ live-image-tag() {
       #echo 'v-2025-05-01'
       ;;
     benchmarks)
-      # Add 'pyte' terminal emulator library to py3-libs, for testing
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-27'
       ;;
     benchmarks2)
-      # refresh
-      echo 'v-2025-05-01'
+      # wedges 2025
+      echo 'v-2025-10-27'
       ;;
     cpp-spec)
       # rebuild with layer-locales

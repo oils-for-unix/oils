@@ -193,7 +193,7 @@ push-many() {
   done
 }
 
-smoke-test-script() {
+smoke-script-1() {
   echo '
 for file in /etc/debian_version /etc/lsb-release; do
   if test -f $file; then
@@ -265,8 +265,40 @@ fi
 '
 }
 
-smoke() {
-  sudo $0 _smoke "$@"
+smoke-script-2() {
+  echo '
+  cd ~/oil
+  . build/dev-shell.sh
+
+  bloaty --help
+  echo
+
+  # hm this shows Python
+  uftrace --version
+
+  which uftrace
+  uftrace=$(which uftrace)
+
+  ls -l ~/oils.DEPS/wedge/uftrace/0.13/bin/uftrace
+  uftrace=~/oils.DEPS/wedge/uftrace/0.13/bin/uftrace
+
+  exit
+
+  cc -pg -o hello deps/source.medo/uftrace/hello.c
+
+  # libmcount-fast is in the uftrace lib/ dir
+  ldd $(which uftrace)
+  echo
+
+  set -x
+  #head /tmp/cache-bust.txt
+
+  $uftrace record hello
+  #uftrace replay hello
+  echo
+
+  #find /usr -name "libm*.so"
+  '
 }
 
 _smoke() {
@@ -276,19 +308,19 @@ _smoke() {
   local docker=${3:-$DOCKER}
   local prefix=${4:-}
 
-  #sudo docker run oilshell/$name
-  #sudo docker run oilshell/$name python2 -c 'print("python2")'
+  #$docker run ${prefix}oilshell/$name:$tag bash -c "$(smoke-script-1)"
 
-  # Need to point at registries.conf ?
-  #export-podman
+  local repo_root=$PWD
 
-  $docker run ${prefix}oilshell/$name:$tag bash -c "$(smoke-test-script)"
-
-  # Python 2.7 build/prepare.sh requires this
-  #sudo docker run oilshell/$name python -V
-
-  #sudo docker run oilshell/$name python3 -c 'import pexpect; print(pexpect)'
+  $docker run \
+    --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
+    ${prefix}oilshell/$name:$tag bash -c "$(smoke-script-2)"
 }
+
+smoke() {
+  sudo $0 _smoke "$@"
+}
+
 
 smoke-podman() {
   local name=${1:-dummy}

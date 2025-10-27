@@ -87,10 +87,22 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
 
+log() {
+  echo "$@" >&2
+}
+
+die() {
+  log "$0: fatal: $@"
+  exit 1
+}
+
 if test -n "${WEDGE_2025:-}"; then
+  log "*** WEDGE running in 2025 mode with ../oils.DEPS"
+
   # We don't have any absolute/relative distinction
-  OILS_ABSOLUTE_ROOT="$HOME/oils.DEPS"
-  OILS_RELATIVE_ROOT="$HOME/oils.DEPS"
+  # SHOULD match $WEDGE_2025_DIR in build/deps.sh
+  OILS_ABSOLUTE_ROOT="$HOME/oils.DEPS/wedge"
+  OILS_RELATIVE_ROOT="$HOME/oils.DEPS/wedge"
   OILS_GUEST_DIR=/home/uke0/oils
 else
   OILS_ABSOLUTE_ROOT='/wedge/oils-for-unix.org'
@@ -100,15 +112,6 @@ else
 
   OILS_GUEST_DIR=/home/uke0/oil  # old dir
 fi
-
-log() {
-  echo "$@" >&2
-}
-
-die() {
-  log "$0: fatal: $@"
-  exit 1
-}
 
 #
 # Dirs
