@@ -1,6 +1,6 @@
 ## compare_shells: dash bash mksh zsh
-## oils_failures_allowed: 3
-## oils_cpp_failures_allowed: 4
+## oils_failures_allowed: 4
+## oils_cpp_failures_allowed: 5
 # case #24 with ulimit -f 1 is different under C++ for some reason - could be due to the python2
 # intepreter and SIGXFSZ
 
@@ -238,7 +238,7 @@ umask | tail -c 4
 status=1
 022
 ## END
-## BUG mksh/zsh/dash/osh STDOUT:
+## BUG mksh/zsh/dash STDOUT:
 status=0
 567
 ## END
