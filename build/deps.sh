@@ -709,7 +709,7 @@ install-py3-libs-from-cache() {
   log "Ensuring pip is installed (interpreter $(command -v python3)"
   python3 -m ensurepip
 
-  local venv_dir=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION
+  local venv_dir=$USER_WEDGE_DIR/py3-libs/$PY3_LIBS_VERSION
   log "Creating venv in $venv_dir"
 
   # Note: the bin/python3 in this venv is a symlink to python3 in $PATH, i.e.
