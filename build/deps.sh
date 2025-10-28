@@ -54,14 +54,8 @@ source web/table/html.sh  # table-sort-{begin,end}
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org/pkg
 ROOT_WEDGE_DIR=/wedge/oils-for-unix.org/pkg
 
-if false; then
-  readonly _relative=../oils.DEPS/wedge
-  mkdir -p $_relative
-  WEDGE_2025_DIR=$(cd $_relative; pwd)
-else
-  readonly WEDGE_2025_DIR=../oils.DEPS/wedge
-  mkdir -p $WEDGE_2025_DIR
-fi
+readonly WEDGE_2025_DIR=../oils.DEPS/wedge
+mkdir -p $WEDGE_2025_DIR
 
 readonly DEPS_SOURCE_DIR=_build/deps-source
 
