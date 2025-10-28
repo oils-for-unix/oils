@@ -714,14 +714,13 @@ class Kill(vm._Builtin):
             job = self.job_list.JobFromSpec(pid_arg)
             if job is None:
                 e_usage("got invalid job id %r" % pid_arg, pid_arg_loc)
-            else:
-                return job.ProcessGroupId()
+            return job.ProcessGroupId()
         else:
             try:
                 target_pid = int(pid_arg)
-                return target_pid
             except ValueError:
                 e_usage("got invalid process id %r" % pid_arg, pid_arg_loc)
+            return target_pid
 
     # sigspec can either be in the form 15, TERM, or SIGTERM (case insensitive)
     # raises error if sigspec is in invalid format
@@ -738,7 +737,7 @@ class Kill(vm._Builtin):
 
     def _ParseTargetArgs(self, arg_r, signal):
         # type: (args.Reader, int) -> int
-        arg_pid, arg_pid_loc = arg_r.ReadRequired2("expected a PID")
+        arg_pid, arg_pid_loc = arg_r.ReadRequired2("expected a PID or jobspec")
         pid = self._ParsePid(arg_pid, arg_pid_loc)
         posix.kill(pid, signal)
         while not arg_r.AtEnd():
@@ -776,7 +775,7 @@ class Kill(vm._Builtin):
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()  # skip command name
         first_positional, first_positional_loc = arg_r.ReadRequired2(
-            "you must provide a process id")
+            "expected PID or jobspec")
         # checking for -sigspec argument
         if first_positional.startswith('-') and (
                 first_positional[1:].isdigit() or len(first_positional) > 2):
