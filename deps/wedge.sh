@@ -408,6 +408,12 @@ unboxed() {
   # Generally passed to ./configure
   local wedge_out_base_dir=$3
 
+  # Turn it from ../oils.DEPS/wedge into EITHER:
+  #   /home/uke/oils.DEPS/wedge
+  #   /home/andy/git/oils-for-unix/oils.DEPS/wedge
+  mkdir -p $wedge_out_base_dir
+  wedge_out_base_dir=$(cd $wedge_out_base_dir; pwd)
+
   log "*** unboxed $wedge_src_dir $version_requested wedge_out_base_dir=$wedge_out_base_dir"
 
   load-wedge $wedge_src_dir "$version_requested"
@@ -432,9 +438,13 @@ boxed() {
 
   local wedge=$1
   local version_requested=${2:-}
-  local distro=${3:-$DEFAULT_DISTRO}
+  # /wedge/oils-for-unix.org/pkg or ~/wedge/oils-for-unix.org/pkg
+  local wedge_out_base_dir=${3:-}
+  local distro=${4:-$DEFAULT_DISTRO}
 
   local bootstrap_image=oilshell/wedge-bootstrap-$distro
+
+  log "*** boxed $wedge $version_requested out=$wedge_out_base_dir distro=$distro"
 
   load-wedge $wedge "$version_requested"
 
@@ -449,6 +459,7 @@ boxed() {
     wedge_host_dir=_build/wedge/relative
     wedge_guest_dir=/home/uke0/wedge
   fi
+  local wedge_guest_pkg_dir=$wedge_guest_dir/oils-for-unix.org/pkg
 
   mkdir -v -p $wedge_host_dir
 
@@ -462,8 +473,8 @@ boxed() {
 
   # Run unboxed-{build,install,smoke-test} INSIDE the container
   local -a args=(
-      sh -c 'cd ~/oil; deps/wedge.sh unboxed "$1" "$2"'
-      dummy "$wedge" "$version_requested"
+      sh -c 'cd ~/oil; deps/wedge.sh unboxed "$1" "$2" "$3"'
+      dummy "$wedge" "$version_requested" "$wedge_guest_pkg_dir"
   )
 
   local -a docker_flags=()
@@ -496,11 +507,13 @@ boxed-2025() {
 
   local wedge=$1
   local version_requested=${2:-}
-  local distro=${3:-$DEFAULT_DISTRO}
+  # NOT USED.  Because 2025 wedges are not absolute/relative.  We use the same dir
+  local wedge_out_base_dir=${3:-}
+  local distro=${4:-$DEFAULT_DISTRO}
 
   local bootstrap_image=oilshell/wedge-bootstrap-$distro
 
-  echo "*** boxed-2025 $wedge $version_requested $distro"
+  echo "*** boxed-2025 $wedge $version_requested out=$wedge_out_base_dir distro=$distro"
   echo
 
   load-wedge $wedge "$version_requested"
@@ -510,7 +523,9 @@ boxed-2025() {
   # Boxed wedges are put in this HOST dir, as opposed to as opposed to
   # ../oils.DEPS for unboxed wedges
   local wedge_host_dir=_build/boxed/wedge
-  local wedge_guest_dir=/home/uke0/oils.DEPS
+
+  local guest_repo_root=/home/uke0/oils
+  local guest_wedge_out_dir=/home/uke0/oils.DEPS/wedge
 
   mkdir -v -p $wedge_host_dir
 
@@ -524,8 +539,8 @@ boxed-2025() {
 
   # Run unboxed-{build,install,smoke-test} INSIDE the container
   local -a args=(
-      sh -c 'cd ~/oils; deps/wedge.sh unboxed "$1" "$2"'
-      dummy "$wedge" "$version_requested"
+      sh -c 'cd ~/oils; deps/wedge.sh unboxed "$1" "$2" "$3"'
+      dummy "$wedge" "$version_requested" "$guest_wedge_out_dir"
   )
 
   local -a docker_flags=()
@@ -546,8 +561,8 @@ boxed-2025() {
   # -E to preserve CONTAINERS_REGISTRIES_CONF
   sudo -E $DOCKER run "${docker_flags[@]}" \
     --env WEDGE_2025=1 \
-    --mount "type=bind,source=$REPO_ROOT,target=/home/uke0/oils" \
-    --mount "type=bind,source=$PWD/$wedge_host_dir,target=$wedge_guest_dir" \
+    --mount "type=bind,source=$REPO_ROOT,target=$guest_repo_root" \
+    --mount "type=bind,source=$PWD/$wedge_host_dir,target=$guest_wedge_out_dir" \
     $bootstrap_image \
     "${args[@]}"
 }

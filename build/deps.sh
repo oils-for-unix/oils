@@ -54,7 +54,14 @@ source web/table/html.sh  # table-sort-{begin,end}
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org/pkg
 ROOT_WEDGE_DIR=/wedge/oils-for-unix.org/pkg
 
-WEDGE_2025_DIR=$(cd ../oils.DEPS/wedge; pwd)
+if false; then
+  readonly _relative=../oils.DEPS/wedge
+  mkdir -p $_relative
+  WEDGE_2025_DIR=$(cd $_relative; pwd)
+else
+  readonly WEDGE_2025_DIR=../oils.DEPS/wedge
+  mkdir -p $WEDGE_2025_DIR
+fi
 
 readonly DEPS_SOURCE_DIR=_build/deps-source
 
@@ -737,23 +744,23 @@ py-wedges() {
   ### for build/py.sh all
   local how=${1:-legacy}
 
+  if test $how = 'boxed'; then
+    local where='debian-12'
+  else
+    local where='HOST'
+  fi
   case $how in
     boxed|unboxed)
-      if test $how = 'boxed'; then
-        local arg='debian-12'
-      else
-        local arg=$WEDGE_2025_DIR
-      fi
-      echo cmark $CMARK_VERSION $arg
-      echo re2c $RE2C_VERSION $arg
-      echo python2 $PY2_VERSION $arg
-      echo pyflakes $PYFLAKES_VERSION $arg
+      echo cmark $CMARK_VERSION $WEDGE_2025_DIR $where
+      echo re2c $RE2C_VERSION $WEDGE_2025_DIR $where
+      echo python2 $PY2_VERSION $WEDGE_2025_DIR $where
+      echo pyflakes $PYFLAKES_VERSION $WEDGE_2025_DIR $where
       ;;
     legacy)
-      echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR
-      echo re2c $RE2C_VERSION $ROOT_WEDGE_DIR
-      echo python2 $PY2_VERSION $ROOT_WEDGE_DIR
-      echo pyflakes $PYFLAKES_VERSION $USER_WEDGE_DIR
+      echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR $where
+      echo re2c $RE2C_VERSION $ROOT_WEDGE_DIR $where
+      echo python2 $PY2_VERSION $ROOT_WEDGE_DIR $where
+      echo pyflakes $PYFLAKES_VERSION $USER_WEDGE_DIR $where
       ;;
     *)
       die "Invalid how $how"
@@ -764,19 +771,19 @@ cpp-wedges() {
   ### for ninja / mycpp translation
   local how=${1:-legacy}
 
+  if test $how = 'boxed'; then
+    local where='debian-12'
+  else
+    local where='HOST'
+  fi
   case $how in
     boxed|unboxed)
-      if test $how = 'boxed'; then
-        local arg='debian-12'
-      else
-        local arg=$WEDGE_2025_DIR
-      fi
-      echo python3 $PY3_VERSION $arg  
-      echo mypy $MYPY_VERSION $arg
+      echo python3 $PY3_VERSION $WEDGE_2025_DIR $where
+      echo mypy $MYPY_VERSION $WEDGE_2025_DIR $where
       ;;
     legacy)
-      echo python3 $PY3_VERSION $ROOT_WEDGE_DIR
-      echo mypy $MYPY_VERSION $USER_WEDGE_DIR
+      echo python3 $PY3_VERSION $ROOT_WEDGE_DIR $where
+      echo mypy $MYPY_VERSION $USER_WEDGE_DIR $where
       ;;
     *)
       die "Invalid how $how"
@@ -791,31 +798,31 @@ spec-bin-wedges() {
   ### for test/spec-py.sh osh-all
   local how=${1:-legacy}
 
+  if test $how = 'boxed'; then
+    local where='debian-12'
+  else
+    local where='HOST'
+  fi
   case $how in
     boxed|unboxed)
-      if test $how = 'boxed'; then
-        local arg='debian-12'
-      else
-        local arg=$WEDGE_2025_DIR
-      fi
-      echo dash $DASH_VERSION $arg
-      echo bash $BASH_VER $arg
-      echo bash $BASH5_VER $arg
-      echo mksh $MKSH_VERSION $arg
-      echo zsh $ZSH_OLD_VER $arg
-      echo zsh $ZSH_NEW_VER $arg
-      echo busybox $BUSYBOX_VERSION $arg
-      echo yash $YASH_VERSION $arg
+      echo dash $DASH_VERSION $WEDGE_2025_DIR $where
+      echo bash $BASH_VER $WEDGE_2025_DIR $where
+      echo bash $BASH5_VER $WEDGE_2025_DIR $where
+      echo mksh $MKSH_VERSION $WEDGE_2025_DIR $where
+      echo zsh $ZSH_OLD_VER $WEDGE_2025_DIR $where
+      echo zsh $ZSH_NEW_VER $WEDGE_2025_DIR $where
+      echo busybox $BUSYBOX_VERSION $WEDGE_2025_DIR $where
+      echo yash $YASH_VERSION $WEDGE_2025_DIR $where
       ;;
     legacy)
-      echo dash $DASH_VERSION $USER_WEDGE_DIR
-      echo bash $BASH_VER $USER_WEDGE_DIR
-      echo bash $BASH5_VER $USER_WEDGE_DIR
-      echo mksh $MKSH_VERSION $USER_WEDGE_DIR
-      echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR
-      echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR
-      echo busybox $BUSYBOX_VERSION $USER_WEDGE_DIR
-      echo yash $YASH_VERSION $USER_WEDGE_DIR
+      echo dash $DASH_VERSION $USER_WEDGE_DIR $where
+      echo bash $BASH_VER $USER_WEDGE_DIR $where
+      echo bash $BASH5_VER $USER_WEDGE_DIR $where
+      echo mksh $MKSH_VERSION $USER_WEDGE_DIR $where
+      echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR $where
+      echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR $where
+      echo busybox $BUSYBOX_VERSION $USER_WEDGE_DIR $where
+      echo yash $YASH_VERSION $USER_WEDGE_DIR $where
       ;;
     *)
       die "Invalid how $how"
@@ -825,19 +832,19 @@ spec-bin-wedges() {
 zsh-wedges() {
   local how=${1:-legacy}
 
+  if test $how = 'boxed'; then
+    local where='debian-12'
+  else
+    local where='HOST'
+  fi
   case $how in
     boxed|unboxed)
-      if test $how = 'boxed'; then
-        local arg='debian-12'
-      else
-        local arg=$WEDGE_2025_DIR
-      fi
-      echo zsh $ZSH_OLD_VER $arg
-      echo zsh $ZSH_NEW_VER $arg
+      echo zsh $ZSH_OLD_VER $WEDGE_2025_DIR $where
+      echo zsh $ZSH_NEW_VER $WEDGE_2025_DIR $where
       ;;
     legacy)
-      echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR
-      echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR
+      echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR $where
+      echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR $where
       ;;
     *)
       die "Invalid how $how"
@@ -847,17 +854,17 @@ zsh-wedges() {
 smoke-wedges() {
   local how=${1:-legacy}
 
+  if test $how = 'boxed'; then
+    local where='debian-12'
+  else
+    local where='HOST'
+  fi
   case $how in
     boxed|unboxed)
-      if test $how = 'boxed'; then
-        local arg='debian-12'
-      else
-        local arg=$WEDGE_2025_DIR
-      fi
-      echo dash $DASH_VERSION $arg
+      echo dash $DASH_VERSION $WEDGE_2025_DIR $where
       ;;
     legacy)
-      echo dash $DASH_VERSION $USER_WEDGE_DIR
+      echo dash $DASH_VERSION $USER_WEDGE_DIR $where
       ;;
     *)
       die "Invalid how $how"
@@ -872,17 +879,16 @@ extra-wedges() {
 
   case $how in
     boxed)
-      local distro='debian-12'
-      echo uftrace $UFTRACE_VERSION $distro
-      echo bloaty $BLOATY_VERSION debian-10  # It works on Debian 10, not 12
+      echo uftrace $UFTRACE_VERSION $WEDGE_2025_DIR debian-12
+      echo bloaty $BLOATY_VERSION $WEDGE_2025_DIR debian-10  # It works on Debian 10, not 12
       ;;
     unboxed)
-      echo uftrace $UFTRACE_VERSION $WEDGE_2025_DIR
-      echo bloaty $BLOATY_VERSION $WEDGE_2025_DIR
+      echo uftrace $UFTRACE_VERSION $WEDGE_2025_DIR HOST
+      echo bloaty $BLOATY_VERSION $WEDGE_2025_DIR HOST
       ;;
     legacy)
-      echo uftrace $UFTRACE_VERSION $ROOT_WEDGE_DIR
-      echo bloaty $BLOATY_VERSION $ROOT_WEDGE_DIR
+      echo uftrace $UFTRACE_VERSION $ROOT_WEDGE_DIR HOST
+      echo bloaty $BLOATY_VERSION $ROOT_WEDGE_DIR HOST
       ;;
     *)
       die "Invalid how $how"
@@ -917,6 +923,11 @@ maybe-install-wedge() {
   local name=$2
   local version=$3
   local wedge_base_dir=$4
+  local where=$5
+
+  if test $where != HOST; then
+    die 'Expected $where to be "HOST"'
+  fi
 
   local task_file=$WEDGE_LOG_DIR/$name-$version.task.tsv
   local log_file=$WEDGE_LOG_DIR/$name-$version.log.txt
@@ -1091,7 +1102,7 @@ install-wedge-list() {
   # Note: --process-slot-var requires GNU xargs!  busybox args doesn't have it.
   #
   # $name $version $wedge_dir
-  xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 maybe-install-wedge "$how"
+  xargs "${flags[@]}" -n 4 --process-slot-var=XARGS_SLOT -- $0 maybe-install-wedge "$how"
 
   #xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 dummy-task-wrapper
 }
@@ -1188,7 +1199,9 @@ install-wedges() {
   print-wedge-list "$which_wedges" "$how" | install-wedge-list "$how" T
 
   # TODO: should respect 'how'
-  fake-py3-libs-wedge
+  if true; then
+    fake-py3-libs-wedge
+  fi
   echo "   END  $(timestamp)"
 
   write-task-report
@@ -1281,7 +1294,12 @@ _boxed-wedges() {
 
   local resume1=${1:-}
 
-  if test -z "$resume1"; then
+  if true; then
+    deps/wedge.sh boxed deps/source.medo/dash/ '' $USER_WEDGE_DIR debian-12
+  fi
+
+  #if test -z "$resume1"; then
+  if false; then
     boxed-spec-bin
 
     deps/wedge.sh boxed deps/source.medo/python2/ '' debian-12
@@ -1292,7 +1310,7 @@ _boxed-wedges() {
     deps/wedge.sh boxed deps/source.medo/time-helper '' debian-12
   fi
 
-  if true; then
+  if false; then
     # soil-benchmarks
     deps/wedge.sh boxed deps/source.medo/uftrace/ '' debian-12
   fi
@@ -1321,7 +1339,8 @@ boxed-wedges() {
 maybe-boxed-wedge() {
   local name=$1
   local version=$2
-  local distro=$3  # e.g. debian-12 or empty
+  local wedge_base_dir=$3  # e.g. oils.DEPS or _build/boxed/wedge?
+  local distro=$4  # e.g. debian-12 or empty
 
   local task_file=$BOXED_LOG_DIR/$name-$version.task.tsv
   local log_file=$BOXED_LOG_DIR/$name-$version.log.txt
@@ -1343,7 +1362,9 @@ maybe-boxed-wedge() {
   fi
 
   #local -a cmd=( deps/wedge.sh boxed-2025 _build/deps-source/$name/ $version)
-  local -a cmd=( deps/wedge.sh boxed-2025 deps/source.medo/$name/ "$version" "$distro")
+  local -a cmd=(
+    deps/wedge.sh boxed-2025 deps/source.medo/$name/ "$version" "$wedge_base_dir" "$distro"
+  )
 
   set +o errexit
   my-time-tsv \
@@ -1387,7 +1408,7 @@ do-boxed-wedge-list() {
   # Note: --process-slot-var requires GNU xargs!  busybox args doesn't have it.
   #
   # $name $version $wedge_dir
-  xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 maybe-boxed-wedge
+  xargs "${flags[@]}" -n 4 --process-slot-var=XARGS_SLOT -- $0 maybe-boxed-wedge
 
   #xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 dummy-task-wrapper
 }
@@ -1537,6 +1558,25 @@ libssl-bug() {
 
 libssl-smoke() {
   deps/wedge.sh smoke-test deps/source.medo/python3/ '' '' debian-12
+}
+
+smoke-unboxed-boxed() {
+  install-wedges smoke legacy
+  echo
+  ls -l ~/wedge/oils-for-unix.org/pkg/dash
+
+  install-wedges smoke unboxed
+  echo
+  ls -l ../oils.DEPS/wedge/dash
+
+  boxed-wedges-2025 smoke
+  echo
+  ls -l _build/boxed/wedge/dash
+
+  # old boxed wedges: they never had xargs automation
+  #boxed-wedges
+
+  # TODO: now invalidate cache, and build again
 }
 
 task-five "$@"
