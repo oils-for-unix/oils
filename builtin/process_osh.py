@@ -506,7 +506,7 @@ class Umask(vm._Builtin):
         e_usage("unexpected number of arguments", loc.Missing)
 
     def _MaskFromClauseList(self, mask, clause_list):
-        # type: (int, list[str]) -> (bool, int)
+        # type: (int, List[str]) -> Tuple[bool, int]
 
         for clause in clause_list:
             ok, mask = self._SymbolicToOctal(mask, clause)
@@ -517,7 +517,7 @@ class Umask(vm._Builtin):
         
     # TODO: update the naming convention here
     def _SymbolicToOctal(self, initial_mask, arg_component):
-        # type: (int, str) -> (bool, int)
+        # type: (int, str) -> Tuple[bool, int]
 
         # TODO: location highlighting would be nice
         if len(arg_component) == 0:
