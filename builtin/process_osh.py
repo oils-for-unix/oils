@@ -449,14 +449,6 @@ class Wait(vm._Builtin):
         return status
 
 
-# This is due to a mycpp quirk where Optional[int] doesn't exist
-class Int:
-
-    def __init__(self, value):
-        # type: (int) -> None
-        self.value = value
-
-
 class Umask(vm._Builtin):
 
     def __init__(self):
@@ -479,7 +471,6 @@ class Umask(vm._Builtin):
             return 0
 
         if len(argv) == 1:
-            new_mask = 0  # type: int
             first_arg = argv[0]
             if first_arg[0].isdigit():
                 try:
@@ -497,16 +488,12 @@ class Umask(vm._Builtin):
                 # the initial value (ex: umask u=rwx,a=rwx) although it's non-trivial to determine
                 # when, so it's probably not worth it
                 initial_mask = posix.umask(0)
-                new_mask = initial_mask
-
-                for arg_component in first_arg.split(","):
-                    maybe_new_mask = self._SymbolicToOctal(
-                        new_mask, arg_component)
-                    if maybe_new_mask is None:
-                        posix.umask(initial_mask)
-                        return 1
-
-                    new_mask = maybe_new_mask.value
+               
+                # TODO: when to split first_arg? is this fine?
+                ok, new_mask = self._MaskFromClauseList(initial_mask, first_arg.split(","))
+                if not ok:
+                    posix.umask(initial_mask)
+                    return 1
 
                 posix.umask(new_mask)
                 return 0
@@ -518,43 +505,54 @@ class Umask(vm._Builtin):
 
         e_usage("unexpected number of arguments", loc.Missing)
 
+    def _MaskFromClauseList(self, mask, clause_list):
+        # type: (int, list[str]) -> (bool, int)
+
+        for clause in clause_list:
+            ok, mask = self._SymbolicToOctal(mask, clause)
+            if not ok:
+                return False, 0 
+
+        return True, mask 
+        
+    # TODO: update the naming convention here
     def _SymbolicToOctal(self, initial_mask, arg_component):
-        # type: (int, str) -> Optional[Int]
+        # type: (int, str) -> (bool, int)
 
         # TODO: location highlighting would be nice
         if len(arg_component) == 0:
             print_stderr(
                 "oils warning: symbolic mode operator cannot be empty")
-            return None
+            return False, 0
         elif arg_component[0] not in "ugoa":
             print_stderr(
                 "oils warning: `%s` is an invalid symbolic mode operator" %
                 arg_component[0])
-            return None
+            return False, 0
         elif len(arg_component) == 1:
             print_stderr(
                 "oils warning: expected `=+-` after `%s` in symbolic mode operator"
                 % arg_component[0])
-            return None
+            return False, 0
         elif arg_component[1] not in "=+-":
             print_stderr(
                 "oils warning: `%s` is an invalid symbolic mode operator" %
                 arg_component[1])
-            return None
+            return False, 0
 
-        mask_digit = int("111", 2)
+        mask_digit = 0o7
         for ch in arg_component[2:]:
             if ch == 'r':
-                mask_digit &= int("011", 2)
+                mask_digit &= (0o7 - 0o4)
             elif ch == 'w':
-                mask_digit &= int("101", 2)
+                mask_digit &= (0o7 - 0o2)
             elif ch == 'x':
-                mask_digit &= int("110", 2)
+                mask_digit &= (0o7 - 0o1)
             else:
                 print_stderr(
                     "oils warning: `%s` is an invalid symbolic mode character"
                     % ch)
-                return None
+                return False, 0
 
         if arg_component[0] == "u":
             area_mask = 0o700
@@ -579,7 +577,7 @@ class Umask(vm._Builtin):
             new_mask = original_mask_area | (initial_mask |
                                              (~modifier & area_mask))
 
-        return Int(new_mask)
+        return True, new_mask
 
 
 def _LimitString(lim, factor):
