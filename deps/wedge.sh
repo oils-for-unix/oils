@@ -309,13 +309,15 @@ unboxed-make() {
 # install-strip target to do that. 
 
 _unboxed-install() {
-  local wedge=$1  # e.g. re2c.wedge.sh
+  local wedge_dir=$1  # e.g. re2c.wedge.sh
   local version_requested=${2:-}  # e.g. 5.2
   local install_dir=${3:-}
   if test -z "$install_dir"; then
     install_dir=$(install-dir)
   fi
   mkdir -p $install_dir
+
+  load-wedge $wedge_dir "$version_requested"
 
   local source_dir
   source_dir=$(source-dir) 
@@ -408,11 +410,15 @@ unboxed() {
   # Generally passed to ./configure
   local wedge_out_base_dir=$3
 
-  # Turn it from ../oils.DEPS/wedge into EITHER:
-  #   /home/uke/oils.DEPS/wedge
-  #   /home/andy/git/oils-for-unix/oils.DEPS/wedge
-  mkdir -p $wedge_out_base_dir
-  wedge_out_base_dir=$(cd $wedge_out_base_dir; pwd)
+  case $wedge_out_base_dir in
+    # Turn it from ../oils.DEPS/wedge into EITHER:
+    #   /home/uke/oils.DEPS/wedge
+    #   /home/andy/git/oils-for-unix/oils.DEPS/wedge
+    ../*)
+      mkdir -p $wedge_out_base_dir
+      wedge_out_base_dir=$(cd $wedge_out_base_dir; pwd)
+      ;;
+  esac
 
   log "*** unboxed $wedge_src_dir $version_requested wedge_out_base_dir=$wedge_out_base_dir"
 

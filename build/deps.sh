@@ -865,6 +865,26 @@ smoke-wedges() {
   esac
 }
 
+cmark-wedges() {
+  local how=${1:-legacy}
+
+  if test $how = 'boxed'; then
+    local where='debian-12'
+  else
+    local where='HOST'
+  fi
+  case $how in
+    boxed|unboxed)
+      echo cmark $CMARK_VERSION $WEDGE_2025_DIR $where
+      ;;
+    legacy)
+      echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR $where
+      ;;
+    *)
+      die "Invalid how $how"
+  esac
+}
+
 extra-wedges() {
   # Contributors don't need uftrace, bloaty, and probably R-libs
   # Although R-libs could be useful for benchmarks
@@ -1174,6 +1194,9 @@ print-wedge-list() {
       #zsh-wedges "$how"
       smoke-wedges "$how"
       ;;
+    cmark)  # for testing mkdir /wedge BUG
+      cmark-wedges "$how"
+      ;;
     *)
       die "Invalid which_wedges $which_wedges"
       ;;
@@ -1192,8 +1215,8 @@ install-wedges() {
   # Do all of them in parallel
   print-wedge-list "$which_wedges" "$how" | install-wedge-list "$how" T
 
-  # TODO: should respect 'how'
   if true; then
+    # TODO: should respect 'how'
     fake-py3-libs-wedge
   fi
   echo "   END  $(timestamp)"
