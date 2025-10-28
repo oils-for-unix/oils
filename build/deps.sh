@@ -119,6 +119,8 @@ readonly UFTRACE_URL='https://github.com/namhyung/uftrace/archive/refs/tags/v0.1
 readonly SOUFFLE_VERSION=2.4.1
 readonly SOUFFLE_URL=https://github.com/souffle-lang/souffle/archive/refs/tags/2.4.1.tar.gz
 
+readonly R_LIBS_VERSION='2023-04-18'
+
 readonly WEDGE_LOG_DIR=_build/wedge/logs
 
 readonly BOXED_WEDGE_DIR=_build/boxed/wedge
@@ -893,14 +895,17 @@ extra-wedges() {
 
   case $how in
     boxed)
+      echo R-libs $R_LIBS_VERSION $WEDGE_2025_DIR debian-12
       echo uftrace $UFTRACE_VERSION $WEDGE_2025_DIR debian-12
       echo bloaty $BLOATY_VERSION $WEDGE_2025_DIR debian-10  # It works on Debian 10, not 12
       ;;
     unboxed)
+      echo R-libs $R_LIBS_VERSION $WEDGE_2025_DIR HOST
       echo uftrace $UFTRACE_VERSION $WEDGE_2025_DIR HOST
       echo bloaty $BLOATY_VERSION $WEDGE_2025_DIR HOST
       ;;
     legacy)
+      echo R-libs $R_LIBS_VERSION $USER_WEDGE_DIR HOST
       echo uftrace $UFTRACE_VERSION $ROOT_WEDGE_DIR HOST
       echo bloaty $BLOATY_VERSION $ROOT_WEDGE_DIR HOST
       ;;
@@ -1462,7 +1467,7 @@ _boxed-wedges-2025() {
   echo " START  $(timestamp)"
 
   # Do all of them in parallel
-  print-wedge-list "$which_wedges" boxed | do-boxed-wedge-list 
+  print-wedge-list "$which_wedges" boxed | do-boxed-wedge-list T
 
   # Dockerfile.* calls install-py3-libs from within the container, so we don't need this
   # It depends on MyPy

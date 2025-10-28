@@ -42,14 +42,26 @@ def log(msg, *args):
         print(msg, file=sys.stderr)
 
 
-CMARK_WEDGE_DIR = '/wedge/oils-for-unix.org/pkg/cmark/0.29.0'
+this_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+NEW_CMARK_WEDGE_DIR = os.path.join(this_dir, '../../oils.DEPS/wedge/cmark/0.29.0')
+
+OLD_CMARK_WEDGE_DIR = '/wedge/oils-for-unix.org/pkg/cmark/0.29.0'
 
 
 def cmark_bin(md):
     # type: (str) -> str
-    b = os.path.join(CMARK_WEDGE_DIR, 'bin/cmark')
+
+    b1 = os.path.join(NEW_CMARK_WEDGE_DIR, 'bin/cmark')
+    b2 = os.path.join(OLD_CMARK_WEDGE_DIR, 'bin/cmark')
+    if os.path.exists(b1):
+        cmark_path = b1
+    elif os.path.exists(b2):
+        cmark_path = b2
+    else:
+        raise AssertionError('bin/cmark not found')
+
     # Need to render raw HTML
-    p = subprocess.Popen([b, '--unsafe'],
+    p = subprocess.Popen([cmark_path, '--unsafe'],
                          stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE)
     stdout, _ = p.communicate(input=md)

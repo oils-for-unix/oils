@@ -131,16 +131,19 @@ fi
 # Libraries: PYTHONPATH and R_LIBS_USER
 #
 
+OLD_WEDGE_DIR=~/wedge/oils-for-unix.org/pkg
+NEW_WEDGE_DIR=$PWD/../oils.DEPS/wedge
+
 if test -d ~/R; then
   # 2023-07: Hack to keep using old versions on lenny.local
   # In 2023-04, dplyr stopped supporting R 3.4.4 on Ubuntu Bionic
   # https://cran.r-project.org/web/packages/dplyr/index.html
   export R_LIBS_USER=~/R
-else
-  R_LIBS_WEDGE=~/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
-  export R_LIBS_USER=$R_LIBS_WEDGE
+elif test -d $NEW_WEDGE_DIR/R-libs; then
+  export R_LIBS_USER=$NEW_WEDGE_DIR/R-libs/2023-04-18
+elif test -d $OLD_WEDGE_DIR/R-libs; then
+  export R_LIBS_USER=$OLD_WEDGE_DIR/R-libs/2023-04-18
 fi
-
 
 # So we can run Python 2 scripts directly, e.g. asdl/asdl_main.py
 export PYTHONPATH='.'

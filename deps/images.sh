@@ -55,7 +55,7 @@ source deps/podman.sh
 
 DOCKER=${DOCKER:-docker}
 
-readonly LATEST_TAG='v-2025-10-27'  # get rid of /wedge and ~/wedge
+readonly LATEST_TAG='v-2025-10-28'  # get rid of /wedge and ~/wedge
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'
@@ -282,6 +282,11 @@ smoke-script-2() {
   ls -l ~/oils.DEPS/wedge/uftrace/0.13/bin/uftrace
   uftrace=~/oils.DEPS/wedge/uftrace/0.13/bin/uftrace
 
+  # cmark.py
+  doctools/cmark.sh demo-ours
+
+  devtools/R-test.sh soil-run
+
   exit
 
   cc -pg -o hello deps/source.medo/uftrace/hello.c
@@ -306,15 +311,24 @@ _smoke() {
   local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
   local docker=${3:-$DOCKER}
-  local prefix=${4:-}
+  local debug_shell=${4:-}
 
   #$docker run ${prefix}oilshell/$name:$tag bash -c "$(smoke-script-1)"
 
   local repo_root=$PWD
 
-  $docker run \
+  local -a flags argv
+  if test -n "$debug_shell"; then
+    flags=( -i -t )
+    argv=( bash )
+  else
+    flags=()
+    argv=( bash -c "$(smoke-script-2)" )
+  fi
+
+  $docker run "${flags[@]}" \
     --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
-    ${prefix}oilshell/$name:$tag bash -c "$(smoke-script-2)"
+    oilshell/$name:$tag "${argv[@]}"
 }
 
 smoke() {

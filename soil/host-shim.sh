@@ -42,7 +42,8 @@ live-image-tag() {
       ;;
     benchmarks2)
       # wedges 2025
-      echo 'v-2025-10-27'
+      # rebuild cmark, NOT uftrace
+      echo 'v-2025-10-28'
       ;;
     cpp-spec)
       # rebuild with layer-locales
