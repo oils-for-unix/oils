@@ -297,9 +297,9 @@ Yes:
     read -0 (&myvar) < file.bin
     echo $record
 
-### Use multiline here string instead of here doc
+### Use Multi-line String instead of Here Docs
 
-Ysh has multiline here strings with `'''` and `"""` which are cleaner than heredocs, as they can be properly indented.
+YSH has Multi-line Strings with `'''` and `"""` which are easier to remember than Here Docs.
 
 No:
 
@@ -313,7 +313,7 @@ Yes:
       hello world
       """
 
-the indent is removed, based on the indentation of the end quotes.
+The indent is removed, based on the indentation of the end quotes. In comparison to `<<-EOF` it also works with space indentation, not just tabs.
 
 ### Consider Using `--long-flags`
 
@@ -920,7 +920,6 @@ Yes:
 
     # Possible, but a local var might be more readable
     echo flag=$['1' if x else '0']
-
 
 ## Use [Egg Expressions](eggex.html) instead of Regexes
 
