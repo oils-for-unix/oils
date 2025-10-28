@@ -117,6 +117,9 @@ BEGIN {
   # 2025-10-26: demo for updating cause.awk, already fixed
   patterns["#2477"] = "printf expected an integer, got"
 
+  # mdev-conf
+  patterns["#2500"] = "readlink disk/by-label/EFI"
+
   found = 0
 }
 { 
