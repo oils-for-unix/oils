@@ -483,7 +483,7 @@ class Umask(vm._Builtin):
 
                 posix.umask(new_mask)
                 return 0
-            elif first_arg[0] in "ugoa":
+            else:
                 # TODO: it's possible to avoid this extra syscall in cases where we don't care about
                 # the initial value (ex: umask u=rwx,a=rwx) although it's non-trivial to determine
                 # when, so it's probably not worth it
@@ -497,11 +497,6 @@ class Umask(vm._Builtin):
 
                 posix.umask(new_mask)
                 return 0
-
-            print_stderr(
-                "oils warning: `%s` is an invalid symbolic mode operator" %
-                first_arg[0])
-            return 1
 
         e_usage("unexpected number of arguments", loc.Missing)
 
