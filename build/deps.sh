@@ -51,10 +51,10 @@ source test/tsv-lib.sh  # tsv-concat
 source web/table/html.sh  # table-sort-{begin,end}
 
 # Also in build/dev-shell.sh
-USER_WEDGE_DIR=~/wedge/oils-for-unix.org
-ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
+USER_WEDGE_DIR=~/wedge/oils-for-unix.org/pkg
+ROOT_WEDGE_DIR=/wedge/oils-for-unix.org/pkg
 
-WEDGE_2025_DIR=../oils.DEPS/wedge
+WEDGE_2025_DIR=$(cd ../oils.DEPS/wedge; pwd)
 
 readonly DEPS_SOURCE_DIR=_build/deps-source
 
@@ -580,9 +580,9 @@ wedge-exists() {
   ### Does an installed wedge already exist?
   local name=$1
   local version=$2
-  local wedge_dir=${3:-/wedge/oils-for-unix.org}
+  local wedge_base_dir=${3:-/wedge/oils-for-unix.org}  # e.g. ../oils.DEPS/wedge
 
-  local installed=$wedge_dir/$name/$version
+  local installed=$wedge_base_dir/$name/$version
 
   if test -d $installed; then
     log "$installed already exists"
@@ -844,6 +844,26 @@ zsh-wedges() {
   esac
 }
 
+smoke-wedges() {
+  local how=${1:-legacy}
+
+  case $how in
+    boxed|unboxed)
+      if test $how = 'boxed'; then
+        local arg='debian-12'
+      else
+        local arg=$WEDGE_2025_DIR
+      fi
+      echo dash $DASH_VERSION $arg
+      ;;
+    legacy)
+      echo dash $DASH_VERSION $USER_WEDGE_DIR
+      ;;
+    *)
+      die "Invalid how $how"
+  esac
+}
+
 extra-wedges() {
   # Contributors don't need uftrace, bloaty, and probably R-libs
   # Although R-libs could be useful for benchmarks
@@ -896,7 +916,7 @@ maybe-install-wedge() {
   local how=${1:-legacy}
   local name=$2
   local version=$3
-  local wedge_dir=$4  # e.g. $USER_WEDGE_DIR or empty
+  local wedge_base_dir=$4
 
   local task_file=$WEDGE_LOG_DIR/$name-$version.task.tsv
   local log_file=$WEDGE_LOG_DIR/$name-$version.log.txt
@@ -912,7 +932,7 @@ maybe-install-wedge() {
     --field version \
     --output $task_file
 
-  if wedge-exists "$name" "$version" "$wedge_dir"; then
+  if wedge-exists "$name" "$version" "$wedge_base_dir"; then
     echo "CACHED  $(timestamp)  $name $version"
     return
   fi
@@ -930,7 +950,7 @@ maybe-install-wedge() {
       ;;
   esac
 
-  local -a cmd=( deps/wedge.sh unboxed _build/deps-source/$name/ $version)
+  local -a cmd=( deps/wedge.sh unboxed _build/deps-source/$name/ $version $wedge_base_dir)
 
   set +o errexit
   my-time-tsv \
@@ -1146,7 +1166,8 @@ print-wedge-list() {
       extra-wedges "$how"
       ;;
     smoke)
-      zsh-wedges "$how"
+      #zsh-wedges "$how"
+      smoke-wedges "$how"
       ;;
     *)
       die "Invalid which_wedges $which_wedges"

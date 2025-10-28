@@ -266,11 +266,13 @@ abs-wedge-dir() {
 
 unboxed-make() {
   ### Build on the host
-
   local wedge_dir=$1  # e.g. re2c.wedge.sh
   local version_requested=${2:-}  # e.g. 5.2
-
-  load-wedge $wedge_dir "$version_requested"
+  local install_dir=${3:-}
+  # NOT created because it might require root permissions!
+  if test -z "$install_dir"; then
+    install_dir=$(install-dir)
+  fi
 
   local source_dir
   source_dir=$(source-dir) 
@@ -278,10 +280,6 @@ unboxed-make() {
 
   local build_dir
   build_dir=$(build-dir) 
-
-  # NOT created because it might require root permissions!
-  local install_dir
-  install_dir=$(install-dir)
 
   local abs_wedge_dir
   abs_wedge_dir=$(abs-wedge-dir $wedge_dir)
@@ -313,18 +311,17 @@ unboxed-make() {
 _unboxed-install() {
   local wedge=$1  # e.g. re2c.wedge.sh
   local version_requested=${2:-}  # e.g. 5.2
-
-  load-wedge $wedge "$version_requested"
+  local install_dir=${3:-}
+  if test -z "$install_dir"; then
+    install_dir=$(install-dir)
+  fi
+  mkdir -p $install_dir
 
   local source_dir
   source_dir=$(source-dir) 
 
   local build_dir
   build_dir=$(build-dir) 
-
-  local install_dir
-  install_dir=$(install-dir)
-  mkdir -p $install_dir
 
   if declare -f wedge-make-from-source-dir; then
     pushd $source_dir
@@ -356,13 +353,15 @@ unboxed-install() {
 unboxed-smoke-test() {
   local wedge_dir=$1  # e.g. re2c/ with WEDGE
   local version_requested=${2:-}  # e.g. 5.2
+  local install_dir=${3:-}
+  if test -z "$install_dir"; then
+    install_dir=$(install-dir)
+  fi
 
   load-wedge $wedge_dir "$version_requested"
 
   local smoke_test_dir
   smoke_test_dir=$(smoke-test-dir)
-  local install_dir
-  install_dir=$(install-dir)
 
   echo '  SMOKE TEST'
 
@@ -400,20 +399,26 @@ unboxed-stats() {
 }
 
 unboxed() {
-  local wedge_dir=$1
+  local wedge_src_dir=$1
 
   # Can override default version.  Could be a flag since it's optional?  But
   # right now we always pass it.
-  local version_requested=${2:-}
+  local version_requested=$2
 
-  # TODO:
-  # - Would be nice to export the logs somewhere
+  # Generally passed to ./configure
+  local wedge_out_base_dir=$3
 
-  unboxed-make $wedge_dir "$version_requested"
+  log "*** unboxed $wedge_src_dir $version_requested wedge_out_base_dir=$wedge_out_base_dir"
 
-  unboxed-install $wedge_dir "$version_requested"
+  load-wedge $wedge_src_dir "$version_requested"
 
-  unboxed-smoke-test $wedge_dir "$version_requested"
+  local install_dir=$wedge_out_base_dir/$WEDGE_NAME/$WEDGE_VERSION
+
+  unboxed-make $wedge_src_dir "$version_requested" "$install_dir"
+
+  unboxed-install $wedge_src_dir "$version_requested" "$install_dir"
+
+  unboxed-smoke-test $wedge_src_dir "$version_requested" "$install_dir"
 }
 
 readonly DEFAULT_DISTRO=debian-10  # Debian Buster
