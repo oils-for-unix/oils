@@ -297,7 +297,7 @@ Yes:
     read -0 (&myvar) < file.bin
     echo $record
 
-### Use Multi-line String instead of Here Docs
+### Use Multi-line Strings instead of Here Docs
 
 YSH has Multi-line Strings with `'''` and `"""` which are easier to remember than Here Docs.
 
