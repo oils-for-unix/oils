@@ -691,10 +691,9 @@ test-typed-ast() {
 }
 
 install-py3-libs-from-cache() {
-
   # As well as end users
-
   local mypy_dir=${1:-$DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION}
+  local wedge_out_dir=${2:-$USER_WEDGE_DIR}
 
   local py3
   py3=$(command -v python3)
@@ -709,7 +708,7 @@ install-py3-libs-from-cache() {
   log "Ensuring pip is installed (interpreter $(command -v python3)"
   python3 -m ensurepip
 
-  local venv_dir=$USER_WEDGE_DIR/py3-libs/$PY3_LIBS_VERSION
+  local venv_dir=$wedge_out_dir/py3-libs/$PY3_LIBS_VERSION
   log "Creating venv in $venv_dir"
 
   # Note: the bin/python3 in this venv is a symlink to python3 in $PATH, i.e.
@@ -725,9 +724,10 @@ install-py3-libs-from-cache() {
 install-py3-libs() {
   ### Invoked by Dockerfile.cpp-small, etc.
   local mypy_dir=${1:-}
+  local wedge_out_dir=${2:-}
 
-  download-py3-libs "$mypy_dir"
-  install-py3-libs-from-cache "$mypy_dir"
+  download-py3-libs $mypy_dir
+  install-py3-libs-from-cache "$mypy_dir" "$wedge_out_dir"
 }
 
 #
@@ -1148,6 +1148,8 @@ EOF
 }
 
 fake-py3-libs-wedge() {
+  local wedge_out_dir=${1:-}
+
   local name=py3-libs
   local version=$PY3_LIBS_VERSION
 
@@ -1170,7 +1172,7 @@ fake-py3-libs-wedge() {
     --append \
     --output $task_file \
     -- \
-    $0 install-py3-libs >$log_file 2>&1 || true
+    $0 install-py3-libs '' "$wedge_out_dir" >$log_file 2>&1 || true
 
   echo "  FAKE  $(timestamp)  $name $version"
 }
@@ -1215,10 +1217,20 @@ install-wedges() {
   # Do all of them in parallel
   print-wedge-list "$which_wedges" "$how" | install-wedge-list "$how" T
 
-  if true; then
-    # TODO: should respect 'how'
-    fake-py3-libs-wedge
-  fi
+  local wedge_out_dir
+  case $how in
+    unboxed)
+      wedge_out_dir=$WEDGE_2025_DIR
+      ;;
+    legacy)
+      wedge_out_dir=$USER_WEDGE_DIR
+      ;;
+    *)
+      die "Invalid how $how"
+      ;;
+  esac
+  fake-py3-libs-wedge "$wedge_out_dir"
+
   echo "   END  $(timestamp)"
 
   write-task-report
@@ -1452,8 +1464,10 @@ _boxed-wedges-2025() {
   # Do all of them in parallel
   print-wedge-list "$which_wedges" boxed | do-boxed-wedge-list 
 
-  # TODO
-  #fake-py3-libs-wedge
+  # Dockerfile.* calls install-py3-libs from within the container, so we don't need this
+  # It depends on MyPy
+  #fake-py3-libs-wedge ../oils.DEPS/wedge
+
   echo "   END  $(timestamp)"
 
   write-task-report
