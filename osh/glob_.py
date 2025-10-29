@@ -14,6 +14,8 @@ from mycpp.mylib import log, print_stderr
 from pylib import os_path
 
 from libc import GLOB_PERIOD
+from _devbuild.gen.value_asdl import value_e
+from _devbuild.gen.runtime_asdl import scope_e
 
 from typing import List, Tuple, cast, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -453,6 +455,8 @@ class Globber(object):
         # type: (optview.Exec, state.Mem) -> None
         self.exec_opts = exec_opts
         self.mem = mem
+        # Cache for parsed GLOBIGNORE patterns to avoid re-parsing
+        self._globignore_cache = {}  # type: Dict[str, List[str]]
 
         # Other unimplemented bash options:
         #
@@ -465,20 +469,17 @@ class Globber(object):
     def _GetGlobIgnorePatterns(self):
         # type: () -> Optional[List[str]]
         """Get GLOBIGNORE patterns as a list, or None if not set."""
-        from _devbuild.gen.value_asdl import value_e
-        from _devbuild.gen.runtime_asdl import scope_e
-        
-        cell = self.mem.GetCell('GLOBIGNORE', scope_e.GlobalOnly)
-        if cell is None:
-            return None
-        
-        val = cell.val
+                
+        val = self.mem.GetValue('GLOBIGNORE', scope_e.GlobalOnly)
         if val.tag() != value_e.Str:
             return None
         
         globignore = cast(value.Str, val).s  # type: str
-        if not globignore:  # Empty string
+        if len(globignore) == 0:
             return None
+        
+        if globignore in self._globignore_cache:
+            return self._globignore_cache[globignore]
         
         # Split by colon to get individual patterns, but don't split colons
         # inside bracket expressions like [[:alnum:]]
@@ -494,16 +495,16 @@ class Globber(object):
                 in_bracket = False
                 current.append(c)
             elif c == ':' and not in_bracket:
-                # Colon outside brackets is a separator
                 if current:
                     patterns.append(''.join(current))
-                    current = []
+                    del current[:]
             else:
                 current.append(c)
         
-        # Add the last pattern
         if current:
             patterns.append(''.join(current))
+        
+        self._globignore_cache[globignore] = patterns
         
         return patterns
 
