@@ -17,7 +17,7 @@ from libc import GLOB_PERIOD
 from _devbuild.gen.value_asdl import value_e
 from _devbuild.gen.runtime_asdl import scope_e
 
-from typing import List, Tuple, cast, Optional, TYPE_CHECKING
+from typing import Dict, List, Tuple, cast, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from core import optview
     from core import state
@@ -495,13 +495,13 @@ class Globber(object):
                 in_bracket = False
                 current.append(c)
             elif c == ':' and not in_bracket:
-                if current:
+                if len(current):
                     patterns.append(''.join(current))
                     del current[:]
             else:
                 current.append(c)
         
-        if current:
+        if len(current):
             patterns.append(''.join(current))
         
         self._globignore_cache[globignore] = patterns
