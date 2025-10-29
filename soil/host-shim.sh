@@ -33,8 +33,7 @@ live-image-tag() {
       ;;
     bloaty)
       # wedges 2025
-      echo 'v-2025-10-27'
-      #echo 'v-2025-05-01'
+      echo 'v-2025-10-28'
       ;;
     benchmarks)
       # wedges 2025
@@ -66,8 +65,8 @@ live-image-tag() {
       echo 'v-2025-04-30b'
       ;;
     other-tests)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     dummy)
       # update to Debian 12

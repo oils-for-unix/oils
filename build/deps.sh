@@ -120,6 +120,7 @@ readonly SOUFFLE_VERSION=2.4.1
 readonly SOUFFLE_URL=https://github.com/souffle-lang/souffle/archive/refs/tags/2.4.1.tar.gz
 
 readonly R_LIBS_VERSION='2023-04-18'
+readonly TIME_HELPER_VERSION='2023-02-28'
 
 readonly WEDGE_LOG_DIR=_build/wedge/logs
 
@@ -509,6 +510,11 @@ fetch() {
 
   copy-source-medo
 
+  # Hack
+  local dest=$DEPS_SOURCE_DIR/time-helper/time-helper-$TIME_HELPER_VERSION
+  mkdir -p $dest
+  cp -v benchmarks/time-helper.c $dest
+
   download-to $DEPS_SOURCE_DIR/re2c "$RE2C_URL"
   download-to $DEPS_SOURCE_DIR/cmark "$CMARK_URL"
   maybe-extract $DEPS_SOURCE_DIR/re2c "$(basename $RE2C_URL)" re2c-$RE2C_VERSION
@@ -747,12 +753,14 @@ py-wedges() {
   fi
   case $how in
     boxed|unboxed)
+      echo time-helper $TIME_HELPER_VERSION $WEDGE_2025_DIR $where
       echo cmark $CMARK_VERSION $WEDGE_2025_DIR $where
       echo re2c $RE2C_VERSION $WEDGE_2025_DIR $where
       echo python2 $PY2_VERSION $WEDGE_2025_DIR $where
       echo pyflakes $PYFLAKES_VERSION $WEDGE_2025_DIR $where
       ;;
     legacy)
+      echo time-helper $TIME_HELPER_VERSION $ROOT_WEDGE_DIR $where
       echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR $where
       echo re2c $RE2C_VERSION $ROOT_WEDGE_DIR $where
       echo python2 $PY2_VERSION $ROOT_WEDGE_DIR $where

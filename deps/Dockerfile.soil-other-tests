@@ -13,8 +13,12 @@ RUN deps/from-apt.sh layer-python2-symlink
 
 USER uke
 
+#COPY --chown=uke \
+#  _build/wedge/relative/oils-for-unix.org/pkg/R-libs/2023-04-18 \
+#  /home/uke/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
+
 COPY --chown=uke \
-  _build/wedge/relative/oils-for-unix.org/pkg/R-libs/2023-04-18 \
-  /home/uke/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
+  _build/boxed/wedge/R-libs/2023-04-18 \
+  /home/uke/oils.DEPS/wedge/R-libs/2023-04-18
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-other-tests'"]
