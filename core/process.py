@@ -16,11 +16,6 @@ from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
 
 import libc
 
-try:
-    from os import WCOREDUMP
-except ImportError:
-    WCOREDUMP = None
-
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (job_state_e, job_state_t,
                                         job_state_str, wait_status,
@@ -2042,12 +2037,12 @@ _SIGNAL_MESSAGES = {
 def GetSignalMessage(sig_num):
     # type: (int) -> Optional[str]
     """Get signal message from libc or fallback to hard-coded."""
-    try:
+    msg = None  # type: Optional[str]
+    
+    if mylib.PYTHON:
         msg = libc.strsignal(sig_num)
-        if msg:
+        if msg is not None:
             return msg
-    except (SystemError, OSError):
-        pass
     
     return _SIGNAL_MESSAGES.get(sig_num)
 
@@ -2176,9 +2171,15 @@ class Waiter(object):
                 print('')
             else:
                 msg = GetSignalMessage(term_sig)
-                if msg:
-                    if WCOREDUMP is not None and WCOREDUMP(status):
-                        msg += ' (core dumped)'
+                if msg is not None:
+                    if mylib.PYTHON:
+                        # WCOREDUMP is only available on some systems
+                        try:
+                            from os import WCOREDUMP  # type: ignore
+                            if WCOREDUMP(status):
+                                msg = msg + ' (core dumped)'
+                        except (ImportError, AttributeError):
+                            pass
                     print_stderr(msg)
 
             if proc:
