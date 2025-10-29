@@ -11,8 +11,7 @@ from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC, EEXIST
 import fcntl as fcntl_
 from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
 from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
-                    SIGTTOU, SIGTTIN, SIGWINCH, SIGSEGV, SIGABRT, SIGILL,
-                    SIGFPE, SIGBUS, SIGTERM, SIGKILL)
+                    SIGTTOU, SIGTTIN, SIGWINCH)
 
 import libc
 
@@ -2022,29 +2021,15 @@ W1_NO_CHANGE = -14  # WNOHANG was passed and there were no state changes
 NO_ARG = -20
 
 
-_SIGNAL_MESSAGES = {
-    SIGSEGV: 'Segmentation fault',
-    SIGABRT: 'Aborted',
-    SIGILL: 'Illegal instruction',
-    SIGFPE: 'Floating point exception',
-    SIGBUS: 'Bus error',
-    SIGQUIT: 'Quit',
-    SIGTERM: 'Terminated',
-    SIGKILL: 'Killed',
-}
+
 
 
 def GetSignalMessage(sig_num):
     # type: (int) -> Optional[str]
-    """Get signal message from libc or fallback to hard-coded."""
-    msg = None  # type: Optional[str]
-    
+    """Get signal message from libc."""
     if mylib.PYTHON:
-        msg = libc.strsignal(sig_num)
-        if msg is not None:
-            return msg
-    
-    return _SIGNAL_MESSAGES.get(sig_num)
+        return libc.strsignal(sig_num)
+    return None
 
 
 class Waiter(object):

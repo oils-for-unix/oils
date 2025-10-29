@@ -12,6 +12,7 @@ libc_test.py: Tests for libc.py
 """
 import unittest
 import sys
+import signal
 
 import libc  # module under test
 
@@ -371,7 +372,7 @@ class LibcTest(unittest.TestCase):
     self.assertEqual('Segmentation fault', libc.strsignal(11))
     self.assertEqual('Aborted', libc.strsignal(6))
     self.assertEqual('Illegal instruction', libc.strsignal(4))
-    self.assertEqual('Terminated', libc.strsignal(15))
+    self.assertEqual('Terminated', libc.strsignal(signal.SIGTERM))
     
     with self.assertRaises(ValueError):
       libc.strsignal(999)
