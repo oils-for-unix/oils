@@ -13,6 +13,7 @@
 #include <limits.h>
 #include <wchar.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <locale.h>
 #include <fnmatch.h>
@@ -379,6 +380,23 @@ func_sleep_until_error(PyObject *self, PyObject *args) {
   return PyInt_FromLong(result);
 }
 
+static PyObject *
+func_strsignal(PyObject *self, PyObject *args) {
+  int sig_num;
+  char *message;
+  
+  if (!PyArg_ParseTuple(args, "i:strsignal", &sig_num)) {
+    return NULL;
+  }
+  
+  message = strsignal(sig_num);
+  if (message == NULL) {
+    Py_RETURN_NONE;
+  }
+  
+  return PyString_FromString(message);
+}
+
 static PyMethodDef methods[] = {
   // Return the canonical version of a path with symlinks, or None if there is
   // an error.
@@ -416,6 +434,8 @@ static PyMethodDef methods[] = {
   {"cpython_reset_locale", func_cpython_reset_locale, METH_NOARGS, ""},
 
   {"sleep_until_error", func_sleep_until_error, METH_VARARGS, ""},
+  
+  {"strsignal", func_strsignal, METH_VARARGS, ""},
   {NULL, NULL},
 };
 

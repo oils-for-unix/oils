@@ -367,6 +367,15 @@ class LibcTest(unittest.TestCase):
 
     # Not testing errno case
 
+  def testStrsignal(self):
+    self.assertEqual('Segmentation fault', libc.strsignal(11))
+    self.assertEqual('Aborted', libc.strsignal(6))
+    self.assertEqual('Illegal instruction', libc.strsignal(4))
+    self.assertEqual('Terminated', libc.strsignal(15))
+    
+    result = libc.strsignal(999)
+    self.assertIsNotNone(result)
+
 
 if __name__ == '__main__':
   # To simulate the OVM_MAIN patch in pythonrun.c

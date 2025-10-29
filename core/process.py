@@ -14,6 +14,8 @@ from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
                     SIGTTOU, SIGTTIN, SIGWINCH, SIGSEGV, SIGABRT, SIGILL,
                     SIGFPE, SIGBUS, SIGTERM, SIGKILL)
 
+import libc
+
 try:
     from os import WCOREDUMP
 except ImportError:
@@ -2037,6 +2039,19 @@ _SIGNAL_MESSAGES = {
 }
 
 
+def GetSignalMessage(sig_num):
+    # type: (int) -> Optional[str]
+    """Get signal message from libc or fallback to hard-coded."""
+    try:
+        msg = libc.strsignal(sig_num)
+        if msg:
+            return msg
+    except (SystemError, OSError):
+        pass
+    
+    return _SIGNAL_MESSAGES.get(sig_num)
+
+
 class Waiter(object):
     """A capability to wait for processes.
 
@@ -2160,7 +2175,7 @@ class Waiter(object):
             if term_sig == SIGINT:
                 print('')
             else:
-                msg = _SIGNAL_MESSAGES.get(term_sig)
+                msg = GetSignalMessage(term_sig)
                 if msg:
                     if WCOREDUMP is not None and WCOREDUMP(status):
                         msg += ' (core dumped)'
