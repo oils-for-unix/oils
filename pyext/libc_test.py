@@ -373,8 +373,8 @@ class LibcTest(unittest.TestCase):
     self.assertEqual('Illegal instruction', libc.strsignal(4))
     self.assertEqual('Terminated', libc.strsignal(15))
     
-    result = libc.strsignal(999)
-    self.assertIsNotNone(result)
+    with self.assertRaises(ValueError):
+      libc.strsignal(999)
 
 
 if __name__ == '__main__':

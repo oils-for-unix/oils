@@ -14,6 +14,8 @@
 #include <wchar.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <locale.h>
 #include <fnmatch.h>
@@ -383,18 +385,25 @@ func_sleep_until_error(PyObject *self, PyObject *args) {
 static PyObject *
 func_strsignal(PyObject *self, PyObject *args) {
   int sig_num;
-  char *message;
+  char *res;
   
   if (!PyArg_ParseTuple(args, "i:strsignal", &sig_num)) {
     return NULL;
   }
   
-  message = strsignal(sig_num);
-  if (message == NULL) {
+  if (sig_num < 1 || sig_num >= NSIG) {
+    PyErr_SetString(PyExc_ValueError, "signal number out of range");
+    return NULL;
+  }
+  
+  errno = 0;
+  res = strsignal(sig_num);
+  
+  if (errno || res == NULL || strstr(res, "Unknown signal") != NULL) {
     Py_RETURN_NONE;
   }
   
-  return PyString_FromString(message);
+  return PyString_FromString(res);
 }
 
 static PyMethodDef methods[] = {
