@@ -49,8 +49,8 @@ live-image-tag() {
       echo 'v-2025-10-28'
       ;;
     cpp-spec)
-      # rebuild with layer-locales
-      echo 'v-2025-09-23'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     pea)
       # wedges 2025
