@@ -270,6 +270,9 @@ smoke-script-2() {
   cd ~/oil
   . build/dev-shell.sh
 
+  re2c --version
+  echo
+
   bloaty --help
   echo
 

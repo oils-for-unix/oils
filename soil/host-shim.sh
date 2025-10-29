@@ -24,8 +24,10 @@ live-image-tag() {
 
   case $image_id in
     app-tests)
+      # wedges 2025
+      echo 'v-2025-10-28'
       # update to Debian 12
-      echo 'v-2025-04-30b'
+      #echo 'v-2025-04-30b'
       ;;
     wild)
       # update to Debian 12
