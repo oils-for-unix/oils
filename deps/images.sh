@@ -303,16 +303,19 @@ smoke-script-2() {
   cd ~/oil
   . build/dev-shell.sh
 
+  # Bug with python2
+  #devtools/types.sh soil-run
+  #test/lossless.sh soil-run
+  #exit
+
   #test/spec-version.sh osh-version-text
 
   echo PATH=$PATH
 
-  exit
+  #which mksh
+  #mksh -c "echo hi from mksh"
 
-  which mksh
-  mksh -c "echo hi from mksh"
-
-  test/spec.sh smoke
+  #test/spec.sh smoke
 
   which python2
   python2 -V
@@ -321,6 +324,9 @@ smoke-script-2() {
   which python3
   python3 -V
   echo
+
+  # Bug with python2
+  test/lossless.sh soil-run
 
   exit
 

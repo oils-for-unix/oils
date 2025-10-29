@@ -1622,15 +1622,14 @@ each-one() {
   done
 }
 
-_build-all-images() {
+_build-soil-images() {
   # this excludes the test image
 
-  deps/images.sh list prep | each-one deps/images.sh build 
   deps/images.sh list soil | each-one deps/images.sh build-cached
 }
 
-build-all-images() {
-  time _build-all-images "$@"
+build-soil-images() {
+  time _build-soil-images "$@"
 }
 
 push-all-images() {
@@ -1638,14 +1637,28 @@ push-all-images() {
 }
 
 _full-soil-rebuild() {
-  boxed-clean
-  # TODO: can also rm-oils-crap and _build/wedge/*
+  local resume1=${1:-}
+  local resume2=${2:-}
+  local resume3=${3:-}
 
-  fetch
-  # 'soil' includes bloaty, uftrace, R-libs
-  boxed-wedges-2025 soil
+  if test -z "$resume1"; then
+    boxed-clean
+    # TODO: can also rm-oils-crap and _build/wedge/*
 
-  build-all-images
+    fetch
+    # 'soil' includes bloaty, uftrace, R-libs
+    boxed-wedges-2025 soil
+  fi
+
+  if test -z "$resume2"; then
+    # build to populate apt-cache
+    deps/images.sh build wedge-bootstrap-debian-12
+    deps/images.sh build soil-debian-12
+  fi
+
+  if test -z "$resume3"; then
+    build-soil-images
+  fi
 
   push-all-images
 
@@ -1653,22 +1666,22 @@ _full-soil-rebuild() {
   # we need soil/host-shim.sh list-images.sh or something
 
   # full rebuilds to do:
+  # 1. soil-debian-12 rebuild - with python2 etc.
+  #
+  # TODO
   # 1. Remove commented out code from dockerfiles
   # 2. Remove OLD COMPAT stuff that contributors won't use
   #    - pea_main wrapper - build/ninja-rules-py.sh
   #    - R_LIBS_USER - build/dev-shell.sh
   #    - test/wild.sh - oil_DEPS ->
   #    - ovm-tarball - oil_DEPS ->
-  #    - clang binary - might keep this one
-  # 3. soil-debian-12 rebuild - with python2 etc.
-  # 4. for wedge-boostrap uke0 -> uke
+  #    - clang binary - contributors use this
+  # 3. for wedge-boostrap uke0 -> uke
   #    - hopefully this fixes the uftrace wedge
-  # 5. everything with podman - build on hoover machine
-  # 6. everything with rootless podman
-  # 7. everything with raw crun - requires some other rewrites
-  # 8. coarse tree-shaking for task-five.sh, etc.
-
-  # push everything
+  # 4. everything with podman - build on hoover machine
+  # 5. everything with rootless podman
+  # 6. everything with raw crun - requires some other rewrites
+  # 7. coarse tree-shaking for task-five.sh, etc.
 }
 
 full-soil-rebuild() {
