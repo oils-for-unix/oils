@@ -57,8 +57,8 @@ live-image-tag() {
       echo 'v-2025-10-28'
       ;;
     cpp-small)
-      # update to Debian 12
-      echo 'v-2025-05-01'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     clang)
       # update to Debian 12

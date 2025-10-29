@@ -281,9 +281,13 @@ smoke-script-2() {
   echo
 
   #pea/TEST.sh parse-all
+  #pea/TEST.sh run-tests
 
   re2c --version
   echo
+
+  # cmark.py
+  doctools/cmark.sh demo-ours
 
   bloaty --help
   echo
@@ -298,9 +302,6 @@ smoke-script-2() {
 
   ls -l ~/oils.DEPS/wedge/uftrace/0.13/bin/uftrace
   uftrace=~/oils.DEPS/wedge/uftrace/0.13/bin/uftrace
-
-  # cmark.py
-  doctools/cmark.sh demo-ours
 
   devtools/R-test.sh soil-run
 

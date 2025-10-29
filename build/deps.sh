@@ -1625,4 +1625,34 @@ smoke-unboxed-boxed() {
   # TODO: now invalidate cache, and build again
 }
 
+full-rebuild() {
+  boxed-clean
+
+  # TODO: can also rm-oils-crap and _build/wedge/*
+
+  # TODO: change 'extra' to 'soil'
+  # This includes bloaty, uftrace, R-libs
+  boxed-wedges-2025 extra
+
+  # soil/worker.sh list-jobs?  No this has the VIM
+  # we need soil/host-shim.sh list-images.sh or something
+
+  # full rebuilds to do:
+  # 1. Remove commented out code from dockerfiles
+  # 1. Remove OLD COMPAT stuff that contributors won't use
+  #    - pea_main wrapper - build/ninja-rules-py.sh
+  #    - R_LIBS_USER - build/dev-shell.sh
+  #    - test/wild.sh - oil_DEPS ->
+  #    - ovm-tarball - oil_DEPS ->
+  #    - clang binary - might keep this one
+  # 1. soil-debian-12 rebuild - with python2 etc.
+  # 2. for wedge-boostrap uke0 -> uke
+  #    - hopefully this fixes the uftrace wedge
+  # 3. everything with podman - build on hoover machine
+  # 4. everything with rootless podman
+  # 5. everything with raw crun - requires some other rewrites
+
+  # push everything
+}
+
 task-five "$@"
