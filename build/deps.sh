@@ -1193,14 +1193,14 @@ fake-py3-libs-wedge() {
 }
 
 print-wedge-list() {
-  local which_wedges=${1:-contrib}  # contrib | extra | smoke
+  local which_wedges=${1:-contrib}  # contrib | soil | smoke
   local how=${2:-legacy}            # boxed | unboxed | legacy
 
   case $which_wedges in
     contrib)
       contributor-wedges "$how"
       ;;
-    extra)
+    soil)
       contributor-wedges "$how"
       extra-wedges "$how"
       ;;
@@ -1221,7 +1221,7 @@ print-wedge-list() {
 }
 
 install-wedges() {
-  local which_wedges=${1:-contrib}  # contrib | extra | smoke
+  local which_wedges=${1:-contrib}  # contrib | soil | smoke
   local how=${2:-legacy}            # boxed | unboxed | legacy
 
   # For contributor setup: we need to use this BEFORE running build/py.sh all
@@ -1257,7 +1257,7 @@ install-wedges-fast() {
 }
 
 install-wedges-soil() {
-  install-wedges extra
+  install-wedges soil
 }
 
 #
@@ -1469,7 +1469,7 @@ _boxed-wedges-2025-TEST() {
 }
 
 _boxed-wedges-2025() {
-  local which_wedges=${1:-contrib}  # contrib | extra | smoke
+  local which_wedges=${1:-contrib}  # contrib | soil | smoke
 
   # For contributor setup: we need to use this BEFORE running build/py.sh all
   #build/py.sh time-helper
@@ -1627,30 +1627,44 @@ smoke-unboxed-boxed() {
 
 full-rebuild() {
   boxed-clean
-
   # TODO: can also rm-oils-crap and _build/wedge/*
 
-  # TODO: change 'extra' to 'soil'
-  # This includes bloaty, uftrace, R-libs
-  boxed-wedges-2025 extra
+  # 'soil' includes bloaty, uftrace, R-libs
+  boxed-wedges-2025 soil
+
+  # Tops of deps/images
+  deps/images.sh build wedge-bootstrap-debian-10
+  deps/images.sh build wedge-bootstrap-debian-12
+
+  fetch
+  boxed-wedges-2025
+
+  # common image - there's no debian-10 one
+  deps/images.sh build soil-debian-12
+
+  # TODO: list all images
+  for image in soil-dummy soil-pea; do
+    deps/images.sh build soil-debian-12 T  # use the cache
+  done
 
   # soil/worker.sh list-jobs?  No this has the VIM
   # we need soil/host-shim.sh list-images.sh or something
 
   # full rebuilds to do:
   # 1. Remove commented out code from dockerfiles
-  # 1. Remove OLD COMPAT stuff that contributors won't use
+  # 2. Remove OLD COMPAT stuff that contributors won't use
   #    - pea_main wrapper - build/ninja-rules-py.sh
   #    - R_LIBS_USER - build/dev-shell.sh
   #    - test/wild.sh - oil_DEPS ->
   #    - ovm-tarball - oil_DEPS ->
   #    - clang binary - might keep this one
-  # 1. soil-debian-12 rebuild - with python2 etc.
-  # 2. for wedge-boostrap uke0 -> uke
+  # 3. soil-debian-12 rebuild - with python2 etc.
+  # 4. for wedge-boostrap uke0 -> uke
   #    - hopefully this fixes the uftrace wedge
-  # 3. everything with podman - build on hoover machine
-  # 4. everything with rootless podman
-  # 5. everything with raw crun - requires some other rewrites
+  # 5. everything with podman - build on hoover machine
+  # 6. everything with rootless podman
+  # 7. everything with raw crun - requires some other rewrites
+  # 8. coarse tree-shaking for task-five.sh, etc.
 
   # push everything
 }

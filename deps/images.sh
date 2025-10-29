@@ -20,8 +20,7 @@
 # (3) Build wedges
 #
 #     build/deps.sh fetch
-#     build/deps.sh boxed-wedges
-#     build/deps.sh boxed-spec-bin
+#     build/deps.sh boxed-wedges-2025
 #
 # (4) Rebuild an image
 #
@@ -270,8 +269,26 @@ smoke-script-2() {
   cd ~/oil
   . build/dev-shell.sh
 
+  #test/spec-version.sh osh-version-text
+
+  echo PATH=$PATH
+
+  exit
+
+  which mksh
+  mksh -c "echo hi from mksh"
+
+  test/spec.sh smoke
+
+  which python2
+  python2 -V
+  echo
+
+  which python3
   python3 -V
   echo
+
+  exit
 
   python3 -m mypy core/util.py
   echo

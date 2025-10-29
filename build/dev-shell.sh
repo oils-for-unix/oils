@@ -10,6 +10,10 @@
 # - assumes that $REPO_ROOT is $PWD.
 # - build/py2.sh is a slimmer version, for just python2
 
+# TODO: enable this include guard
+#test -n "${__BUILD_DEV_SHELL_SH:-}" && return
+#readonly __BUILD_DEV_SHELL_SH=1
+
 #
 # OLD WEDGES 
 #
@@ -122,7 +126,7 @@ fi
 # - happens in each docker build
 # - happens in the contributor setup: build/deps.sh install-wedges
 
-readonly DEPS_BIN_DIR=../oils.DEPS/bin
+readonly DEPS_BIN_DIR=$PWD/../oils.DEPS/bin
 if test -d $DEPS_BIN_DIR; then
   export PATH="$DEPS_BIN_DIR:$PATH"
 fi

@@ -26,14 +26,10 @@ live-image-tag() {
     app-tests)
       # wedges 2025
       echo 'v-2025-10-28'
-      # update to Debian 12
-      #echo 'v-2025-04-30b'
       ;;
     wild)
       # wedges 2025
       echo 'v-2025-10-28'
-      # update to Debian 12
-      #echo 'v-2025-04-30b'
       ;;
     bloaty)
       # wedges 2025
@@ -41,7 +37,7 @@ live-image-tag() {
       ;;
     benchmarks)
       # wedges 2025
-      echo 'v-2025-10-27'
+      echo 'v-2025-10-28'
       ;;
     benchmarks2)
       # wedges 2025
@@ -61,30 +57,24 @@ live-image-tag() {
       echo 'v-2025-10-28'
       ;;
     clang)
-      # update to Debian 12
-      echo 'v-2025-05-01'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     ovm-tarball)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     other-tests)
       # wedges 2025
       echo 'v-2025-10-28'
       ;;
-    dummy)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
-      ;;
     dev-minimal)
       # wedges 2025
       echo 'v-2025-10-28'
       ;;
-
-    # Not run directly
-    common)
-      # Rebuild with wedges
-      echo 'v-2023-02-28f'
+    dummy)
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     *)
       die "Invalid image $image"
