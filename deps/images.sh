@@ -270,11 +270,25 @@ smoke-script-2() {
   cd ~/oil
   . build/dev-shell.sh
 
+  python3 -V
+  echo
+
+  python3 -m mypy core/util.py
+  echo
+
+  # test pyflakes
+  test/lint.sh py2-lint core/util.py
+  echo
+
+  #pea/TEST.sh parse-all
+
   re2c --version
   echo
 
   bloaty --help
   echo
+
+  exit
 
   # hm this shows Python
   uftrace --version

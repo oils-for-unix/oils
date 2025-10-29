@@ -708,6 +708,8 @@ install-py3-libs-from-cache() {
   case $py3 in
     *wedge/oils-for-unix.org/*)
       ;;
+    *oils.DEPS/*)
+      ;;
     *)
       die "python3 is '$py3', but expected it to be in a wedge"
       ;;

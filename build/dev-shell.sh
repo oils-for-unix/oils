@@ -157,23 +157,27 @@ export PYTHONPATH='.'
 readonly site_packages=lib/python3.10/site-packages
 
 #readonly PY3_LIBS_VERSION=2023-07-27
-# Use older version because containers aren't rebuild.  TODO: fix this
 readonly PY3_LIBS_VERSION=2023-03-04
 
-# Note: Version should match the one in build/deps.sh
-readonly PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION/$site_packages
+readonly NEW_PY3_LIBS_WEDGE=$NEW_WEDGE_DIR/py3-libs/$PY3_LIBS_VERSION/$site_packages
+readonly OLD_PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION/$site_packages
 # Unconditionally add to PYTHONPATH; otherwise build/deps.sh install-wedges
 # can't work in one shot
-export PYTHONPATH="$PY3_LIBS_WEDGE:$PYTHONPATH"
+export PYTHONPATH="$NEW_PY3_LIBS_WEDGE:$OLD_PY3_LIBS_WEDGE:$PYTHONPATH"
 
 MYPY_VERSION=0.780
 # TODO: would be nice to upgrade to newer version
 #readonly MYPY_VERSION=0.971
 
 # Containers copy it here
-readonly MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
-if test -d "$MYPY_WEDGE"; then
-  export PYTHONPATH="$MYPY_WEDGE:$PYTHONPATH"
+readonly OLD_MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
+if test -d "$OLD_MYPY_WEDGE"; then
+  export PYTHONPATH="$OLD_MYPY_WEDGE:$PYTHONPATH"
+fi
+
+readonly NEW_MYPY_WEDGE=$NEW_WEDGE_DIR/mypy/$MYPY_VERSION
+if test -d "$NEW_MYPY_WEDGE"; then
+  export PYTHONPATH="$NEW_MYPY_WEDGE:$PYTHONPATH"
 fi
 
 # Hack for misconfigured RC cluster!  Some machines have the empty string in

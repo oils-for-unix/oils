@@ -30,8 +30,10 @@ live-image-tag() {
       #echo 'v-2025-04-30b'
       ;;
     wild)
+      # wedges 2025
+      echo 'v-2025-10-28'
       # update to Debian 12
-      echo 'v-2025-04-30b'
+      #echo 'v-2025-04-30b'
       ;;
     bloaty)
       # wedges 2025
@@ -51,8 +53,8 @@ live-image-tag() {
       echo 'v-2025-09-23'
       ;;
     pea)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     cpp-small)
       # update to Debian 12
@@ -75,8 +77,8 @@ live-image-tag() {
       echo 'v-2025-04-30b'
       ;;
     dev-minimal)
-      # rebuild python 2 wedge with libreadline-dev in wedge-bootstrap-debian-12
-      echo 'v-2025-05-01'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
 
     # Not run directly
