@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 4
+## oils_failures_allowed: 5
 
 # This file relates to:
 #
@@ -132,4 +132,15 @@ status=0
 status=0
 status=0
 status=0
+## END
+
+#### builtin cat crashes a subshell (#2530)
+
+((/usr/bin/cat </dev/zero; echo $? >&7) | true) 7>&1
+
+((cat </dev/zero; echo $? >&7) | true) 7>&1
+
+## STDOUT:
+141
+141
 ## END
