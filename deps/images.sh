@@ -54,7 +54,7 @@ source deps/podman.sh
 
 DOCKER=${DOCKER:-docker}
 
-readonly LATEST_TAG='v-2025-10-28'  # get rid of /wedge and ~/wedge
+readonly LATEST_TAG='v-2025-10-29'  # full rebuild
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'
@@ -62,14 +62,43 @@ clean-all() {
   sudo rm -r -f $dirs
 }
 
-list-images() {
-  for name in deps/Dockerfile.*; do
-    local image_id=${name//'deps/Dockerfile.'/}
-    if test "$image_id" = 'test-image'; then
-      continue
-    fi
-    echo $image_id
-  done
+list() {
+  local which=${1:-all}  # all | soil | prep
+
+  local accept=''
+  local reject=''
+  case $which in
+    all)
+      reject='^$'
+      ;;
+    soil)  # 13 soil images
+      reject='^(wedge-bootstrap-.*|soil-debian-.*)'
+      ;;
+    prep)
+      # images to prepare
+      # 2025-10: *-debian-10 is Debian Buster from 2019, which was retired in
+      # 2024.  You can't do sudo apt-get update
+      # https://wiki.debian.org/DebianReleases
+      accept='^(wedge-bootstrap-debian-12|soil-debian-12)'
+      ;;
+  esac
+
+  if test -n "$accept"; then
+    for name in deps/Dockerfile.*; do
+      local image_id=${name//'deps/Dockerfile.'/}
+      if [[ "$image_id" =~ $accept ]]; then
+        echo $image_id
+      fi
+    done
+  else
+    for name in deps/Dockerfile.*; do
+      local image_id=${name//'deps/Dockerfile.'/}
+      if [[ "$image_id" =~ $reject ]]; then
+        continue
+      fi
+      echo $image_id
+    done
+  fi
 }
 
 list-tagged() {
@@ -155,6 +184,11 @@ build() {
 
   # Avoid hassle by also tagging it
   tag-latest $name
+}
+
+build-cached() {
+  local name=${1:-soil-dummy}
+  build "$name" T
 }
 
 build-many() {

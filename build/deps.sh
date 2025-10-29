@@ -11,16 +11,6 @@
 #   build/deps.sh install-wedges  # for both Python and C++
 #
 #   build/deps.sh rm-oils-crap  # rm -r -f /wedge ~/wedge to start over
-#
-# TODO: Do we need something faster, just python2, re2c, and cmark?
-#
-#   - build/deps.sh fetch-py
-#   - build/deps.sh install-wedges-py
-#
-# TODO: Can we make most of them non-root deps?  This requires rebuilding
-# containers, which requires podman.
-#
-#     rm -r -f ~/wedge  # would be better
 
 
 # Check if we're in the right directory
@@ -1625,27 +1615,39 @@ smoke-unboxed-boxed() {
   # TODO: now invalidate cache, and build again
 }
 
-full-rebuild() {
+each-one() {
+  # like xargs -n 1, but RESPECTS ERREXIT!
+  while read -r task; do
+    "$@" "$task"
+  done
+}
+
+_build-all-images() {
+  # this excludes the test image
+
+  deps/images.sh list prep | each-one deps/images.sh build 
+  deps/images.sh list soil | each-one deps/images.sh build-cached
+}
+
+build-all-images() {
+  time _build-all-images "$@"
+}
+
+push-all-images() {
+  deps/images.sh list | xargs --verbose -n 1 -- deps/images.sh push
+}
+
+_full-soil-rebuild() {
   boxed-clean
   # TODO: can also rm-oils-crap and _build/wedge/*
 
+  fetch
   # 'soil' includes bloaty, uftrace, R-libs
   boxed-wedges-2025 soil
 
-  # Tops of deps/images
-  deps/images.sh build wedge-bootstrap-debian-10
-  deps/images.sh build wedge-bootstrap-debian-12
+  build-all-images
 
-  fetch
-  boxed-wedges-2025
-
-  # common image - there's no debian-10 one
-  deps/images.sh build soil-debian-12
-
-  # TODO: list all images
-  for image in soil-dummy soil-pea; do
-    deps/images.sh build soil-debian-12 T  # use the cache
-  done
+  push-all-images
 
   # soil/worker.sh list-jobs?  No this has the VIM
   # we need soil/host-shim.sh list-images.sh or something
@@ -1667,6 +1669,20 @@ full-rebuild() {
   # 8. coarse tree-shaking for task-five.sh, etc.
 
   # push everything
+}
+
+full-soil-rebuild() {
+  time _full-soil-rebuild "$@"
+}
+
+_full-host-rebuild() {
+  rm-oils-crap  # old dirs
+  rm -r -f ../oils.DEPS/  # new dir
+  install-wedges contrib unboxed
+}
+
+full-host-rebuild() {
+  time _full-host-rebuild "$@"
 }
 
 task-five "$@"

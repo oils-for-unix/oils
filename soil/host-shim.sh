@@ -20,6 +20,12 @@ source test/tsv-lib.sh
 
 live-image-tag() {
   ### image ID -> Docker tag name
+
+  # 2025-10-29: build/deps.sh full-soil-rebuild !!
+  # 7 minutes to build boxed wedges, 9:30 to build 13+ containers, and then push all
+  echo 'v-2025-10-29'
+  return
+
   local image_id=$1
 
   case $image_id in
