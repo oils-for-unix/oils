@@ -112,22 +112,6 @@ layer-wedge-bootstrap-debian-12() {
   layer-wedge-bootstrap-debian "${uftrace_packages[@]}"
 }
 
-readonly PY2=/wedge/oils-for-unix.org/pkg/python2/2.7.18/bin/python
-
-layer-python-symlink() {
-  ### make /usr/bin/python 
-
-  # For building CPython in soil-ovm-tarball; done as root
-  ln -s -f -v $PY2 /usr/bin/python
-}
-
-layer-python2-symlink() {
-  # make /usr/bin/python2
-
-  # It's usually better do 'source build/dev-shell.sh' instead ...
-  ln -s -f -v $PY2 /usr/bin/python2
-}
-
 layer-debian-10() {
   # Can't install packages in Debian without this
   apt-get update  # uses /var/lib/apt

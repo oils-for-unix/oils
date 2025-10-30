@@ -8,14 +8,7 @@ RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=
     du --si -s /var/cache/apt /var/lib/apt && \
     deps/from-apt.sh dev-minimal
 
-# use this instead of 'source build/dev-shell.sh' for now
-RUN deps/from-apt.sh layer-python2-symlink
-
 USER uke
-
-#COPY --chown=uke \
-#  _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
-#  /wedge/oils-for-unix.org/pkg/python3/3.10.4
 
 COPY --chown=uke \
   _build/boxed/wedge/python3/3.10.4 \
@@ -24,11 +17,6 @@ COPY --chown=uke \
 # Put python3 in PATH before running install-py3-libs
 RUN mkdir -p /home/uke/oils.DEPS/bin && \
     ln -s --relative /home/uke/oils.DEPS/wedge/python3/3.10.4/bin/python3 /home/uke/oils.DEPS/bin
-
-# Copy _build/deps-source -> /home/uke/wedge for now.
-#COPY --chown=uke \
-#  _build/deps-source/pyflakes/pyflakes-2.4.0/ \
-#  /home/uke/wedge/oils-for-unix.org/pkg/pyflakes/2.4.0/
 
 COPY --chown=uke \
   _build/boxed/wedge/pyflakes/2.4.0 \

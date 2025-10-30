@@ -54,7 +54,7 @@ source deps/podman.sh
 
 DOCKER=${DOCKER:-docker}
 
-readonly LATEST_TAG='v-2025-10-29'  # full rebuild
+readonly LATEST_TAG='v-2025-10-30'  # another full rebuild
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'

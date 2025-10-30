@@ -45,10 +45,6 @@ RUN mkdir -p /home/uke/oils.DEPS/bin && \
 # - add osh-runtime testdata, from deps/source.medo
 # - not running ovm-build yet, but it also has testdata
 
-#COPY --chown=uke \
-#  _build/wedge/relative/oils-for-unix.org/pkg/R-libs/2023-04-18 \
-#  /home/uke/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
-
 COPY --chown=uke \
   _build/boxed/wedge/R-libs/2023-04-18 \
   /home/uke/oils.DEPS/wedge/R-libs/2023-04-18

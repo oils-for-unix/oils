@@ -1666,10 +1666,10 @@ _full-soil-rebuild() {
   # we need soil/host-shim.sh list-images.sh or something
 
   # full rebuilds to do:
-  # 1. soil-debian-12 rebuild - with python2 etc.
+  # a. soil-debian-12 rebuild - with python2 etc.
+  # b. Remove commented out code from dockerfiles
   #
   # TODO
-  # 1. Remove commented out code from dockerfiles
   # 2. Remove OLD COMPAT stuff that contributors won't use
   #    - pea_main wrapper - build/ninja-rules-py.sh
   #    - R_LIBS_USER - build/dev-shell.sh

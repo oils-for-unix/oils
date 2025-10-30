@@ -8,33 +8,18 @@ RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=
     du --si -s /var/cache/apt /var/lib/apt && \
     deps/from-apt.sh cpp-small
 
-# use this instead of 'source build/dev-shell.sh' for now
-RUN deps/from-apt.sh layer-python2-symlink
-
 # Build other dependencies as non-root uke
 USER uke
 
 # Pre-built wedges
 
-#COPY --chown=uke \
-#  _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
-#  /wedge/oils-for-unix.org/pkg/cmark/0.29.0
-
 COPY --chown=uke \
   _build/boxed/wedge/cmark/0.29.0 \
   /home/uke/oils.DEPS/wedge/cmark/0.29.0
 
-#COPY --chown=uke \
-#  _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
-#  /wedge/oils-for-unix.org/pkg/re2c/3.0
-
 COPY --chown=uke \
   _build/boxed/wedge/re2c/3.0 \
   /home/uke/oils.DEPS/wedge/re2c/3.0
-
-#COPY --chown=uke \
-#  _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
-#  /wedge/oils-for-unix.org/pkg/python3/3.10.4
 
 COPY --chown=uke \
   _build/boxed/wedge/python3/3.10.4 \
@@ -60,11 +45,6 @@ COPY web/table/html.sh /home/uke/tmp/web/table/html.sh
 
 COPY build/deps.sh /home/uke/tmp/build/deps.sh
 COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
-
-# Hack for now: pass a different MyPy dir
-# Ideally py3-libs would be created a BUILD TIME with wedge-builder, not at
-# RUNTIME with uke!
-#RUN build/deps.sh install-py3-libs /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
 
 RUN build/deps.sh install-py3-libs \
   /home/uke/oils.DEPS/wedge/mypy/0.780/ ../oils.DEPS/wedge
