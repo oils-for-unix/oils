@@ -322,9 +322,9 @@ class Build(visitor.SimpleVisitor):
             with pass_state.CfgBlockContext(cfg, self.current_statement_id):
                 self.accept(o.body)
 
-    def oils_visit_func_def(
-            self, o: 'mypy.nodes.FuncDef',
-            current_class_name: Optional[util.SymbolPath]) -> None:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
         # For virtual methods, pretend that the method on the base class calls
         # the same method on every subclass. This way call sites using the
         # abstract base class will over-approximate the set of call paths they
@@ -433,7 +433,8 @@ class Build(visitor.SimpleVisitor):
     #def oils_visit_assign_to_listcomp(self, o: 'mypy.nodes.AssignmentStmt', lval: NameExpr) -> None:
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str]) -> None:
         cfg = self.current_cfg()
         if cfg:
             lval_names = []

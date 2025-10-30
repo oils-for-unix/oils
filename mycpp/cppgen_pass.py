@@ -567,9 +567,9 @@ class Decl(_Shared):
         # abstract method
         return 'declare'
 
-    def oils_visit_func_def(
-            self, o: 'mypy.nodes.FuncDef',
-            current_class_name: Optional[util.SymbolPath]) -> None:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
         # Avoid C++ warnings by prepending [[noreturn]]
         noreturn = _GetNoReturn(o.name)
 
@@ -597,7 +597,8 @@ class Decl(_Shared):
         self.write(o.name)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str]) -> None:
         # Declare constant strings.  They have to be at the top level.
 
         # TODO: self.at_global_scope doesn't work for context managers and so forth
@@ -661,7 +662,7 @@ class Decl(_Shared):
         self.write_ind(' public:\n')
 
         # This visits all the methods, with self.indent += 1, param
-        # base_class_sym, self.current_method_name
+        # base_class_sym, current_method_name
 
         super().oils_visit_class_def(o, base_class_sym, current_class_name)
 
@@ -811,9 +812,9 @@ class Impl(_Shared):
         # abstract method
         return 'define'
 
-    def oils_visit_func_def(
-            self, o: 'mypy.nodes.FuncDef',
-            current_class_name: Optional[util.SymbolPath]) -> None:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
         if current_class_name:
             # definition looks like
             # void Class::method(...);
@@ -1648,7 +1649,8 @@ class Impl(_Shared):
         self.write_ind('}\n')
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str]) -> None:
 
         # GLOBAL CONSTANTS - Avoid Alloc<T>, since that can't be done until main().
         if self.indent == 0:

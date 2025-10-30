@@ -32,7 +32,7 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         # DO NOT USE from classes inheriting SimpleVisitor.
         # These should be passed into oils_visit_* explicitly
         self.__current_class_name: Optional[util.SymbolPath] = None
-        self.current_method_name: Optional[str] = None
+        self.__current_method_name: Optional[str] = None
 
         # So we can report multiple at once
         # module path, line number, message
@@ -180,9 +180,9 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(expr)
         self.accept(o.body)
 
-    def oils_visit_func_def(
-            self, o: 'mypy.nodes.FuncDef',
-            current_class_name: Optional[util.SymbolPath]) -> None:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
         """Only the functions we care about in Oils."""
         for arg in o.arguments:
             if arg.initializer:
@@ -197,7 +197,8 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         # If an assignment statement is not in a function or method, then it's at global scope
 
         self.at_global_scope = False
-        self.oils_visit_func_def(o, self.__current_class_name)
+        self.oils_visit_func_def(o, self.__current_class_name,
+                                 self.__current_method_name)
         self.at_global_scope = True
 
     #
@@ -247,10 +248,10 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                     continue
 
                 if method_name == '__init__':  # Don't translate
-                    self.current_method_name = stmt.name
+                    self.__current_method_name = stmt.name
                     self.oils_visit_constructor(o, stmt, base_class_sym,
                                                 current_class_name)
-                    self.current_method_name = None
+                    self.__current_method_name = None
                     continue
 
                 if method_name == '__exit__':  # Don't translate
@@ -260,14 +261,14 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                             'Class with __exit__ should be named ctx_Foo: %s' %
                             (current_class_name, ))
 
-                    self.current_method_name = stmt.name
+                    self.__current_method_name = stmt.name
                     self.oils_visit_dunder_exit(o, stmt, base_class_sym)
-                    self.current_method_name = None
+                    self.__current_method_name = None
                     continue
 
-                self.current_method_name = stmt.name
+                self.__current_method_name = stmt.name
                 self.oils_visit_method(o, stmt, base_class_sym)
-                self.current_method_name = None
+                self.__current_method_name = None
                 continue
 
             # if 0: is allowed
@@ -304,7 +305,8 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     # Statements
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str]) -> None:
         self.accept(lval)
         self.accept(rval)
 
@@ -332,7 +334,8 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
             # Key reason it needs to be in the virtual pass is that signatures
             # must change to allow an out param.
 
-        self.oils_visit_assignment_stmt(o, lval, o.rvalue)
+        self.oils_visit_assignment_stmt(o, lval, o.rvalue,
+                                        self.__current_method_name)
 
     def visit_operator_assignment_stmt(
             self, o: 'mypy.nodes.OperatorAssignmentStmt') -> None:

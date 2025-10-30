@@ -222,9 +222,9 @@ class Pass(visitor.SimpleVisitor):
                 (func_def.name, num_defaults))
             return
 
-    def oils_visit_func_def(
-            self, o: 'mypy.nodes.FuncDef',
-            current_class_name: Optional[util.SymbolPath]) -> None:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
         self._ValidateDefaultArgs(o)
 
         self.virtual.OnMethod(current_class_name, o.name)
@@ -239,7 +239,7 @@ class Pass(visitor.SimpleVisitor):
         # Are we assuming we never do mylib.MaybeCollect() inside a
         # constructor?  We can check that too.
 
-        if self.current_method_name != '__init__':
+        if current_method_name != '__init__':
             # Add function params as locals, to be rooted
             arg_types = o.type.arg_types
             arg_names = [arg.variable.name for arg in o.arguments]
@@ -249,7 +249,7 @@ class Pass(visitor.SimpleVisitor):
                 self.current_local_vars.append((name, typ))
 
         # Traverse to collect member variables
-        super().oils_visit_func_def(o, current_class_name)
+        super().oils_visit_func_def(o, current_class_name, current_method_name)
         self.all_local_vars[o] = self.current_local_vars
 
         # Is this function is a generator?  Then associate the node with an
@@ -294,7 +294,8 @@ class Pass(visitor.SimpleVisitor):
         super().oils_visit_assign_to_listcomp(lval, left_expr, index_expr, seq,
                                               cond)
 
-    def _MaybeAddMember(self, lval: MemberExpr) -> None:
+    def _MaybeAddMember(self, lval: MemberExpr,
+                        current_method_name: Optional[str]) -> None:
         assert not self.at_global_scope, "Members shouldn't be assigned at the top level"
 
         # Collect statements that look like self.foo = 1
@@ -304,7 +305,7 @@ class Pass(visitor.SimpleVisitor):
         #
         # HACK for WordParser: also include Reset().  We could change them
         # all up front but I kinda like this.
-        if self.current_method_name not in ('__init__', 'Reset'):
+        if current_method_name not in ('__init__', 'Reset'):
             return
 
         if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
@@ -316,10 +317,11 @@ class Pass(visitor.SimpleVisitor):
                                                    is_managed)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str]) -> None:
 
         if isinstance(lval, MemberExpr):
-            self._MaybeAddMember(lval)
+            self._MaybeAddMember(lval, current_method_name)
 
         if lval in self.types and isinstance(self.types[lval], PartialType):
             t = self.types[lval]
@@ -392,9 +394,9 @@ class Pass(visitor.SimpleVisitor):
 
                 # self.a, self.b = foo()
                 if isinstance(lval_item, MemberExpr):
-                    self._MaybeAddMember(lval_item)
+                    self._MaybeAddMember(lval_item, current_method_name)
 
-        super().oils_visit_assignment_stmt(o, lval, rval)
+        super().oils_visit_assignment_stmt(o, lval, rval, current_method_name)
 
     def oils_visit_for_stmt(self, o: 'mypy.nodes.ForStmt',
                             func_name: Optional[str]) -> None:
