@@ -1264,6 +1264,9 @@ test-kill-builtin-usage() {
 
   _osh-error-2 'kill -s TE 123'
   _osh-error-2 'kill -s TERM %zzz'
+
+  _osh-error-2 'kill -L TERM ZZ USR1'
+  _osh-error-2 'kill -L 15 9999 16'
 }
 
 #

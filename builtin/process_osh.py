@@ -744,12 +744,13 @@ class Kill(vm._Builtin):
         Raises error if sigspec is in invalid format
         """
         if sig_str.isdigit():
-            # TODO: we don't validate the signal number here
+            # We don't validate the signal number; we rely on kill() returning
+            # EINVAL instead.  This is useful for sending unportable signals.
             sig_num = int(sig_str)
         else:
             sig_num = _SigNameToNumber(sig_str)
             if sig_num == signal_def.NO_SIGNAL:
-                e_usage("got invalid signal %r" % sig_str, blame_loc)
+                e_usage("got invalid signal name %r" % sig_str, blame_loc)
         return sig_num
 
     def _TranslateSignals(self, arg_r):
@@ -759,12 +760,12 @@ class Kill(vm._Builtin):
             if arg.isdigit():
                 sig_name = signal_def.GetName(int(arg))
                 if sig_name is None:
-                    e_usage("got invalid signal %r" % arg, arg_loc)
+                    e_usage("can't translate number %r to a name" % arg, arg_loc)
                 print(sig_name[3:])
             else:
                 sig_num = _SigNameToNumber(arg)
-                if sig_num < signal_def.NO_SIGNAL:
-                    e_usage("got invalid signal %r" % arg, arg_loc)
+                if sig_num == signal_def.NO_SIGNAL:
+                    e_usage("can't translate name %r to a number" % arg, arg_loc)
                 print(str(sig_num))
 
             arg_r.Next()

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 ## compare_shells: dash bash mksh
 # note: zsh 5.9 passes more tests
 
@@ -303,8 +303,12 @@ echo $?
 1
 ## END
 
-#### Numeric signal out of range is validated
+#### Numeric signal out of range - OSH may send it anyway
+
 sleep 0.1 &
+
+# OSH doesn't validate this, but that could be useful for non-portable signals,
+# which we don't have a name for.
 
 kill -s 9999 %%
 echo kill=$?
@@ -313,11 +317,11 @@ wait
 echo wait=$?
 
 ## STDOUT:
-kill=2
+kill=1
 wait=0
 ## END
 
-## OK bash/mksh/zsh STDOUT:
-kill=1
+## OK dash STDOUT:
+kill=2
 wait=0
 ## END
