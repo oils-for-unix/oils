@@ -709,63 +709,63 @@ class Kill(vm._Builtin):
         # type: (process.JobList) -> None
         self.job_list = job_list
 
-    def _ParsePid(self, pid_arg, pid_arg_loc):
+    def _ParseWhat(self, what, blame_loc):
         # type: (str, loc_t) -> int
-        if pid_arg.startswith("%"):
-            job = self.job_list.JobFromSpec(pid_arg)
+        if what.startswith("%"):
+            job = self.job_list.JobFromSpec(what)
             if job is None:
-                e_usage("got invalid job ID %r" % pid_arg, pid_arg_loc)
+                e_usage("got invalid job ID %r" % what, blame_loc)
             return job.ProcessGroupId()
         else:
             try:
-                target_pid = int(pid_arg)
+                pid = int(what)
             except ValueError:
-                e_usage("got invalid process ID %r" % pid_arg, pid_arg_loc)
-            return target_pid
+                e_usage("got invalid process ID %r" % what, blame_loc)
+            return pid
 
-    def _SendSignal(self, arg_r, signal):
+    def _SendSignal(self, arg_r, sig_num):
         # type: (args.Reader, int) -> int
         if arg_r.AtEnd():
             e_usage("expects at least one process/job ID", loc.Missing)
 
         while not arg_r.AtEnd():
             arg_str, arg_loc = arg_r.Peek2()
-            pid = self._ParsePid(arg_str, arg_loc)
+            pid = self._ParseWhat(arg_str, arg_loc)
 
-            posix.kill(pid, signal)
+            posix.kill(pid, sig_num)
             arg_r.Next()
         return 0
 
-    def _ParseSignal(self, sigspec_arg, sigspec_arg_loc):
+    def _ParseSignal(self, sig_str, blame_loc):
         # type: (str, loc_t) -> int
         """
         Sigspec can one of these forms:
           15, TERM, SIGTERM (case insensitive)
         Raises error if sigspec is in invalid format
         """
-        if sigspec_arg.isdigit():
+        if sig_str.isdigit():
             # TODO: we don't validate the signal number here
-            sig_num = int(sigspec_arg)
+            sig_num = int(sig_str)
         else:
-            sig_num = _SigNameToNumber(sigspec_arg)
+            sig_num = _SigNameToNumber(sig_str)
             if sig_num == signal_def.NO_SIGNAL:
-                e_usage("got invalid signal %r" % sigspec_arg, sigspec_arg_loc)
+                e_usage("got invalid signal %r" % sig_str, blame_loc)
         return sig_num
 
     def _TranslateSignals(self, arg_r):
         # type: (args.Reader) -> int
         while not arg_r.AtEnd():
-            arg_l, arg_loc = arg_r.Peek2()
-            if arg_l.isdigit():
-                signal = signal_def.GetName(int(arg_l))
-                if signal is None:
-                    e_usage("got invalid signal %r" % arg_l, arg_loc)
-                print(signal[3:])
+            arg, arg_loc = arg_r.Peek2()
+            if arg.isdigit():
+                sig_name = signal_def.GetName(int(arg))
+                if sig_name is None:
+                    e_usage("got invalid signal %r" % arg, arg_loc)
+                print(sig_name[3:])
             else:
-                num = _SigNameToNumber(arg_l)
-                if num < signal_def.NO_SIGNAL:
-                    e_usage("got invalid signal %r" % arg_l, arg_loc)
-                print(str(num))
+                sig_num = _SigNameToNumber(arg)
+                if sig_num < signal_def.NO_SIGNAL:
+                    e_usage("got invalid signal %r" % arg, arg_loc)
+                print(str(sig_num))
 
             arg_r.Next()
         return 0
@@ -803,11 +803,11 @@ class Kill(vm._Builtin):
         # TODO: it would be nice if the flag parser could expose the location
         # of 'foo' in -s foo
         sig_num = 15  # SIGTERM, the default signal to send
-        arg_loc = cmd_val.arg_locs[0]
+        blame_loc = cmd_val.arg_locs[0]
         if arg.n is not None:
-            sig_num = self._ParseSignal(arg.n, arg_loc)
+            sig_num = self._ParseSignal(arg.n, blame_loc)
         if arg.s is not None:
-            sig_num = self._ParseSignal(arg.s, arg_loc)
+            sig_num = self._ParseSignal(arg.s, blame_loc)
 
         return self._SendSignal(arg_r, sig_num)
 
