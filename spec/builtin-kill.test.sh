@@ -1,5 +1,6 @@
 ## oils_failures_allowed: 3
-## compare_shells: dash bash mksh zsh
+## compare_shells: dash bash mksh
+# note: zsh 5.9 passes more tests
 
 # Tests for builtins having to do with killing a process
 
@@ -73,53 +74,28 @@ kill=0
 wait=0
 ## END
 
-#### kill -SIGTERM with all its variants
-# Test 3: SIGTERM with sigspec variants
+#### kill -terM -SigterM isn't case sensitive
 case $SH in mksh|dash|zsh) exit ;; esac
 
 sleep 0.1 &
 pid=$!
-builtin kill -SIGTERM $pid
+kill -SigterM $pid
+echo kill=$?
 wait $pid
-echo $?  # Should be 143 (128 + SIGTERM)
+echo wait=$?
 
 sleep 0.1 &
 pid=$!
-builtin kill -SigTERM $pid
+kill -terM $pid
+echo kill=$?
 wait $pid
-echo $?  # Should be 143 (128 + SIGTERM)
-
-sleep 0.1 &
-pid=$!
-builtin kill -Sigterm $pid
-wait $pid
-echo $?  # Should be 143 (128 + SIGTERM)
-
-sleep 0.1 &
-pid=$!
-builtin kill -TERM $pid
-wait $pid
-echo $?  # Should be 143 (128 + SIGTERM)
-
-sleep 0.1 &
-pid=$!
-builtin kill -term $pid
-wait $pid
-echo $?  # Should be 143 (128 + SIGTERM)
-
-sleep 0.1 &
-pid=$!
-builtin kill -TErm $pid
-wait $pid
-echo $?  # Should be 143 (128 + SIGTERM)
+echo wait=$?
 
 ## STDOUT:
-143
-143
-143
-143
-143
-143
+kill=0
+wait=143
+kill=0
+wait=143
 ## N-I dash/mksh/zsh STDOUT:
 ## END
 
