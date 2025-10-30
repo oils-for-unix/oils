@@ -397,16 +397,18 @@ wait --all 1
 ## N-I dash/bash/mksh STDOUT:
 ## END
 
-#### Signal message for killed background job (OSH)
-case $SH in bash|dash|mksh) exit ;; esac
+#### Signal message for killed background job
+case $SH in dash|mksh) exit ;; esac
 
 sleep 1 &
 kill -HUP $!
-wait $!
+wait $! 2>err.txt
 echo status=$?
+grep -o "Hangup" err.txt
 ## status: 0
 ## STDOUT:
 status=129
+Hangup
 ## END
 ## STDERR:
 ## END
