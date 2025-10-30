@@ -10,6 +10,10 @@
 # - assumes that $REPO_ROOT is $PWD.
 # - build/py2.sh is a slimmer version, for just python2
 
+# TODO: enable this include guard
+#test -n "${__BUILD_DEV_SHELL_SH:-}" && return
+#readonly __BUILD_DEV_SHELL_SH=1
+
 #
 # OLD WEDGES 
 #
@@ -122,7 +126,7 @@ fi
 # - happens in each docker build
 # - happens in the contributor setup: build/deps.sh install-wedges
 
-readonly DEPS_BIN_DIR=../oils.DEPS/bin
+readonly DEPS_BIN_DIR=$PWD/../oils.DEPS/bin
 if test -d $DEPS_BIN_DIR; then
   export PATH="$DEPS_BIN_DIR:$PATH"
 fi
@@ -131,16 +135,19 @@ fi
 # Libraries: PYTHONPATH and R_LIBS_USER
 #
 
+OLD_WEDGE_DIR=~/wedge/oils-for-unix.org/pkg
+NEW_WEDGE_DIR=$PWD/../oils.DEPS/wedge
+
 if test -d ~/R; then
   # 2023-07: Hack to keep using old versions on lenny.local
   # In 2023-04, dplyr stopped supporting R 3.4.4 on Ubuntu Bionic
   # https://cran.r-project.org/web/packages/dplyr/index.html
   export R_LIBS_USER=~/R
-else
-  R_LIBS_WEDGE=~/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
-  export R_LIBS_USER=$R_LIBS_WEDGE
+elif test -d $NEW_WEDGE_DIR/R-libs; then
+  export R_LIBS_USER=$NEW_WEDGE_DIR/R-libs/2023-04-18
+elif test -d $OLD_WEDGE_DIR/R-libs; then
+  export R_LIBS_USER=$OLD_WEDGE_DIR/R-libs/2023-04-18
 fi
-
 
 # So we can run Python 2 scripts directly, e.g. asdl/asdl_main.py
 export PYTHONPATH='.'
@@ -154,23 +161,27 @@ export PYTHONPATH='.'
 readonly site_packages=lib/python3.10/site-packages
 
 #readonly PY3_LIBS_VERSION=2023-07-27
-# Use older version because containers aren't rebuild.  TODO: fix this
 readonly PY3_LIBS_VERSION=2023-03-04
 
-# Note: Version should match the one in build/deps.sh
-readonly PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION/$site_packages
+readonly NEW_PY3_LIBS_WEDGE=$NEW_WEDGE_DIR/py3-libs/$PY3_LIBS_VERSION/$site_packages
+readonly OLD_PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION/$site_packages
 # Unconditionally add to PYTHONPATH; otherwise build/deps.sh install-wedges
 # can't work in one shot
-export PYTHONPATH="$PY3_LIBS_WEDGE:$PYTHONPATH"
+export PYTHONPATH="$NEW_PY3_LIBS_WEDGE:$OLD_PY3_LIBS_WEDGE:$PYTHONPATH"
 
 MYPY_VERSION=0.780
 # TODO: would be nice to upgrade to newer version
 #readonly MYPY_VERSION=0.971
 
 # Containers copy it here
-readonly MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
-if test -d "$MYPY_WEDGE"; then
-  export PYTHONPATH="$MYPY_WEDGE:$PYTHONPATH"
+readonly OLD_MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
+if test -d "$OLD_MYPY_WEDGE"; then
+  export PYTHONPATH="$OLD_MYPY_WEDGE:$PYTHONPATH"
+fi
+
+readonly NEW_MYPY_WEDGE=$NEW_WEDGE_DIR/mypy/$MYPY_VERSION
+if test -d "$NEW_MYPY_WEDGE"; then
+  export PYTHONPATH="$NEW_MYPY_WEDGE:$PYTHONPATH"
 fi
 
 # Hack for misconfigured RC cluster!  Some machines have the empty string in

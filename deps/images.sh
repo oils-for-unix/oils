@@ -20,8 +20,7 @@
 # (3) Build wedges
 #
 #     build/deps.sh fetch
-#     build/deps.sh boxed-wedges
-#     build/deps.sh boxed-spec-bin
+#     build/deps.sh boxed-wedges-2025
 #
 # (4) Rebuild an image
 #
@@ -55,7 +54,7 @@ source deps/podman.sh
 
 DOCKER=${DOCKER:-docker}
 
-readonly LATEST_TAG='v-2025-10-27'  # get rid of /wedge and ~/wedge
+readonly LATEST_TAG='v-2025-10-29'  # full rebuild
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'
@@ -63,14 +62,43 @@ clean-all() {
   sudo rm -r -f $dirs
 }
 
-list-images() {
-  for name in deps/Dockerfile.*; do
-    local image_id=${name//'deps/Dockerfile.'/}
-    if test "$image_id" = 'test-image'; then
-      continue
-    fi
-    echo $image_id
-  done
+list() {
+  local which=${1:-all}  # all | soil | prep
+
+  local accept=''
+  local reject=''
+  case $which in
+    all)
+      reject='^$'
+      ;;
+    soil)  # 13 soil images
+      reject='^(wedge-bootstrap-.*|soil-debian-.*)'
+      ;;
+    prep)
+      # images to prepare
+      # 2025-10: *-debian-10 is Debian Buster from 2019, which was retired in
+      # 2024.  You can't do sudo apt-get update
+      # https://wiki.debian.org/DebianReleases
+      accept='^(wedge-bootstrap-debian-12|soil-debian-12)'
+      ;;
+  esac
+
+  if test -n "$accept"; then
+    for name in deps/Dockerfile.*; do
+      local image_id=${name//'deps/Dockerfile.'/}
+      if [[ "$image_id" =~ $accept ]]; then
+        echo $image_id
+      fi
+    done
+  else
+    for name in deps/Dockerfile.*; do
+      local image_id=${name//'deps/Dockerfile.'/}
+      if [[ "$image_id" =~ $reject ]]; then
+        continue
+      fi
+      echo $image_id
+    done
+  fi
 }
 
 list-tagged() {
@@ -156,6 +184,11 @@ build() {
 
   # Avoid hassle by also tagging it
   tag-latest $name
+}
+
+build-cached() {
+  local name=${1:-soil-dummy}
+  build "$name" T
 }
 
 build-many() {
@@ -270,8 +303,47 @@ smoke-script-2() {
   cd ~/oil
   . build/dev-shell.sh
 
+  #test/spec-version.sh osh-version-text
+
+  echo PATH=$PATH
+
+  exit
+
+  which mksh
+  mksh -c "echo hi from mksh"
+
+  test/spec.sh smoke
+
+  which python2
+  python2 -V
+  echo
+
+  which python3
+  python3 -V
+  echo
+
+  exit
+
+  python3 -m mypy core/util.py
+  echo
+
+  # test pyflakes
+  test/lint.sh py2-lint core/util.py
+  echo
+
+  #pea/TEST.sh parse-all
+  #pea/TEST.sh run-tests
+
+  re2c --version
+  echo
+
+  # cmark.py
+  doctools/cmark.sh demo-ours
+
   bloaty --help
   echo
+
+  exit
 
   # hm this shows Python
   uftrace --version
@@ -281,6 +353,8 @@ smoke-script-2() {
 
   ls -l ~/oils.DEPS/wedge/uftrace/0.13/bin/uftrace
   uftrace=~/oils.DEPS/wedge/uftrace/0.13/bin/uftrace
+
+  devtools/R-test.sh soil-run
 
   exit
 
@@ -306,15 +380,24 @@ _smoke() {
   local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
   local docker=${3:-$DOCKER}
-  local prefix=${4:-}
+  local debug_shell=${4:-}
 
   #$docker run ${prefix}oilshell/$name:$tag bash -c "$(smoke-script-1)"
 
   local repo_root=$PWD
 
-  $docker run \
+  local -a flags argv
+  if test -n "$debug_shell"; then
+    flags=( -i -t )
+    argv=( bash )
+  else
+    flags=()
+    argv=( bash -c "$(smoke-script-2)" )
+  fi
+
+  $docker run "${flags[@]}" \
     --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
-    ${prefix}oilshell/$name:$tag bash -c "$(smoke-script-2)"
+    oilshell/$name:$tag "${argv[@]}"
 }
 
 smoke() {

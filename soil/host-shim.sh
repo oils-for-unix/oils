@@ -20,67 +20,71 @@ source test/tsv-lib.sh
 
 live-image-tag() {
   ### image ID -> Docker tag name
+
+  # Revert to known good version
+  echo 'v-2025-10-28'
+  return
+
+  # 2025-10-29: build/deps.sh full-soil-rebuild !!
+  # 7 minutes to build boxed wedges, 9:30 to build 13+ containers, and then push all
+  echo 'v-2025-10-29'
+  return
+
   local image_id=$1
 
   case $image_id in
     app-tests)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     wild)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     bloaty)
       # wedges 2025
-      echo 'v-2025-10-27'
-      #echo 'v-2025-05-01'
+      echo 'v-2025-10-28'
       ;;
     benchmarks)
       # wedges 2025
-      echo 'v-2025-10-27'
+      echo 'v-2025-10-28'
       ;;
     benchmarks2)
       # wedges 2025
-      echo 'v-2025-10-27'
+      # rebuild cmark, NOT uftrace
+      echo 'v-2025-10-28'
       ;;
     cpp-spec)
-      # rebuild with layer-locales
-      echo 'v-2025-09-23'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     pea)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     cpp-small)
-      # update to Debian 12
-      echo 'v-2025-05-01'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     clang)
-      # update to Debian 12
-      echo 'v-2025-05-01'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     ovm-tarball)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     other-tests)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
-      ;;
-    dummy)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     dev-minimal)
-      # rebuild python 2 wedge with libreadline-dev in wedge-bootstrap-debian-12
-      echo 'v-2025-05-01'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
-
-    # Not run directly
-    common)
-      # Rebuild with wedges
-      echo 'v-2023-02-28f'
+    dummy)
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     *)
       die "Invalid image $image"
