@@ -70,6 +70,7 @@ if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from builtin import trap_osh
     from core import optview
+    from core import vm
     from core.util import _DebugFile
     from osh.cmd_eval import CommandEvaluator
 
@@ -861,6 +862,27 @@ class ExternalThunk(Thunk):
         # type: () -> None
         """An ExternalThunk is run in parent for the exec builtin."""
         self.ext_prog.Exec(self.argv0_path, self.cmd_val, self.environ)
+
+
+class BuiltinThunk(Thunk):
+    """Builtin thunk - for running builtins in a forked subprocess"""
+
+    def __init__(self, shell_ex, builtin_id, cmd_val):
+        # type: (vm._Executor, int, cmd_value.Argv) -> None
+        self.shell_ex = shell_ex
+        self.builtin_id = builtin_id
+        self.cmd_val = cmd_val
+
+    def UserString(self):
+        # type: () -> str
+        tmp = [j8_lite.MaybeShellEncode(a) for a in self.cmd_val.argv]
+        return '[builtin] %s' % ' '.join(tmp)
+
+    def Run(self):
+        # type: () -> None
+        """No exec - we need to exit ourselves"""
+        status = self.shell_ex.RunBuiltin(self.builtin_id, self.cmd_val)
+        posix._exit(status)
 
 
 class SubProgramThunk(Thunk):

@@ -582,7 +582,14 @@ class ShellExecutor(vm._Executor):
                 not self.exec_opts.interactive()):
             builtin_id = _RewriteExternToBuiltin(cmd_val.argv)
             if builtin_id != consts.NO_INDEX:
-                return self.RunBuiltin(builtin_id, cmd_val)
+                if builtin_id == builtin_i.cat:
+                    thunk = process.BuiltinThunk(self, builtin_id, cmd_val)
+                    p = process.Process(thunk, self.job_control, self.job_list,
+                                        self.tracer)
+                    status = p.RunProcess(self.waiter, trace.Fork)
+                    return status
+                else:
+                    return self.RunBuiltin(builtin_id, cmd_val)
 
         return self.RunExternal(arg0, arg0_loc, cmd_val, cmd_st, run_flags)
 
