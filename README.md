@@ -73,13 +73,30 @@ Python program that you can quickly run and change!  Try it interactively:
 Let us know if any of these things don't work!  [The continuous
 build](https://op.oilshell.org/) tests them at every commit.
 
-### Dev Build vs. Release Build
+## Dev Build vs. Release Build
 
-Again, note that the **developer build** is **very different** from the release
-tarball.  The [Contributing][] page describes this difference in detail.
+Oils can be built in two main ways — each suited for different use cases:
 
-The release tarballs are linked from the [home page][home-page].  (Developer
-builds don't work on OS X, so use the release tarballs on OS X.)
+### 🧑‍💻 Developer Build (from source)
+- Built directly from the Git repository.
+- Intended for contributors or anyone who wants to modify Oils.
+- Uses `build/dev.sh` to compile and test the latest development version.
+- May include experimental or in-progress features.
+- Requires a working Python and build environment on your system.
+
+### 📦 Release Build (tarball)
+- Downloaded from the official [GitHub Releases](https://github.com/oils-for-unix/oils/releases) page.
+- Intended for users who simply want to run Oils — no build tools required.
+- Verified, tested, and stable for general use.
+- Contains prebuilt binaries and platform-specific optimizations.
+
+### 💡 Which One Should I Use?
+- If you’re **contributing or debugging**, use the *developer build*.
+- If you just want to **use Oils as a shell**, download the *release build*.
+
+> **Note for macOS users:** Some prebuilt release tarballs are not fully compatible with older OS X versions.  
+> In that case, it’s recommended to build Oils locally using the developer build process.
+
 
 ### Important: We Accept Small Contributions!
 
