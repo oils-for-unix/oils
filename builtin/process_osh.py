@@ -780,7 +780,7 @@ class Kill(vm._Builtin):
         if first_positional.startswith('-') and (
                 first_positional[1:].isdigit() or len(first_positional) > 2):
             signal_to_send = self._ParseSignal(first_positional[1:],
-                                                   first_positional_loc)
+                                               first_positional_loc)
             return self._SendSignal(arg_r, signal_to_send)
 
         # Note: we're making another args.Reader here
