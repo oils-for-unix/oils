@@ -694,6 +694,14 @@ class Ulimit(vm._Builtin):
         return 0
 
 
+def _SigNameToNumber(name):
+    # type: (str) -> int
+    name = name.upper()
+    if name.startswith("SIG"):
+        name = name[3:]
+    return signal_def.GetNumber(name)
+
+
 class Kill(vm._Builtin):
     """Send a signal to a process"""
 
@@ -701,39 +709,35 @@ class Kill(vm._Builtin):
         # type: (process.JobList) -> None
         self.job_list = job_list
 
-    def _SignameToSignum(self, name):
-        # type: (str) -> int
-        signal_name = name.upper()
-        if signal_name.startswith("SIG"):
-            signal_name = signal_name[3:]
-        return signal_def.GetNumber(signal_name)
-
     def _ParsePid(self, pid_arg, pid_arg_loc):
         # type: (str, loc_t) -> int
         if pid_arg.startswith("%"):
             job = self.job_list.JobFromSpec(pid_arg)
             if job is None:
-                e_usage("got invalid job id %r" % pid_arg, pid_arg_loc)
+                e_usage("got invalid job ID %r" % pid_arg, pid_arg_loc)
             return job.ProcessGroupId()
         else:
             try:
                 target_pid = int(pid_arg)
             except ValueError:
-                e_usage("got invalid process id %r" % pid_arg, pid_arg_loc)
+                e_usage("got invalid process ID %r" % pid_arg, pid_arg_loc)
             return target_pid
 
-    # sigspec can either be in the form 15, TERM, or SIGTERM (case insensitive)
-    # raises error if sigspec is in invalid format
     def _ParseSigspecArg(self, sigspec_arg, sigspec_arg_loc):
         # type: (str, loc_t) -> int
-        signal = signal_def.NO_SIGNAL
+        """
+        Sigspec can one of these forms:
+          15, TERM, SIGTERM (case insensitive)
+        Raises error if sigspec is in invalid format
+        """
         if sigspec_arg.isdigit():
-            signal = int(sigspec_arg)
+            # TODO: we don't validate the signal number here
+            sig_num = int(sigspec_arg)
         else:
-            signal = self._SignameToSignum(sigspec_arg)
-        if signal == signal_def.NO_SIGNAL:
-            e_usage("got invalid signal  %r" % sigspec_arg, sigspec_arg_loc)
-        return signal
+            sig_num = _SigNameToNumber(sigspec_arg)
+            if sig_num == signal_def.NO_SIGNAL:
+                e_usage("got invalid signal %r" % sigspec_arg, sigspec_arg_loc)
+        return sig_num
 
     def _ParseTargetArgs(self, arg_r, signal):
         # type: (args.Reader, int) -> int
@@ -757,7 +761,7 @@ class Kill(vm._Builtin):
                     e_usage("got invalid signal %r" % arg_l, arg_loc)
                 print(signal[3:])
             else:
-                num = self._SignameToSignum(arg_l)
+                num = _SigNameToNumber(arg_l)
                 if num < signal_def.NO_SIGNAL:
                     e_usage("got invalid signal %r" % arg_l, arg_loc)
                 print(str(num))
@@ -791,7 +795,9 @@ class Kill(vm._Builtin):
         if arg.l or arg.L:
             return self._ParsePrintArgs(arg_r)
 
-        _, arg_loc = arg_r.Peek2()
+        # TODO: it would be nice if the flag parser could expose the location
+        # of 'foo' in -s foo
+        arg_loc = cmd_val.arg_locs[0]
         if arg.n is not None:
             signal_to_send = self._ParseSigspecArg(arg.n, arg_loc)
         if arg.s is not None:
