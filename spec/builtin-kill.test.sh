@@ -163,26 +163,42 @@ echo $?
 case $SH in mksh|dash) exit ;; esac
 
 builtin kill -l 10 11 12
+echo status=$?
 echo
 
 builtin kill -l SIGUSR1 SIGSEGV USR2
+echo status=$?
 echo
 
 # mixed kind
 builtin kill -l 10 SIGSEGV 12
+echo status=$?
+echo
+
+builtin kill -l 10 BAD 12
+echo status=$?
+echo
 
 ## STDOUT:
 USR1
 SEGV
 USR2
+status=0
 
 10
 11
 12
+status=0
 
 USR1
 11
 USR2
+status=0
+
+USR1
+USR2
+status=1
+
 ## N-I dash/mksh STDOUT:
 ## END
 
