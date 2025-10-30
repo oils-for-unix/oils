@@ -72,9 +72,8 @@ build](https://op.oilshell.org/) tests them at every commit.
 
 ---
 
-Remember that this is the **dev build** in the Oils repo.  [The Oils Repo Is
-Different From the Tarball
-Releases](https://github.com/oils-for-unix/oils/wiki/The-Oils-Repo-Is-Different-From-the-Tarball-Releases).
+Remember that this is the **dev build** in Python, not a released binary.  [The
+Oils Repo Is Different From the Tarball Releases](https://github.com/oils-for-unix/oils/wiki/The-Oils-Repo-Is-Different-From-the-Tarball-Releases).
 
 ### Important: We Accept Small Contributions!
 
