@@ -1254,6 +1254,21 @@ test-brace-range() {
   _osh-error-X 127 '{35..37}"x"'
 }
 
+test-kill-builtin-usage() {
+  _osh-error-2 'kill'
+  _osh-error-2 'kill -15'
+
+  _osh-error-2 'kill --15 99'
+  _osh-error-2 'kill -T 99'  # invalid flag
+  _osh-error-2 'kill -TE 99'  # invalid sigspec
+
+  _osh-error-2 'kill -s TE 123'
+  _osh-error-2 'kill -s TERM %zzz'
+
+  _osh-error-2 'kill -L TERM ZZ USR1'
+  _osh-error-2 'kill -L 15 9999 16'
+}
+
 #
 # TEST DRIVER
 #

@@ -196,8 +196,10 @@ def GetCType(t: Type) -> str:
         c_type = 'void'
 
     elif isinstance(t, PartialType):
-        # Should be rejected in conversion_pass.py
-        raise AssertionError()
+        # Note: This can happen if you have
+        # signal_to_send = None
+        # signal_to_send = FunctionReturningInt()
+        raise AssertionError('Unexpected PartialType %s' % t)
 
     elif isinstance(t,
                     NoneTyp):  # e.g. a function that doesn't return anything
