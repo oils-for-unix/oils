@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## compare_shells: dash bash mksh zsh
 
 # Tests for builtins having to do with killing a process
@@ -175,10 +175,6 @@ builtin kill -l 10 SIGSEGV 12
 echo status=$?
 echo
 
-builtin kill -l 10 BAD 12
-echo status=$?
-echo
-
 ## STDOUT:
 USR1
 SEGV
@@ -195,10 +191,30 @@ USR1
 USR2
 status=0
 
+## N-I dash/mksh STDOUT:
+## END
+
+#### kill -L checks for invalid input
+case $SH in mksh|dash) exit ;; esac
+
+builtin kill -L 10 BAD 12
+echo status=$?
+echo
+
+builtin kill -L USR1 9999 USR2
+echo status=$?
+echo
+
+## STDOUT:
 USR1
 USR2
 status=1
 
+10
+12
+status=1
+
+## END
 ## N-I dash/mksh STDOUT:
 ## END
 

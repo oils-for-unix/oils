@@ -709,21 +709,7 @@ class Kill(vm._Builtin):
         # type: (process.JobList) -> None
         self.job_list = job_list
 
-    def _ParsePid(self, pid_arg, pid_arg_loc):
-        # type: (str, loc_t) -> int
-        if pid_arg.startswith("%"):
-            job = self.job_list.JobFromSpec(pid_arg)
-            if job is None:
-                e_usage("got invalid job ID %r" % pid_arg, pid_arg_loc)
-            return job.ProcessGroupId()
-        else:
-            try:
-                target_pid = int(pid_arg)
-            except ValueError:
-                e_usage("got invalid process ID %r" % pid_arg, pid_arg_loc)
-            return target_pid
-
-    def _ParseSigspecArg(self, sigspec_arg, sigspec_arg_loc):
+    def _ParseSignal(self, sigspec_arg, sigspec_arg_loc):
         # type: (str, loc_t) -> int
         """
         Sigspec can one of these forms:
@@ -739,7 +725,21 @@ class Kill(vm._Builtin):
                 e_usage("got invalid signal %r" % sigspec_arg, sigspec_arg_loc)
         return sig_num
 
-    def _ParseTargetArgs(self, arg_r, signal):
+    def _ParsePid(self, pid_arg, pid_arg_loc):
+        # type: (str, loc_t) -> int
+        if pid_arg.startswith("%"):
+            job = self.job_list.JobFromSpec(pid_arg)
+            if job is None:
+                e_usage("got invalid job ID %r" % pid_arg, pid_arg_loc)
+            return job.ProcessGroupId()
+        else:
+            try:
+                target_pid = int(pid_arg)
+            except ValueError:
+                e_usage("got invalid process ID %r" % pid_arg, pid_arg_loc)
+            return target_pid
+
+    def _SendSignal(self, arg_r, signal):
         # type: (args.Reader, int) -> int
         if arg_r.AtEnd():
             e_usage("expected a PID or jobspec", loc.Missing)
@@ -751,9 +751,8 @@ class Kill(vm._Builtin):
             arg_r.Next()
         return 0
 
-    def _ParsePrintArgs(self, arg_r):
+    def _TranslateSignals(self, arg_r):
         # type: (args.Reader) -> int
-        done_listing = False  # type: bool
         while not arg_r.AtEnd():
             arg_l, arg_loc = arg_r.Peek2()
             if arg_l.isdigit():
@@ -766,12 +765,8 @@ class Kill(vm._Builtin):
                 if num < signal_def.NO_SIGNAL:
                     e_usage("got invalid signal %r" % arg_l, arg_loc)
                 print(str(num))
-            done_listing = True
+
             arg_r.Next()
-
-        if not done_listing:
-            PrintSignals()
-
         return 0
 
     def Run(self, cmd_val):
@@ -784,26 +779,34 @@ class Kill(vm._Builtin):
         # checking for -sigspec argument
         if first_positional.startswith('-') and (
                 first_positional[1:].isdigit() or len(first_positional) > 2):
-            signal_to_send = self._ParseSigspecArg(first_positional[1:],
+            signal_to_send = self._ParseSignal(first_positional[1:],
                                                    first_positional_loc)
-            return self._ParseTargetArgs(arg_r, signal_to_send)
+            return self._SendSignal(arg_r, signal_to_send)
 
+        # Note: we're making another args.Reader here
         attrs, arg_r = flag_util.ParseCmdVal('kill',
                                              cmd_val,
                                              accept_typed_args=False)
         arg = arg_types.kill(attrs.attrs)
 
         if arg.l or arg.L:
-            return self._ParsePrintArgs(arg_r)
+            # If no arg, print all signals
+            if arg_r.AtEnd():
+                PrintSignals()
+                return 0
+
+            # Otherwise translate each arg
+            return self._TranslateSignals(arg_r)
 
         # TODO: it would be nice if the flag parser could expose the location
         # of 'foo' in -s foo
         arg_loc = cmd_val.arg_locs[0]
         if arg.n is not None:
-            signal_to_send = self._ParseSigspecArg(arg.n, arg_loc)
+            signal_to_send = self._ParseSignal(arg.n, arg_loc)
         if arg.s is not None:
-            signal_to_send = self._ParseSigspecArg(arg.s, arg_loc)
-        return self._ParseTargetArgs(arg_r, signal_to_send)
+            signal_to_send = self._ParseSignal(arg.s, arg_loc)
+
+        return self._SendSignal(arg_r, signal_to_send)
 
 
 # vim: sw=4
