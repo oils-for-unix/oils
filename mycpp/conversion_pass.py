@@ -167,15 +167,16 @@ class Pass(visitor.SimpleVisitor):
 
     def oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
-            base_class_sym: Optional[util.SymbolPath]) -> None:
+            base_class_sym: Optional[util.SymbolPath],
+            current_class_name: Optional[util.SymbolPath]) -> None:
         self.write_ind('class %s;\n', o.name)
         if base_class_sym:
-            self.virtual.OnSubclass(base_class_sym, self.current_class_name)
+            self.virtual.OnSubclass(base_class_sym, current_class_name)
 
         # Do default traversal of methods, associating member vars with the
         # ClassDef node
         self.current_member_vars = {}
-        super().oils_visit_class_def(o, base_class_sym)
+        super().oils_visit_class_def(o, base_class_sym, current_class_name)
         self.all_member_vars[o] = self.current_member_vars
 
     def _ValidateDefaultArg(self, arg: Argument) -> None:
@@ -221,10 +222,12 @@ class Pass(visitor.SimpleVisitor):
                 (func_def.name, num_defaults))
             return
 
-    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+    def oils_visit_func_def(
+            self, o: 'mypy.nodes.FuncDef',
+            current_class_name: Optional[util.SymbolPath]) -> None:
         self._ValidateDefaultArgs(o)
 
-        self.virtual.OnMethod(self.current_class_name, o.name)
+        self.virtual.OnMethod(current_class_name, o.name)
 
         self.current_local_vars = []
 
@@ -246,7 +249,7 @@ class Pass(visitor.SimpleVisitor):
                 self.current_local_vars.append((name, typ))
 
         # Traverse to collect member variables
-        super().oils_visit_func_def(o)
+        super().oils_visit_func_def(o, current_class_name)
         self.all_local_vars[o] = self.current_local_vars
 
         # Is this function is a generator?  Then associate the node with an
