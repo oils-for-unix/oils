@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 ## compare_shells: dash bash mksh zsh
 
 # Tests for builtins having to do with killing a process
@@ -293,4 +293,23 @@ echo $?
 0
 ## BUG dash STDOUT:
 1
+## END
+
+#### Numeric signal out of range is validated
+sleep 0.1 &
+
+kill -s 9999 %%
+echo kill=$?
+
+wait
+echo wait=$?
+
+## STDOUT:
+kill=2
+wait=0
+## END
+
+## OK bash/mksh/zsh STDOUT:
+kill=1
+wait=0
 ## END

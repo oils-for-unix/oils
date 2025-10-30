@@ -1259,7 +1259,10 @@ test-kill-builtin-usage() {
   _osh-error-2 'kill -TE 99'
   _osh-error-2 'kill -15'
   _osh-error-2 'kill -s TE 123'
-  _osh-error-2 'sleep 1 & kill -s 9999 %%; wait; echo status=$?'
+
+  # listing errors
+  _osh-error-2 'kill -L TERM ZZ'
+  _osh-error-2 'kill -L 15 9999'
 }
 
 #
