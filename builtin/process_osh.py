@@ -709,22 +709,6 @@ class Kill(vm._Builtin):
         # type: (process.JobList) -> None
         self.job_list = job_list
 
-    def _ParseSignal(self, sigspec_arg, sigspec_arg_loc):
-        # type: (str, loc_t) -> int
-        """
-        Sigspec can one of these forms:
-          15, TERM, SIGTERM (case insensitive)
-        Raises error if sigspec is in invalid format
-        """
-        if sigspec_arg.isdigit():
-            # TODO: we don't validate the signal number here
-            sig_num = int(sigspec_arg)
-        else:
-            sig_num = _SigNameToNumber(sigspec_arg)
-            if sig_num == signal_def.NO_SIGNAL:
-                e_usage("got invalid signal %r" % sigspec_arg, sigspec_arg_loc)
-        return sig_num
-
     def _ParsePid(self, pid_arg, pid_arg_loc):
         # type: (str, loc_t) -> int
         if pid_arg.startswith("%"):
@@ -742,14 +726,31 @@ class Kill(vm._Builtin):
     def _SendSignal(self, arg_r, signal):
         # type: (args.Reader, int) -> int
         if arg_r.AtEnd():
-            e_usage("expected a PID or jobspec", loc.Missing)
+            e_usage("expects at least one process/job ID", loc.Missing)
 
         while not arg_r.AtEnd():
             arg_str, arg_loc = arg_r.Peek2()
             pid = self._ParsePid(arg_str, arg_loc)
+
             posix.kill(pid, signal)
             arg_r.Next()
         return 0
+
+    def _ParseSignal(self, sigspec_arg, sigspec_arg_loc):
+        # type: (str, loc_t) -> int
+        """
+        Sigspec can one of these forms:
+          15, TERM, SIGTERM (case insensitive)
+        Raises error if sigspec is in invalid format
+        """
+        if sigspec_arg.isdigit():
+            # TODO: we don't validate the signal number here
+            sig_num = int(sigspec_arg)
+        else:
+            sig_num = _SigNameToNumber(sigspec_arg)
+            if sig_num == signal_def.NO_SIGNAL:
+                e_usage("got invalid signal %r" % sigspec_arg, sigspec_arg_loc)
+        return sig_num
 
     def _TranslateSignals(self, arg_r):
         # type: (args.Reader) -> int
@@ -771,17 +772,17 @@ class Kill(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        signal_to_send = 15  # sigterm, the default signal to send
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()  # skip command name
-        first_positional, first_positional_loc = arg_r.ReadRequired2(
-            "expected PID or jobspec")
-        # checking for -sigspec argument
-        if first_positional.startswith('-') and (
-                first_positional[1:].isdigit() or len(first_positional) > 2):
-            signal_to_send = self._ParseSignal(first_positional[1:],
-                                               first_positional_loc)
-            return self._SendSignal(arg_r, signal_to_send)
+
+        # Check for a signal argument like -15 -TERM -SIGTERM
+        first, first_loc = arg_r.Peek2()
+        if first is not None and first.startswith('-'):
+            sig_spec = first[1:]
+            if sig_spec.isdigit() or len(sig_spec) > 1:
+                sig_num = self._ParseSignal(sig_spec, first_loc)
+                arg_r.Next()  # Skip signal argument
+                return self._SendSignal(arg_r, sig_num)
 
         # Note: we're making another args.Reader here
         attrs, arg_r = flag_util.ParseCmdVal('kill',
@@ -798,15 +799,17 @@ class Kill(vm._Builtin):
             # Otherwise translate each arg
             return self._TranslateSignals(arg_r)
 
+        # -n and -s are synonyms.
         # TODO: it would be nice if the flag parser could expose the location
         # of 'foo' in -s foo
+        sig_num = 15  # SIGTERM, the default signal to send
         arg_loc = cmd_val.arg_locs[0]
         if arg.n is not None:
-            signal_to_send = self._ParseSignal(arg.n, arg_loc)
+            sig_num = self._ParseSignal(arg.n, arg_loc)
         if arg.s is not None:
-            signal_to_send = self._ParseSignal(arg.s, arg_loc)
+            sig_num = self._ParseSignal(arg.s, arg_loc)
 
-        return self._SendSignal(arg_r, signal_to_send)
+        return self._SendSignal(arg_r, sig_num)
 
 
 # vim: sw=4
