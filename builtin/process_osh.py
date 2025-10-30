@@ -741,12 +741,13 @@ class Kill(vm._Builtin):
 
     def _ParseTargetArgs(self, arg_r, signal):
         # type: (args.Reader, int) -> int
-        arg_pid, arg_pid_loc = arg_r.ReadRequired2("expected a PID or jobspec")
-        pid = self._ParsePid(arg_pid, arg_pid_loc)
-        posix.kill(pid, signal)
+        if arg_r.AtEnd():
+            e_usage("expected a PID or jobspec", loc.Missing)
+
         while not arg_r.AtEnd():
-            arg_pid, arg_loc = arg_r.Peek2()
-            posix.kill(self._ParsePid(arg_pid, arg_loc), signal)
+            arg_str, arg_loc = arg_r.Peek2()
+            pid = self._ParsePid(arg_str, arg_loc)
+            posix.kill(pid, signal)
             arg_r.Next()
         return 0
 
