@@ -9,7 +9,6 @@ source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source build/dev-shell.sh  # python3 in $PATH
 source test/common.sh      # run-one-test
 
 unit() {
