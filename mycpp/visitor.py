@@ -33,12 +33,12 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         # These should be passed into oils_visit_* explicitly
         self.__current_class_name: Optional[util.SymbolPath] = None
         self.__current_method_name: Optional[str] = None
+        self.__at_global_scope = True
 
         # So we can report multiple at once
         # module path, line number, message
         self.errors_keep_going: List[Tuple[str, int, str]] = []
 
-        self.at_global_scope = True
         self.indent = 0
         self.f: Optional[TextIO] = None
 
@@ -196,10 +196,10 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
         # If an assignment statement is not in a function or method, then it's at global scope
 
-        self.at_global_scope = False
+        self.__at_global_scope = False
         self.oils_visit_func_def(o, self.__current_class_name,
                                  self.__current_method_name)
-        self.at_global_scope = True
+        self.__at_global_scope = True
 
     #
     # Classes
@@ -306,7 +306,8 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression,
-                                   current_method_name: Optional[str]) -> None:
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
         self.accept(lval)
         self.accept(rval)
 
@@ -335,7 +336,8 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
             # must change to allow an out param.
 
         self.oils_visit_assignment_stmt(o, lval, o.rvalue,
-                                        self.__current_method_name)
+                                        self.__current_method_name,
+                                        self.__at_global_scope)
 
     def visit_operator_assignment_stmt(
             self, o: 'mypy.nodes.OperatorAssignmentStmt') -> None:

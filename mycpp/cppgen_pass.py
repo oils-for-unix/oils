@@ -598,10 +598,11 @@ class Decl(_Shared):
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression,
-                                   current_method_name: Optional[str]) -> None:
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
         # Declare constant strings.  They have to be at the top level.
 
-        # TODO: self.at_global_scope doesn't work for context managers and so forth
+        # TODO: at_global_scope doesn't work for context managers and so forth
         if self.indent == 0:
             # Top level can't have foo.bar = baz
             assert isinstance(lval, NameExpr), lval
@@ -1650,7 +1651,8 @@ class Impl(_Shared):
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression,
-                                   current_method_name: Optional[str]) -> None:
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
 
         # GLOBAL CONSTANTS - Avoid Alloc<T>, since that can't be done until main().
         if self.indent == 0:
@@ -1751,7 +1753,7 @@ class Impl(_Shared):
             #c_type = GetCType(lval_type, local=self.indent != 0)
             c_type = GetCType(lval_type)
 
-            if self.at_global_scope:
+            if at_global_scope:
                 # globals always get a type -- they're not mutated
                 self.write_ind('%s %s = ', c_type, lval.name)
             else:

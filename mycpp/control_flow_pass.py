@@ -434,7 +434,8 @@ class Build(visitor.SimpleVisitor):
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression,
-                                   current_method_name: Optional[str]) -> None:
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
         cfg = self.current_cfg()
         if cfg:
             lval_names = []

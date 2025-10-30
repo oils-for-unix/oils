@@ -295,8 +295,9 @@ class Pass(visitor.SimpleVisitor):
                                               cond)
 
     def _MaybeAddMember(self, lval: MemberExpr,
-                        current_method_name: Optional[str]) -> None:
-        assert not self.at_global_scope, "Members shouldn't be assigned at the top level"
+                        current_method_name: Optional[str],
+                        at_global_scope: bool) -> None:
+        assert not at_global_scope, "Members shouldn't be assigned at the top level"
 
         # Collect statements that look like self.foo = 1
         # Only do this in __init__ so that a derived class mutating a field
@@ -318,10 +319,11 @@ class Pass(visitor.SimpleVisitor):
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression,
-                                   current_method_name: Optional[str]) -> None:
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
 
         if isinstance(lval, MemberExpr):
-            self._MaybeAddMember(lval, current_method_name)
+            self._MaybeAddMember(lval, current_method_name, at_global_scope)
 
         if lval in self.types and isinstance(self.types[lval], PartialType):
             t = self.types[lval]
@@ -365,7 +367,7 @@ class Pass(visitor.SimpleVisitor):
                         to_cast.name.startswith('UP_')):
                     is_downcast_and_shadow = True
 
-            if (not self.at_global_scope and not is_iterator and
+            if (not at_global_scope and not is_iterator and
                     not is_downcast_and_shadow):
                 self.current_local_vars.append((lval.name, self.types[lval]))
 
@@ -394,9 +396,11 @@ class Pass(visitor.SimpleVisitor):
 
                 # self.a, self.b = foo()
                 if isinstance(lval_item, MemberExpr):
-                    self._MaybeAddMember(lval_item, current_method_name)
+                    self._MaybeAddMember(lval_item, current_method_name,
+                                         at_global_scope)
 
-        super().oils_visit_assignment_stmt(o, lval, rval, current_method_name)
+        super().oils_visit_assignment_stmt(o, lval, rval, current_method_name,
+                                           at_global_scope)
 
     def oils_visit_for_stmt(self, o: 'mypy.nodes.ForStmt',
                             func_name: Optional[str]) -> None:
