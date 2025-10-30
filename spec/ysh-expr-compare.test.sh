@@ -297,7 +297,7 @@ if (int(false) <= int(false) ) {
   echo '<='
 }
 
-# JavaScript and Python both have this, but Oil prefers being explicit
+# JavaScript and Python both have this, but YSH prefers being explicit
 
 if (true < false) {
   echo 'BAD'

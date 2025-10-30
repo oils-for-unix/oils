@@ -113,6 +113,36 @@ _tmp/executable
 status=0
 ## END
 
+#### command -v doesn't find executable dir
+
+mkdir -p _tmp
+PATH="_tmp:$PATH"
+mkdir _tmp/cat
+
+command -v _tmp/cat
+echo status=$?
+command -v cat
+echo status=$?
+
+## STDOUT:
+status=1
+/usr/bin/cat
+status=0
+## END
+
+## BUG mksh STDOUT:
+status=1
+cat
+status=0
+## END
+
+## BUG ash/dash STDOUT:
+_tmp/cat
+status=0
+/usr/bin/cat
+status=0
+## END
+
 #### command -V
 myfunc() { echo x; }
 

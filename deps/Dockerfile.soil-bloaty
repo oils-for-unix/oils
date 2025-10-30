@@ -13,7 +13,15 @@ RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=
 USER uke
 
 # For measuring binary size
+#COPY --chown=uke \
+#  _build/wedge/binary/oils-for-unix.org/pkg/bloaty/1.1 \
+#  /wedge/oils-for-unix.org/pkg/bloaty/1.1
+
+# New structure
 COPY --chown=uke \
-  _build/wedge/binary/oils-for-unix.org/pkg/bloaty/1.1 \
-  /wedge/oils-for-unix.org/pkg/bloaty/1.1
+  _build/boxed/wedge/bloaty/1.1 \
+  /home/uke/oils.DEPS/wedge/bloaty/1.1
+
+RUN mkdir -p /home/uke/oils.DEPS/bin && \
+    ln -s --relative /home/uke/oils.DEPS/wedge/bloaty/1.1/bloaty /home/uke/oils.DEPS/bin
 

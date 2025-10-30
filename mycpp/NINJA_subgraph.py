@@ -15,6 +15,7 @@ _ = log
 def DefineTargets(ru):
 
     # Creates _bin/shwrap/mycpp_main
+    # This isn't used directly - see SHWRAP in build/ninja_lib.py
     ru.py_binary(
         'mycpp/mycpp_main.py',
         deps_base_dir='prebuilt/ninja',
@@ -387,9 +388,9 @@ def MycppExamples(ru, ph):
 
         ## Translate the example 2 ways, and benchmark and test it
 
-        for translator in ['mycpp', 'mycpp-nosouffle']:
+        for translator in ['mycpp', 'mycpp-souffle', 'mycpp-nosouffle']:
 
-            matrix = (NOSOUFFLE_MATRIX if translator == 'mycpp-nosouffle' else
+            matrix = (NOSOUFFLE_MATRIX if 'souffle' in translator else
                       COMPILERS_VARIANTS)
             phony_prefix = 'mycpp-examples' if translator == 'mycpp' else None
             py_inputs = TRANSLATE_FILES.get(ex)
@@ -443,6 +444,8 @@ def MycppExamples(ru, ph):
                 impl = 'C++'
                 if translator == 'mycpp-nosouffle':
                     impl = 'C++-NoSouffle'
+                elif translator == 'mycpp-souffle':
+                    impl = 'C++-Souffle'
 
                 n.build([task_out, cc_log_out],
                         'example-task', [b_example],

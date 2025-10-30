@@ -24,6 +24,19 @@ The result should be:
 
 The -1 value means it's cached forever.
 
+## Note on Directory Structure
+
+The following scripts assume a directory structure like this:
+
+```
+*this can be any path*/
+    oils-for-unix/
+        oils/      # dir where this git repo is cloned
+    alpinelinux/   # created by scripts below
+```
+
+This layout mimics the GitHub URL namespace.  If the layout on your machine differs, you might run into problems.
+
 ## Set up Alpine chroot - `he.oils.pub`
 
 The first step is in `regtest/aports-setup.sh`:
@@ -54,16 +67,16 @@ into 17 *shards*.  You can run two shards like this:
 
     $ export APORTS_EPOCH=2025-08-07-fix   # directory name, and .wwz name
 
-    $ regtest/aports-run.sh build-many-shards shard5 shard6
+    $ regtest/aports-run.sh build-many-shards-overlayfs shard5 shard6
 
 This is the normal way to run all 17 shards (using bash brace expansion):
 
-    $ regtest/aports-run.sh build-many-shards shard{0..16}
+    $ regtest/aports-run.sh build-many-shards-overlayfs shard{0..16}
 
 But this is how I run it right now, due to flakiness:
 
       # weird order!
-    $ regtest/aports-run.sh build-many-shards shard{10..16} shard{0..5}
+    $ regtest/aports-run.sh build-many-shards-overlayfs shard{10..16} shard{0..5}
 
       # Now BLOW AWAY CHROOT, to work around errors
     $ regtest/aports-setup.sh remove-chroot
@@ -71,7 +84,7 @@ But this is how I run it right now, due to flakiness:
     $ regtest/aports-setup.sh unpack-distfiles
 
       # Run remaining shards
-    $ regtest/aports-run.sh build-many-shards shard{6..9}
+    $ regtest/aports-run.sh build-many-shards-overlayfs shard{6..9}
 
 (This was discovered empirically; we should remove this workaround eventually.)
 
@@ -166,14 +179,6 @@ And then visit:
 
 - <https://op.oils.pub/aports-build/published.html>
 
-## Updating Causes
-
-See [regtest/aports-cause.awk](regtest/aports-cause.awk).
-
-Faster way to test it:
-
-    $ regtest/aports-html.sh merge-diffs _tmp/aports-report/2025-08-07-fix/
-
 ## Other Instructions
 
 ### Reproducing a single package build failure
@@ -209,55 +214,40 @@ Then look at the logs in
 
     $ regtest/aports-run.sh enter-rootfs       # as root user
 
-### Update `cause.awk`, re-generate HTML, and re-deploy
-
-Suppose you want to edit `regtest/aports/cause.awk` to add new causes.  For
-example, you can link to bug `#2339` with a line like:
-
-    patterns["#2339"] = "requires a signal or hook name"
-
-First sync the latest report from the `op.oils.pub` web server:
-
-    regtest/aports-html sync-wwz 2025-08-26-ifs.wwz
-
-Then extract it to a new "epoch":
-
-    regtest/aports-html extract 2025-08-26-ifs.wwz 2025-09-06-edit
-
-Then re-generate HTML:
-
-    $ regtest/aports-html.sh write-all-reports _tmp/aports-report/2025-09-06-edit
-
-You can iterate on `cause.awk`, generating new HTML.
-
-And then upload a new report as before.  You can similarly edit the function
-`regtest/aports-html.sh published-html` to include a link.
-
-- <https://op.oils.pub/aports-build/published.html>
-
 ## TODO
 
 - Running under podman could be more reliable
   - `regtest/aports-container.sh` shows that podman is able to run `abuild
     rootbld` -> `bwrap`, if it's passed the `--privileged` flag
 
+## Related Links
+
+- [Updating-Causes-of-Aports-Failures](https://github.com/oils-for-unix/oils/wiki/Updating-Causes-of-Aports-Failures) (wiki)
+
 ## Appendix: Dir Structure
 
 ```
 he.oils.pub/
   ~/git/oils-for-unix/oils/
-    _chroot/aports-build/
-      home/udu/    # user name is 'udu'
-       oils/       # a subset of the Oils repo
-         build/
-           py.sh
-         _tmp/
-           aports-guest/
-             baseline/
-               7zip.log.txt
-               7zip.task.tsv
-             osh-as-sh/
-             osh-as-bash/
+    _chroot/
+      aports-build/
+        enter-chroot  # you can run this, passing -u udu
+        home/udu/     # user name is 'udu'
+         oils/        # a subset of the Oils repo
+           build/
+             py.sh
+           _tmp/
+             aports-guest/
+               baseline/
+                 7zip.log.txt
+                 7zip.task.tsv
+               osh-as-sh/
+               osh-as-bash/
+      osh-as-sh.overlay/
+        layer/
+        merged/
+          enter-chroot        # you can run this, passing -u udu
+        work/
     _tmp/aports-build/ 
       2025-08-07-fix/         # $APORTS_EPOCH
         shard0/

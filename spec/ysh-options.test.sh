@@ -147,6 +147,7 @@ shopt -s strict:all
 shopt -o -p | grep -- ' -o ' | grep -v hashall
 shopt -p strict:all
 ## STDOUT:
+shopt -s strict_arg_parse
 shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array
@@ -208,7 +209,7 @@ three
 
 #### osh -O errexit: use -O everywhere, even for Bourne options
 $SH -O errexit -c 'shopt -p -o errexit'
-#$SH -O errexit -c 'shopt -p errexit'  # bash doesn't allow this, but Oil does
+#$SH -O errexit -c 'shopt -p errexit'  # bash doesn't allow this, but Oils does
 ## STDOUT:
 set -o errexit
 ## END

@@ -2,39 +2,8 @@
 #
 # Test kernel state: which signals caught, ignored, etc.
 #
-# Copied from:
-# https://unix.stackexchange.com/questions/85364/how-can-i-check-what-signals-a-process-is-listening-to
-#
 # Usage:
 #   test/signal-state.sh <function name>
-
-sigparse() {
-  # Parse signal format in /proc.
-  local hex_mask=$1
-
-  local i=0
-
-  # bits="$(printf "16i 2o %X p" "0x$1" | dc)" # variant for busybox
-
-  # hex to binary.  Could also do this with Python.
-  bits="$(printf 'ibase=16; obase=2; %X\n' "0x$hex_mask" | bc)"
-  while test -n "$bits"; do
-    i=$((i + 1))
-    case "$bits" in
-      *1)
-        local sig_name=$(kill -l "$i")
-        printf ' %s(%s)' "$sig_name" "$i"
-        ;;
-    esac
-    bits="${bits%?}"
-  done
-}
-
-report() {
-  grep '^Sig...:' "/proc/$1/status" | while read state hex_mask; do
-    printf "%s%s\n" "$state" "$(sigparse "$hex_mask")"
-  done
-}
 
 do_child() {
   echo
@@ -47,6 +16,7 @@ do_child() {
 
 compare-shells() {
   local do_child=${1:-}
+  local do_trap=${2:-}
 
   local osh_cpp=_bin/cxx-dbg/osh
   ninja $osh_cpp
@@ -62,13 +32,19 @@ compare-shells() {
     echo "---- $sh ----"
     echo
 
-    $sh -c 'script=$1; $script report $$' -- $0
+    #echo "Parent PID $$"
+    #grep '^SigIgn:' "/proc/$$/status" 
+    #trap
+
+    $sh test/signal-report.sh report "$do_trap"
 
     if test -n "$do_child"; then
       do_child $sh
     fi
   done
+}
 
+old() {
   echo
   echo
 

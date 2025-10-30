@@ -84,10 +84,10 @@ module syntax
   # Note that ASDL generates:
   #    typedef uint16_t Id_t;
   # So Token is
-  #    8 bytes GC header + 2 + 2 + 4 + 8 + 8 = 32 bytes on 64-bit machines
+  #    8 bytes GC header + 2 + 4 + 4 + 8 + 8 = 34 bytes on 64-bit machines
   #
   # We transpose (id, col, length) -> (id, length, col) for C struct packing.
-  Token = (id id, uint16 length, int col, SourceLine? line, str? tval)
+  Token = (id id, int length, int col, SourceLine? line, str? tval)
 
   # I wanted to get rid of Token.tval with this separate WideToken type, but it
   # is more efficient if word_part.Literal %Token literally is the same thing
@@ -111,8 +111,6 @@ module syntax
   | Arith(arith_expr a)
     # e.g. for errexit blaming
   | Command(command c)
-    # the location of a token that's too long
-  | TokenTooLong(SourceLine line, id id, int length, int col)
 
   # debug_frame_t is an EXECUTION stack (proc func source use eval), while
   # source_t (in some cases) is like a PARSING stack (files, strings from vars,
@@ -184,6 +182,10 @@ module syntax
 
   CommandSub = (Token left_token, command child, Token right)
 
+  # @[expr] or $[expr] - expression substitution
+  # Used in both word_part and expr contexts
+  ExprSub = (Token left, expr child, Token right)
+
   # - can contain word.BracedTree
   # - no 'Token right' for now, doesn't appear to be used
   YshArrayLiteral = (Token left, List[word] words, Token right)
@@ -239,8 +241,8 @@ module syntax
 
     # @myarray - Id.Lit_Splice (could be optimized to %Token)
   | Splice(Token blame_tok, str var_name)
-    # $[d.key], etc.
-  | ExprSub(Token left, expr child, Token right)
+    # @[expr] $[expr] - array splice or expr sub
+  | ExprSub %ExprSub
 
   # Use cases for Empty: RHS of 'x=', the argument in "${x:-}".
   # The latter is semantically necessary.  (See osh/word_parse.py). 
@@ -260,6 +262,8 @@ module syntax
   | BracedTree(List[word_part] parts)
     # For dynamic parsing of test aka [ - the string is already evaluated.
   | String(id id, str s, CompoundWord? blame_loc)
+    # Redirect words like   >   3>  {myvar}>
+  | Redir(Token? left_tok, Token op)
 
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs =
@@ -583,6 +587,7 @@ module syntax
   | SimpleVarSub %SimpleVarSub
   | BracedVarSub %BracedVarSub
   | CommandSub %CommandSub
+  | ExprSub %ExprSub
   | SingleQuoted %SingleQuoted
   | DoubleQuoted %DoubleQuoted
 

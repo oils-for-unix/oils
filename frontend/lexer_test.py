@@ -168,6 +168,31 @@ class TokenTest(unittest.TestCase):
         # Get x, then Id.Eof_Real because there are no more lines
         _PrintfOuterTokens('x\0')
 
+    def testLookAheadDParens(self):
+        """Test that it doesn't mess up invariants."""
+        arena = test_lib.MakeArena('<lexer_test.py>')
+
+        code_str = '((cd /tmp && ls) )'
+        _, lx = test_lib.InitLexer(code_str, arena)
+        #_PrintAllTokens(lx, lex_mode_e.ShCommand)
+
+        t = lx.Read(lex_mode_e.ShCommand)
+        self.assertEqual(Id.Op_DLeftParen, t.id)
+
+        #t = lx.Read(lex_mode_e.ShCommand)
+
+        look = lx.LookAheadDParens(0)
+        self.assertEqual(False, look)
+
+        code_str = '(( x > 0 ))'
+        _, lx = test_lib.InitLexer(code_str, arena)
+
+        t = lx.Read(lex_mode_e.ShCommand)
+        self.assertEqual(Id.Op_DLeftParen, t.id)
+
+        look = lx.LookAheadDParens(0)
+        self.assertEqual(True, look)
+
 
 class TokenFunctionsTest(unittest.TestCase):
 

@@ -33,6 +33,7 @@ from _devbuild.gen.syntax_asdl import (
     SingleQuoted,
     DoubleQuoted,
     CommandSub,
+    ExprSub,
     BracedVarSub,
     BraceGroup,
     Subscript,
@@ -300,8 +301,8 @@ def LeftTokenForWordPart(part):
             return part.blame_tok
 
         elif case(word_part_e.ExprSub):
-            part = cast(word_part.ExprSub, UP_part)
-            return part.left  # $[
+            part = cast(ExprSub, UP_part)
+            return part.left  # $[ or @[
 
         else:
             raise AssertionError(part.tag())
@@ -378,7 +379,7 @@ def _RightTokenForWordPart(part):
             return part.blame_tok
 
         elif case(word_part_e.ExprSub):
-            part = cast(word_part.ExprSub, UP_part)
+            part = cast(ExprSub, UP_part)
             return part.right
 
         else:
@@ -392,6 +393,11 @@ def LeftTokenForCompoundWord(w):
     else:
         # This is possible for empty brace sub alternative {a,b,}
         return None
+
+
+def LeftTokenForRedirWord(w):
+    # type: (word.Redir) -> Token
+    return w.left_tok if w.left_tok else w.op
 
 
 def LeftTokenForWord(w):
@@ -416,8 +422,12 @@ def LeftTokenForWord(w):
 
         elif case(word_e.String):
             w = cast(word.String, UP_w)
-            # See _StringWordEmitter in osh/builtin_bracket.py
+            # See _StringWordEmitter in builtin/bracket_osh.py
             return LeftTokenForWord(w.blame_loc)
+
+        elif case(word_e.Redir):
+            w = cast(word.Redir, UP_w)
+            return LeftTokenForRedirWord(w)
 
         else:
             raise AssertionError(w.tag())
@@ -455,6 +465,10 @@ def RightTokenForWord(w):
             w = cast(word.String, UP_w)
             # Note: this case may be unused
             return RightTokenForWord(w.blame_loc)
+
+        elif case(word_e.Redir):
+            w = cast(word.Redir, UP_w)
+            return w.op
 
         else:
             raise AssertionError(w.tag())
@@ -508,6 +522,10 @@ def TokenForExpr(node):
         elif case(expr_e.CommandSub):
             node = cast(CommandSub, UP_node)
             return node.left_token
+
+        elif case(expr_e.ExprSub):
+            node = cast(ExprSub, UP_node)
+            return node.left
 
         elif case(expr_e.YshArrayLiteral):
             node = cast(YshArrayLiteral, UP_node)

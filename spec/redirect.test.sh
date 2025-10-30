@@ -500,3 +500,96 @@ cat file1
 ## stdout: foo55
 ## N-I mksh/dash stdout-json: ""
 ## N-I mksh/dash status: 1
+
+#### noclobber can still write to non-regular files like /dev/null
+set -C  # noclobber
+set -e  # errexit (raise any redirection errors)
+
+# Each redirect to /dev/null should succeed
+echo a  >  /dev/null  # trunc, write stdout
+echo a &>  /dev/null  # trunc, write stdout and stderr
+echo a  >> /dev/null  # append, write stdout
+echo a &>> /dev/null  # append, write stdout and stderr
+echo a  >| /dev/null  # ignore noclobber, trunc, write stdout
+## OK dash STDOUT:
+a
+a
+## END
+## STDOUT:
+## END
+
+#### Parsing of x=1> and related cases
+
+echo x=1>/dev/stdout
+echo x=1 >/dev/stdout
+echo x= 1>/dev/stdout
+
+echo +1>/dev/stdout
+echo +1 >/dev/stdout
+echo + 1>/dev/stdout
+
+echo a1>/dev/stdout
+
+## STDOUT:
+x=1
+x=1
+x=
++1
++1
++
+a1
+## END
+
+#### Parsing of x={myvar} and related cases
+case $SH in dash) exit ;; esac
+
+echo {myvar}>/dev/stdout
+# Bash chooses fds starting with 10 here, osh with 100, and there can already
+# be some open fds, so compare further fds against this one
+starting_fd=$myvar
+
+echo x={myvar}>/dev/stdout
+echo $((myvar-starting_fd))
+echo x={myvar} >/dev/stdout
+echo $((myvar-starting_fd))
+echo x= {myvar}>/dev/stdout
+echo $((myvar-starting_fd))
+
+echo +{myvar}>/dev/stdout
+echo $((myvar-starting_fd))
+echo +{myvar} >/dev/stdout
+echo $((myvar-starting_fd))
+echo + {myvar}>/dev/stdout
+echo $((myvar-starting_fd))
+## STDOUT:
+
+x={myvar}
+0
+x={myvar}
+0
+x=
+1
++{myvar}
+1
++{myvar}
+1
++
+2
+## END
+## BUG mksh/ash STDOUT:
+{myvar}
+x={myvar}
+0
+x={myvar}
+0
+x= {myvar}
+0
++{myvar}
+0
++{myvar}
+0
++ {myvar}
+0
+## END
+## N-I dash STDOUT:
+## END

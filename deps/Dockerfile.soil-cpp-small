@@ -16,22 +16,39 @@ USER uke
 
 # Pre-built wedges
 
-COPY --chown=uke \
-  _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
-  /wedge/oils-for-unix.org/pkg/cmark/0.29.0
+#COPY --chown=uke \
+#  _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
+#  /wedge/oils-for-unix.org/pkg/cmark/0.29.0
 
 COPY --chown=uke \
-  _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
-  /wedge/oils-for-unix.org/pkg/re2c/3.0
+  _build/boxed/wedge/cmark/0.29.0 \
+  /home/uke/oils.DEPS/wedge/cmark/0.29.0
+
+#COPY --chown=uke \
+#  _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
+#  /wedge/oils-for-unix.org/pkg/re2c/3.0
 
 COPY --chown=uke \
-  _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
-  /wedge/oils-for-unix.org/pkg/python3/3.10.4
+  _build/boxed/wedge/re2c/3.0 \
+  /home/uke/oils.DEPS/wedge/re2c/3.0
+
+#COPY --chown=uke \
+#  _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
+#  /wedge/oils-for-unix.org/pkg/python3/3.10.4
+
+COPY --chown=uke \
+  _build/boxed/wedge/python3/3.10.4 \
+  /home/uke/oils.DEPS/wedge/python3/3.10.4
+
+# Put python3 in PATH before running install-py3-libs
+RUN mkdir -p /home/uke/oils.DEPS/bin && \
+    ln -s --relative /home/uke/oils.DEPS/wedge/re2c/3.0/bin/re2c /home/uke/oils.DEPS/bin && \
+    ln -s --relative /home/uke/oils.DEPS/wedge/python3/3.10.4/bin/python3 /home/uke/oils.DEPS/bin
 
 # Copy _build/deps-source -> /home/uke/wedge for now.
 COPY --chown=uke \
   _build/deps-source/mypy/mypy-0.780/ \
-  /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+  /home/uke/oils.DEPS/wedge/mypy/0.780/
 
 # 2025-04: build/deps.sh install-py3-libs depends on this - need tree shaking
 COPY stdlib/osh/bash-strict.sh /home/uke/tmp/stdlib/osh/bash-strict.sh
@@ -47,6 +64,9 @@ COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
 # Hack for now: pass a different MyPy dir
 # Ideally py3-libs would be created a BUILD TIME with wedge-builder, not at
 # RUNTIME with uke!
-RUN build/deps.sh install-py3-libs /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+#RUN build/deps.sh install-py3-libs /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+
+RUN build/deps.sh install-py3-libs \
+  /home/uke/oils.DEPS/wedge/mypy/0.780/ ../oils.DEPS/wedge
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-cpp-small'"]

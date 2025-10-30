@@ -159,7 +159,7 @@ _shell-id-hash() {
   # For example, the version is different on Ubuntu Bionic vs. Trusty, but we
   # ignore that.
   file=$src/osh-version.txt
-  test -f $file && egrep '^Oil version|^Interpreter:' $file
+  test -f $file && egrep '^Interpreter:' $file
 
   # For OSH
   file=$src/git-commit-hash.txt

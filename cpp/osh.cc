@@ -60,6 +60,9 @@ bool DoUnaryOp(Id_t op_id, BigStr* s) {
     case Id::BoolUnary_e:
       return true;
 
+    case Id::BoolUnary_b:
+      return S_ISBLK(mode);
+
     case Id::BoolUnary_c:
       return S_ISCHR(mode);
 

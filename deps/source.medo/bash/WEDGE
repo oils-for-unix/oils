@@ -20,7 +20,7 @@ wedge-make() {
 
   # --without-bash-malloc for Alpine only -- musl libc incompatibility?
   # https://patchwork.ozlabs.org/project/buildroot/patch/20170523171931.18744-1-dsabogalcc@gmail.com/
-  time $src_dir/configure --without-bash-malloc --prefix=$install_dir
+  time $src_dir/configure --without-bash-malloc --prefix=$install_dir CFLAGS="-std=gnu99 -Wno-error=implicit-function-declaration"
 
   time make
 }
@@ -43,6 +43,6 @@ wedge-smoke-test() {
 
   # Create bash-4.4 and bash-5.2 symlinks for use in spec tests
   pushd $install_dir/bin
-  ln -s -v bash bash-$WEDGE_VERSION
+  ln -s -f -v bash bash-$WEDGE_VERSION
   popd
 }

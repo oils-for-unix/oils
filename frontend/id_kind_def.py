@@ -282,6 +282,8 @@ def AddKinds(spec):
             # syntax error in YSH, but NOT OSH
             'CompDummy',  # A fake Lit_* token to get partial words during
             # completion
+            'Number',
+            'RedirVarName'  # "{myvar}", as in {myvar}>out.txt (and on its own)
         ])
 
     # For recognizing \` and \" and \\ within backticks.  There's an extra layer
@@ -459,6 +461,7 @@ def AddKinds(spec):
             'DollarBraceZsh',  # ${(foo)
             'DollarDParen',  # $((
             'DollarBracket',  # $[ - synonym for $(( in bash and zsh
+            'AtBracket',  # @[expr] array splice in expression mode
             'DollarDoubleQuote',  # $" for bash localized strings
             'ProcSubIn',  # <( )
             'ProcSubOut',  # >( )

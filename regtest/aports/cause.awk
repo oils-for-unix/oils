@@ -22,7 +22,10 @@ BEGIN {
 
   patterns[3] = "cannot compile programs"
 
+  # abuild, ifupdown-ng, ...
   patterns["#2416"] = "test case names with"
+  # jemalloc appears to be the same root cause
+  patterns["##2416"] = "jemalloc/internal/private_namespace.h: No such file or directory"
 
   # e2fsprogs - not sure how to narrow this down more?
   patterns["#2413"] = "382 tests succeeded	1 tests failed"
@@ -70,10 +73,10 @@ BEGIN {
   patterns["##2364"] = "mkdir: invalid option --"
 
   # make
-  patterns[17] = "oils I/O error"
-
-  # imap
-  patterns[18] = "[ backticks in [ -c flag ] ]"
+  patterns["#2335"] = "oils I/O error"
+  # patch is the same ulimit bug, but the "invalid argument" EINVAL string
+  # occurs in test-suite.log
+  patterns["##2335"] = "patch: check failed"
 
   # sqsh
   patterns["#2409"] = "(test) Unexpected trailing word"
@@ -99,8 +102,23 @@ BEGIN {
   # chrony
   patterns["#2426"] = "In expressions, remove $ and use `OPTIND`"
 
-  # shorewall - BAD version detection
-  patterns["#2427"] = "ERROR: This program requires Bash 4.0 or later"
+  # shorewall - BAD version detection - fixed
+  #patterns["#2427"] = "ERROR: This program requires Bash 4.0 or later"
+
+  # gdbm
+  patterns["#2429"] = "ERROR: gdbm: check failed"
+
+  # shorewall
+  patterns["#2438"] = "Assoc array keys must be strings"
+
+  # zfs
+  patterns["#2441"] = "Token starting at column"
+
+  # 2025-10-26: demo for updating cause.awk, already fixed
+  patterns["#2477"] = "printf expected an integer, got"
+
+  # mdev-conf
+  patterns["#2500"] = "readlink disk/by-label/EFI"
 
   found = 0
 }

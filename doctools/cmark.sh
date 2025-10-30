@@ -18,7 +18,6 @@ REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
 readonly REPO_ROOT
 
 readonly TAR_DIR=$REPO_ROOT/_cache
-readonly DEPS_DIR=$REPO_ROOT/../oil_DEPS
 
 readonly CMARK_VERSION=0.29.0
 readonly URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.tar.gz"

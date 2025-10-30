@@ -1191,6 +1191,21 @@ test-no-osh-builtins() {
   # TODO: disallow . too
 }
 
+test-ysh-trap() {
+  _ysh-error-2 'trap --remove 0'
+  _ysh-error-2 'trap --remove INT 0'
+  _ysh-error-2 'trap --add INT 0 { echo hi }'
+  _ysh-error-2 'trap --add INT 0'  # block is required
+
+  _ysh-should-run 'trap -p'
+
+  # old forms
+
+  _ysh-error-2 'trap'
+  _ysh-error-2 'trap - 0'
+  _ysh-error-2 'trap - INT 0'
+}
+
 
 soil-run-py() {
   run-test-funcs

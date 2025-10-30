@@ -306,6 +306,22 @@ Note that, in shell, the `( )` syntax does **not** simply group commands.  The
 This is a common mistake because parentheses are for grouping in other
 programming languages.
 
+### OILS-ERR-20
+
+
+```
+  var x = ' \n '
+           ^~~~
+[ -c flag ]:1: Ambiguous backslash: add explicit r'' or u'' prefix (OILS-ERR-20)
+```
+
+Did you mean `r' \n '`?  This is a raw string with a literal backslash.
+
+Or did you mean `u' \n '` or `b' \n '`?  These are strings with C-style
+escapes.
+
+YSH wants you to be explicit about what backslashes mean.
+
 ## Runtime Errors - Traditional Shell
 
 These errors may occur in shells like [bash]($xref) and [zsh]($xref).

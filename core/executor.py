@@ -45,6 +45,11 @@ if TYPE_CHECKING:
 _ = log
 
 
+def _IsPathExecutable(full_path):
+    # type: (str) -> bool
+    return posix.access(full_path, X_OK) and path_stat.isfile(full_path)
+
+
 def LookupExecutable(name, path_dirs, exec_required=True):
     # type: (str, List[str], bool) -> Optional[str]
     """
@@ -62,9 +67,9 @@ def LookupExecutable(name, path_dirs, exec_required=True):
     for path_dir in path_dirs:
         full_path = os_path.join(path_dir, name)
         if exec_required:
-            found = posix.access(full_path, X_OK)
-        else:
-            found = path_stat.exists(full_path)
+            found = _IsPathExecutable(full_path)
+        else:  # Used by 'source' builtin
+            found = path_stat.isfile(full_path)
 
         if found:
             return full_path
@@ -223,7 +228,7 @@ class SearchPath(object):
             return []
 
         if '/' in name:
-            if path_stat.exists(name):
+            if _IsPathExecutable(name):
                 return [name]
             else:
                 return []
@@ -231,7 +236,7 @@ class SearchPath(object):
         results = []  # type: List[str]
         for path_dir in self._GetPath():
             full_path = os_path.join(path_dir, name)
-            if path_stat.exists(full_path):
+            if _IsPathExecutable(full_path):
                 results.append(full_path)
                 if not do_all:
                     return results
@@ -408,11 +413,11 @@ class PureExecutor(vm._Executor):
             loc.WordPart(cs_part))
 
     def PushRedirects(self, redirects, err_out):
-        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        # type: (List[RedirValue], List[int]) -> None
         pass
 
     def PopRedirects(self, num_redirects, err_out):
-        # type: (int, List[error.IOError_OSError]) -> None
+        # type: (int, List[int]) -> None
         pass
 
     def PushProcessSub(self):
@@ -876,14 +881,15 @@ class ShellExecutor(vm._Executor):
                 raise error.ErrExit(status, msg, loc.WordPart(cs_part))
 
         else:
-            # Set a flag so we check errexit at the same time as bash.  Example:
+            # POSIX 2.9.1.3: "If there is no command name but the command
+            # contains a command substitution, the command shall complete with
+            # the exit status of the command substitution whose exit status was
+            # the last to be obtained"
             #
+            # This affects
             # a=$(false)
-            # echo foo  # no matter what comes here, the flag is reset
-            #
-            # Set ONLY until this command node has finished executing.
+            # $(false) $(exit 42)
 
-            # HACK: move this
             self.cmd_ev.check_command_sub_status = True
             self.mem.SetLastStatus(status)
 
@@ -1004,13 +1010,13 @@ class ShellExecutor(vm._Executor):
             raise AssertionError()
 
     def PushRedirects(self, redirects, err_out):
-        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        # type: (List[RedirValue], List[int]) -> None
         if len(redirects) == 0:  # Optimized to avoid allocs
             return
         self.fd_state.Push(redirects, err_out)
 
     def PopRedirects(self, num_redirects, err_out):
-        # type: (int, List[error.IOError_OSError]) -> None
+        # type: (int, List[int]) -> None
         if num_redirects == 0:  # Optimized to avoid allocs
             return
         self.fd_state.Pop(err_out)

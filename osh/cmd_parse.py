@@ -14,6 +14,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind, Kind_str
 from _devbuild.gen.types_asdl import lex_mode_e, cmd_mode_e, cmd_mode_t
 from _devbuild.gen.syntax_asdl import (
     loc,
+    word,
     SourceLine,
     source,
     parse_result,
@@ -723,33 +724,20 @@ class CommandParser(object):
         # type: () -> Redir
         self._GetWord()
         assert self.c_kind == Kind.Redir, self.cur_word
-        op_tok = cast(Token, self.cur_word)  # for MyPy
+        cur_word = cast(word.Redir, self.cur_word)
 
-        # Note: the lexer could take distinguish between
-        #  >out
-        #  3>out
-        #  {fd}>out
-        #
-        # which would make the code below faster.  But small string optimization
-        # would also speed it up, since redirects are small.
-
-        # One way to do this is with Kind.Redir and Kind.RedirNamed, and then
-        # possibly "unify" the IDs by subtracting a constant like 8 or 16?
-
-        op_val = lexer.TokenVal(op_tok)
-        if op_val[0] == '{':
-            pos = op_val.find('}')
-            assert pos != -1  # lexer ensures this
-            where = redir_loc.VarName(op_val[1:pos])  # type: redir_loc_t
-
-        elif op_val[0].isdigit():
-            pos = 1
-            if op_val[1].isdigit():
-                pos = 2
-            where = redir_loc.Fd(int(op_val[:pos]))
-
+        # Redirects like   >out   3>out   {myvar}>out
+        left_tok = cur_word.left_tok
+        if left_tok is not None:
+            left_val = lexer.TokenVal(left_tok)
+            if left_tok.id == Id.Lit_Number:
+                where = redir_loc.Fd(int(left_val))  # type: redir_loc_t
+            elif left_tok.id == Id.Lit_RedirVarName:
+                where = redir_loc.VarName(left_val[1:-1])
+            else:
+                assert False  # shouldn't happen
         else:
-            where = redir_loc.Fd(consts.RedirDefaultFd(op_tok.id))
+            where = redir_loc.Fd(consts.RedirDefaultFd(cur_word.op.id))
 
         self._SetNext()
 
@@ -760,12 +748,12 @@ class CommandParser(object):
                   loc.Word(self.cur_word))
 
         # Here doc
-        if op_tok.id in (Id.Redir_DLess, Id.Redir_DLessDash):
+        if cur_word.op.id in (Id.Redir_DLess, Id.Redir_DLessDash):
             arg = redir_param.HereDoc.CreateNull()
             arg.here_begin = self.cur_word
             arg.stdin_parts = []
 
-            r = Redir(op_tok, where, arg)
+            r = Redir(cur_word.op, where, arg)
 
             self.pending_here_docs.append(r)  # will be filled on next newline.
 
@@ -782,7 +770,7 @@ class CommandParser(object):
         self._SetNext()
 
         # Special case for <<< 'hi' and <<< ''' multiline '''
-        if op_tok.id == Id.Redir_TLess:
+        if cur_word.op.id == Id.Redir_TLess:
             part0 = arg_word.parts[0]
 
             is_multiline = False
@@ -802,9 +790,9 @@ class CommandParser(object):
                         is_multiline = True
 
             param = redir_param.HereWord(arg_word, is_multiline)
-            return Redir(op_tok, where, param)
+            return Redir(cur_word.op, where, param)
 
-        return Redir(op_tok, where, arg_word)
+        return Redir(cur_word.op, where, arg_word)
 
     def _ParseRedirectList(self):
         # type: () -> List[Redir]
@@ -887,7 +875,7 @@ class CommandParser(object):
           '(' arglist ')'
         | '[' arglist ']'
 
-        simple_command = 
+        simple_command =
             cmd_prefix* item+ typed_args? BraceGroup? cmd_suffix*
 
         Notably, redirects shouldn't appear after typed args, or after
@@ -2116,8 +2104,15 @@ class CommandParser(object):
                 p_die(
                     'Bash (( not allowed in YSH (no_parse_dparen, see OILS-ERR-14 for wart)',
                     loc.Word(self.cur_word))
-            n7 = self.ParseDParen()
-            return self._MaybeParseRedirectList(n7)
+
+            # If the closing parens aren't separated by anything - '))' - it's
+            # an arithmetic expression, otherwise it's a subshell
+            if self.w_parser.LookAheadDParens():
+                n7 = self.ParseDParen()
+                return self._MaybeParseRedirectList(n7)
+            else:
+                subshell = self.ParseSubshell(dparen_hack=True)
+                return self._MaybeParseRedirectList(subshell)
 
         # bash extensions: no redirects
         if self.c_id == Id.KW_Time:
@@ -2336,8 +2331,8 @@ class CommandParser(object):
         """
         raise NotImplementedError()
 
-    def ParseSubshell(self):
-        # type: () -> command.Subshell
+    def ParseSubshell(self, dparen_hack=False):
+        # type: (bool) -> command.Subshell
         """
         subshell : '(' compound_list ')'
 
@@ -2345,8 +2340,16 @@ class CommandParser(object):
         """
         left = word_.AsOperatorToken(self.cur_word)
         if self.parse_opts.no_parse_osh():
-            p_die("Subshell syntax ( ) isn't allowed in YSH (OILS-ERR-19)", left)
-        self._SetNext()  # skip past (
+            p_die("Subshell syntax ( ) isn't allowed in YSH (OILS-ERR-19)",
+                  left)
+        if dparen_hack:
+            # We've skipped the first of the two parens, so "replace" the
+            # current token with a (
+            # TODO: It would be nicer to get rid of the (( DParen token, and
+            # just have two ( ( Op_LParen tokens.
+            self.c_id = Id.Op_LParen
+        else:
+            self._SetNext()  # skip past (
 
         # Ensure that something $( (cd / && pwd) ) works.  If ) is already on the
         # translation stack, we want to delay it.
@@ -2412,7 +2415,7 @@ class CommandParser(object):
         they can't be alone in a shell function body.
 
         Example:
-        This is valid shell   f() if true; then echo hi; fi  
+        This is valid shell   f() if true; then echo hi; fi
         This is invalid       f() var x = 1
         """
         if self._AtSecondaryKeyword():

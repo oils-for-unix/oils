@@ -20,8 +20,7 @@
 # (3) Build wedges
 #
 #     build/deps.sh fetch
-#     build/deps.sh boxed-wedges
-#     build/deps.sh boxed-spec-bin
+#     build/deps.sh boxed-wedges-2025
 #
 # (4) Rebuild an image
 #
@@ -33,9 +32,8 @@
 #
 # (6) Push Everything you Built
 #
-#     $0 push wedge-bootstrap-debian-12  # pushes both $LATEST_TAG and latest
-#     $0 push soil-debian-12             # ditto
-#     $0 push soil-test-image            # ditto
+#     # pushes both $LATEST_TAG and latest
+#     $0 push-many wedge-bootstrap-debian-12 soil-debian-12 soil-test-image
 #
 # More
 # ----
@@ -56,7 +54,7 @@ source deps/podman.sh
 
 DOCKER=${DOCKER:-docker}
 
-readonly LATEST_TAG='v-2025-09-23'  # add libreadline-dev to wedge-bootstrap-debian-12
+readonly LATEST_TAG='v-2025-10-29'  # full rebuild
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'
@@ -64,14 +62,43 @@ clean-all() {
   sudo rm -r -f $dirs
 }
 
-list-images() {
-  for name in deps/Dockerfile.*; do
-    local image_id=${name//'deps/Dockerfile.'/}
-    if test "$image_id" = 'test-image'; then
-      continue
-    fi
-    echo $image_id
-  done
+list() {
+  local which=${1:-all}  # all | soil | prep
+
+  local accept=''
+  local reject=''
+  case $which in
+    all)
+      reject='^$'
+      ;;
+    soil)  # 13 soil images
+      reject='^(wedge-bootstrap-.*|soil-debian-.*)'
+      ;;
+    prep)
+      # images to prepare
+      # 2025-10: *-debian-10 is Debian Buster from 2019, which was retired in
+      # 2024.  You can't do sudo apt-get update
+      # https://wiki.debian.org/DebianReleases
+      accept='^(wedge-bootstrap-debian-12|soil-debian-12)'
+      ;;
+  esac
+
+  if test -n "$accept"; then
+    for name in deps/Dockerfile.*; do
+      local image_id=${name//'deps/Dockerfile.'/}
+      if [[ "$image_id" =~ $accept ]]; then
+        echo $image_id
+      fi
+    done
+  else
+    for name in deps/Dockerfile.*; do
+      local image_id=${name//'deps/Dockerfile.'/}
+      if [[ "$image_id" =~ $reject ]]; then
+        continue
+      fi
+      echo $image_id
+    done
+  fi
 }
 
 list-tagged() {
@@ -159,6 +186,11 @@ build() {
   tag-latest $name
 }
 
+build-cached() {
+  local name=${1:-soil-dummy}
+  build "$name" T
+}
+
 build-many() {
   echo 'TODO: use_cache should be automatic - all but 2 images use it'
 }
@@ -194,7 +226,7 @@ push-many() {
   done
 }
 
-smoke-test-script() {
+smoke-script-1() {
   echo '
 for file in /etc/debian_version /etc/lsb-release; do
   if test -f $file; then
@@ -266,8 +298,81 @@ fi
 '
 }
 
-smoke() {
-  sudo $0 _smoke "$@"
+smoke-script-2() {
+  echo '
+  cd ~/oil
+  . build/dev-shell.sh
+
+  #test/spec-version.sh osh-version-text
+
+  echo PATH=$PATH
+
+  exit
+
+  which mksh
+  mksh -c "echo hi from mksh"
+
+  test/spec.sh smoke
+
+  which python2
+  python2 -V
+  echo
+
+  which python3
+  python3 -V
+  echo
+
+  exit
+
+  python3 -m mypy core/util.py
+  echo
+
+  # test pyflakes
+  test/lint.sh py2-lint core/util.py
+  echo
+
+  #pea/TEST.sh parse-all
+  #pea/TEST.sh run-tests
+
+  re2c --version
+  echo
+
+  # cmark.py
+  doctools/cmark.sh demo-ours
+
+  bloaty --help
+  echo
+
+  exit
+
+  # hm this shows Python
+  uftrace --version
+
+  which uftrace
+  uftrace=$(which uftrace)
+
+  ls -l ~/oils.DEPS/wedge/uftrace/0.13/bin/uftrace
+  uftrace=~/oils.DEPS/wedge/uftrace/0.13/bin/uftrace
+
+  devtools/R-test.sh soil-run
+
+  exit
+
+  cc -pg -o hello deps/source.medo/uftrace/hello.c
+
+  # libmcount-fast is in the uftrace lib/ dir
+  ldd $(which uftrace)
+  echo
+
+  set -x
+  #head /tmp/cache-bust.txt
+
+  $uftrace record hello
+  #uftrace replay hello
+  echo
+
+  #find /usr -name "libm*.so"
+  '
 }
 
 _smoke() {
@@ -275,21 +380,30 @@ _smoke() {
   local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
   local docker=${3:-$DOCKER}
-  local prefix=${4:-}
+  local debug_shell=${4:-}
 
-  #sudo docker run oilshell/$name
-  #sudo docker run oilshell/$name python2 -c 'print("python2")'
+  #$docker run ${prefix}oilshell/$name:$tag bash -c "$(smoke-script-1)"
 
-  # Need to point at registries.conf ?
-  #export-podman
+  local repo_root=$PWD
 
-  $docker run ${prefix}oilshell/$name:$tag bash -c "$(smoke-test-script)"
+  local -a flags argv
+  if test -n "$debug_shell"; then
+    flags=( -i -t )
+    argv=( bash )
+  else
+    flags=()
+    argv=( bash -c "$(smoke-script-2)" )
+  fi
 
-  # Python 2.7 build/prepare.sh requires this
-  #sudo docker run oilshell/$name python -V
-
-  #sudo docker run oilshell/$name python3 -c 'import pexpect; print(pexpect)'
+  $docker run "${flags[@]}" \
+    --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
+    oilshell/$name:$tag "${argv[@]}"
 }
+
+smoke() {
+  sudo $0 _smoke "$@"
+}
+
 
 smoke-podman() {
   local name=${1:-dummy}
@@ -331,7 +445,7 @@ mount-test() {
     argv=( "${@:2}" )  # index 2 not 1, weird shell behavior
   fi
 
-  # mount Oil directory as /app
+  # mount 'oil' directory as /app.  TODO: Oils
   sudo $DOCKER run \
     --mount "type=bind,source=$PWD,target=/home/uke/oil" \
     oilshell/$name "${argv[@]}"

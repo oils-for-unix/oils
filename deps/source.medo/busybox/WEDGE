@@ -17,7 +17,8 @@ wedge-make() {
 
   # Out of tree instructions from INSTALL
   make KBUILD_SRC=$src_dir -f $src_dir/Makefile defconfig
-
+  # disable the tc module, since thats broken on linux kernels > 6.8
+  sed -i 's/CONFIG_TC=y/CONFIG_TC=n/' .config
   time make
 }
 

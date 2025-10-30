@@ -13,7 +13,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source test/common.sh
 source test/tsv-lib.sh
 
-# TODO: This would be a nice little program for Oil
+# TODO: This would be a nice little program for YSH
 count-lines-and-cols() {
   python2 -c '
 import sys

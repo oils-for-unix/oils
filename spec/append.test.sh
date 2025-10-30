@@ -36,9 +36,6 @@ t=foofoo
 
 #### Append to array to undefined variable
 
-# I wonder if Oil should have accumulators:
-# auto y += %(c d) or something
-
 y+=(c d)
 argv.py "${y[@]}"
 ## STDOUT:

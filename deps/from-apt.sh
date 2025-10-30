@@ -225,7 +225,7 @@ cpp-small() {
     # for build/py.sh all
     libreadline-dev
 
-    # To compile Oil
+    # To compile Oils
     g++
     ninja-build
 
@@ -334,7 +334,7 @@ cpp-spec() {
     # for build/py.sh all
     libreadline-dev
 
-    # To build Oil
+    # To build Oils
     g++
     ninja-build
 

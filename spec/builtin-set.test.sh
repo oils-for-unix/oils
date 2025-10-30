@@ -276,3 +276,66 @@ echo "$@"
 +
 
 ## END
+
+#### set -a exports variables
+set -a
+FOO=bar
+BAZ=qux
+printenv.py FOO BAZ
+## STDOUT:
+bar
+qux
+## END
+
+#### set +a stops exporting
+set -a
+FOO=exported
+set +a
+BAR=not_exported
+printenv.py FOO BAR
+## STDOUT:
+exported
+None
+## END
+
+#### set -o allexport (long form)
+set -o allexport
+VAR1=value1
+set +o allexport
+VAR2=value2
+printenv.py VAR1 VAR2
+## STDOUT:
+value1
+None
+## END
+
+#### variables set before set -a are not exported
+BEFORE=before_value
+set -a
+AFTER=after_value
+printenv.py BEFORE AFTER
+## STDOUT:
+None
+after_value
+## END
+
+#### set -a exports local variables
+set -a
+f() {
+  local ZZZ=zzz
+  printenv.py ZZZ
+}
+f
+## STDOUT:
+zzz
+## END
+## BUG mksh stdout: None
+
+#### set -a exports declare variables
+set -a
+declare ZZZ=zzz
+printenv.py ZZZ
+## STDOUT:
+zzz
+## END
+## N-I dash/mksh stdout: None

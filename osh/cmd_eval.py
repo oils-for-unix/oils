@@ -304,6 +304,12 @@ def _PrefixBindingsPersist(cmd_val):
             return True
         elif case(cmd_value_e.Argv):
             cmd_val = cast(cmd_value.Argv, UP_cmd_val)
+            if len(cmd_val.argv) == 0:
+                # This is counter-intuitive, but bash appears to preserve
+                # bindings in this case. Try the following snippet:
+                # bash -c 'A=a $B; echo $A' (prints "a")
+                return True
+
             arg0 = cmd_val.argv[0]
 
             # exec is an EXCEPTION to the SPECIAL builtin rule.
@@ -1106,7 +1112,7 @@ class CommandEvaluator(object):
         if node.redirects is not None:
             num_redirects = len(node.redirects)
 
-        io_errors = []  # type: List[error.IOError_OSError]
+        io_errors = []  # type: List[int]
         with vm.ctx_Redirect(self.shell_ex, num_redirects, io_errors):
             # NOTE: RunSimpleCommand may never return
             if len(node.more_env):  # I think this guard is necessary?
@@ -1150,7 +1156,7 @@ class CommandEvaluator(object):
             # It would be better to point to the right redirect
             # operator, but we don't track it specifically
             e_die("Fatal error popping redirect: %s" %
-                  pyutil.strerror(io_errors[0]))
+                  posix.strerror(io_errors[0]))
 
         probe('cmd_eval', '_DoSimple_exit', status)
         return status
@@ -1252,6 +1258,9 @@ class CommandEvaluator(object):
             # with Undef value, but the 'array' attribute.
 
             flags = 0  # for tracing
+            # set -a: automatically mark variables for export
+            if self.exec_opts.allexport():
+                flags |= state.SetExport
             self.mem.SetValue(lval, val, which_scopes, flags=flags)
             if initializer is not None:
                 ListInitialize(val, initializer, has_plus, self.exec_opts,
@@ -1259,17 +1268,9 @@ class CommandEvaluator(object):
 
             self.tracer.OnShAssignment(lval, pair.op, rhs, flags, which_scopes)
 
-        # PATCH to be compatible with existing shells: If the assignment had a
-        # command sub like:
-        #
-        # s=$(echo one; false)
-        #
-        # then its status will be in mem.last_status, and we can check it here.
-        # If there was NOT a command sub in the assignment, then we don't want to
-        # check it.
-
-        # Only do this if there was a command sub?  How?  Look at node?
-        # Set a flag in mem?   self.mem.last_status or
+        # For the cases like
+        #   a=$(false)
+        #   $(false) $(exit 42)
         if self.check_command_sub_status:
             last_status = self.mem.LastStatus()
             self._CheckStatus(last_status, cmd_st, node, loc.Missing)
@@ -1783,14 +1784,14 @@ class CommandEvaluator(object):
 
         # If we evaluated redir_vals, apply/push them
         if status == 0:
-            io_errors = []  # type: List[error.IOError_OSError]
+            io_errors = []  # type: List[int]
             self.shell_ex.PushRedirects(redir_vals, io_errors)
             if len(io_errors):
                 # core/process.py prints cryptic errors, so we repeat them
                 # here.  e.g. Bad File Descriptor
                 self.errfmt.PrintMessage(
                     'I/O error applying redirect: %s' %
-                    pyutil.strerror(io_errors[0]),
+                    posix.strerror(io_errors[0]),
                     self.mem.GetFallbackLocation())
                 status = 1
 
@@ -1808,14 +1809,14 @@ class CommandEvaluator(object):
         # Translation fix: redirect I/O errors may happen in a C++
         # destructor ~vm::ctx_Redirect, which means they must be signaled
         # by out params, not exceptions.
-        io_errors = []  # type: List[error.IOError_OSError]
+        io_errors = []  # type: List[int]
         with vm.ctx_Redirect(self.shell_ex, len(node.redirects), io_errors):
             status = self._Execute(node.child)
         if len(io_errors):
             # It would be better to point to the right redirect
             # operator, but we don't track it specifically
             e_die("Fatal error popping redirect: %s" %
-                  pyutil.strerror(io_errors[0]))
+                  posix.strerror(io_errors[0]))
 
         return status
 
@@ -2452,23 +2453,25 @@ class CommandEvaluator(object):
         # type: (IntParamBox) -> None
         """If an EXIT trap handler exists, run it.
 
-        Only mutates the status if 'return' or 'exit'.  This is odd behavior, but
-        all bash/dash/mksh seem to agree on it.  See cases in
+        It only mutates the status if 'return' or 'exit'.  This is odd
+        behavior, but bash/dash/mksh seem to agree on it.  See test cases in
         builtin-trap.test.sh.
-
-        Note: if we could easily modulo -1 % 256 == 255 here, then we could get rid
-        of this awkward interface.  But that's true in Python and not C!
-
-        Could use i & (n-1) == i & 255  because we have a power of 2.
-        https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
         """
         # This does not raise, even on 'exit', etc.
         self.RunPendingTrapsAndCatch()
 
         node = self.trap_state.GetHook('EXIT')  # type: command_t
         if node:
-            # NOTE: Don't set option_i._running_trap, because that's for
+            # Note: Don't set option_i._running_trap, because that's for
             # RunPendingTraps() in the MAIN LOOP
+
+            # Note: we're not using ctx_EnclosedFrame(), so
+            # proc p {
+            #   var x = 'local'
+            #   trap --add { echo $x }
+            # }
+            # doesn't capture x.  This is documented in doc/ref/
+
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
                 try:
                     is_return, is_fatal = self.ExecuteAndCatch(node, 0)

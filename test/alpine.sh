@@ -12,7 +12,7 @@
 # - _chroot/alpine-oils-spec
 #   Test how the spec tests run (gawk and zip deps)
 # - _chroot/alpine-distro-build
-#   Test if Oil can run Alpine's own package manager and scripts (not done yet)
+#   Test if OSH can run Alpine's own package manager and scripts (not done yet)
 #
 # Examples:
 #

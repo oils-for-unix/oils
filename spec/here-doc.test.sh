@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## compare_shells: dash bash mksh
 
 #### Here string
@@ -409,3 +409,11 @@ echo ok
 ok
 ## END
 
+#### Here doc and backslash double quote
+cat <<EOF
+a \"quote\"
+EOF
+
+## STDOUT:
+a \"quote\"
+## END

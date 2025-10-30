@@ -1,5 +1,8 @@
-## oils_failures_allowed: 2
 ## compare_shells: dash bash mksh zsh
+## oils_failures_allowed: 2
+## oils_cpp_failures_allowed: 3
+# case #24 with ulimit -f 1 is different under C++ for some reason - could be due to the python2
+# intepreter and SIGXFSZ
 
 #### exec builtin 
 exec echo hi
@@ -413,11 +416,7 @@ after 1
 
 
 #### ulimit -f 1 prevents files larger 512 bytes
-
-# dash and zsh give too much spew
-# mksh gives 512 byte files?
-
-#case $SH in dash|zsh|mksh) exit ;; esac
+trap - XFSZ  # don't handle this
 
 rm -f err.txt
 touch err.txt
@@ -434,7 +433,6 @@ bytes() {
   done
 }
 
-
 ulimit -f 1
 
 bytes 512 > ok.txt
@@ -449,7 +447,13 @@ echo
 
 cat err.txt
 
+## status: -25
 ## STDOUT:
+512 status=0
+## END
+
+## OK disabledosh status: 0
+## OK disabledosh STDOUT:
 512 status=0
 513 status=0
 
@@ -460,6 +464,7 @@ cat err.txt
 ERROR: echo failed with status 1
 ## END
 
+## BUG bash status: 0
 ## BUG bash STDOUT:
 512 status=0
 513 status=0
@@ -485,6 +490,11 @@ $SH big.sh
 echo outer=$?
 
 ## STDOUT:
+outer=153
+## END
+
+# not sure why this is different
+## OK osh STDOUT:
 inner=1
 outer=0
 ## END

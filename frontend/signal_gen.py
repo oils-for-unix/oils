@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""Signal_gen.py."""
 from __future__ import print_function
 
 import sys
@@ -7,20 +6,27 @@ import sys
 import signal_def
 
 
-def CppPrintSignals(f):
-    f.write("""
-void PrintSignals() {
-""")
-
-    for abbrev, _ in signal_def._BY_NUMBER:
+def CppGetName(f):
+    for abbrev, _ in signal_def._SIGNAL_LIST:
         name = "SIG%s" % (abbrev, )
-        f.write("""\
-#ifdef %s
-  printf("%%2d %s\\n", %s);
-#endif
-""" % (name, name, name))
+        f.write('GLOBAL_STR(k%s, "%s");\n' % (name, name))
 
-    f.write("}\n")
+    f.write("""\
+BigStr* GetName(int sig_num) {
+  switch (sig_num) {
+""")
+    for abbrev, num in signal_def._SIGNAL_LIST:
+        name = "SIG%s" % (abbrev, )
+        f.write('  case %d:\n' % num)
+        f.write('    return k%s;\n' % (name))
+        f.write('    break;\n')
+    f.write("""\
+  default:
+    return nullptr;
+  }
+}
+
+""")
 
 
 def CppGetNumber(f):
@@ -34,14 +40,13 @@ int GetNumber(BigStr* sig_spec) {
   const char* data = sig_spec->data_;
 
 """)
-    for abbrev, _ in signal_def._BY_NUMBER:
+    for abbrev, _ in signal_def._SIGNAL_LIST:
         name = "SIG%s" % (abbrev, )
         f.write("""\
-  if ((length == %d && memcmp("%s", data, %d) == 0) ||
-      (length == %d && memcmp("%s", data, %d) == 0)) {
+  if (length == %d && memcmp("%s", data, %d) == 0) {
     return %s;
   }
-""" % (len(name), name, len(name), len(abbrev), abbrev, len(abbrev), name))
+""" % (len(abbrev), abbrev, len(abbrev), name))
     f.write("""\
   return NO_SIGNAL;
 }
@@ -68,9 +73,11 @@ namespace signal_def {
 
 const int NO_SIGNAL = -1;
 
-void PrintSignals();
+int MaxSigNumber();
 
 int GetNumber(BigStr* sig_spec);
+
+BigStr* GetName(int sig_num);
 
 }  // namespace signal_def
 
@@ -86,10 +93,17 @@ int GetNumber(BigStr* sig_spec);
 
 namespace signal_def {
 
-""")
-            CppPrintSignals(f)
-            f.write("\n")
+int MaxSigNumber() {
+  return %d;
+}
+
+""" % signal_def._MAX_SIG_NUMBER)
+
             CppGetNumber(f)
+            f.write("\n")
+
+            CppGetName(f)
+            f.write("\n")
 
             f.write("""\
 

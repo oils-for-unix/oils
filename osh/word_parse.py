@@ -31,7 +31,7 @@ lex_mode_e.Arith
 lex_mode_e.VSub_ArgUnquoted
   Like ShCommand, everything is allowed (even process substitutions), but we
   stop at }, and space is SIGNIFICANT.
-  
+
   Example: ${a:-  b   }
 
   ${X:-$v}   ${X:-${v}}  ${X:-$(echo hi)}  ${X:-`echo hi`}  ${X:-$((1+2))}
@@ -52,11 +52,13 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
 from _devbuild.gen.types_asdl import (lex_mode_t, lex_mode_e)
 from _devbuild.gen.syntax_asdl import (
+    ExprSub,
     BoolParamBox,
     Token,
     SimpleVarSub,
     loc,
     source,
+    word,
     DoubleQuoted,
     SingleQuoted,
     BracedVarSub,
@@ -304,13 +306,8 @@ class WordParser(WordEmitter):
 
     def _ReadVarOpArg2(self, arg_lex_mode, eof_type, empty_ok):
         # type: (lex_mode_t, Id_t, bool) -> CompoundWord
-        """Return a CompoundWord.
-
-        Helper function for _ReadVarOpArg and used directly by
-        _ReadPatSubVarOp.
-        """
+        """Helper function for _ReadVarOpArg and _ReadPatSubVarOp"""
         w = self._ReadCompoundWord3(arg_lex_mode, eof_type, empty_ok)
-        #log('w %s', w)
         tilde = word_.TildeDetect(w)
         if tilde:
             w = tilde
@@ -727,7 +724,9 @@ class WordParser(WordEmitter):
                   left_token)
 
         # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'
-        no_backslashes = is_ysh_expr and left_token.id == Id.Left_SingleQuote
+        # enforce for triple-quoted strings: ''' \u ''' requires r''' \u '''
+        no_backslashes = is_ysh_expr and left_token.id in (
+            Id.Left_SingleQuote, Id.Left_TSingleQuote)
 
         expected_end_tokens = 3 if left_token.id in (
             Id.Left_TSingleQuote, Id.Left_RTSingleQuote, Id.Left_UTSingleQuote,
@@ -747,7 +746,7 @@ class WordParser(WordEmitter):
                 # r'one\two' or c'one\\two'
                 if no_backslashes and lexer.TokenContains(tok, '\\'):
                     p_die(
-                        r"Strings with backslashes should look like r'\n' or u'\n' or b'\n'",
+                        "Ambiguous backslash: add explicit r'' or u'' prefix (OILS-ERR-20)",
                         tok)
 
                 if is_ysh_expr:
@@ -829,7 +828,13 @@ class WordParser(WordEmitter):
             return self._ReadBracedVarSub(self.cur_token, d_quoted=True)
 
         if self.token_type == Id.Left_DollarDParen:
+            # TODO: Uncomment this after another regtest/aports run
+            # if (self.LookAheadDParens(shift_back=1)):
             return self._ReadArithSub()
+            # else:
+            # Mutate token - we treat this '$((' as '$( ('
+            # self.cur_token.id = Id.Left_DollarParen
+            # return self._ReadCommandSub(Id.Left_DollarParen, d_quoted=True)
 
         if self.token_type == Id.Left_DollarBracket:
             return self._ReadExprSub(lex_mode_e.DQ)
@@ -956,7 +961,13 @@ class WordParser(WordEmitter):
             return self._ReadBracedVarSub(self.cur_token, d_quoted=False)
 
         if self.token_type == Id.Left_DollarDParen:
+            # TODO: Uncomment this after another regtest/aports run
+            # if (self.LookAheadDParens(shift_back=1)):
             return self._ReadArithSub()
+            # else:
+            # Mutate token - we treat this '$((' as '$( ('
+            # self.cur_token.id = Id.Left_DollarParen
+            # return self._ReadCommandSub(Id.Left_DollarParen, d_quoted=True)
 
         if self.token_type == Id.Left_DollarBracket:
             return self._ReadExprSub(lex_mode_e.ShCommand)
@@ -1281,7 +1292,7 @@ class WordParser(WordEmitter):
         return CommandSub(left_token, node, right_token)
 
     def _ReadExprSub(self, lex_mode):
-        # type: (lex_mode_t) -> word_part.ExprSub
+        # type: (lex_mode_t) -> ExprSub
         """$[d->key]  $[obj.method()]  etc."""
         left_token = self.cur_token
 
@@ -1290,7 +1301,7 @@ class WordParser(WordEmitter):
             self.lexer, grammar_nt.ysh_expr_sub)
 
         self._SetNext(lex_mode)  # Move past ]
-        return word_part.ExprSub(left_token, enode, right_token)
+        return ExprSub(left_token, enode, right_token)
 
     def ParseVarDecl(self, kw_token):
         # type: (Token) -> VarDecl
@@ -1299,7 +1310,7 @@ class WordParser(WordEmitter):
 
         Note that assignments must end with \n  ;  }  or EOF.  Unlike shell
         assignments, we disallow:
-        
+
         var x = 42 | wc -l
         var x = 42 && echo hi
         """
@@ -1835,10 +1846,31 @@ class WordParser(WordEmitter):
 
     def _ReadCompoundWord(self, lex_mode):
         # type: (lex_mode_t) -> CompoundWord
-        return self._ReadCompoundWord3(lex_mode, Id.Undefined_Tok, True)
+
+        # This is the ONLY lexer mode that can return word.Redir
+        assert lex_mode != lex_mode_e.ShCommand, lex_mode
+
+        w = self._ReadCompoundOrRedir(lex_mode)
+        assert w.tag() == word_e.Compound, w
+        return cast(CompoundWord, w)
 
     def _ReadCompoundWord3(self, lex_mode, eof_type, empty_ok):
         # type: (lex_mode_t, Id_t, bool) -> CompoundWord
+
+        # This is the ONLY lexer mode that can return word.Redir
+        assert lex_mode != lex_mode_e.ShCommand, lex_mode
+
+        w = self._ReadCompoundOrRedir3(lex_mode, eof_type, empty_ok)
+        assert w.tag() == word_e.Compound, w
+        return cast(CompoundWord, w)
+
+    def _ReadCompoundOrRedir(self, lex_mode):
+        # type: (lex_mode_t) -> word_t
+        """Returns either word.Compound or word.Redir"""
+        return self._ReadCompoundOrRedir3(lex_mode, Id.Undefined_Tok, True)
+
+    def _ReadCompoundOrRedir3(self, lex_mode, eof_type, empty_ok):
+        # type: (lex_mode_t, Id_t, bool) -> word_t
         """
         Precondition: Looking at the first token of the first word part
         Postcondition: Looking at the token after, e.g. space or operator
@@ -1846,12 +1878,15 @@ class WordParser(WordEmitter):
         NOTE: eof_type is necessary because / is a literal, i.e. Lit_Slash, but it
         could be an operator delimiting a compound word.  Can we change lexer modes
         and remove this special case?
+
+        Returns either word.Compound or word.Redir
         """
         w = CompoundWord([])
         num_parts = 0
         brace_count = 0
         done = False
         is_triple_quoted = None  # type: Optional[BoolParamBox]
+        saw_redir_left_tok = False
 
         while not done:
             self._GetToken()
@@ -1882,6 +1917,8 @@ class WordParser(WordEmitter):
                         p_die(
                             'Literal $ should be quoted like \$ (no_parse_dollar)',
                             self.cur_token)
+                elif self.token_type in (Id.Lit_Number, Id.Lit_RedirVarName):
+                    saw_redir_left_tok = True
 
                 done = self._MaybeReadWordPart(num_parts == 0, lex_mode,
                                                w.parts)
@@ -1956,6 +1993,22 @@ class WordParser(WordEmitter):
                     done = True
                 else:
                     done = True
+
+            elif self.token_kind == Kind.Redir:
+                # Check if the previous token was a possible left_tok to a
+                # redirect operator, attach it to the word.Redir.  And return
+                # it instead of the CompoundWord.
+
+                # &> and &>> don't have a leading descriptor (2 is implied)
+                if (saw_redir_left_tok and num_parts == 1 and self.token_type
+                        not in (Id.Redir_AndGreat, Id.Redir_AndDGreat)):
+
+                    self._SetNext(lex_mode)
+                    left_tok = cast(Token, w.parts.pop())
+                    r = word.Redir(left_tok, self.cur_token)
+                    return r  # EARLY RETURN
+
+                done = True
 
             elif self.token_kind == Kind.Ignored:
                 done = True
@@ -2053,8 +2106,13 @@ class WordParser(WordEmitter):
             # No advance
             return self.cur_token
 
+        elif self.token_kind == Kind.Redir:
+            self._SetNext(lex_mode)
+            # This is >out -- 3>out is handled below
+            return word.Redir(None, self.cur_token)
+
         # Allow Arith for ) at end of for loop?
-        elif self.token_kind in (Kind.Op, Kind.Redir, Kind.Arith):
+        elif self.token_kind in (Kind.Op, Kind.Arith):
             self._SetNext(lex_mode)
 
             # Newlines are complicated.  See 3x2 matrix in the comment about
@@ -2161,7 +2219,7 @@ class WordParser(WordEmitter):
                             # Read the word in a different lexer mode
                             return self._ReadYshSingleQuoted(left_id)
 
-                return self._ReadCompoundWord(lex_mode)
+                return self._ReadCompoundOrRedir(lex_mode)
 
     def ParseVarRef(self):
         # type: () -> BracedVarSub
@@ -2203,6 +2261,16 @@ class WordParser(WordEmitter):
         else:
             id_ = self.cur_token.id
         return id_
+
+    def LookAheadDParens(self, shift_back=0):
+        # type: (int) -> bool
+        """Special lookahead for (( )), to make sure it's an arithmetic
+        expression (i.e. that the closing parens are a single token, not
+        separated by anything).
+        """
+        assert self.token_type in (Id.Op_DLeftParen, Id.Left_DollarDParen)
+
+        return self.lexer.LookAheadDParens(shift_back)
 
     def LookAheadFuncParens(self):
         # type: () -> bool

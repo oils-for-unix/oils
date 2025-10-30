@@ -4,9 +4,17 @@ FROM oilshell/soil-debian-12
 
 USER uke
 
+#COPY --chown=uke \
+#  _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
+#  /wedge/oils-for-unix.org/pkg/python3/3.10.4
+
 COPY --chown=uke \
-  _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
-  /wedge/oils-for-unix.org/pkg/python3/3.10.4
+  _build/boxed/wedge/python3/3.10.4 \
+  /home/uke/oils.DEPS/wedge/python3/3.10.4
+
+# Put python3 in PATH before running install-py3-libs
+RUN mkdir -p /home/uke/oils.DEPS/bin && \
+    ln -s --relative /home/uke/oils.DEPS/wedge/python3/3.10.4/bin/python3 /home/uke/oils.DEPS/bin
 
 # 2024-12: Added because we want to run the old MyPy (which is not compiled)
 #
@@ -24,14 +32,19 @@ COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
 COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
 COPY build/deps.sh /home/uke/tmp/build/deps.sh
 
+#COPY --chown=uke \
+#  _build/deps-source/mypy/mypy-0.780/ \
+#  /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+
 COPY --chown=uke \
   _build/deps-source/mypy/mypy-0.780/ \
-  /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+  /home/uke/oils.DEPS/wedge/mypy/0.780/
 
-RUN build/deps.sh install-py3-libs /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+RUN build/deps.sh install-py3-libs \
+  /home/uke/oils.DEPS/wedge/mypy/0.780/ ../oils.DEPS/wedge
 
 # Install MyPy with the python3 wedge
-RUN /wedge/oils-for-unix.org/pkg/python3/3.10.4/bin/python3 -m pip \
+RUN /home/uke/oils.DEPS/wedge/python3/3.10.4/bin/python3 -m pip \
   install mypy
 
 # pea/TEST.sh uses the wedge as well

@@ -21,6 +21,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source test/tsv-lib.sh  # tsv2html3
 source web/table/html.sh  # table-sort-{begin,end}
 source benchmarks/common.sh  # cmark
+source build/dev-shell.sh  # python2
 
 sqlite-tabs-headers() {
   sqlite3 \
@@ -72,35 +73,7 @@ EOF
 diff-metrics-html() {
   local db=${1:-_tmp/aports-report/2025-08-03/diff_merged.db}
 
-  sqlite3 $db <<EOF
--- this is only shards with disagreements; we want total shards
--- select printf("<li>Shards: %s</li>", count(distinct shard)) from diff_merged;
--- select printf("<li><code>.apk</code> packages produced: %s</li>", count(distinct apk_name)) from apk_merged;
-
-select "<ul>";
-select printf("<li>Tasks: %s</li>", sum(num_tasks)) from metrics;
-select printf("<li><b>Elapsed Hours: %.1f</b></li>", sum(elapsed_minutes) / 60) from metrics;
-select "</ul>";
-
-select "<ul>";
-select printf("<li><code>APKBUILD</code> files: %s</li>", sum(num_tasks)) from metrics where config = "baseline";
-select printf("<li>Baseline <code>.apk</code> built: %s</li>", sum(num_apk)) from metrics where config = "baseline";
-select printf("<li>osh-as-sh <code>.apk</code> built: %s</li>", sum(num_apk)) from metrics where config = "osh-as-sh";
-select printf("<li>Baseline failures: %s</li>", sum(num_failures)) from metrics where config = "baseline";
-select printf("<li>osh-as-sh failures: %s</li>", sum(num_failures)) from metrics where config = "osh-as-sh";
-select "</ul>";
-
-select "<ul>";
-select printf("<li><b>Notable Disagreements: %s</b></li>", count(*)) from notable_disagree;
-select printf("<li>Unique causes: %s</li>", count(distinct cause)) from notable_disagree where cause != "unknown";
-select printf("<li>Packages without a cause assigned (unknown): %s</li>", count(*)) from notable_disagree where cause = "unknown";
-select "</ul>";
-
-select "<ul>";
-select printf("<li>Other Failures: %s</li>", count(*)) from other_fail;
-select printf("<li>Inconclusive result because of timeout (-124, -143): %s</li>", count(*)) from timeout where cause like "signal-%";
-select "</ul>";
-EOF
+  sqlite3 $db < regtest/aports/summary.sql
 }
 
 table-page-html() {
@@ -163,9 +136,15 @@ EOF
   diff-metrics-html $base_dir/diff_merged.db
 
   cmark << 'EOF'
-[tree](tree.html) &nbsp;&nbsp; [metrics](metrics.html)
+[tree](tree.html) &nbsp;&nbsp; [metrics](metrics.html) &nbsp;&nbsp; [disagree-packages.txt](disagree-packages.txt)
 
 ## Notable Disagreements
+
+<div style="color: #666;">
+
+(Hint: **click** on the cause column header to sort)
+
+</div>
 
 EOF
 
@@ -268,12 +247,19 @@ published-html() {
     </p>
   '
 
-  cmark <<EOF
-## $title
+  { echo "## $title"
+    echo '
+Testing OSH on decades worth of shell scripts.  [Source code](https://github.com/oils-for-unix/oils/tree/master/regtest).
 
-- [2025-08-07-fix](2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff_merged.html)
+The `aports/main` repo has 1595 `APKBUILD` files, and `aports/community` has
+7168.  A disagreement is when the package succeeds normally, but fails when
+`osh` becomes the system shell.  Caveats: timeouts and flakiness.
+
+### main
+
+- [2025-08-07-fix](2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff_merged.html) - **131** disagreements
 - [2025-08-14-fix](2025-08-14-fix.wwz/_tmp/aports-report/2025-08-14-fix/diff_merged.html)
-- [2025-08-26-ifs](2025-08-26-ifs.wwz/_tmp/aports-report/2025-08-26-ifs/diff_merged.html)
+- [2025-08-26-ifs](2025-08-26-ifs.wwz/_tmp/aports-report/2025-08-26-ifs/diff_merged.html) - **62** after `IFS` fix
   - new causes: [2025-09-06-edit](2025-09-06-edit.wwz/_tmp/aports-report/2025-09-06-edit/diff_merged.html)
 - [2025-09-07](2025-09-07.wwz/_tmp/aports-report/2025-09-07/diff_merged.html)
 - [2025-09-08](2025-09-08.wwz/_tmp/aports-report/2025-09-08/diff_merged.html)
@@ -281,11 +267,28 @@ published-html() {
   - [2025-09-08-notable](2025-09-08-notable.wwz/_tmp/aports-report/2025-09-08-notable/diff_merged.html)
 - [2025-09-10-overlayfs](2025-09-10-overlayfs.wwz/_tmp/aports-report/2025-09-10-overlayfs/diff_merged.html)
 - [2025-09-11-match](2025-09-11-match.wwz/_tmp/aports-report/2025-09-11-match/diff_merged.html)
-- [2025-09-15-order](2025-09-15-order.wwz/_tmp/aports-report/2025-09-15-order/diff_merged.html)
-- [2025-09-17-ash2](2025-09-17-ash2.wwz/_tmp/aports-report/2025-09-17-ash2/diff_merged.html)
-- [2025-09-18-bash](2025-09-18-bash.wwz/_tmp/aports-report/2025-09-18-bash/diff_merged.html)
+- [2025-09-15-order](2025-09-15-order.wwz/_tmp/aports-report/2025-09-15-order/diff_merged.html) - **32** disagreements with `osh` as `/bin/sh`
 
-EOF
+After this success, we expanded our testing:
+
+- [2025-09-17-ash2](2025-09-17-ash2.wwz/_tmp/aports-report/2025-09-17-ash2/diff_merged.html) - **37**, after adding `osh` as `/bin/ash`
+- [2025-09-18-bash](2025-09-18-bash.wwz/_tmp/aports-report/2025-09-18-bash/diff_merged.html) - **43**, after adding `osh` as `/bin/bash`
+  - only run on packages that disagree: [2025-09-27-disagree](2025-09-27-disagree.wwz/_tmp/aports-report/2025-09-27-disagree/diff_merged.html)
+  - new causes: [2025-10-03-causes](2025-10-03-causes.wwz/_tmp/aports-report/2025-10-03-causes/diff_merged.html)
+- [2025-10-15-main](2025-10-15-main.wwz/_tmp/aports-report/2025-10-15-main/diff_merged.html) - **38** disagreements
+  - [2025-10-16](2025-10-16.wwz/_tmp/aports-report/2025-10-16/diff_merged.html) - down to **35** after `x=1>` and `cd x y` fixes
+  - [2025-10-22](2025-10-22.wwz/_tmp/aports-report/2025-10-22/diff_merged.html) - down to **24** after `((` and `$(false)` fixes
+  - [2025-10-26-cause](2025-10-26-cause.wwz/_tmp/aports-report/2025-10-26-cause/diff_merged.html) - updated causes
+
+### community
+
+- [2025-10-08-comm](2025-10-08-comm.wwz/_tmp/aports-report/2025-10-08-comm/diff_merged.html) - **86** disagreements
+  - [2025-10-16-comm-disagree](2025-10-16-comm-disagree.wwz/_tmp/aports-report/2025-10-16-comm-disagree/diff_merged.html) - **71** disagreements
+  - [2025-10-22-comm](2025-10-22-comm.wwz/_tmp/aports-report/2025-10-22-comm/diff_merged.html) - down to **65** after `((` and `$(false)` fixes
+  - [2025-10-26-comm-cause](2025-10-26-comm-cause.wwz/_tmp/aports-report/2025-10-26-comm-cause/diff_merged.html) - updated causes
+
+';
+  } | cmark 
 
   echo '
   </body>
@@ -457,21 +460,29 @@ EOF
 
   mkdir -p error
   cat failed-packages.txt | while read -r pkg; do
-    local left=baseline/log/$pkg.log.txt 
+    #local left=baseline/log/$pkg.log.txt 
     local right=osh-as-sh/log/$pkg.log.txt 
 
     # lower case 'error fail' are more noisy, e.g. command line flags
     egrep 'Error|ERROR|Fail|FAIL|test-suite.log' $right > error/$pkg.txt || true
   done
 
-  { echo "pkg${TAB}cause"
+  { echo "pkg${TAB}cause${TAB}suite${TAB}suite_HREF"
     cat failed-packages.txt | while read -r pkg; do
       local right=osh-as-sh/log/$pkg.log.txt 
 
       local cause
       cause=$(awk -f $cause_awk $right)
 
-      echo "${pkg}${TAB}${cause}"
+      local suite=''
+      local suite_HREF=''
+      local suite_path="osh-as-sh/test-suite/$pkg/test-suite.log.txt"
+      if test -f "$suite_path"; then
+        suite='suite'
+        suite_HREF=$suite_path  # shard added in regtest/aports/merge.sql
+      fi
+
+      echo "${pkg}${TAB}${cause}${TAB}${suite}${TAB}${suite_HREF}"
     done 
   } > causes.tsv
 
@@ -557,12 +568,24 @@ merge-diffs-sql() {
 }
 
 merge-diffs() {
-  local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
+  local epoch_dir=${1:-_tmp/aports-report/2025-10-15-main}
+  local do_disagree=${2:-}
+
   local db=$PWD/$epoch_dir/diff_merged.db
   rm -f $db
-  # TODO: may fail on incomplete shard
-  merge-diffs-sql $epoch_dir/shard* | sqlite3 $db
-  echo $db
+
+  local -a shards
+  if test -n "$do_disagree"; then
+    # Hack: distinguish disagree-2025 from disagree-packages.txt
+    shards=( $epoch_dir/disagree-2* )  # Usually 1 shard
+  else
+    shards=( $epoch_dir/shard* )
+  fi
+
+  echo SHARDS "${shards[@]}"
+
+  merge-diffs-sql "${shards[@]}" | sqlite3 $db
+  #echo $db
 
   # copied from above
   pushd $epoch_dir > /dev/null
@@ -574,6 +597,13 @@ merge-diffs() {
   db-to-tsv $db baseline_only 'order by pkg'
   db-to-tsv $db other_fail 'order by pkg'
   db-to-tsv $db timeout 'order by pkg'
+
+  # For re-running failures
+  sqlite3 diff_merged.db >disagree-packages.txt <<EOF
+.headers off
+select pkg from diff_merged where disagree = 1 and timeout = 0;
+EOF
+  #wc -l disagree-packages.txt
 
   popd > /dev/null
 
@@ -617,11 +647,23 @@ write-shard-reports() {
 
 write-all-reports() {
   local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
+
   for shard_dir in $epoch_dir/shard*; do
     write-shard-reports "$shard_dir"
   done
 
   merge-diffs "$epoch_dir"
+}
+
+write-disagree-reports() {
+  local epoch_dir=${1:-_tmp/aports-build/2025-09-27}
+
+  # Hack: distinguish disagree-2025 from disagree-packages.txt
+  for shard_dir in $epoch_dir/disagree-2*; do
+    write-shard-reports "$shard_dir"
+  done
+
+  merge-diffs "$epoch_dir" T
 }
 
 html-tree() {
@@ -705,22 +747,23 @@ deploy-published() {
 
 readonly EDIT_DIR=_tmp/aports-edit
 
-sync-wwz() {
-  local wwz=${1:-2025-08-26-ifs.wwz}
+readonly EDITING_APORTS_EPOCH='2025-10-22-comm.wwz'
+
+sync-old-wwz() {
+  local wwz=${1:-$EDITING_APORTS_EPOCH}
 
   mkdir -p $EDIT_DIR
 
-  rsync --archive --verbose \
-    $WEB_HOST:$WEB_HOST/aports-build/$wwz  \
-    $EDIT_DIR/$wwz
+  wget --directory $EDIT_DIR \
+    "https://$WEB_HOST/aports-build/$wwz"
 
   ls -l $EDIT_DIR
   #echo "Wrote $wwz"
 }
 
-extract() {
-  local wwz=${1:-2025-08-26-ifs.wwz}
-  local new_epoch=${2:-2025-09-06-edit}
+extract-old-wwz() {
+  local new_epoch=$1
+  local wwz=${2:-$EDITING_APORTS_EPOCH}
 
   # Extract the whole thing into a temp dir
   local tmp_dir=$EDIT_DIR/$new_epoch
