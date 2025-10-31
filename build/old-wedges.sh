@@ -6,34 +6,34 @@
 # put 'python2' in $PATH
 readonly WEDGE_PY2_DIR=$ROOT_WEDGE_DIR/pkg/python2/2.7.18/bin
 if test -d $WEDGE_PY2_DIR; then
-  export PATH="$WEDGE_PY2_DIR:$PATH"
+  PATH="$WEDGE_PY2_DIR:$PATH"
 fi
 
 # put 'python3' in $PATH
 readonly WEDGE_PY3_DIR=$ROOT_WEDGE_DIR/pkg/python3/3.10.4/bin
 # Unconditionally add it to PATH; otherwise build/deps.sh install-wedges won't
 # work
-export PATH="$WEDGE_PY3_DIR:$PATH"
+PATH="$WEDGE_PY3_DIR:$PATH"
 
 readonly WEDGE_RE2C_DIR=$ROOT_WEDGE_DIR/pkg/re2c/3.0/bin
 if test -d $WEDGE_RE2C_DIR; then
-  export PATH="$WEDGE_RE2C_DIR:$PATH"
+  PATH="$WEDGE_RE2C_DIR:$PATH"
 fi
 
 readonly UFTRACE_WEDGE_DIR=$ROOT_WEDGE_DIR/pkg/uftrace/0.13/bin
 if test -d $UFTRACE_WEDGE_DIR; then
-  export PATH="$UFTRACE_WEDGE_DIR:$PATH"
+  PATH="$UFTRACE_WEDGE_DIR:$PATH"
 fi
 
 # FALLBACK without busybox wedge: test/spec.sh link-busybox-ash
 readonly ASH_SYMLINK_DIR="$PWD/_tmp/shells"
 if test -d $ASH_SYMLINK_DIR; then
-  export PATH="$ASH_SYMLINK_DIR:$PATH"
+  PATH="$ASH_SYMLINK_DIR:$PATH"
 fi
 
 readonly WEDGE_SOUFFLE_DIR=$USER_WEDGE_DIR/pkg/souffle/2.4.1/bin
 if test -d $WEDGE_SOUFFLE_DIR; then
-  export PATH="$WEDGE_SOUFFLE_DIR:$PATH"
+  PATH="$WEDGE_SOUFFLE_DIR:$PATH"
 fi
 
 # OBSOLETE
@@ -41,7 +41,7 @@ fi
 readonly SPEC_DIR="$PWD/../oil_DEPS/spec-bin"
 
 if test -d $SPEC_DIR; then
-  export PATH="$SPEC_DIR:$PATH"
+  PATH="$SPEC_DIR:$PATH"
 fi
 
 #
@@ -50,42 +50,42 @@ fi
 
 readonly BASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/bash/4.4/bin
 if test -d $BASH_WEDGE_DIR; then
-  export PATH="$BASH_WEDGE_DIR:$PATH"
+  PATH="$BASH_WEDGE_DIR:$PATH"
 fi
 
 # bash 5 found before bash 4
 readonly BASH5_WEDGE_DIR=$USER_WEDGE_DIR/pkg/bash/5.2.21/bin
 if test -d $BASH5_WEDGE_DIR; then
-  export PATH="$BASH5_WEDGE_DIR:$PATH"
+  PATH="$BASH5_WEDGE_DIR:$PATH"
 fi
 
 readonly DASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/dash/0.5.10.2/bin
 if test -d $DASH_WEDGE_DIR; then
-  export PATH="$DASH_WEDGE_DIR:$PATH"
+  PATH="$DASH_WEDGE_DIR:$PATH"
 fi
 
 readonly MKSH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/mksh/R52c
 if test -d $MKSH_WEDGE_DIR; then
-  export PATH="$MKSH_WEDGE_DIR:$PATH"
+  PATH="$MKSH_WEDGE_DIR:$PATH"
 fi
 
 readonly ZSH_NEW_WEDGE_DIR=$USER_WEDGE_DIR/pkg/zsh/5.9/bin
 if test -d $ZSH_NEW_WEDGE_DIR; then
-  export PATH="$ZSH_NEW_WEDGE_DIR:$PATH"
+  PATH="$ZSH_NEW_WEDGE_DIR:$PATH"
 fi
 
 # Old version comes first
 readonly ZSH_OLD_WEDGE_DIR=$USER_WEDGE_DIR/pkg/zsh/5.1.1/bin
 if test -d $ZSH_OLD_WEDGE_DIR; then
-  export PATH="$ZSH_OLD_WEDGE_DIR:$PATH"
+  PATH="$ZSH_OLD_WEDGE_DIR:$PATH"
 fi
 
 readonly BUSYBOX_WEDGE_DIR=$USER_WEDGE_DIR/pkg/busybox/1.35.0
 if test -d $BUSYBOX_WEDGE_DIR; then
-  export PATH="$BUSYBOX_WEDGE_DIR:$PATH"
+  PATH="$BUSYBOX_WEDGE_DIR:$PATH"
 fi
 
 readonly YASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/yash/2.49/bin
 if test -d $YASH_WEDGE_DIR; then
-  export PATH="$YASH_WEDGE_DIR:$PATH"
+  PATH="$YASH_WEDGE_DIR:$PATH"
 fi

@@ -20,6 +20,9 @@
 # OLD WEDGES 
 #
 
+# TODO:
+# - Move all of this into old wedges
+
 ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
 # Also in build/deps.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
@@ -41,7 +44,7 @@ fi
 
 readonly DEPS_BIN_DIR=$PWD/../oils.DEPS/bin
 if test -d $DEPS_BIN_DIR; then
-  export PATH="$DEPS_BIN_DIR:$PATH"
+  PATH="$DEPS_BIN_DIR:$PATH"
 fi
 
 #
@@ -55,15 +58,15 @@ if test -d ~/R; then
   # 2023-07: Hack to keep using old versions on lenny.local
   # In 2023-04, dplyr stopped supporting R 3.4.4 on Ubuntu Bionic
   # https://cran.r-project.org/web/packages/dplyr/index.html
-  export R_LIBS_USER=~/R
+  R_LIBS_USER=~/R
 elif test -d $NEW_WEDGE_DIR/R-libs; then
-  export R_LIBS_USER=$NEW_WEDGE_DIR/R-libs/2023-04-18
+  R_LIBS_USER=$NEW_WEDGE_DIR/R-libs/2023-04-18
 elif test -d $OLD_WEDGE_DIR/R-libs; then
-  export R_LIBS_USER=$OLD_WEDGE_DIR/R-libs/2023-04-18
+  R_LIBS_USER=$OLD_WEDGE_DIR/R-libs/2023-04-18
 fi
 
 # So we can run Python 2 scripts directly, e.g. asdl/asdl_main.py
-export PYTHONPATH='.'
+PYTHONPATH='.'
 
 # We can also run mycpp/mycpp_main.py directly
 #
@@ -80,7 +83,7 @@ readonly NEW_PY3_LIBS_WEDGE=$NEW_WEDGE_DIR/py3-libs/$PY3_LIBS_VERSION/$site_pack
 readonly OLD_PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION/$site_packages
 # Unconditionally add to PYTHONPATH; otherwise build/deps.sh install-wedges
 # can't work in one shot
-export PYTHONPATH="$NEW_PY3_LIBS_WEDGE:$OLD_PY3_LIBS_WEDGE:$PYTHONPATH"
+PYTHONPATH="$NEW_PY3_LIBS_WEDGE:$OLD_PY3_LIBS_WEDGE:$PYTHONPATH"
 
 MYPY_VERSION=0.780
 # TODO: would be nice to upgrade to newer version
@@ -89,12 +92,12 @@ MYPY_VERSION=0.780
 # Containers copy it here
 readonly OLD_MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
 if test -d "$OLD_MYPY_WEDGE"; then
-  export PYTHONPATH="$OLD_MYPY_WEDGE:$PYTHONPATH"
+  PYTHONPATH="$OLD_MYPY_WEDGE:$PYTHONPATH"
 fi
 
 readonly NEW_MYPY_WEDGE=$NEW_WEDGE_DIR/mypy/$MYPY_VERSION
 if test -d "$NEW_MYPY_WEDGE"; then
-  export PYTHONPATH="$NEW_MYPY_WEDGE:$PYTHONPATH"
+  PYTHONPATH="$NEW_MYPY_WEDGE:$PYTHONPATH"
 fi
 
 # Hack for misconfigured RC cluster!  Some machines have the empty string in
@@ -108,3 +111,8 @@ case $PATH in
     PATH=$(echo "$PATH" | sed 's/::/:/g')
     ;;
 esac
+
+# ALL VARS MUTATED
+# Some of them might be exported already
+export PATH PYTHONPATH R_LIBS_USER
+
