@@ -1370,6 +1370,12 @@ boxed-wedges() {
   time $0 _boxed-wedges "$@"
 }
 
+uftrace-boxed() {
+  ### until we can move uftrace to ../oils.DEPS/wedge
+
+  deps/wedge.sh boxed deps/source.medo/uftrace/ '' $ROOT_WEDGE_DIR debian-12
+}
+
 
 maybe-boxed-wedge() {
   local name=$1
@@ -1637,12 +1643,22 @@ push-all-images() {
   deps/images.sh list | xargs --verbose -n 1 -- deps/images.sh push
 }
 
+download-for-soil() {
+  deps/from-binary.sh download-clang
+  deps/from-tar.sh download-wild
+}
+
 _full-soil-rebuild() {
   local resume1=${1:-}
   local resume2=${2:-}
   local resume3=${3:-}
+  local resume4=${4:-}
 
   if test -z "$resume1"; then
+    download-for-soil
+  fi
+
+  if test -z "$resume2"; then
     boxed-clean
     # TODO: can also rm-oils-crap and _build/wedge/*
 
@@ -1651,13 +1667,13 @@ _full-soil-rebuild() {
     boxed-wedges-2025 soil
   fi
 
-  if test -z "$resume2"; then
+  if test -z "$resume3"; then
     # build to populate apt-cache
     deps/images.sh build wedge-bootstrap-debian-12
     deps/images.sh build soil-debian-12
   fi
 
-  if test -z "$resume3"; then
+  if test -z "$resume4"; then
     build-soil-images
   fi
 
@@ -1666,23 +1682,29 @@ _full-soil-rebuild() {
   # soil/worker.sh list-jobs?  No this has the VIM
   # we need soil/host-shim.sh list-images.sh or something
 
-  # full rebuilds to do:
+  # Full rebuilds DONE:
   # a. soil-debian-12 rebuild - with python2 etc.
   # b. Remove commented out code from dockerfiles
   #
   # TODO
   # 2. Remove OLD COMPAT stuff that contributors won't use
   #    - pea_main wrapper - build/ninja-rules-py.sh
-  #    - R_LIBS_USER - build/dev-shell.sh
-  #    - test/wild.sh - oil_DEPS ->
-  #    - ovm-tarball - oil_DEPS ->
-  #    - clang binary - contributors use this
-  # 3. for wedge-boostrap uke0 -> uke
+  # 3. wedge-boostrap: rename uke0 -> uke
   #    - hopefully this fixes the uftrace wedge
   # 4. everything with podman - build on hoover machine
   # 5. everything with rootless podman
   # 6. everything with raw crun - requires some other rewrites
   # 7. coarse tree-shaking for task-five.sh, etc.
+
+  # MORE WEDGES
+  # - test/wild.sh - oil_DEPS ->
+  # - ovm-tarball - oil_DEPS -> ../oils.DEPS/wedge/python2-slice
+  # - clang binary - contributors use this
+  # - benchmarks/osh-runtime files
+
+  # Dependencies
+  # - py3-libs depends on python3, and on mypy-requirements.txt
+  # - uftrace depends on python3 - is it system python3?
 }
 
 full-soil-rebuild() {

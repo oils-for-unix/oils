@@ -21,8 +21,8 @@ source test/tsv-lib.sh
 live-image-tag() {
   ### image ID -> Docker tag name
 
-  # 2025-10-30: another build/deps.sh full-soil-rebuild !!
-  echo 'v-2025-10-30'
+  # 2025-10-30-a: full rebuild after clean
+  echo 'v-2025-10-30-a'
   return
 
   local image_id=$1
