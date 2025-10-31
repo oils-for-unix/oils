@@ -1242,6 +1242,11 @@ install-wedges-parallel() {
   write-task-report
 }
 
+install-wedges-OLD() {
+  # the /wedge and ~/wedge stuff we got rid of
+  install-wedges-parallel contrib legacy
+}
+
 install-wedges-2025() {
   ### Install in ../oils.DEPS (aka unboxed)
 
@@ -1255,19 +1260,17 @@ install-wedges-2025() {
 install-wedges() {
   ### What we tell users to run
 
-  # the /wedge and ~/wedge stuff we got rid of
-  install-wedges-parallel contrib legacy
-
-  # TODO: change to install-wedges-2025
-}
-
-install-wedges-fast() {
-  ### OLD alias for compatibility
-  install-wedges-parallel contrib legacy
+  # Migrated as of 2025-10
+  install-wedges-2025 "$@"
 }
 
 install-wedges-soil() {
-  install-wedges soil
+  ### CI calls this
+
+  install-wedges-parallel soil legacy
+
+  # TODO: enable this
+  # install-wedges-2025
 }
 
 #
