@@ -2,11 +2,11 @@
 
 update diff_merged
 set
-  baseline_HREF = printf("%s/%s", shard, baseline_HREF),
-  osh_as_sh_HREF = printf("%s/%s", shard, osh_as_sh_HREF),
-  error_grep_HREF = printf("%s/%s", shard, error_grep_HREF),
+  baseline_HREF = printf('%s/%s', shard, baseline_HREF),
+  osh_as_sh_HREF = printf('%s/%s', shard, osh_as_sh_HREF),
+  error_grep_HREF = printf('%s/%s', shard, error_grep_HREF),
   -- note: suite/suite_HREF are sometimes empty
-  suite_HREF = printf("%s/%s", shard, suite_HREF);
+  suite_HREF = printf('%s/%s', shard, suite_HREF);
 
 -- Useful queries to verify the result:
 -- SELECT COUNT(*) as total_rows FROM diff_merged;

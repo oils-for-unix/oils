@@ -17,11 +17,11 @@ where causes.pkg = diff_baseline.pkg;
 
 -- Set causes for signals/timeouts
 update diff_baseline
-set cause = "signal-124"
+set cause = 'signal-124'
 where status1 = 124 or status2 = 124;
 
 update diff_baseline
-set cause = "signal-143"
+set cause = 'signal-143'
 where status1 = 143 or status2 = 143;
 
 update diff_baseline

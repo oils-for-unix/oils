@@ -19,12 +19,6 @@ echo status=$?
 wc --bytes out
 
 ## STDOUT:
-status=2
-0 out
-## END
-
-## OK dash/bash/mksh status: 0
-## OK dash/bash/mksh STDOUT:
 status=0
 65536 out
 ## END

@@ -21,6 +21,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source test/tsv-lib.sh  # tsv2html3
 source web/table/html.sh  # table-sort-{begin,end}
 source benchmarks/common.sh  # cmark
+source build/dev-shell.sh  # python2
 
 sqlite-tabs-headers() {
   sqlite3 \
@@ -276,11 +277,15 @@ After this success, we expanded our testing:
   - new causes: [2025-10-03-causes](2025-10-03-causes.wwz/_tmp/aports-report/2025-10-03-causes/diff_merged.html)
 - [2025-10-15-main](2025-10-15-main.wwz/_tmp/aports-report/2025-10-15-main/diff_merged.html) - **38** disagreements
   - [2025-10-16](2025-10-16.wwz/_tmp/aports-report/2025-10-16/diff_merged.html) - down to **35** after `x=1>` and `cd x y` fixes
+  - [2025-10-22](2025-10-22.wwz/_tmp/aports-report/2025-10-22/diff_merged.html) - down to **24** after `((` and `$(false)` fixes
+  - [2025-10-26-cause](2025-10-26-cause.wwz/_tmp/aports-report/2025-10-26-cause/diff_merged.html) - updated causes
 
 ### community
 
 - [2025-10-08-comm](2025-10-08-comm.wwz/_tmp/aports-report/2025-10-08-comm/diff_merged.html) - **86** disagreements
   - [2025-10-16-comm-disagree](2025-10-16-comm-disagree.wwz/_tmp/aports-report/2025-10-16-comm-disagree/diff_merged.html) - **71** disagreements
+  - [2025-10-22-comm](2025-10-22-comm.wwz/_tmp/aports-report/2025-10-22-comm/diff_merged.html) - down to **65** after `((` and `$(false)` fixes
+  - [2025-10-26-comm-cause](2025-10-26-comm-cause.wwz/_tmp/aports-report/2025-10-26-comm-cause/diff_merged.html) - updated causes
 
 ';
   } | cmark 
@@ -742,22 +747,23 @@ deploy-published() {
 
 readonly EDIT_DIR=_tmp/aports-edit
 
-sync-wwz() {
-  local wwz=${1:-2025-09-27-disagree.wwz}
+readonly EDITING_APORTS_EPOCH='2025-10-22-comm.wwz'
+
+sync-old-wwz() {
+  local wwz=${1:-$EDITING_APORTS_EPOCH}
 
   mkdir -p $EDIT_DIR
 
-  rsync --archive --verbose \
-    $WEB_HOST:$WEB_HOST/aports-build/$wwz  \
-    $EDIT_DIR/$wwz
+  wget --directory $EDIT_DIR \
+    "https://$WEB_HOST/aports-build/$wwz"
 
   ls -l $EDIT_DIR
   #echo "Wrote $wwz"
 }
 
-extract() {
-  local wwz=${1:-2025-09-27-disagree.wwz}
-  local new_epoch=${2:-2025-10-03-causes}
+extract-old-wwz() {
+  local new_epoch=$1
+  local wwz=${2:-$EDITING_APORTS_EPOCH}
 
   # Extract the whole thing into a temp dir
   local tmp_dir=$EDIT_DIR/$new_epoch

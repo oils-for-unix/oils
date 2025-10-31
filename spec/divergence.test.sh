@@ -54,30 +54,6 @@ two
 two
 ## END
 
-#### Exit code when command sub evaluates to empty str, e.g. `false` (#2435)
-
-# OSH exits with 0 while others exit with 1
-`true`; echo $?
-`false`; echo $?
-$(true); echo $?
-$(false); echo $?
-
-# OSH and others agree on these
-eval true; echo $?
-eval false; echo $?
-`echo true`; echo $?
-`echo false`; echo $?
-## STDOUT:
-0
-1
-0
-1
-0
-1
-0
-1
-## END
-
 #### Changing PATH will invalidate PATH cache
 
 mkdir -p _tmp/bin
@@ -156,4 +132,15 @@ status=0
 status=0
 status=0
 status=0
+## END
+
+#### builtin cat crashes a subshell (#2530)
+
+((/usr/bin/cat </dev/zero; echo $? >&7) | true) 7>&1
+
+((cat </dev/zero; echo $? >&7) | true) 7>&1
+
+## STDOUT:
+141
+141
 ## END

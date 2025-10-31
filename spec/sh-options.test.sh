@@ -320,6 +320,87 @@ f.o
 .oo
 ## END
 
+#### noclobber on >>
+rm -f $TMP/no-clobber
+
+set -C
+echo foo >> $TMP/no-clobber
+echo status=$?
+
+cat $TMP/no-clobber
+## STDOUT:
+status=0
+foo
+## END
+
+#### noclobber on &> >
+case $SH in dash) exit ;; esac
+
+set -C
+
+rm -f $TMP/no-clobber
+echo foo > $TMP/no-clobber
+echo stdout=$?
+echo bar > $TMP/no-clobber
+echo again=$?
+cat $TMP/no-clobber
+
+rm -f $TMP/no-clobber
+echo baz &> $TMP/no-clobber
+echo both=$?
+echo foo &> $TMP/no-clobber
+echo again=$?
+cat $TMP/no-clobber
+
+## STDOUT:
+stdout=0
+again=1
+foo
+both=0
+again=1
+baz
+## END
+## BUG dash STDOUT:
+## END
+
+#### noclobber on &>> >>
+set -C
+
+rm -f $TMP/no-clobber
+echo foo >> $TMP/no-clobber
+echo stdout=$?
+echo bar >> $TMP/no-clobber
+echo again=$?
+cat $TMP/no-clobber
+
+rm -f $TMP/no-clobber
+echo baz &>> $TMP/no-clobber
+echo both=$?
+echo foo &>> $TMP/no-clobber
+echo again=$?
+cat $TMP/no-clobber
+
+## STDOUT:
+stdout=0
+again=0
+foo
+bar
+both=0
+again=0
+baz
+foo
+## END
+## BUG dash STDOUT:
+stdout=0
+again=0
+foo
+bar
+both=0
+baz
+again=0
+foo
+## END
+
 #### set without args lists variables
 __GLOBAL=g
 f() {

@@ -10,21 +10,20 @@ RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=
     deps/from-apt.sh layer-locales && \
     deps/from-apt.sh app-tests
 
-# 2025-04-30b: this COULD be in the layer soil-debian-12
-# or we can also add 'source build/dev-shell.sh'
-#RUN deps/from-apt.sh layer-python-symlink
-
 USER uke
 
 # Copy pre-built wedges for build/py.sh all
 
 COPY --chown=uke \
-  _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
-  /wedge/oils-for-unix.org/pkg/cmark/0.29.0
+  _build/boxed/wedge/cmark/0.29.0 \
+  /home/uke/oils.DEPS/wedge/cmark/0.29.0
 
 COPY --chown=uke \
-  _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
-  /wedge/oils-for-unix.org/pkg/re2c/3.0
+  _build/boxed/wedge/re2c/3.0 \
+  /home/uke/oils.DEPS/wedge/re2c/3.0
+
+RUN mkdir -p /home/uke/oils.DEPS/bin && \
+    ln -s --relative /home/uke/oils.DEPS/wedge/re2c/3.0/bin/re2c /home/uke/oils.DEPS/bin
 
 # TODO: Add osh-cpp so we can test ble.sh with it
 

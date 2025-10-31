@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Build the dev version of Oil on CPython.
-# This is in contrast to oils-for-unix and the oil.ovm build.
+# Build the dev version of Oils on CPython.
+# This is in contrast to oils-for-unix C++ build
 #
 # Usage:
 #   build/py.sh <function name>
@@ -424,7 +424,7 @@ minimal() {
 *****
 '$0 minimal' succeeded
 
-  It allows you to run and modify Oil quickly, but the lexer will be slow and
+  It allows you to run and modify Oils quickly, but the lexer will be slow and
   the help builtin won't work.
 
 '$0 all' requires re2c and libcmark.so.  (Issue #513 is related, ask

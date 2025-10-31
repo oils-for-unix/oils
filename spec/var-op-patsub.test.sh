@@ -330,7 +330,7 @@ helloworld
 
 #### patsub with [^]]
 
-# This is a PARSING divergence.  In Oil we match [], rather than using POSIX
+# This is a PARSING divergence.  In OSH we match [], rather than using POSIX
 # rules!
 
 pat='[^]]'

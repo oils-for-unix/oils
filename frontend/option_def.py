@@ -65,6 +65,7 @@ class _OptionDef(object):
 _OTHER_SET_OPTIONS = [
     # NOTE: set -i and +i is explicitly disallowed.  Only osh -i or +i is valid
     # https://unix.stackexchange.com/questions/339506/can-an-interactive-shell-become-non-interactive-or-vice-versa
+    ('a', 'allexport'),
     ('n', 'noexec'),
     ('x', 'xtrace'),
     ('v', 'verbose'),  # like xtrace, but prints unevaluated commands

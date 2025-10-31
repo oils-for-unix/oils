@@ -12,7 +12,7 @@ from resource import (RLIM_INFINITY, RLIMIT_CORE, RLIMIT_CPU, RLIMIT_DATA,
 from signal import SIGCONT
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.syntax_asdl import loc, CompoundWord
+from _devbuild.gen.syntax_asdl import loc, loc_t, CompoundWord
 from _devbuild.gen.runtime_asdl import (cmd_value, job_state_e, wait_status,
                                         wait_status_e)
 from core import dev
@@ -24,7 +24,9 @@ from core import pyutil
 from core import vm
 from frontend import flag_util
 from frontend import match
+from frontend import signal_def
 from frontend import typed_args
+from frontend import args
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, print_stderr
@@ -39,6 +41,16 @@ if TYPE_CHECKING:
     from display import ui
 
 _ = log
+
+
+def PrintSignals():
+    # type: () -> None
+    # Iterate over signals and print them
+    for sig_num in xrange(signal_def.MaxSigNumber()):
+        sig_name = signal_def.GetName(sig_num)
+        if sig_name is None:
+            continue
+        print('%2d %s' % (sig_num, sig_name))
 
 
 class Jobs(vm._Builtin):
@@ -680,6 +692,125 @@ class Ulimit(vm._Builtin):
                 return 1
 
         return 0
+
+
+def _SigNameToNumber(name):
+    # type: (str) -> int
+    name = name.upper()
+    if name.startswith("SIG"):
+        name = name[3:]
+    return signal_def.GetNumber(name)
+
+
+class Kill(vm._Builtin):
+    """Send a signal to a process"""
+
+    def __init__(self, job_list):
+        # type: (process.JobList) -> None
+        self.job_list = job_list
+
+    def _ParseWhat(self, what, blame_loc):
+        # type: (str, loc_t) -> int
+        if what.startswith("%"):
+            job = self.job_list.JobFromSpec(what)
+            if job is None:
+                e_usage("got invalid job ID %r" % what, blame_loc)
+            return job.ProcessGroupId()
+        else:
+            try:
+                pid = int(what)
+            except ValueError:
+                e_usage("got invalid process ID %r" % what, blame_loc)
+            return pid
+
+    def _SendSignal(self, arg_r, sig_num):
+        # type: (args.Reader, int) -> int
+        if arg_r.AtEnd():
+            e_usage("expects at least one process/job ID", loc.Missing)
+
+        while not arg_r.AtEnd():
+            arg_str, arg_loc = arg_r.Peek2()
+            pid = self._ParseWhat(arg_str, arg_loc)
+
+            posix.kill(pid, sig_num)
+            arg_r.Next()
+        return 0
+
+    def _ParseSignal(self, sig_str, blame_loc):
+        # type: (str, loc_t) -> int
+        """
+        Sigspec can one of these forms:
+          15, TERM, SIGTERM (case insensitive)
+        Raises error if sigspec is in invalid format
+        """
+        if sig_str.isdigit():
+            # We don't validate the signal number; we rely on kill() returning
+            # EINVAL instead.  This is useful for sending unportable signals.
+            sig_num = int(sig_str)
+        else:
+            sig_num = _SigNameToNumber(sig_str)
+            if sig_num == signal_def.NO_SIGNAL:
+                e_usage("got invalid signal name %r" % sig_str, blame_loc)
+        return sig_num
+
+    def _TranslateSignals(self, arg_r):
+        # type: (args.Reader) -> int
+        while not arg_r.AtEnd():
+            arg, arg_loc = arg_r.Peek2()
+            if arg.isdigit():
+                sig_name = signal_def.GetName(int(arg))
+                if sig_name is None:
+                    e_usage("can't translate number %r to a name" % arg, arg_loc)
+                print(sig_name[3:])
+            else:
+                sig_num = _SigNameToNumber(arg)
+                if sig_num == signal_def.NO_SIGNAL:
+                    e_usage("can't translate name %r to a number" % arg, arg_loc)
+                print(str(sig_num))
+
+            arg_r.Next()
+        return 0
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
+        arg_r.Next()  # skip command name
+
+        # Check for a signal argument like -15 -TERM -SIGTERM
+        first, first_loc = arg_r.Peek2()
+        if first is not None and first.startswith('-'):
+            sig_spec = first[1:]
+            if sig_spec.isdigit() or len(sig_spec) > 1:
+                sig_num = self._ParseSignal(sig_spec, first_loc)
+                arg_r.Next()  # Skip signal argument
+                return self._SendSignal(arg_r, sig_num)
+
+        # Note: we're making another args.Reader here
+        attrs, arg_r = flag_util.ParseCmdVal('kill',
+                                             cmd_val,
+                                             accept_typed_args=False)
+        arg = arg_types.kill(attrs.attrs)
+
+        if arg.l or arg.L:
+            # If no arg, print all signals
+            if arg_r.AtEnd():
+                PrintSignals()
+                return 0
+
+            # Otherwise translate each arg
+            return self._TranslateSignals(arg_r)
+
+        # -n and -s are synonyms.
+        # TODO: it would be nice if the flag parser could expose the location
+        # of 'foo' in -s foo
+        sig_num = 15  # SIGTERM, the default signal to send
+        blame_loc = cmd_val.arg_locs[0]
+        if arg.n is not None:
+            sig_num = self._ParseSignal(arg.n, blame_loc)
+        if arg.s is not None:
+            sig_num = self._ParseSignal(arg.s, blame_loc)
+
+        return self._SendSignal(arg_r, sig_num)
 
 
 # vim: sw=4

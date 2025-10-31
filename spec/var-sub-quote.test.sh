@@ -311,3 +311,52 @@ echo "${var-"}"}"
 }
 ## END
 
+#### Var substitution with newlines (#2492)
+echo "${var-a \
+b}"
+echo "${var-a
+b}"
+
+echo "${var:-c \
+d}"
+echo "${var:-c
+d}"
+
+var=set
+echo "${var:+e \
+f}"
+echo "${var:+e
+f}"
+
+## STDOUT:
+a b
+a
+b
+c d
+c
+d
+e f
+e
+f
+## END
+
+
+#### Var substitution with \n in value
+echo "${var-a\nb}"
+echo "${var:-c\nd}"
+var=val
+echo "${var:+e\nf}"
+
+## STDOUT:
+a\nb
+c\nd
+e\nf
+## END
+## BUG dash/mksh STDOUT:
+a
+b
+c
+d
+e
+f
+## END

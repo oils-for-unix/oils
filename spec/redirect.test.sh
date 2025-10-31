@@ -501,6 +501,23 @@ cat file1
 ## N-I mksh/dash stdout-json: ""
 ## N-I mksh/dash status: 1
 
+#### noclobber can still write to non-regular files like /dev/null
+set -C  # noclobber
+set -e  # errexit (raise any redirection errors)
+
+# Each redirect to /dev/null should succeed
+echo a  >  /dev/null  # trunc, write stdout
+echo a &>  /dev/null  # trunc, write stdout and stderr
+echo a  >> /dev/null  # append, write stdout
+echo a &>> /dev/null  # append, write stdout and stderr
+echo a  >| /dev/null  # ignore noclobber, trunc, write stdout
+## OK dash STDOUT:
+a
+a
+## END
+## STDOUT:
+## END
+
 #### Parsing of x=1> and related cases
 
 echo x=1>/dev/stdout

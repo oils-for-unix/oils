@@ -209,7 +209,7 @@ three
 
 #### osh -O errexit: use -O everywhere, even for Bourne options
 $SH -O errexit -c 'shopt -p -o errexit'
-#$SH -O errexit -c 'shopt -p errexit'  # bash doesn't allow this, but Oil does
+#$SH -O errexit -c 'shopt -p errexit'  # bash doesn't allow this, but Oils does
 ## STDOUT:
 set -o errexit
 ## END

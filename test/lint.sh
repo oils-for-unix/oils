@@ -57,7 +57,10 @@ oils-lint() {
   local lang=$1  # py2 or py3
   shift
 
-  PYTHONPATH=.:~/wedge/oils-for-unix.org/pkg/pyflakes/2.4.0 test/${lang}_lint.py "$@"
+  local old_wedge_dir=~/wedge/oils-for-unix.org/pkg/
+  local new_wedge_dir=../oils.DEPS/wedge/
+  local pyflakes=pyflakes/2.4.0 
+  PYTHONPATH=".:$new_wedge_dir/$pyflakes:$old_wedge_dir/$pyflakes" test/${lang}_lint.py "$@"
   #PYTHONPATH=.:vendor/pyflakes-2.4.0 test/oils_lint.py "$@"
 }
 

@@ -15,6 +15,7 @@ from frontend import flag_util
 from frontend import reader
 from frontend import signal_def
 from frontend import typed_args
+from builtin import process_osh  # for PrintSignals()
 from data_lang import j8_lite
 from mycpp import iolib
 from mycpp import mylib
@@ -309,14 +310,7 @@ class Trap(vm._Builtin):
             # EXIT is 0, but we hide that
             print('   %s' % hook_name)
 
-        # Iterate over signals and print them
-        n = signal_def.MaxSigNumber() + 1
-        for sig_num in xrange(n):
-
-            sig_name = signal_def.GetName(sig_num)
-            if sig_name is None:
-                continue
-            print('%2d %s' % (sig_num, sig_name))
+        process_osh.PrintSignals()
 
     def _AddTheRest(self, arg_r, node, allow_legacy=True):
         # type: (args.Reader, command_t, bool) -> int
@@ -330,8 +324,7 @@ class Trap(vm._Builtin):
             if parsed_id == 'RETURN':
                 print_stderr("osh warning: The %r hook isn't implemented" %
                              arg_str)
-            if parsed_id == 'STOP':
-                # KILL also can't be handled, but it's not part of out signal list
+            if parsed_id == 'STOP' or parsed_id == 'KILL':
                 self.errfmt.Print_("Signal %r can't be handled" % arg_str,
                                    blame_loc=arg_loc)
                 # Other shells return 0, but this seems like an obvious error

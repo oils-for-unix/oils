@@ -33,7 +33,7 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
 
-#source build/dev-shell.sh  # 're2c' in path
+source build/dev-shell.sh  # 're2c' in path
 source build/ninja-rules-cpp.sh
 
 my-re2c() {

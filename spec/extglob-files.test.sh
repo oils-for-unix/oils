@@ -6,7 +6,7 @@
 # originated in ksh).
 #
 # However all extended globs are syntax errors if shopt -s extglob isn't set.
-# In Oil, they are not PARSE TIME errors, but the syntax won't be respected at
+# In Oils, they are not PARSE TIME errors, but the syntax won't be respected at
 # RUNTIME, i.e. when passed to fnmatch().
 #
 # GNU libc has the FNM_EXTMATCH extension to fnmatch().  (I don't think musl
@@ -290,8 +290,8 @@ foo.py
 zzz bar.py foo.py
 ## END
 
-#### No extended glob with simple_word_eval (Oil evaluation)
-shopt -s oil:all
+#### No extended glob with simple_word_eval (YSH evaluation)
+shopt -s ysh:all
 shopt -s extglob
 mkdir -p eg12
 cd eg12

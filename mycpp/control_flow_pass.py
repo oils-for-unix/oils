@@ -54,7 +54,6 @@ class Build(visitor.SimpleVisitor):
             SymbolPath, pass_state.ControlFlowGraph] = collections.defaultdict(
                 pass_state.ControlFlowGraph)
         self.current_statement_id = INVALID_ID
-        self.current_class_name: Optional[SymbolPath] = None
         self.current_func_node: Optional[FuncDef] = None
         self.loop_stack: List[pass_state.CfgLoopContext] = []
         self.virtual = virtual
@@ -71,7 +70,9 @@ class Build(visitor.SimpleVisitor):
 
         return self.cflow_graphs[SplitPyName(self.current_func_node.fullname)]
 
-    def resolve_callee(self, o: CallExpr) -> Optional[util.SymbolPath]:
+    def resolve_callee(
+        self, o: CallExpr, current_class_name: Optional[util.SymbolPath]
+    ) -> Optional[util.SymbolPath]:
         """
         Returns the fully qualified name of the callee in the given call
         expression.
@@ -101,8 +102,8 @@ class Build(visitor.SimpleVisitor):
                             (o.callee.name, ))
 
                 elif o.callee.expr.name == 'self':
-                    assert self.current_class_name
-                    return self.current_class_name + (o.callee.name, )
+                    assert current_class_name
+                    return current_class_name + (o.callee.name, )
 
                 else:
                     local_type = None
@@ -321,17 +322,19 @@ class Build(visitor.SimpleVisitor):
             with pass_state.CfgBlockContext(cfg, self.current_statement_id):
                 self.accept(o.body)
 
-    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
         # For virtual methods, pretend that the method on the base class calls
         # the same method on every subclass. This way call sites using the
         # abstract base class will over-approximate the set of call paths they
         # can take when checking if they can reach MaybeCollect().
-        if self.current_class_name and self.virtual.IsVirtual(
-                self.current_class_name, o.name):
-            key = (self.current_class_name, o.name)
+        if current_class_name and self.virtual.IsVirtual(
+                current_class_name, o.name):
+            key = (current_class_name, o.name)
             base = self.virtual.virtuals[key]
             if base:
-                sub = SymbolToString(self.current_class_name + (o.name, ),
+                sub = SymbolToString(current_class_name + (o.name, ),
                                      delim='.')
                 base_key = base[0] + (base[1], )
                 cfg = self.cflow_graphs[base_key]
@@ -430,7 +433,9 @@ class Build(visitor.SimpleVisitor):
     #def oils_visit_assign_to_listcomp(self, o: 'mypy.nodes.AssignmentStmt', lval: NameExpr) -> None:
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
         cfg = self.current_cfg()
         if cfg:
             lval_names = []
@@ -526,10 +531,12 @@ class Build(visitor.SimpleVisitor):
             if ref and is_local:
                 cfg.AddFact(self.current_statement_id, pass_state.Use(ref))
 
-    def oils_visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
+    def oils_visit_call_expr(
+            self, o: 'mypy.nodes.CallExpr',
+            current_class_name: Optional[util.SymbolPath]) -> None:
         cfg = self.current_cfg()
         if self.current_func_node:
-            full_callee = self.resolve_callee(o)
+            full_callee = self.resolve_callee(o, current_class_name)
             if full_callee:
                 self.callees[o] = full_callee
                 cfg.AddFact(

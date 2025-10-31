@@ -332,7 +332,9 @@ def Main(
         # 2025-09: bash 5.3 is the latest version; can increase this with
         # future Oils releases
         state.SetGlobalString(mem, 'BASH_VERSION', '5.3')
-        state.SetGlobalArray(mem, 'BASH_VERSINFO', ['5', '3', '0', '0', 'release', 'unknown']) # major minor patch build release-status machine-type
+        # major minor patch build release-status machine-type
+        state.SetGlobalArray(mem, 'BASH_VERSINFO',
+                             ['5', '3', '0', '0', 'release', 'unknown'])
 
     sh_init.CopyVarsFromEnv(exec_opts, environ, mem)
 
@@ -772,6 +774,7 @@ def Main(
 
     b[builtin_i.jobs] = process_osh.Jobs(job_list)
     b[builtin_i.fg] = process_osh.Fg(job_control, job_list, waiter)
+    b[builtin_i.kill] = process_osh.Kill(job_list)
     b[builtin_i.bg] = process_osh.Bg(job_list)
 
     # Could be in process_ysh

@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 7
+## oils_failures_allowed: 3
 
 #### (( closed with ) ) after multiple lines is command - #2337
 

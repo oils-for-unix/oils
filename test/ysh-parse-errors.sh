@@ -1479,6 +1479,21 @@ EOF
   _ysh-parse-error "$code_str"
 }
 
+test-multiline-backslashes() {
+  _ysh-parse-error-here <<'EOF'
+var x = ''' \n '''
+EOF
+
+  _ysh-should-parse-here <<'EOF'
+var x = r''' \n '''
+EOF
+
+  _ysh-should-parse-here <<'EOF'
+var x = u''' \n '''
+EOF
+
+}
+
 test-ysh_c_strings() {
   # bash syntax
   _osh-should-parse-here <<'EOF'
@@ -1563,12 +1578,12 @@ test-ysh-dq-strings() {
   _assert-sh-status 2 "$OSH" $0 \
     -o no_parse_backslash -n -c 'echo test-no_parse_backslash "\z"'
 
-  _ysh-parse-error 'echo "\z"'  # not in Oil
+  _ysh-parse-error 'echo "\z"'  # not in YSH
   _ysh-parse-error 'const bad = "\z"'  # not in expression mode
 
   # C style escapes not respected
   _osh-should-parse 'echo "\u1234"'  # ok in OSH
-  _ysh-parse-error 'echo "\u1234"'  # not in Oil
+  _ysh-parse-error 'echo "\u1234"'  # not in YSH
   _ysh-parse-error 'const bad = "\u1234"'
 
   _osh-should-parse 'echo "`echo hi`"'
@@ -1760,6 +1775,16 @@ test-string-sigil-pair() {
 
   _ysh-parse-error "echo html'single'"
   _ysh-parse-error "echo 'single'html"
+}
+
+test-assert-left-brackets() {
+  _ysh-should-run 'var x = [42]; assert [ [42] === x]'
+
+  # TODO: fix this bug - space makes a difference
+  # _ysh-should-run 'var x = [42]; assert [[42] === x]'
+
+  # TODO: fix this bug too
+  #_ysh-should-run "var x = ['42']; assert [['42'] === x]"
 }
 
 #

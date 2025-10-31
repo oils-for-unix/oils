@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Translate parts of Oil with mycpp, to work around circular deps issue.
+# Translate parts of Oils with mycpp, to work around circular deps issue.
 #
 # Usage:
 #   prebuilt/translate.sh <function name>

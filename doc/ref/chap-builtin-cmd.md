@@ -1303,9 +1303,40 @@ If no JOB is specified, use the latest job.
 
 ### kill
 
-UNIMPLEMENTED
+The `kill` builtin sends a signal to one or more processes.  Usage:
 
-<!-- Note: 'kill' accepts job specs like %2 -->
+    kill (-s SIG | -SIG)? WHAT+  # send SIG to the given processes
+
+where
+
+    SIG  = NAME | NUMBER   # e.g. USR1 or 10
+    WHAT = PID  | JOBSPEC  # e.g. 789 or %%
+
+Examples:
+
+    kill -s USR1 789       # send SIGUSR1 to PID 789
+
+    kill -s USR1 789 %%    # send signal to PID 789 and the current job
+    kill -s 10   789 %%    # specify SIGUSR1 by number instead
+
+    kill -USR1   789 %%    # shortcut syntax
+    kill -10     789 %%    # shortcut using a number
+
+    kill -n USR1 789 %%    # -n is a synonym for -s
+    kill         789 %%    # if not specified, the default is SIGTERM
+
+---
+
+It can also list signals:
+
+    kill -L                # List all signals
+    kill -L SIG+           # Translate signals from name to number, and vice versa
+
+Examples:
+
+    kill -l                # List all signals; -l is a synonym for -L
+    kill -L USR1 USR2      # prints '10 12'
+    kill -L USR1 15        # prints '10 TERM'
 
 ## External
 

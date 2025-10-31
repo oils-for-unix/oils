@@ -661,6 +661,9 @@ job-main() {
   fi
   echo
 
+  # 2025-10: we now ASSUME this state
+  source build/dev-shell.sh
+
   ${job_name}-tasks | run-tasks $job_name $out_dir "$tty"
 }
 

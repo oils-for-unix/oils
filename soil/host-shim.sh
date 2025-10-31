@@ -6,7 +6,8 @@
 #   soil/host-shim.sh <function name>
 #
 # Examples:
-#   soil/host-shim.sh local-test-uke cpp-spec
+#   soil/host-shim.sh local-test-uke cpp-spec       # run a job
+#   soil/host-shim.sh local-test-uke cpp-spec '' T  # get  shell
 
 set -o nounset
 set -o pipefail
@@ -19,66 +20,66 @@ source test/tsv-lib.sh
 
 live-image-tag() {
   ### image ID -> Docker tag name
+
+  # 2025-10-30-a: full rebuild after clean
+  echo 'v-2025-10-30-a'
+  return
+
   local image_id=$1
 
   case $image_id in
     app-tests)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     wild)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     bloaty)
-      # update to Debian 12
-      echo 'v-2025-05-01'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     benchmarks)
-      # Add 'pyte' terminal emulator library to py3-libs, for testing
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     benchmarks2)
-      # refresh
-      echo 'v-2025-05-01'
+      # wedges 2025
+      # rebuild cmark, NOT uftrace
+      echo 'v-2025-10-28'
       ;;
     cpp-spec)
-      # rebuild with layer-locales
-      echo 'v-2025-09-23'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     pea)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     cpp-small)
-      # update to Debian 12
-      echo 'v-2025-05-01'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     clang)
-      # update to Debian 12
-      echo 'v-2025-05-01'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     ovm-tarball)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     other-tests)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
-      ;;
-    dummy)
-      # update to Debian 12
-      echo 'v-2025-04-30b'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     dev-minimal)
-      # rebuild python 2 wedge with libreadline-dev in wedge-bootstrap-debian-12
-      echo 'v-2025-05-01'
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
-
-    # Not run directly
-    common)
-      # Rebuild with wedges
-      echo 'v-2023-02-28f'
+    dummy)
+      # wedges 2025
+      echo 'v-2025-10-28'
       ;;
     *)
       die "Invalid image $image"
@@ -319,10 +320,6 @@ run-job-uke() {
     # https://stackoverflow.com/questions/35860527/warning-error-disabling-address-space-randomization-operation-not-permitted
     flags+=( --cap-add SYS_PTRACE --security-opt seccomp=unconfined )
 
-    # can mount other tools for debugging, like clang
-    #local clang_dir=~/git/oilshell/oil_DEPS/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04
-    #flags+=( --mount "type=bind,source=$clang_dir,target=/home/uke/oil_DEPS/$(basename $clang_dir)" )
-    
     args=(bash)
   else
     args=(sh -c "cd /home/uke/oil; soil/worker.sh JOB-$job_name")

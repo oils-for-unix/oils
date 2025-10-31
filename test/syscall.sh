@@ -495,9 +495,9 @@ suite-static() {
 # $ ls|grep osh|wc -l
 # 6098
 #
-# So Oil is already at dash level for CPython's configure, and bash isn't
-# far off.  So autoconf-generated scripts probably already use constructs
-# that are already "optimal" in most shells.
+# So OSH is already at dash level for CPython's configure, and bash isn't far
+# off.  So autoconf-generated scripts probably already use constructs that are
+# already "optimal" in most shells.
 
 readonly PY27_DIR=$PWD/Python-2.7.13
 

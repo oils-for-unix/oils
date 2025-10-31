@@ -167,6 +167,37 @@ write -- $a $b $c $d
 false
 ## END
 
+#### Unary plus on integers and floats
+
+var a = +1
+var b = +42
+var c = +2.5
+
+var d = -10
+var e = +d
+
+write -- $a $b $c $e
+
+## STDOUT:
+1
+42
+2.5
+-10
+## END
+
+#### unary plus and minus combined
+
+var a = +-5
+var b = -+5
+var c = +(-3)
+
+write -- $a $b $c
+
+## STDOUT:
+-5
+-5
+-3
+## END
 
 #### unary minus on strings
 json write (-3)
@@ -181,6 +212,21 @@ json write (-'abc')
 -3
 -4
 -5.5
+## END
+
+#### unary plus on strings
+json write (+3)
+json write (+'4')
+json write (+'5.5')
+
+# Not accepted
+json write (+'abc')
+
+## status: 3
+## STDOUT:
+3
+4
+5.5
 ## END
 
 #### unary ~ complement on strings

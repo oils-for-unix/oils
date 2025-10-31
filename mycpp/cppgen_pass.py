@@ -196,10 +196,10 @@ def GetCType(t: Type) -> str:
         c_type = 'void'
 
     elif isinstance(t, PartialType):
-        # I removed the last instance of this!  It was dead code in comp_ui.py.
-        raise AssertionError()
-        #c_type = 'void'
-        #is_pointer = True
+        # Note: This can happen if you have
+        # signal_to_send = None
+        # signal_to_send = FunctionReturningInt()
+        raise AssertionError('Unexpected PartialType %s' % t)
 
     elif isinstance(t,
                     NoneTyp):  # e.g. a function that doesn't return anything
@@ -567,12 +567,14 @@ class Decl(_Shared):
         # abstract method
         return 'declare'
 
-    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
         # Avoid C++ warnings by prepending [[noreturn]]
         noreturn = _GetNoReturn(o.name)
 
         virtual = ''
-        if self.virtual.IsVirtual(self.current_class_name, o.name):
+        if self.virtual.IsVirtual(current_class_name, o.name):
             virtual = 'virtual '
 
         # declaration inside class { }
@@ -595,10 +597,12 @@ class Decl(_Shared):
         self.write(o.name)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
         # Declare constant strings.  They have to be at the top level.
 
-        # TODO: self.at_global_scope doesn't work for context managers and so forth
+        # TODO: at_global_scope doesn't work for context managers and so forth
         if self.indent == 0:
             # Top level can't have foo.bar = baz
             assert isinstance(lval, NameExpr), lval
@@ -609,8 +613,9 @@ class Decl(_Shared):
         # TODO: we don't traverse here, so _CheckCondition() isn't called
         # e.g. x = 'a' if mylist else 'b'
 
-    def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
-                               base_class_sym: util.SymbolPath) -> None:
+    def oils_visit_constructor(
+            self, o: ClassDef, stmt: FuncDef, base_class_sym: util.SymbolPath,
+            current_class_name: Optional[util.SymbolPath]) -> None:
         self.indent += 1
         self.write_ind('%s(', o.name)
         self._WriteFuncParams(stmt, write_defaults=True)
@@ -635,16 +640,18 @@ class Decl(_Shared):
         self.accept(stmt)
         self.indent -= 1
 
-    def oils_visit_class_members(self, o: ClassDef,
-                                 base_class_sym: util.SymbolPath) -> None:
+    def oils_visit_class_members(
+            self, o: ClassDef, base_class_sym: util.SymbolPath,
+            current_class_name: Optional[util.SymbolPath]) -> None:
         # Write member variables
         self.indent += 1
-        self._MemberDecl(o, base_class_sym)
+        self._MemberDecl(o, base_class_sym, current_class_name)
         self.indent -= 1
 
     def oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
-            base_class_sym: Optional[util.SymbolPath]) -> None:
+            base_class_sym: Optional[util.SymbolPath],
+            current_class_name: Optional[util.SymbolPath]) -> None:
         self.write_ind('class %s', o.name)  # block after this
 
         # e.g. class TextOutput : public ColorOutput
@@ -656,9 +663,9 @@ class Decl(_Shared):
         self.write_ind(' public:\n')
 
         # This visits all the methods, with self.indent += 1, param
-        # base_class_sym, self.current_method_name
+        # base_class_sym, current_method_name
 
-        super().oils_visit_class_def(o, base_class_sym)
+        super().oils_visit_class_def(o, base_class_sym, current_class_name)
 
         self.write_ind('};\n')
         self.write('\n')
@@ -695,7 +702,8 @@ class Decl(_Shared):
         self.write_ind('}\n')
 
     def _MemberDecl(self, o: 'mypy.nodes.ClassDef',
-                    base_class_sym: util.SymbolPath) -> None:
+                    base_class_sym: util.SymbolPath,
+                    current_class_name: Optional[util.SymbolPath]) -> None:
         member_vars = self.all_member_vars[o]
 
         # List of field mask expressions
@@ -756,7 +764,7 @@ class Decl(_Shared):
                 self.write_ind('%s %s{};\n', c_type, name)
 
         # Context managers aren't GC objects
-        if not _IsContextManager(self.current_class_name):
+        if not _IsContextManager(current_class_name):
             self._GcHeaderDecl(o, field_gc, mask_bits)
 
         self.write('\n')
@@ -805,11 +813,13 @@ class Impl(_Shared):
         # abstract method
         return 'define'
 
-    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
-        if self.current_class_name:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
+        if current_class_name:
             # definition looks like
             # void Class::method(...);
-            func_name = SymbolToString((self.current_class_name[-1], o.name))
+            func_name = SymbolToString((current_class_name[-1], o.name))
             noreturn = ''
         else:
             func_name = o.name
@@ -974,7 +984,9 @@ class Impl(_Shared):
             self.accept(arg)
         self.write('))')
 
-    def oils_visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
+    def oils_visit_call_expr(
+            self, o: 'mypy.nodes.CallExpr',
+            current_class_name: Optional[util.SymbolPath]) -> None:
         callee_name = o.callee.name
 
         #    return cast(YshArrayLiteral, tok)
@@ -1638,7 +1650,9 @@ class Impl(_Shared):
         self.write_ind('}\n')
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
 
         # GLOBAL CONSTANTS - Avoid Alloc<T>, since that can't be done until main().
         if self.indent == 0:
@@ -1739,7 +1753,7 @@ class Impl(_Shared):
             #c_type = GetCType(lval_type, local=self.indent != 0)
             c_type = GetCType(lval_type)
 
-            if self.at_global_scope:
+            if at_global_scope:
                 # globals always get a type -- they're not mutated
                 self.write_ind('%s %s = ', c_type, lval.name)
             else:
@@ -2412,8 +2426,9 @@ class Impl(_Shared):
 
             self.write(';\n')
 
-    def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
-                               base_class_sym: util.SymbolPath) -> None:
+    def oils_visit_constructor(
+            self, o: ClassDef, stmt: FuncDef, base_class_sym: util.SymbolPath,
+            current_class_name: Optional[util.SymbolPath]) -> None:
         self.write('\n')
         self.write('%s::%s(', o.name, o.name)
         self._WriteFuncParams(stmt, write_defaults=False)
@@ -2456,7 +2471,7 @@ class Impl(_Shared):
         # Now visit the rest of the statements
         self.indent += 1
 
-        if _IsContextManager(self.current_class_name):
+        if _IsContextManager(current_class_name):
             # For ctx_* classes only, do gHeap.PushRoot() for all the pointer
             # members
             member_vars = self.all_member_vars[o]

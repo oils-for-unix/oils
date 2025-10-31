@@ -15,7 +15,7 @@ die() {
 }
 
 #
-# inherit_errexit (bash and Oil)
+# inherit_errexit (bash and Oils)
 #
 # It's confusing that command subs clear the errexit flag (but subshells
 # don't.)
@@ -35,7 +35,7 @@ subshell-demo() {
 }
 
 #
-# command_sub_errexit (Oil)
+# command_sub_errexit (Oils)
 #
 # It's confusing that a=$(false) is different than local a=$(false).
 
@@ -57,7 +57,7 @@ oil-more-errexit() {
 }
 
 #
-# strict_errexit (Oil)
+# strict_errexit (Oils)
 #
 # It's confusing that 'if myfunc', 'while/until myfunc', 'myfunc || die',
 # 'myfunc && echo OK' and '!  myfunc' change errexit.
@@ -150,7 +150,7 @@ read-exit-status() {
 
   echo status=$?
 
-  # Solution: Oil can have its own builtin.  It already has 'getline'.
+  # Solution: Oils can have its own builtin.  It already has 'getline'.
   # getfile / slurp / readall
   # readall :x < myfile
   #

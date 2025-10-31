@@ -68,10 +68,37 @@ checkout-stable() {
   popd > /dev/null
 }
 
-download-oils() {
-  local job_id=${1:-10368}  # 2025-10-16, after x=1> fix
+patch-aports() {
+  local cur_dir=$PWD
+  pushd ../../alpinelinux/aports
 
-  local url="https://op.oilshell.org/uuu/github-jobs/$job_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
+  # Add our patches alongside Alpine's own patches
+  # abuild's default_prepare() applies all patches inside $srcdir, but they
+  # also need to be specified in the 'source=' and 'sha512sums=' lists in APKBUILD
+  for patch_dir in $cur_dir/regtest/patches/*; do
+      local patch_dir=$(basename $patch_dir)
+      for patch in $cur_dir/regtest/patches/$patch_dir/*; do
+          cp $patch main/$patch_dir/
+          local patch_name=$(basename $patch)
+          local shasum=$(sha512sum $patch | cut -d " " -f1)
+          local apkbuild=main/$patch_dir/APKBUILD
+          git restore $apkbuild
+          sed -i "/source='*/ a $patch_name" $apkbuild
+          sed -i "/sha512sums='*/ a $shasum  $patch_name" $apkbuild
+      done
+  done
+
+  popd >/dev/null
+}
+
+
+# 2025-10-22, after $(false) and (( fixes
+readonly TARBALL_ID='10439'
+
+download-oils() {
+  local tarball_id=${1:-$TARBALL_ID}
+
+  local url="https://op.oilshell.org/uuu/github-jobs/$tarball_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
 
   rm -f -v _tmp/oils-for-unix.tar
 
@@ -442,10 +469,14 @@ remove-all() {
 }
 
 fetch-all() {
+  local tarball_id=${1:-$TARBALL_ID}
+
   clone-aports
   clone-aci
   checkout-stable
-  download-oils
+  patch-aports
+
+  download-oils "$tarball_id"
 }
 
 prepare-all() {
