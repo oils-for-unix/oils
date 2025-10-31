@@ -51,6 +51,20 @@ OLD_CMARK_WEDGE_DIR = '/wedge/oils-for-unix.org/pkg/cmark/0.29.0'
 def cmark_bin(md):
     # type: (str) -> str
 
+    # On macOS, try Homebrew's cmark first, then fall back to wedge
+    import platform
+    if platform.system() == 'Darwin':
+        # Try Homebrew cmark on macOS
+        try:
+            p = subprocess.Popen(['cmark', '--unsafe'],
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE)
+            stdout, _ = p.communicate(input=md)
+            return stdout
+        except OSError:
+            pass  # Fall through to wedge version
+
+    # Use wedge version (Linux or fallback)
     b1 = os.path.join(NEW_CMARK_WEDGE_DIR, 'bin/cmark')
     b2 = os.path.join(OLD_CMARK_WEDGE_DIR, 'bin/cmark')
     if os.path.exists(b1):
