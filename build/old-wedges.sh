@@ -7,17 +7,15 @@ ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
 # Also in build/deps.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
 
-# put 'python2' in $PATH
 readonly WEDGE_PY2_DIR=$ROOT_WEDGE_DIR/pkg/python2/2.7.18/bin
 if test -d $WEDGE_PY2_DIR; then
   PATH="$WEDGE_PY2_DIR:$PATH"
 fi
 
-# put 'python3' in $PATH
 readonly WEDGE_PY3_DIR=$ROOT_WEDGE_DIR/pkg/python3/3.10.4/bin
-# Unconditionally add it to PATH; otherwise build/deps.sh install-wedges won't
-# work
-PATH="$WEDGE_PY3_DIR:$PATH"
+if test -d $WEDGE_PY3_DIR; then
+  PATH="$WEDGE_PY3_DIR:$PATH"
+fi
 
 readonly WEDGE_RE2C_DIR=$ROOT_WEDGE_DIR/pkg/re2c/3.0/bin
 if test -d $WEDGE_RE2C_DIR; then
@@ -49,7 +47,7 @@ if test -d $SPEC_DIR; then
 fi
 
 #
-# NEW spec-bin wedges found before old ../oil_DEPS
+# Newer spec-bin wedges found before obsolete ../oil_DEPS
 #
 
 readonly BASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/bash/4.4/bin

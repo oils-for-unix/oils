@@ -40,7 +40,6 @@ shells() {
   ### used in ovm-tarball
   local deps_dir=$1
 
-
   link-relative $deps_dir/wedge/bash/4.4/bin/bash $deps_dir/bin/bash-4.4
   link-relative $deps_dir/wedge/bash/5.2.21/bin/bash $deps_dir/bin/bash-5.2.21
   # newer bash 5.2  is the default
