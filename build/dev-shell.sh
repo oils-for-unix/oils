@@ -16,16 +16,18 @@
 test -n "${__BUILD_DEV_SHELL_SH:-}" && return
 readonly __BUILD_DEV_SHELL_SH=1
 
-#
-# OLD WEDGES 
-#
+# Used by BOTH this file, build/old-wedges.sh 
+_MYPY_VERSION=0.780
+_PY3_LIBS_VERSION=2023-03-04
+_SITE_PACKAGES=lib/python3.10/site-packages
 
-# TODO:
-# - Move all of this into old wedges
+# So we can run Python 2 scripts directly, e.g. asdl/asdl_main.py
+# Must come before old-wedges.sh
+PYTHONPATH='.'
 
-ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
-# Also in build/deps.sh
-USER_WEDGE_DIR=~/wedge/oils-for-unix.org
+#
+# PATH for old wedges - not available in Soil CI, but are on contributor machines
+#
 
 _OLD_WEDGES=build/old-wedges.sh
 if test -f $_OLD_WEDGES; then
@@ -34,13 +36,10 @@ if test -f $_OLD_WEDGES; then
 fi
 
 #
-# 2025 WEDGES
+# PATH for 2025 wedges
 #
 
-# Note:
-# Should we have a command: deps/wedge.sh make-bin-dir 
-# - happens in each docker build
-# - happens in the contributor setup: build/deps.sh install-wedges
+# TODO: contributor setup should make these symlinks
 
 _DEPS_BIN_DIR=$PWD/../oils.DEPS/bin
 if test -d $_DEPS_BIN_DIR; then
@@ -48,7 +47,7 @@ if test -d $_DEPS_BIN_DIR; then
 fi
 
 #
-# Libraries: PYTHONPATH and R_LIBS_USER
+# R_LIBS_USER
 #
 
 _NEW_WEDGE_DIR=$PWD/../oils.DEPS/wedge
@@ -56,33 +55,14 @@ if test -d $_NEW_WEDGE_DIR/R-libs; then
   R_LIBS_USER=$_NEW_WEDGE_DIR/R-libs/2023-04-18
 fi
 
-# So we can run Python 2 scripts directly, e.g. asdl/asdl_main.py
-PYTHONPATH='.'
-
-# We can also run mycpp/mycpp_main.py directly
 #
-# But NOT bin/oils_for_unix.py (Python 2).  Those need to find our stripped down
-# vendor/typing.py, but we CANNOT put vendor/ in $PYTHONPATH, because then
-# mycpp would import it and fail.
-
-readonly _SITE_PACKAGES=lib/python3.10/site-packages
-readonly _PY3_LIBS_VERSION=2023-03-04
+# PYTHONPATH
+#
 
 # Unconditionally add to PYTHONPATH; otherwise build/deps.sh install-wedges
 # can't work in one shot
-
-readonly OLD_PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$_PY3_LIBS_VERSION/$_SITE_PACKAGES
-PYTHONPATH="$OLD_PY3_LIBS_WEDGE:$PYTHONPATH"
-
 readonly _NEW_PY3_LIBS_WEDGE=$_NEW_WEDGE_DIR/py3-libs/$_PY3_LIBS_VERSION/$_SITE_PACKAGES
 PYTHONPATH="$_NEW_PY3_LIBS_WEDGE:$PYTHONPATH"
-
-_MYPY_VERSION=0.780
-
-readonly _OLD_MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$_MYPY_VERSION
-if test -d "$_OLD_MYPY_WEDGE"; then
-  PYTHONPATH="$_OLD_MYPY_WEDGE:$PYTHONPATH"
-fi
 
 readonly _NEW_MYPY_WEDGE=$_NEW_WEDGE_DIR/mypy/$_MYPY_VERSION
 if test -d "$_NEW_MYPY_WEDGE"; then
@@ -101,7 +81,9 @@ case $PATH in
     ;;
 esac
 
-# ALL VARS MUTATED
-# Some of them might be exported already
-export PATH PYTHONPATH R_LIBS_USER
+#
+# Export all vars MUTATED
+#
 
+# Some of them might be exported already, but that's OK
+export PATH PYTHONPATH R_LIBS_USER

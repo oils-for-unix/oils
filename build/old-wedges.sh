@@ -1,7 +1,11 @@
 # Old shell state, preserved to avoid breaking existing contributors.
 #
 # Usage:
-#   source build/old-wedges.sh
+#   . build/old-wedges.sh
+
+ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
+# Also in build/deps.sh
+USER_WEDGE_DIR=~/wedge/oils-for-unix.org
 
 # put 'python2' in $PATH
 readonly WEDGE_PY2_DIR=$ROOT_WEDGE_DIR/pkg/python2/2.7.18/bin
@@ -102,4 +106,18 @@ if test -d ~/R; then
   R_LIBS_USER=~/R
 elif test -d $OLD_WEDGE_DIR/R-libs; then
   R_LIBS_USER=$OLD_WEDGE_DIR/R-libs/2023-04-18
+fi
+
+#
+# PYTHONPATH
+#
+
+# Unconditionally add to PYTHONPATH; otherwise build/deps.sh install-wedges
+# can't work in one shot
+readonly OLD_PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$_PY3_LIBS_VERSION/$_SITE_PACKAGES
+PYTHONPATH="$OLD_PY3_LIBS_WEDGE:$PYTHONPATH"
+
+readonly _OLD_MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$_MYPY_VERSION
+if test -d "$_OLD_MYPY_WEDGE"; then
+  PYTHONPATH="$_OLD_MYPY_WEDGE:$PYTHONPATH"
 fi

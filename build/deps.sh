@@ -34,7 +34,7 @@ source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source build/dev-shell.sh  # python3 in PATH, PY3_LIBS_VERSION
+source build/dev-shell.sh  # TODO: remove this
 source deps/from-apt.sh  # PY3_BUILD_DEPS
 #source deps/podman.sh
 source test/tsv-lib.sh  # tsv-concat
@@ -111,6 +111,7 @@ readonly SOUFFLE_URL=https://github.com/souffle-lang/souffle/archive/refs/tags/2
 
 readonly R_LIBS_VERSION='2023-04-18'
 readonly TIME_HELPER_VERSION='2023-02-28'
+readonly PY3_LIBS_VERSION=2023-03-04
 
 readonly WEDGE_LOG_DIR=_build/wedge/logs
 
