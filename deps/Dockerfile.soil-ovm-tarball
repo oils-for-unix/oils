@@ -52,6 +52,11 @@ COPY --chown=uke \
   _build/boxed/wedge/zsh/5.1.1 \
   /home/uke/oils.DEPS/wedge/zsh/5.1.1
 
+COPY --chown=uke \
+  _build/boxed/wedge/zsh/5.9 \
+  /home/uke/oils.DEPS/wedge/zsh/5.9
+
+# Make symlinks
 COPY deps/make-bin.sh /home/uke/tmp/deps/make-bin.sh
 RUN mkdir -p /home/uke/oils.DEPS/bin && \
     deps/make-bin.sh re2c /home/uke/oils.DEPS && \
