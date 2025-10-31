@@ -167,15 +167,16 @@ class Pass(visitor.SimpleVisitor):
 
     def oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
-            base_class_sym: Optional[util.SymbolPath]) -> None:
+            base_class_sym: Optional[util.SymbolPath],
+            current_class_name: Optional[util.SymbolPath]) -> None:
         self.write_ind('class %s;\n', o.name)
         if base_class_sym:
-            self.virtual.OnSubclass(base_class_sym, self.current_class_name)
+            self.virtual.OnSubclass(base_class_sym, current_class_name)
 
         # Do default traversal of methods, associating member vars with the
         # ClassDef node
         self.current_member_vars = {}
-        super().oils_visit_class_def(o, base_class_sym)
+        super().oils_visit_class_def(o, base_class_sym, current_class_name)
         self.all_member_vars[o] = self.current_member_vars
 
     def _ValidateDefaultArg(self, arg: Argument) -> None:
@@ -221,10 +222,12 @@ class Pass(visitor.SimpleVisitor):
                 (func_def.name, num_defaults))
             return
 
-    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
         self._ValidateDefaultArgs(o)
 
-        self.virtual.OnMethod(self.current_class_name, o.name)
+        self.virtual.OnMethod(current_class_name, o.name)
 
         self.current_local_vars = []
 
@@ -236,7 +239,7 @@ class Pass(visitor.SimpleVisitor):
         # Are we assuming we never do mylib.MaybeCollect() inside a
         # constructor?  We can check that too.
 
-        if self.current_method_name != '__init__':
+        if current_method_name != '__init__':
             # Add function params as locals, to be rooted
             arg_types = o.type.arg_types
             arg_names = [arg.variable.name for arg in o.arguments]
@@ -246,7 +249,7 @@ class Pass(visitor.SimpleVisitor):
                 self.current_local_vars.append((name, typ))
 
         # Traverse to collect member variables
-        super().oils_visit_func_def(o)
+        super().oils_visit_func_def(o, current_class_name, current_method_name)
         self.all_local_vars[o] = self.current_local_vars
 
         # Is this function is a generator?  Then associate the node with an
@@ -291,8 +294,10 @@ class Pass(visitor.SimpleVisitor):
         super().oils_visit_assign_to_listcomp(lval, left_expr, index_expr, seq,
                                               cond)
 
-    def _MaybeAddMember(self, lval: MemberExpr) -> None:
-        assert not self.at_global_scope, "Members shouldn't be assigned at the top level"
+    def _MaybeAddMember(self, lval: MemberExpr,
+                        current_method_name: Optional[str],
+                        at_global_scope: bool) -> None:
+        assert not at_global_scope, "Members shouldn't be assigned at the top level"
 
         # Collect statements that look like self.foo = 1
         # Only do this in __init__ so that a derived class mutating a field
@@ -301,7 +306,7 @@ class Pass(visitor.SimpleVisitor):
         #
         # HACK for WordParser: also include Reset().  We could change them
         # all up front but I kinda like this.
-        if self.current_method_name not in ('__init__', 'Reset'):
+        if current_method_name not in ('__init__', 'Reset'):
             return
 
         if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
@@ -313,10 +318,12 @@ class Pass(visitor.SimpleVisitor):
                                                    is_managed)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
 
         if isinstance(lval, MemberExpr):
-            self._MaybeAddMember(lval)
+            self._MaybeAddMember(lval, current_method_name, at_global_scope)
 
         if lval in self.types and isinstance(self.types[lval], PartialType):
             t = self.types[lval]
@@ -360,7 +367,7 @@ class Pass(visitor.SimpleVisitor):
                         to_cast.name.startswith('UP_')):
                     is_downcast_and_shadow = True
 
-            if (not self.at_global_scope and not is_iterator and
+            if (not at_global_scope and not is_iterator and
                     not is_downcast_and_shadow):
                 self.current_local_vars.append((lval.name, self.types[lval]))
 
@@ -389,9 +396,11 @@ class Pass(visitor.SimpleVisitor):
 
                 # self.a, self.b = foo()
                 if isinstance(lval_item, MemberExpr):
-                    self._MaybeAddMember(lval_item)
+                    self._MaybeAddMember(lval_item, current_method_name,
+                                         at_global_scope)
 
-        super().oils_visit_assignment_stmt(o, lval, rval)
+        super().oils_visit_assignment_stmt(o, lval, rval, current_method_name,
+                                           at_global_scope)
 
     def oils_visit_for_stmt(self, o: 'mypy.nodes.ForStmt',
                             func_name: Optional[str]) -> None:
