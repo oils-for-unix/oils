@@ -12,9 +12,9 @@
 # - assumes that $REPO_ROOT is $PWD.
 # - build/py2.sh is a slimmer version, for just python2
 
-# TODO: enable this include guard
-#test -n "${__BUILD_DEV_SHELL_SH:-}" && return
-#readonly __BUILD_DEV_SHELL_SH=1
+# Include guard
+test -n "${__BUILD_DEV_SHELL_SH:-}" && return
+readonly __BUILD_DEV_SHELL_SH=1
 
 #
 # OLD WEDGES 
@@ -27,10 +27,10 @@ ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
 # Also in build/deps.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
 
-OLD_WEDGES=build/old-wedges.sh
-if test -f $OLD_WEDGES; then
+_OLD_WEDGES=build/old-wedges.sh
+if test -f $_OLD_WEDGES; then
   # note: 'source' doesn't work under /bin/sh
-  . $OLD_WEDGES
+  . $_OLD_WEDGES
 fi
 
 #
@@ -42,27 +42,18 @@ fi
 # - happens in each docker build
 # - happens in the contributor setup: build/deps.sh install-wedges
 
-readonly DEPS_BIN_DIR=$PWD/../oils.DEPS/bin
-if test -d $DEPS_BIN_DIR; then
-  PATH="$DEPS_BIN_DIR:$PATH"
+_DEPS_BIN_DIR=$PWD/../oils.DEPS/bin
+if test -d $_DEPS_BIN_DIR; then
+  PATH="$_DEPS_BIN_DIR:$PATH"
 fi
 
 #
 # Libraries: PYTHONPATH and R_LIBS_USER
 #
 
-OLD_WEDGE_DIR=~/wedge/oils-for-unix.org/pkg
-NEW_WEDGE_DIR=$PWD/../oils.DEPS/wedge
-
-if test -d ~/R; then
-  # 2023-07: Hack to keep using old versions on lenny.local
-  # In 2023-04, dplyr stopped supporting R 3.4.4 on Ubuntu Bionic
-  # https://cran.r-project.org/web/packages/dplyr/index.html
-  R_LIBS_USER=~/R
-elif test -d $NEW_WEDGE_DIR/R-libs; then
-  R_LIBS_USER=$NEW_WEDGE_DIR/R-libs/2023-04-18
-elif test -d $OLD_WEDGE_DIR/R-libs; then
-  R_LIBS_USER=$OLD_WEDGE_DIR/R-libs/2023-04-18
+_NEW_WEDGE_DIR=$PWD/../oils.DEPS/wedge
+if test -d $_NEW_WEDGE_DIR/R-libs; then
+  R_LIBS_USER=$_NEW_WEDGE_DIR/R-libs/2023-04-18
 fi
 
 # So we can run Python 2 scripts directly, e.g. asdl/asdl_main.py
@@ -74,30 +65,28 @@ PYTHONPATH='.'
 # vendor/typing.py, but we CANNOT put vendor/ in $PYTHONPATH, because then
 # mycpp would import it and fail.
 
-readonly site_packages=lib/python3.10/site-packages
+readonly _SITE_PACKAGES=lib/python3.10/site-packages
+readonly _PY3_LIBS_VERSION=2023-03-04
 
-#readonly PY3_LIBS_VERSION=2023-07-27
-readonly PY3_LIBS_VERSION=2023-03-04
-
-readonly NEW_PY3_LIBS_WEDGE=$NEW_WEDGE_DIR/py3-libs/$PY3_LIBS_VERSION/$site_packages
-readonly OLD_PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION/$site_packages
 # Unconditionally add to PYTHONPATH; otherwise build/deps.sh install-wedges
 # can't work in one shot
-PYTHONPATH="$NEW_PY3_LIBS_WEDGE:$OLD_PY3_LIBS_WEDGE:$PYTHONPATH"
 
-MYPY_VERSION=0.780
-# TODO: would be nice to upgrade to newer version
-#readonly MYPY_VERSION=0.971
+readonly OLD_PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$_PY3_LIBS_VERSION/$_SITE_PACKAGES
+PYTHONPATH="$OLD_PY3_LIBS_WEDGE:$PYTHONPATH"
 
-# Containers copy it here
-readonly OLD_MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
-if test -d "$OLD_MYPY_WEDGE"; then
-  PYTHONPATH="$OLD_MYPY_WEDGE:$PYTHONPATH"
+readonly _NEW_PY3_LIBS_WEDGE=$_NEW_WEDGE_DIR/py3-libs/$_PY3_LIBS_VERSION/$_SITE_PACKAGES
+PYTHONPATH="$_NEW_PY3_LIBS_WEDGE:$PYTHONPATH"
+
+_MYPY_VERSION=0.780
+
+readonly _OLD_MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$_MYPY_VERSION
+if test -d "$_OLD_MYPY_WEDGE"; then
+  PYTHONPATH="$_OLD_MYPY_WEDGE:$PYTHONPATH"
 fi
 
-readonly NEW_MYPY_WEDGE=$NEW_WEDGE_DIR/mypy/$MYPY_VERSION
-if test -d "$NEW_MYPY_WEDGE"; then
-  PYTHONPATH="$NEW_MYPY_WEDGE:$PYTHONPATH"
+readonly _NEW_MYPY_WEDGE=$_NEW_WEDGE_DIR/mypy/$_MYPY_VERSION
+if test -d "$_NEW_MYPY_WEDGE"; then
+  PYTHONPATH="$_NEW_MYPY_WEDGE:$PYTHONPATH"
 fi
 
 # Hack for misconfigured RC cluster!  Some machines have the empty string in

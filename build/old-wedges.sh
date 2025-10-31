@@ -89,3 +89,17 @@ readonly YASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/yash/2.49/bin
 if test -d $YASH_WEDGE_DIR; then
   PATH="$YASH_WEDGE_DIR:$PATH"
 fi
+
+#
+# R_LIBS_USER
+#
+
+OLD_WEDGE_DIR=~/wedge/oils-for-unix.org/pkg
+if test -d ~/R; then
+  # 2023-07: Hack to keep using old versions on lenny.local
+  # In 2023-04, dplyr stopped supporting R 3.4.4 on Ubuntu Bionic
+  # https://cran.r-project.org/web/packages/dplyr/index.html
+  R_LIBS_USER=~/R
+elif test -d $OLD_WEDGE_DIR/R-libs; then
+  R_LIBS_USER=$OLD_WEDGE_DIR/R-libs/2023-04-18
+fi

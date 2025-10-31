@@ -14,7 +14,7 @@ if test -d $_WEDGE_PY2_DIR; then
 fi
 
 # 2025-10: also in build/dev-shell.sh
-readonly _DEPS_BIN_DIR=$PWD/../oils.DEPS/bin
+_DEPS_BIN_DIR=$PWD/../oils.DEPS/bin
 if test -d $_DEPS_BIN_DIR; then
   export PATH="$_DEPS_BIN_DIR:$PATH"
 fi
