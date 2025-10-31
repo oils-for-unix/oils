@@ -316,6 +316,7 @@ smoke-script-2() {
   #mksh -c "echo hi from mksh"
 
   #test/spec.sh smoke
+  test/spec.sh zsh-assoc
 
   which python2
   python2 -V
@@ -325,10 +326,10 @@ smoke-script-2() {
   python3 -V
   echo
 
+  exit
+
   # Bug with python2
   test/lossless.sh soil-run
-
-  exit
 
   python3 -m mypy core/util.py
   echo
