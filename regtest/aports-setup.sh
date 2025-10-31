@@ -77,14 +77,20 @@ patch-aports() {
   # also need to be specified in the 'source=' and 'sha512sums=' lists in APKBUILD
   for patch_dir in $cur_dir/regtest/patches/*; do
       local patch_dir=$(basename $patch_dir)
+      local apkbuild=main/$patch_dir/APKBUILD
+      git restore $apkbuild
       for patch in $cur_dir/regtest/patches/$patch_dir/*; do
-          cp $patch main/$patch_dir/
-          local patch_name=$(basename $patch)
-          local shasum=$(sha512sum $patch | cut -d " " -f1)
-          local apkbuild=main/$patch_dir/APKBUILD
-          git restore $apkbuild
-          sed -i "/source='*/ a $patch_name" $apkbuild
-          sed -i "/sha512sums='*/ a $shasum  $patch_name" $apkbuild
+          if [[ $patch == *.patch ]]; then
+              cp $patch main/$patch_dir/
+              local patch_name=$(basename $patch)
+              local shasum=$(sha512sum $patch | cut -d " " -f1)
+              sed -i "/source='*/ a $patch_name" $apkbuild
+              sed -i "/sha512sums='*/ a $shasum  $patch_name" $apkbuild
+          elif [[ $patch == *.copy ]]; then
+              cp $patch main/$patch_dir/
+          elif [[ $patch == *.apkbuild ]]; then
+              git apply $patch
+          fi
       done
   done
 
