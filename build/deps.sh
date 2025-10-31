@@ -277,6 +277,21 @@ readonly -a WEDGE_DEPS_ARCH=(
 
 )
 
+# macOS / Homebrew dependencies
+readonly -a WEDGE_DEPS_MACOS=(
+  wget
+  tree
+  gawk
+  cmake
+  ninja
+  readline
+  openssl@3
+  re2c
+  bash  # bash 4+ needed for inherit_errexit
+  # Note: Python 2 was removed from Homebrew, will be built as wedge
+  # Note: macOS includes gcc as alias to clang, zlib, and bzip2
+)
+
 
 install-debian-packages() {
   ### Packages for build/py.sh all, building wedges, etc.
@@ -322,18 +337,50 @@ wedge-deps-alpine() {
 }
 
 wedge-deps-arch() {
-  # Install packages without prompt 
-  
-  # First sync the package database
-  sudo pacman -Sy
+# Install packages without prompt
 
-  # Then install packages
-  for pkg in "${WEDGE_DEPS_ARCH[@]}"; do
-    # Only install if not already installed
-    if ! pacman -Qi "$pkg" >/dev/null 2>&1; then
-      sudo pacman --noconfirm -S "$pkg"
+# First sync the package database
+sudo pacman -Sy
+
+# Then install packages
+for pkg in "${WEDGE_DEPS_ARCH[@]}"; do
+# Only install if not already installed
+if ! pacman -Qi "$pkg" >/dev/null 2>&1; then
+sudo pacman --noconfirm -S "$pkg"
+fi
+done
+}
+
+wedge-deps-macos() {
+  ### Install packages on macOS via Homebrew
+
+  # Check if Homebrew is installed
+  if ! command -v brew >/dev/null 2>&1; then
+    die "Homebrew is not installed. Install it from https://brew.sh/"
+  fi
+
+  log "Updating Homebrew..."
+  brew update
+
+  log "Installing dependencies..."
+  for pkg in "${WEDGE_DEPS_MACOS[@]}"; do
+    # Check if already installed to avoid unnecessary reinstalls
+    if ! brew list "$pkg" >/dev/null 2>&1; then
+      log "Installing $pkg..."
+      brew install "$pkg"
+    else
+      log "$pkg already installed"
     fi
   done
+
+  log ""
+  log "Dependencies installed successfully!"
+  log ""
+  log "IMPORTANT: You need to use the newer bash in your PATH:"
+  log "  Run: export PATH=\"/opt/homebrew/bin:$PATH\"  # Apple Silicon"
+  log "  Or:  export PATH=\"/usr/local/bin:$PATH\"      # Intel Mac"
+  log ""
+  log "Add this to your ~/.zshrc or ~/.bash_profile to make it permanent"
 }
 
 #
@@ -450,8 +497,15 @@ copy-source-medo() {
   mkdir -p $DEPS_SOURCE_DIR
 
   # Copy the whole tree, including the .treeptr files
-  cp --verbose --recursive --no-target-directory \
-    deps/source.medo/ $DEPS_SOURCE_DIR/
+  # Note: --no-target-directory is GNU-specific, not available on macOS/BSD
+  if [[ "$(uname)" == "Darwin" ]]; then
+    # macOS/BSD cp: use -R with trailing slash to copy contents
+    cp -v -R deps/source.medo/. $DEPS_SOURCE_DIR/
+  else
+    # GNU cp
+    cp --verbose --recursive --no-target-directory \
+      deps/source.medo/ $DEPS_SOURCE_DIR/
+  fi
 }
 
 fetch-spec-bin() {
@@ -1096,7 +1150,14 @@ EOF
   table-sort-end 'tasks'  # ID for sorting
 }
 
-NPROC=$(nproc)
+# Get number of processors (Linux: nproc, macOS: sysctl)
+if command -v nproc >/dev/null 2>&1; then
+  NPROC=$(nproc)
+elif command -v sysctl >/dev/null 2>&1; then
+  NPROC=$(sysctl -n hw.ncpu)
+else
+  NPROC=1
+fi
 #NPROC=1
 
 install-wedge-list() {
@@ -1119,10 +1180,16 @@ install-wedge-list() {
   fi
 
   # Reads from stdin
-  # Note: --process-slot-var requires GNU xargs!  busybox args doesn't have it.
+  # Note: --process-slot-var requires GNU xargs!  busybox and macOS xargs don't have it.
   #
   # $name $version $wedge_dir
-  xargs "${flags[@]}" -n 4 --process-slot-var=XARGS_SLOT -- $0 maybe-install-wedge "$how"
+  if [[ "$(uname)" == "Darwin" ]]; then
+    # macOS xargs doesn't support --process-slot-var, set default XARGS_SLOT
+    export XARGS_SLOT=1
+    xargs "${flags[@]}" -n 3 -- $0 maybe-install-wedge "$how"
+  else
+    xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 maybe-install-wedge "$how"
+  fi
 
   #xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 dummy-task-wrapper
 }
