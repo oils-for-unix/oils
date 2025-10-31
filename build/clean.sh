@@ -11,14 +11,14 @@ set -o pipefail
 
 # To test building stdlib.
 clean-pyc() {
-  # skip _chroot, _tmp, etc.  But delete __init__.pyc
-  find . \( -type d -a -name '_*' -a -prune \) -o -name '*.pyc' -a -print |
-    xargs --no-run-if-empty -- rm --verbose
+# skip _chroot, _tmp, etc.  But delete __init__.pyc
+find . \( -type d -a -name '_*' -a -prune \) -o -name '*.pyc' -a -print |
+xargs rm -v
 }
 
 py() {
-  rm -f --verbose *.so
-  rm -r -f --verbose _devbuild _cache
+  rm -f -v *.so
+  rm -r -f -v _devbuild _cache
 
   # These can be stale after renaming things
   clean-pyc
@@ -26,7 +26,7 @@ py() {
 
 cpp() {
   ### e.g. to time ninja build
-  rm -r -f --verbose _bin _build _gen _release _test build.ninja
+  rm -r -f -v _bin _build _gen _release _test build.ninja
 
   clean-pyc
 
@@ -34,7 +34,7 @@ cpp() {
 }
 
 all() {
-  rm -r -f --verbose _tmp 
+  rm -r -f -v _tmp
   # TODO: the _deps dir should be obsolete, after removing devtools/release.sh
   # dep-benchmarks
 
