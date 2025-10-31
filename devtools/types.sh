@@ -14,6 +14,12 @@ readonly MYPY_FLAGS='--strict --no-strict-optional'
 # Note: similar to egrep filename filters in build/dynamic-deps.sh
 readonly COMMENT_RE='^[ ]*#'
 
+banner() {
+  echo ''
+  echo "*** $@"
+  echo ''
+}
+
 typecheck-files() {
   # The --follow-imports=silent option allows adding type annotations
   # in smaller steps without worrying about triggering a bunch of
@@ -31,6 +37,8 @@ typecheck-files() {
 
 check-binary() {
   local py_module=${1:-}
+
+  banner "Type checking $py_module"
 
   # TODO: remove --no-warn-unused-ignores and type: ignore in
   # osh/builtin_comp.py after help_.py import isn't conditional
@@ -62,14 +70,22 @@ check-more() {
 }
 
 mypy-check() {
-  local p=".:$MYPY_WEDGE:$PY3_LIBS_WEDGE"
+  # duplicates some values from build/deps.sh
+  local MYPY_WEDGE="$PWD/../oils.DEPS/wedge/mypy/0.780"
 
-  # the path is fiddly
-  PYTHONPATH=$p MYPYPATH=$MYPY_WEDGE \
+  local site_packages='lib/python3.10/site-packages'
+  local PY3_LIBS_WEDGE="$PWD/../oils.DEPS/wedge/py3-libs/2023-03-04/$site_packages"
+
+  local pypath=".:$MYPY_WEDGE:$PY3_LIBS_WEDGE"
+
+  # The paths are fiddly?
+  PYTHONPATH=$pypath MYPYPATH=$MYPY_WEDGE \
     python3 -m mypy "$@"
 }
 
 check-mycpp() {
+  banner 'Type checking mycpp'
+
   local -a files=(
     mycpp/{pass_state,util,crash,format_strings,visitor,const_pass,control_flow_pass,mycpp_main,cppgen_pass,conversion_pass}.py
   )
@@ -99,15 +115,6 @@ check-doctools() {
   mypy-check "${flags[@]}" "${files[@]}"
 }
 
-check-all() {
-  ### Run this locally
-
-  check-oils
-
-  # Ad hoc list of additional files
-  check-more
-}
-
 soil-run() {
   set -x
   python3 -m mypy --version
@@ -116,7 +123,12 @@ soil-run() {
   # Generate oils-for-unix dependencies.  Though this is overly aggressive
   ./NINJA-config.sh
 
-  check-all
+  check-oils
+  check-more
+
+  # 2025-10-31: 27 errors in 5 files
+  # allow it to fail for now
+  check-mycpp || true
 }
 
 name=$(basename $0)

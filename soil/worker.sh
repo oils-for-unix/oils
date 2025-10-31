@@ -142,7 +142,7 @@ build-minimal       build/py.sh minimal                          -
 repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
 asdl-types          asdl/TEST.sh check-types                     -
-oil-types           devtools/types.sh soil-run                   -
+oils-types          devtools/types.sh soil-run                   -
 unit                test/unit.sh minimal                         _test/py-unit/
 lossless            test/lossless.sh soil-run                    -
 parse-errors        test/parse-errors.sh soil-run-py             -

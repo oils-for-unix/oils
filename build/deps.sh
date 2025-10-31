@@ -1211,7 +1211,7 @@ print-wedge-list() {
   esac 
 }
 
-install-wedges() {
+install-wedges-parallel() {
   local which_wedges=${1:-contrib}  # contrib | soil | smoke
   local how=${2:-legacy}            # boxed | unboxed | legacy
 
@@ -1242,9 +1242,28 @@ install-wedges() {
   write-task-report
 }
 
+install-wedges-2025() {
+  ### Install in ../oils.DEPS (aka unboxed)
+
+  # ../oils.DEPS/wedge
+  install-wedges-parallel contrib unboxed
+
+  # ../oils.DEPS/bin
+  deps/make-bin.sh contrib
+}
+
+install-wedges() {
+  ### What we tell users to run
+
+  # the /wedge and ~/wedge stuff we got rid of
+  install-wedges-parallel contrib legacy
+
+  # TODO: change to install-wedges-2025
+}
+
 install-wedges-fast() {
-  ### Alias for compatibility
-  install-wedges "$@"
+  ### OLD alias for compatibility
+  install-wedges-parallel contrib legacy
 }
 
 install-wedges-soil() {
