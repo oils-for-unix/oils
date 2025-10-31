@@ -126,6 +126,12 @@ BEGIN {
   # dircproxy
   patterns["#2535"] = "fatal: Pat Sub op expected Str, BashArray, or BashAssoc, got Int"
 
+  # jq
+  patterns["#2540"] = "FAIL: tests/shtest"
+
+  # libidn
+  patterns["#2523"] = "ERROR: libidn2: check failed"
+
   found = 0
 }
 { 
