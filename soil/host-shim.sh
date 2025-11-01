@@ -270,15 +270,10 @@ run-job-uke() {
   make-soil-dir
   local soil_dir=$repo_root/_tmp/soil
 
-  local -a flags=()
-
   local image_id=$job_name
-
   # Some jobs don't have their own image, and some need docker -t
   case $job_name in
     app-tests)
-      # to run ble.sh tests
-      flags=( -t )
       ;;
     cpp-coverage)
       image_id='clang'
@@ -297,12 +292,24 @@ run-job-uke() {
       image_id='benchmarks'
       ;;
     interactive)
-      # to run 'interactive-osh' with job control enabled
-      flags=( -t )
-
       # Reuse for now
       image_id='benchmarks'
       ;;
+  esac
+
+  local -a flags=()
+  case $job_name in
+    app-tests|interactive)
+      # app-tests: to run ble.sh tests
+      # interactive: to run 'interactive-osh' with job control enabled
+      flags+=( -t )
+      ;;
+    cpp-small|cpp-spec|cpp-tarball|ovm-tarball)
+      # podman requires an additional flag for ASAN, so it can use ptrace()
+      # Otherwise we get:
+      # ==1194==LeakSanitizer has encountered a fatal error.
+      # ==1194==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+      flags+=()  # TODO
   esac
 
   local image="docker.io/oilshell/soil-$image_id"

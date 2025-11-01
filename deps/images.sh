@@ -387,21 +387,22 @@ _smoke() {
   local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
   local docker=${3:-$DOCKER}
-  local debug_shell=${4:-}
+  local script_func=${4:-}  # if empty, then start a debug shell
 
   #$docker run ${prefix}oilshell/$name:$tag bash -c "$(smoke-script-1)"
 
   local repo_root=$PWD
 
   local -a flags argv
-  if test -n "$debug_shell"; then
+  if test -n "$script_func"; then
+    flags=()
+    argv=( bash -c "$("$script_func")" )
+  else
     flags=( -i -t )
     argv=( bash )
-  else
-    flags=()
-    argv=( bash -c "$(smoke-script-2)" )
   fi
 
+  set -x
   $docker run "${flags[@]}" \
     --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
     oilshell/$name:$tag "${argv[@]}"
