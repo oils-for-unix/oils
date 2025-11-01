@@ -163,6 +163,7 @@ readonly -a WEDGE_DEPS_DEBIAN=(
   #flex bison
 
   "${PY3_BUILD_DEPS[@]}"
+  "${SPEC_TEST_DEPS[@]}"
 )
 
 readonly -a WEDGE_DEPS_ALPINE=(

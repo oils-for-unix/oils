@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 
 # These are needed for bootstrapping pip in Python 3.10
-# (Also used by build/py.sh ubuntu-deps)
+# (Also used by build/deps.sh wedge-deps-{debian,alpine,fedora})
 #
 # For building Python 3.10 with working 'pip install'
 #   libssl-dev: to download packages
@@ -27,6 +27,11 @@ declare -a R_BUILD_DEPS=(
     # it tries to compile it from source.
     # https://stringi.gagolewski.com/install.html
     libicu-dev
+)
+
+declare -a SPEC_TEST_DEPS=(
+    jq      # YSH spec tests invoke this
+    procps  # for 'ps'
 )
 
 install-R() {
@@ -154,11 +159,6 @@ wild() {
 
 dev-minimal() {
   local -a packages=(
-    # TODO: remove
-    #python2-dev  # for building Python extensions
-    #python-setuptools  # Python 2, for flake8
-    #python-pip  # flake8 typing
-
     gcc  # for building Python extensions
     libreadline-dev
 
@@ -175,18 +175,11 @@ dev-minimal() {
 
     # 'ps' used by spec tests
     procps
-    # for oil-spec task
-    jq
+
+    "${SPEC_TEST_DEPS[@]}"
   )
 
   apt-install "${packages[@]}"
-}
-
-pea() {
-  # For installing MyPy
-  # apt-install python3-pip
-
-  echo 'None'
 }
 
 other-tests() {
@@ -325,9 +318,7 @@ cpp-spec() {
     # to create _test/index.html
     gawk
 
-    # spec tests use these
-    procps
-    jq
+    "${SPEC_TEST_DEPS[@]}"
 
     # for MyPy git clone https://.  TODO: remove when the build is hermetic
     ca-certificates
