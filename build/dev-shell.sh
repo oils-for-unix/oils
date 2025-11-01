@@ -39,8 +39,6 @@ fi
 # PATH for 2025 wedges
 #
 
-# TODO: contributor setup should make these symlinks
-
 _DEPS_BIN_DIR=$PWD/../oils.DEPS/bin
 if test -d $_DEPS_BIN_DIR; then
   PATH="$_DEPS_BIN_DIR:$PATH"
@@ -59,8 +57,7 @@ fi
 # PYTHONPATH
 #
 
-# Unconditionally add to PYTHONPATH; otherwise build/deps.sh install-wedges
-# can't work in one shot
+# Unconditionally add to PYTHONPATH, to avoid ordering issues in initial build/deps.sh setup
 readonly _NEW_PY3_LIBS_WEDGE=$_NEW_WEDGE_DIR/py3-libs/$_PY3_LIBS_VERSION/$_SITE_PACKAGES
 PYTHONPATH="$_NEW_PY3_LIBS_WEDGE:$PYTHONPATH"
 

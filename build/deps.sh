@@ -277,7 +277,6 @@ readonly -a WEDGE_DEPS_ARCH=(
 
 )
 
-
 install-debian-packages() {
   ### Packages for build/py.sh all, building wedges, etc.
 
@@ -334,54 +333,6 @@ wedge-deps-arch() {
       sudo pacman --noconfirm -S "$pkg"
     fi
   done
-}
-
-#
-# Unused patch, was experiment for Fedora
-#
-
-get-typed-ast-patch() {
-  curl -o deps/typed_ast.patch https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96.patch
-}
-
-# Work around typed_ast bug:
-#   https://github.com/python/typed_ast/issues/169
-#
-# Apply this patch
-# https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96
-#
-# typed_ast is tarred up though
-patch-typed-ast() {
-  local package_dir=_cache/py3-libs
-  local patch=$PWD/deps/typed_ast.patch
-
-  pushd $package_dir
-  cat $patch
-  echo
-
-  local dir=typed_ast-1.4.3
-  local tar=typed_ast-1.4.3.tar.gz
-
-  echo OLD
-  ls -l $tar
-  echo
-
-  rm -r -f -v $dir
-  tar -x -z < $tar
-
-  pushd $dir
-  patch -p1 < $patch
-  popd
-  #find $dir
-
-  # Create a new one
-  tar --create --gzip --file $tar typed_ast-1.4.3
-
-  echo NEW
-  ls -l $tar
-  echo
-
-  popd
 }
 
 #
@@ -615,10 +566,29 @@ boxed-wedge-exists() {
 # Install
 #
 
-# TODO: py3-libs needs to be a WEDGE, so that that you can run
-# 'wedge build deps/source.medo/py3-libs/' and then get it in
-#
-# _build/wedge/{absolute,relative}   # which one?
+upgrade-typed-ast() {
+  local file=$1
+  sed -i 's/typed_ast.*/typed_ast==1.5.0/' $file
+}
+
+test-typed-ast() {
+  local dir=~/wedge/oils-for-unix.org/pkg/mypy/0.780
+
+  cp -v $dir/mypy-requirements.txt _tmp
+
+  local file=_tmp/mypy-requirements.txt
+  cat $file
+  #echo
+
+  # 1.5.0 fixed this bug
+  # https://github.com/python/typed_ast/issues/169 
+
+  upgrade-typed-ast $file
+  echo
+  cat $file
+}
+
+# TODO: py3-libs needs to be a WEDGE
 #
 # It needs a BUILD DEPENDENCY on:
 # - the python3 wedge, so you can do python3 -m pip install.
@@ -633,9 +603,6 @@ download-py3-libs() {
   local mypy_dir=${1:-$DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION}
   local py_package_dir=_cache/py3-libs
   mkdir -p $py_package_dir
-
-  # Avoids a warning, but doesn't fix typed_ast
-  #python3 -m pip download -d $py_package_dir wheel
 
   python3 -m pip download -d $py_package_dir -r $mypy_dir/test-requirements.txt
   python3 -m pip download -d $py_package_dir pexpect pyte
@@ -667,44 +634,10 @@ install-py3-libs-in-venv() {
   time python3 -m pip install --find-links $package_dir pexpect pyte
 }
 
-upgrade-typed-ast() {
-  local file=$1
-  sed -i 's/typed_ast.*/typed_ast==1.5.0/' $file
-}
-
-test-typed-ast() {
-  local dir=~/wedge/oils-for-unix.org/pkg/mypy/0.780
-
-  cp -v $dir/mypy-requirements.txt _tmp
-
-  local file=_tmp/mypy-requirements.txt
-  cat $file
-  #echo
-
-  # 1.5.0 fixed this bug
-  # https://github.com/python/typed_ast/issues/169 
-
-  upgrade-typed-ast $file
-  echo
-  cat $file
-}
-
 install-py3-libs-from-cache() {
   # As well as end users
   local mypy_dir=${1:-$DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION}
   local wedge_out_dir=${2:-$USER_WEDGE_DIR}
-
-  local py3
-  py3=$(command -v python3)
-  case $py3 in
-    *wedge/oils-for-unix.org/*)
-      ;;
-    *oils.DEPS/*)
-      ;;
-    *)
-      die "python3 is '$py3', but expected it to be in a wedge"
-      ;;
-  esac
 
   log "Ensuring pip is installed (interpreter $(command -v python3)"
   python3 -m ensurepip
@@ -723,9 +656,23 @@ install-py3-libs-from-cache() {
 }
 
 install-py3-libs() {
-  ### Invoked by Dockerfile.cpp-small, etc.
+  ### Invoked by Dockerfile.cpp-small, etc. and by fake-py3-libs-wedge
   local mypy_dir=${1:-}
   local wedge_out_dir=${2:-}
+
+  local py3
+  py3=$(command -v python3)
+  case $py3 in
+    *wedge/oils-for-unix.org/*)
+      ;;
+    *oils.DEPS/*)
+      ;;
+    *)
+      die "python3 is '$py3', but expected it to be in a wedge"
+      ;;
+  esac
+
+  log "python3 is $py3"
 
   download-py3-libs $mypy_dir
   install-py3-libs-from-cache "$mypy_dir" "$wedge_out_dir"
@@ -1123,8 +1070,6 @@ install-wedge-list() {
   #
   # $name $version $wedge_dir
   xargs "${flags[@]}" -n 4 --process-slot-var=XARGS_SLOT -- $0 maybe-install-wedge "$how"
-
-  #xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 dummy-task-wrapper
 }
 
 write-task-report() {
@@ -1223,6 +1168,10 @@ install-wedges-parallel() {
   # Do all of them in parallel
   print-wedge-list "$which_wedges" "$how" | install-wedge-list "$how" T
 
+  # python3 interpreter is needed to download and install python packages
+  mkdir -p ../oils.DEPS/bin  # must create it
+  deps/make-bin.sh python3 ../oils.DEPS
+
   local wedge_out_dir
   case $how in
     unboxed)
@@ -1247,7 +1196,7 @@ install-wedges-OLD() {
   install-wedges-parallel contrib legacy
 }
 
-install-wedges-2025() {
+install-wedges-contrib-2025() {
   ### Install in ../oils.DEPS (aka unboxed)
 
   # ../oils.DEPS/wedge
@@ -1261,16 +1210,20 @@ install-wedges() {
   ### What we tell users to run
 
   # Migrated as of 2025-10
-  install-wedges-2025 "$@"
+  install-wedges-contrib-2025 "$@"
 }
 
 install-wedges-soil() {
-  ### CI calls this
+  ### dev-setup-{debian,fedora,alpine} jobs call this
 
-  install-wedges-parallel soil legacy
+  # Old wedges
+  # install-wedges-parallel soil legacy
 
-  # TODO: enable this
-  # install-wedges-2025
+  # ../oils.DEPS/wedge
+  install-wedges-parallel soil unboxed
+
+  # ../oils.DEPS/bin
+  deps/make-bin.sh contrib
 }
 
 #
@@ -1472,19 +1425,6 @@ do-boxed-wedge-list() {
   #
   # $name $version $wedge_dir
   xargs "${flags[@]}" -n 4 --process-slot-var=XARGS_SLOT -- $0 maybe-boxed-wedge
-
-  #xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 dummy-task-wrapper
-}
-
-
-_boxed-wedges-2025-TEST() {
-  # fastest one
-  deps/wedge.sh boxed-2025 deps/source.medo/time-helper '' debian-12
-
-  if true; then
-    # debian 10 for now
-    deps/wedge.sh boxed-2025 deps/source.medo/bloaty/ '' # debian-12
-  fi
 }
 
 _boxed-wedges-2025() {
@@ -1531,7 +1471,7 @@ wedge-sizes() {
   local tmp=_tmp/wedge-sizes.txt
 
   # -b is --bytes, but use short flag for busybox compat
-  du -s -b /wedge/*/*/* ~/wedge/*/*/* | awk '
+  du -s -b ../oils.DEPS/wedge/*/* | awk '
     { print $0  # print the line
       total_bytes += $1  # accumulate
     }
@@ -1549,7 +1489,7 @@ END { print total_bytes " TOTAL" }
 wedge-report() {
   # 4 levels deep shows the package
   if command -v tree > /dev/null; then
-    tree -L 4 /wedge ~/wedge
+    tree -L 4 ../oils.DEPS
     echo
   fi
 
@@ -1558,7 +1498,7 @@ wedge-report() {
   local tmp=_tmp/wedge-manifest.txt
 
   echo 'Biggest files'
-  if ! find /wedge ~/wedge -type f -a -printf '%10s %P\n' > $tmp; then
+  if ! find ../oils.DEPS/wedge -type f -a -printf '%10s %P\n' > $tmp; then
     # busybox find doesn't have -printf
     echo 'find -printf failed'
     return
