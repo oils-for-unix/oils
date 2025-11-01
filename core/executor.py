@@ -578,8 +578,7 @@ class ShellExecutor(vm._Executor):
 
         # Maybe rewrite 'cat' as 'builtin cat' !
         # Don't do it interactively, since that can mess up job control.
-        if (self.exec_opts.rewrite_extern() and
-                not self.exec_opts.interactive()):
+        if self.exec_opts.rewrite_extern():
             builtin_id = _RewriteExternToBuiltin(cmd_val.argv)
             if builtin_id != consts.NO_INDEX:
                 if builtin_id == builtin_i.cat:
