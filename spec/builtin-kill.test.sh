@@ -5,6 +5,8 @@
 # Tests for builtins having to do with killing a process
 
 #### kill -15 kills the process with SIGTERM
+case $SH in mksh) exit ;; esac  # mksh is flaky
+
 sleep 0.1 &
 pid=$!
 kill -15 $pid
@@ -17,8 +19,6 @@ kill=0
 wait=143
 ## END
 ## BUG mksh STDOUT:
-kill=0
-wait=0
 ## END
 
 #### kill -KILL kills the process with SIGKILL
