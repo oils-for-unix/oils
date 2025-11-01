@@ -14,12 +14,11 @@ BASE_DIR=_tmp/ltrace
 test-home-dir() {
 
   mkdir -p $BASE_DIR
+  rm -f -v $BASE_DIR/*
 
   # ltrace doesn't work with ASAN, etc.
   local osh=_bin/cxx-dbg/osh
   ninja $osh
-
-  local status=0
 
   # zsh calls getpwuid
   # bash on my Ubuntu machine doesn't call it, but seems to in the Debian CI
@@ -28,24 +27,26 @@ test-home-dir() {
   for sh in $osh dash "$@"; do
     local trace
     trace=$BASE_DIR/$(basename $sh).txt
-
     set -x
     ltrace -e getpwuid -- $sh -c 'echo hi' 2> $trace
-
-    if grep getpwuid $trace; then
-      log "ERROR: $sh should not call getpwuid()"
-      status=1
-    else
-      log "OK $sh"
-    fi
     set +x
   done
 
-  return $status
+  wc -l $BASE_DIR/*.txt
+  echo
+
+  head $BASE_DIR/*.txt
+
+  if grep getpwuid $BASE_DIR/*.txt; then
+    log "ERROR: shells should not call getpwuid()"
+    return 1
+  fi
+
+  return 0
 }
 
 soil-run() {
-  test-home-dir
+  test-home-dir bash
 }
 
 task-five "$@"
