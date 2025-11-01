@@ -303,6 +303,9 @@ smoke-script-2() {
   cd ~/oil
   . build/dev-shell.sh
 
+  test/ltrace.sh soil-run
+  exit
+
   # Bug with python2
   #devtools/types.sh soil-run
   #test/lossless.sh soil-run

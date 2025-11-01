@@ -305,6 +305,9 @@ run-job-uke() {
       # interactive: to run 'interactive-osh' with job control enabled
       flags+=( -t )
       ;;
+  esac
+
+  case $job_name in
     cpp-small|cpp-spec|cpp-tarball|ovm-tarball)
       # podman requires an additional flag for ASAN, so it can use ptrace()
       # Otherwise we get:

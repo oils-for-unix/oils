@@ -12,7 +12,6 @@ source test/common.sh  # log
 BASE_DIR=_tmp/ltrace
 
 test-home-dir() {
-
   mkdir -p $BASE_DIR
   rm -f -v $BASE_DIR/*
 
@@ -54,6 +53,29 @@ test-home-dir() {
 }
 
 soil-run() {
+  # 2025-11: ltrace doesn't seem to work on Github Actions, with podman, even
+  # podman 4.9 on Ubuntu
+  #
+  # This test does NOT fail, but it doesn't test anything either.
+  # This is even with PTRACE_FLAGS in soil/host-shim.sh, which fixed ASAN, but
+  # not ltrace.
+  #
+  # ==> _tmp/ltrace/dash.txt <==
+  # failed to init breakpoints 1648
+  # failed to initialize process 1648: Permission denied
+  # couldn't open program '/usr/bin/dash': Permission denied
+  # 
+  # ==> _tmp/ltrace/osh.txt <==
+  # failed to init breakpoints 1645
+  # failed to initialize process 1645: Permission denied
+  # couldn't open program '_bin/cxx-dbg/osh': Permission denied
+
+  # Did it ever work with Docker?  It's not clear.
+  # In any case, we want to switch to podman, and this test is not that
+  # important.
+  # We could make it a separate Soil task in the future, so it's easier to
+  # debug.
+
   test-home-dir
 }
 
