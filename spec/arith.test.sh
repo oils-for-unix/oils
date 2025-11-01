@@ -1042,3 +1042,24 @@ status=0
 ## BUG bash STDOUT:
 status=1
 ## END
+
+#### $[ is $((
+echo $[1+2]
+
+## STDOUT:
+3
+## END
+## BUG dash/mksh STDOUT:
+$[1+2]
+## END
+
+#### $[$var is $(($var
+var=1
+echo $[$var+2]
+
+## STDOUT:
+3
+## END
+## BUG dash/mksh STDOUT:
+$[1+2]
+## END

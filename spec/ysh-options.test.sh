@@ -178,6 +178,7 @@ shopt -s for_loop_frames
 shopt -s inherit_errexit
 shopt -s init_ysh_globals
 shopt -s no_dash_glob
+shopt -s no_parse_dollar_in_expression_sub
 shopt -s no_xtrace_osh
 shopt -s nounset
 shopt -s nullglob

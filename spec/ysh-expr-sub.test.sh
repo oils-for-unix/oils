@@ -112,3 +112,10 @@ var x = $[ [42] ]
 d = 15
 len(e) = 3
 ## END
+
+#### $[$var] is not allowed
+var=1
+echo $[$var+2]
+echo status=$?
+
+## status: 2

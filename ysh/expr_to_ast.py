@@ -64,6 +64,7 @@ from ysh import regex_translate
 
 from typing import TYPE_CHECKING, Dict, List, Tuple, Optional, cast
 if TYPE_CHECKING:
+    from core import optview
     from pgen2.grammar import Grammar
     from pgen2.pnode import PNode
 
@@ -149,9 +150,10 @@ class Transformer(object):
       atom, trailer, etc. are private, named after productions in grammar.pgen2.
     """
 
-    def __init__(self, gr):
-        # type: (Grammar) -> None
+    def __init__(self, gr, parse_opts):
+        # type: (Grammar, optview.Parse) -> None
         self.number2symbol = gr.number2symbol
+        self.parse_opts = parse_opts
         if mylib.PYTHON:
             names = MakeGrammarNames(gr)
             # print raw nodes
@@ -721,7 +723,7 @@ class Transformer(object):
         elif typ == grammar_nt.simple_var_sub:
             tok = pnode.GetChild(0).tok
 
-            if tok.id == Id.VSub_DollarName:  # $foo is disallowed
+            if (tok.id == Id.VSub_DollarName and self.parse_opts.no_parse_dollar_in_expression_sub()):  # $foo is disallowed
                 bare = lexer.TokenSliceLeft(tok, 1)
                 p_die(
                     'In expressions, remove $ and use `%s`, or sometimes "$%s"'

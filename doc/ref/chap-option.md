@@ -238,6 +238,7 @@ Details on each option:
       xtrace_rich             Hierarchical and process tracing
       no_xtrace_osh           Disable OSH tracing with +
       no_dash_glob            Avoid globbing files like -rf
+      no_parse_dollar_in_expression_sub               Disallows $var in $[]
       env_obj                 Init ENV Obj at startup; use it when starting
                               child processes
       init_ysh_globals        Init ARGV List at startup
