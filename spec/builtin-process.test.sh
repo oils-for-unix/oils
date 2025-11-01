@@ -1,6 +1,6 @@
 ## compare_shells: dash bash mksh zsh
-## oils_failures_allowed: 2
-## oils_cpp_failures_allowed: 3
+## oils_failures_allowed: 4
+## oils_cpp_failures_allowed: 5
 # case #24 with ulimit -f 1 is different under C++ for some reason - could be due to the python2
 # intepreter and SIGXFSZ
 
@@ -131,6 +131,7 @@ stat -c '%a' $TMP/umask-one $TMP/umask-two
 #### set umask symbolically
 umask 0002  # begin in a known state for the test
 rm -f $TMP/umask-one $TMP/umask-two
+# open()s 'umask-one' with mask 0666, then subtracts 0002 -> 0664
 echo one > $TMP/umask-one
 umask g-w,o-w
 echo two > $TMP/umask-two
@@ -141,6 +142,135 @@ stat -c '%a' $TMP/umask-one $TMP/umask-two
 644
 ## END
 ## stderr-json: ""
+
+#### umask -p
+umask -p | grep 'umask [0-9][0-9][0-9][0-9]'
+## status: 0
+## N-I dash/mksh/zsh status: 1
+
+#### umask -S
+# current mask as symbolic
+umask -S | grep 'u=[rwx]*,g=[rwx]*,o=[rwx]*' 
+## status: 0
+
+#### umask symbolic parsing
+
+umask 0000
+umask u-rw
+echo status0=$?
+umask | tail -c 4
+
+umask 0700
+umask u=r
+echo status1=$?
+umask | tail -c 4
+
+umask 0000
+umask u=r,g=w,o=x
+echo status2=$?
+umask | tail -c 4
+
+umask 0777
+umask u+r,g+w,o+x
+echo status3=$?
+umask | tail -c 4
+
+umask 0000
+umask u-r,g-w,o-x
+echo status4=$?
+umask | tail -c 4
+
+umask 0137
+umask u=,g+,o-
+echo status5=$?
+umask | tail -c 4
+
+## status: 0
+## STDOUT:
+status0=0
+600
+status1=0
+300
+status2=0
+356
+status3=0
+356
+status4=0
+421
+status5=0
+737
+## END
+
+#### umask symbolic parsing with spaces
+umask 0111
+# spaces are an error in bash
+# dash & mksh only interpret the first one
+umask u=, g+, o-
+echo status=$?
+umask | tail -c 4
+## status: 0
+## STDOUT:
+status=2
+111
+## END
+## OK bash/zsh STDOUT:
+status=1
+111
+## END
+## BUG dash/mksh STDOUT:
+status=0
+711
+## END
+
+#### umask bad symbolic input
+umask b=rwx
+## status: 1
+## OK dash status: 2
+
+#### umask octal number out of range
+umask 0022
+umask 1234567
+# osh currently treats 0o1234567 as 0o0567
+echo status=$?
+umask | tail -c 4
+## status: 0
+## STDOUT:
+status=1
+022
+## END
+## BUG mksh/zsh/dash STDOUT:
+status=0
+567
+## END
+
+#### umask allow overwriting and duplicates
+umask 0111
+umask u=rwx,u=rw,u=r,u=,g=rwx
+umask | tail -c 4
+## status: 0
+## STDOUT:
+701
+## END
+
+#### umask a=rwx is allowed
+umask 0732
+umask a=rwx
+umask | tail -c 4
+
+umask 0124
+umask a+r
+umask | tail -c 4
+
+umask 0124
+umask a-r
+umask | tail -c 4
+## status: 0
+## STDOUT:
+000
+120
+564
+## END
+
 
 #### ulimit with no flags is like -f
 

@@ -462,28 +462,117 @@ class Umask(vm._Builtin):
         argv = cmd_val.argv[1:]
         if len(argv) == 0:
             # umask() has a dumb API: you can't get it without modifying it first!
+            # see: https://man7.org/linux/man-pages/man2/umask.2.html
             # NOTE: dash disables interrupts around the two umask() calls, but that
             # shouldn't be a concern for us.  Signal handlers won't call umask().
             mask = posix.umask(0)
-            posix.umask(mask)  #
+            posix.umask(mask)
             print('0%03o' % mask)  # octal format
             return 0
 
         if len(argv) == 1:
-            a = argv[0]
-            try:
-                new_mask = int(a, 8)
-            except ValueError:
-                # NOTE: This also happens when we have '8' or '9' in the input.
+            first_arg = argv[0]
+            if first_arg[0].isdigit():
+                try:
+                    new_mask = int(first_arg, 8)
+                except ValueError:
+                    # NOTE: This also happens when we have '8' or '9' in the input.
+                    print_stderr("oils warning: `%s` is not an octal number" %
+                                 first_arg)
+                    return 1
+
+                posix.umask(new_mask)
+                return 0
+            else:
+                # TODO: it's possible to avoid this extra syscall in cases where we don't care about
+                # the initial value (ex: umask u=rwx,a=rwx) although it's non-trivial to determine
+                # when, so it's probably not worth it
+                initial_mask = posix.umask(0)
+               
+                # TODO: when to split first_arg? is this fine?
+                ok, new_mask = self._MaskFromClauseList(initial_mask, first_arg.split(","))
+                if not ok:
+                    posix.umask(initial_mask)
+                    return 1
+
+                posix.umask(new_mask)
+                return 0
+
+        e_usage("unexpected number of arguments", loc.Missing)
+
+    def _MaskFromClauseList(self, mask, clause_list):
+        # type: (int, List[str]) -> Tuple[bool, int]
+
+        for clause in clause_list:
+            ok, mask = self._SymbolicToOctal(mask, clause)
+            if not ok:
+                return False, 0 
+
+        return True, mask 
+        
+    # TODO: update the naming convention here
+    def _SymbolicToOctal(self, initial_mask, arg_component):
+        # type: (int, str) -> Tuple[bool, int]
+
+        # TODO: location highlighting would be nice
+        if len(arg_component) == 0:
+            print_stderr(
+                "oils warning: symbolic mode operator cannot be empty")
+            return False, 0
+        elif arg_component[0] not in "ugoa":
+            print_stderr(
+                "oils warning: `%s` is an invalid symbolic mode operator" %
+                arg_component[0])
+            return False, 0
+        elif len(arg_component) == 1:
+            print_stderr(
+                "oils warning: expected `=+-` after `%s` in symbolic mode operator"
+                % arg_component[0])
+            return False, 0
+        elif arg_component[1] not in "=+-":
+            print_stderr(
+                "oils warning: `%s` is an invalid symbolic mode operator" %
+                arg_component[1])
+            return False, 0
+
+        mask_digit = 0o7
+        for ch in arg_component[2:]:
+            if ch == 'r':
+                mask_digit &= (0o7 - 0o4)
+            elif ch == 'w':
+                mask_digit &= (0o7 - 0o2)
+            elif ch == 'x':
+                mask_digit &= (0o7 - 0o1)
+            else:
                 print_stderr(
-                    "oils warning: umask with symbolic input isn't implemented"
-                )
-                return 1
+                    "oils warning: `%s` is an invalid symbolic mode character"
+                    % ch)
+                return False, 0
 
-            posix.umask(new_mask)
-            return 0
+        if arg_component[0] == "u":
+            area_mask = 0o700
+            modifier = mask_digit << 6
+        elif arg_component[0] == "g":
+            area_mask = 0o070
+            modifier = mask_digit << 3
+        elif arg_component[0] == "o":
+            area_mask = 0o007
+            modifier = mask_digit
+        elif arg_component[0] == "a":
+            area_mask = 0o777
+            modifier = (mask_digit << 6) | (mask_digit << 3) | mask_digit
 
-        e_usage('umask: unexpected arguments', loc.Missing)
+        original_mask_area = initial_mask & ~area_mask
+        if arg_component[1] == "=":
+            new_mask = original_mask_area | modifier
+        elif arg_component[1] == "+":
+            new_mask = original_mask_area | (initial_mask & area_mask
+                                             & modifier)
+        elif arg_component[1] == "-":
+            new_mask = original_mask_area | (initial_mask |
+                                             (~modifier & area_mask))
+
+        return True, new_mask
 
 
 def _LimitString(lim, factor):
