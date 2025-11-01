@@ -1650,14 +1650,14 @@ _full-soil-rebuild() {
   # b. Remove commented out code from dockerfiles
   #
   # TODO
-  # 2. Remove OLD COMPAT stuff that contributors won't use
-  #    - pea_main wrapper - build/ninja-rules-py.sh
-  # 3. wedge-boostrap: rename uke0 -> uke
+  # 1. wedge-boostrap: rename uke0 -> uke
   #    - hopefully this fixes the uftrace wedge
-  # 4. everything with podman - build on hoover machine
-  # 5. everything with rootless podman
-  # 6. everything with raw crun - requires some other rewrites
-  # 7. coarse tree-shaking for task-five.sh, etc.
+  # 2. everything with podman - build on hoover machine
+  # 3. everything with rootless podman
+  # 4. migrate to --network none for one container build at a time
+  #    - not sure how it interacts with apt
+  # 5. everything with raw crun - requires some other rewrites
+  # 6. coarse tree-shaking for task-five.sh, etc.
 
   # MORE WEDGES
   # - test/wild.sh - oil_DEPS ->
