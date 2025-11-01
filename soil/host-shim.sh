@@ -312,7 +312,9 @@ run-job-uke() {
       # ==1194==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
       #
       # Note: somehow this isn't necessary locally: on podamn 4.3.1 on Debian 12
-      flags+=( "${PTRACE_FLAGS[@]}" )
+      if test $docker = podman; then
+        flags+=( "${PTRACE_FLAGS[@]}" )
+      fi
   esac
 
   local image="docker.io/oilshell/soil-$image_id"
