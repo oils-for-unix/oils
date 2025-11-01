@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 ## compare_shells: bash dash mksh
 
 #### >& and <& are the same
@@ -592,4 +592,28 @@ x= {myvar}
 0
 ## END
 ## N-I dash STDOUT:
+## END
+
+#### xtrace not affected by redirects
+set -x
+printf 'aaaa' > /dev/null 2> test_osh
+set +x
+cat test_osh
+## STDERR:
++ printf aaaa
++ set +x
+## END
+## STDOUT:
+## END
+
+## OK osh STDERR:
++ printf aaaa
++ set '+x'
+## END
+
+## OK mksh STDERR:
++ >/dev/null 
++ 2>test_osh 
++ printf aaaa
++ set +x
 ## END
