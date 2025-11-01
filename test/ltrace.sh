@@ -31,12 +31,14 @@ test-home-dir() {
 
     set -x
     ltrace -e getpwuid -- $sh -c 'echo hi' 2> $trace
-    set +x
 
     if grep getpwuid $trace; then
       log "ERROR: $sh should not call getpwuid()"
       status=1
+    else
+      log "OK $sh"
     fi
+    set +x
   done
 
   return $status
