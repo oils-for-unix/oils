@@ -194,11 +194,40 @@ job-reset() {
   show-disk-info
 }
 
+image-layers-tsv() {
+  local docker=${1:-docker}
+  local image=${2:-oilshell/soil-dummy}
+  local tag=${3:-latest}
+
+  # --human=0 gives us raw bytes and ISO timestamps
+  # --no-trunc shows the full command line
+
+  # Removed .CreatedAt because of this issue
+  # https://github.com/containers/podman/issues/17738
+  #echo $'num_bytes\tcreated_at\tcreated_by'
+
+  echo $'num_bytes\tcreated_by'
+
+  $docker history \
+    --no-trunc --human=0 \
+    --format json \
+    $image:$tag | python3 -c '
+import sys, json
+array = json.load(sys.stdin)
+for row in array:
+  print("%s\t%s" % (row["size"], row["CreatedBy"]))
+'
+}
+
 save-image-stats() {
   local soil_dir=${1:-_tmp/soil}
   local docker=${2:-docker}
   local image=${3:-oilshell/soil-dummy}
   local tag=${4:-latest}
+
+  log "save-image-stats with $docker"
+  which $docker
+  $docker --version
 
   # TODO: write image.json with the name and tag?
 
@@ -211,13 +240,7 @@ save-image-stats() {
   $docker history $image:$tag > $soil_dir/image-layers.txt
   log "Wrote $soil_dir/image-layers.txt"
 
-  # NOTE: Works with docker but not podman!  podman doesn't support --format ?
-  {
-    # --human=0 gives us raw bytes and ISO timestamps
-    # --no-trunc shows the full command line
-    echo $'num_bytes\tcreated_at\tcreated_by'
-    $docker history --no-trunc --human=0 --format '{{.Size}}\t{{.CreatedAt}}\t{{.CreatedBy}}' $image:$tag
-  } > $soil_dir/image-layers.tsv
+  image-layers-tsv $docker $image $tag > $soil_dir/image-layers.tsv
   log "Wrote $soil_dir/image-layers.tsv"
 
   # TODO: sum into image-layers.json

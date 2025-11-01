@@ -187,7 +187,7 @@ EOF
 
 format-image-stats() {
   local soil_dir=${1:-_tmp/soil}
-  local web_base_url=${2:-'/web'}  # for production
+  local web_base_url=${2:-'/uuu/web'}  # for production
 
   table-sort-html-head "Image Stats" $web_base_url
 
