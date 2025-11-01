@@ -450,11 +450,13 @@ demo-grammar() {
 
 time-helper() {
   local out=${1:-_devbuild/bin/time-helper}
+  local cflags=${2:-}  # e.g. -fsanitize=address
+
   local in=benchmarks/time-helper.c
 
   mkdir -p $(dirname $out)
 
-  cc -std=c99 -Wall -o $out $in
+  cc -std=c99 -Wall $cflags -o $out $in
   log "    CC $in"
 }
 

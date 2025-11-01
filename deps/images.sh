@@ -303,6 +303,9 @@ smoke-script-2() {
   cd ~/oil
   . build/dev-shell.sh
 
+  test/ltrace.sh soil-run
+  exit
+
   # Bug with python2
   #devtools/types.sh soil-run
   #test/lossless.sh soil-run
@@ -382,25 +385,63 @@ smoke-script-2() {
   '
 }
 
+asan-smoke-script() {
+  echo '
+  cd ~/oil
+  pwd
+  whoami 
+
+  # this failed with ASAN
+  yaks/TEST.sh soil-run
+  exit
+
+  build/py.sh all
+  ./NINJA-config.sh
+  bin=_bin/cxx-asan/mycpp/examples/varargs.mycpp
+  ninja $bin
+  $bin
+
+  exit
+
+  # ls -l
+  #mkdir -p _devbuild/bin
+  out=_devbuild/bin/th.asan 
+
+  build/py.sh time-helper $out -fsanitize=address
+  export ASAN_OPTIONS=detect_leaks=1
+  ldd $out
+  ls -l $out
+  $out 
+  exit
+  '
+}
+
 _smoke() {
   ### Smoke test of container
   local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
   local docker=${3:-$DOCKER}
-  local debug_shell=${4:-}
-
-  #$docker run ${prefix}oilshell/$name:$tag bash -c "$(smoke-script-1)"
+  local script_func=${4:-}  # if empty, then start a debug shell
 
   local repo_root=$PWD
 
   local -a flags argv
-  if test -n "$debug_shell"; then
+  if test -n "$script_func"; then
+    flags=()
+    argv=( bash -c "$("$script_func")" )
+  else
     flags=( -i -t )
     argv=( bash )
-  else
-    flags=()
-    argv=( bash -c "$(smoke-script-2)" )
   fi
+
+  # Stupid podman!
+  case $docker in
+    podman)
+      export-podman
+      # this fixes mount permissions!
+      flags+=( --userns=keep-id )
+      ;;
+  esac
 
   $docker run "${flags[@]}" \
     --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
@@ -411,6 +452,9 @@ smoke() {
   sudo $0 _smoke "$@"
 }
 
+smoke-podman-asan() {
+  _smoke soil-cpp-small latest podman asan-smoke-script
+}
 
 smoke-podman() {
   local name=${1:-dummy}
