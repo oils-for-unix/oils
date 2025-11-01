@@ -194,13 +194,40 @@ job-reset() {
   show-disk-info
 }
 
+image-layers-tsv() {
+  local docker=${1:-docker}
+  local image=${2:-oilshell/soil-dummy}
+  local tag=${3:-latest}
+
+  # --human=0 gives us raw bytes and ISO timestamps
+  # --no-trunc shows the full command line
+
+  # Removed .CreatedAt because of this issue
+  # https://github.com/containers/podman/issues/17738
+  #echo $'num_bytes\tcreated_at\tcreated_by'
+
+  echo $'num_bytes\tcreated_by'
+
+  $docker history \
+    --no-trunc --human=0 \
+    --format json \
+    $image:$tag | python3 -c '
+import sys, json
+array = json.load(sys.stdin)
+for row in array:
+  print("%s\t%s" % (row["size"], row["CreatedBy"]))
+'
+}
+
 save-image-stats() {
   local soil_dir=${1:-_tmp/soil}
   local docker=${2:-docker}
   local image=${3:-oilshell/soil-dummy}
   local tag=${4:-latest}
 
-  # TODO: write image.json with the name and tag?
+  log "save-image-stats with $(which $docker)"
+  $docker --version
+  echo
 
   mkdir -p $soil_dir
 
@@ -211,13 +238,7 @@ save-image-stats() {
   $docker history $image:$tag > $soil_dir/image-layers.txt
   log "Wrote $soil_dir/image-layers.txt"
 
-  # NOTE: Works with docker but not podman!  podman doesn't support --format ?
-  {
-    # --human=0 gives us raw bytes and ISO timestamps
-    # --no-trunc shows the full command line
-    echo $'num_bytes\tcreated_at\tcreated_by'
-    $docker history --no-trunc --human=0 --format '{{.Size}}\t{{.CreatedAt}}\t{{.CreatedBy}}' $image:$tag
-  } > $soil_dir/image-layers.tsv
+  image-layers-tsv $docker $image $tag > $soil_dir/image-layers.tsv
   log "Wrote $soil_dir/image-layers.tsv"
 
   # TODO: sum into image-layers.json
@@ -234,6 +255,9 @@ EOF
   log "Wrote $soil_dir/image-layers.schema.tsv"
 }
 
+# for both ASAN/LeakSanitizer and GDB
+readonly PTRACE_FLAGS=( --cap-add=SYS_PTRACE --security-opt seccomp=unconfined )
+
 run-job-uke() {
   local docker=$1  # docker or podman
   local repo_root=$2
@@ -247,15 +271,10 @@ run-job-uke() {
   make-soil-dir
   local soil_dir=$repo_root/_tmp/soil
 
-  local -a flags=()
-
   local image_id=$job_name
-
   # Some jobs don't have their own image, and some need docker -t
   case $job_name in
     app-tests)
-      # to run ble.sh tests
-      flags=( -t )
       ;;
     cpp-coverage)
       image_id='clang'
@@ -274,12 +293,31 @@ run-job-uke() {
       image_id='benchmarks'
       ;;
     interactive)
-      # to run 'interactive-osh' with job control enabled
-      flags=( -t )
-
       # Reuse for now
       image_id='benchmarks'
       ;;
+  esac
+
+  local -a flags=()
+  case $job_name in
+    app-tests|interactive)
+      # app-tests: to run ble.sh tests
+      # interactive: to run 'interactive-osh' with job control enabled
+      flags+=( -t )
+      ;;
+  esac
+
+  case $job_name in
+    cpp-small|cpp-spec|cpp-tarball|ovm-tarball)
+      # podman requires an additional flag for ASAN, so it can use ptrace()
+      # Otherwise we get:
+      # ==1194==LeakSanitizer has encountered a fatal error.
+      # ==1194==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+      #
+      # Note: somehow this isn't necessary locally: on podamn 4.3.1 on Debian 12
+      if test $docker = podman; then
+        flags+=( "${PTRACE_FLAGS[@]}" )
+      fi
   esac
 
   local image="docker.io/oilshell/soil-$image_id"
@@ -318,17 +356,19 @@ run-job-uke() {
 
     # So we can run GDB
     # https://stackoverflow.com/questions/35860527/warning-error-disabling-address-space-randomization-operation-not-permitted
-    flags+=( --cap-add SYS_PTRACE --security-opt seccomp=unconfined )
+    flags+=( "${PTRACE_FLAGS[@]}" )
 
     args=(bash)
   else
     args=(sh -c "cd /home/uke/oil; soil/worker.sh JOB-$job_name")
   fi
 
+  set -x
   $docker run "${flags[@]}" \
       --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
       $image:$tag \
       "${args[@]}"
+  set +x
 }
 
 did-all-succeed() {
