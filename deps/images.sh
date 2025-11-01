@@ -382,14 +382,24 @@ smoke-script-2() {
   '
 }
 
+asan-smoke() {
+  echo '
+  cd ~/oil
+  pwd
+  whoami 
+  # ls -l
+  #mkdir -p _devbuild/bin
+  build/py.sh time-helper
+  exit
+  '
+}
+
 _smoke() {
   ### Smoke test of container
   local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
   local docker=${3:-$DOCKER}
   local script_func=${4:-}  # if empty, then start a debug shell
-
-  #$docker run ${prefix}oilshell/$name:$tag bash -c "$(smoke-script-1)"
 
   local repo_root=$PWD
 
@@ -402,7 +412,15 @@ _smoke() {
     argv=( bash )
   fi
 
-  set -x
+  # Stupid podman!
+  case $docker in
+    podman)
+      export-podman
+      # this fixes mount permissions!
+      flags+=( --userns=keep-id )
+      ;;
+  esac
+
   $docker run "${flags[@]}" \
     --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
     oilshell/$name:$tag "${argv[@]}"
