@@ -382,14 +382,33 @@ smoke-script-2() {
   '
 }
 
-asan-smoke() {
+asan-smoke-script() {
   echo '
   cd ~/oil
   pwd
   whoami 
+
+  # this failed with ASAN
+  yaks/TEST.sh soil-run
+  exit
+
+  build/py.sh all
+  ./NINJA-config.sh
+  bin=_bin/cxx-asan/mycpp/examples/varargs.mycpp
+  ninja $bin
+  $bin
+
+  exit
+
   # ls -l
   #mkdir -p _devbuild/bin
-  build/py.sh time-helper
+  out=_devbuild/bin/th.asan 
+
+  build/py.sh time-helper $out -fsanitize=address
+  export ASAN_OPTIONS=detect_leaks=1
+  ldd $out
+  ls -l $out
+  $out 
   exit
   '
 }
@@ -430,6 +449,9 @@ smoke() {
   sudo $0 _smoke "$@"
 }
 
+smoke-podman-asan() {
+  _smoke soil-cpp-small latest podman asan-smoke-script
+}
 
 smoke-podman() {
   local name=${1:-dummy}

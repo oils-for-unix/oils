@@ -225,11 +225,9 @@ save-image-stats() {
   local image=${3:-oilshell/soil-dummy}
   local tag=${4:-latest}
 
-  log "save-image-stats with $docker"
-  which $docker
+  log "save-image-stats with $(which $docker)"
   $docker --version
-
-  # TODO: write image.json with the name and tag?
+  echo
 
   mkdir -p $soil_dir
 
@@ -256,6 +254,9 @@ EOF
 
   log "Wrote $soil_dir/image-layers.schema.tsv"
 }
+
+# for both ASAN/LeakSanitizer and GDB
+readonly PTRACE_FLAGS=( --cap-add=SYS_PTRACE --security-opt seccomp=unconfined )
 
 run-job-uke() {
   local docker=$1  # docker or podman
@@ -309,7 +310,9 @@ run-job-uke() {
       # Otherwise we get:
       # ==1194==LeakSanitizer has encountered a fatal error.
       # ==1194==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
-      flags+=()  # TODO
+      #
+      # Note: somehow this isn't necessary locally: on podamn 4.3.1 on Debian 12
+      flags+=( "${PTRACE_FLAGS[@]}" )
   esac
 
   local image="docker.io/oilshell/soil-$image_id"
@@ -348,17 +351,19 @@ run-job-uke() {
 
     # So we can run GDB
     # https://stackoverflow.com/questions/35860527/warning-error-disabling-address-space-randomization-operation-not-permitted
-    flags+=( --cap-add SYS_PTRACE --security-opt seccomp=unconfined )
+    flags+=( "${PTRACE_FLAGS[@]}" )
 
     args=(bash)
   else
     args=(sh -c "cd /home/uke/oil; soil/worker.sh JOB-$job_name")
   fi
 
+  set -x
   $docker run "${flags[@]}" \
       --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
       $image:$tag \
       "${args[@]}"
+  set +x
 }
 
 did-all-succeed() {
