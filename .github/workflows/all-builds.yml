@@ -273,7 +273,7 @@ jobs:
           soil/github-actions.sh publish-and-exit benchmarks3 T
 
   cpp-small:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:

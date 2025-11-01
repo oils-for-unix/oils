@@ -27,9 +27,17 @@ test-home-dir() {
   for sh in $osh dash "$@"; do
     local trace
     trace=$BASE_DIR/$(basename $sh).txt
+
+    set +o errexit
+
     set -x
     ltrace -e getpwuid -- $sh -c 'echo hi' 2> $trace
+    local status=$?
     set +x
+    echo "status=$status"
+
+    set -o errexit
+    echo
   done
 
   wc -l $BASE_DIR/*.txt
@@ -46,7 +54,7 @@ test-home-dir() {
 }
 
 soil-run() {
-  test-home-dir bash
+  test-home-dir
 }
 
 task-five "$@"

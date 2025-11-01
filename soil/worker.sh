@@ -327,6 +327,7 @@ os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 py-unit          test/unit.sh all                      _test/py-unit/
+ltrace           test/ltrace.sh soil-run               -
 stdlib-test      stdlib/TEST.sh soil-run               -
 yaks             yaks/TEST.sh soil-run                 -
 pea              pea/TEST.sh run-tests                 -
@@ -335,7 +336,6 @@ cpp-unit         test/cpp-unit.sh soil-run             _test/-wwz-index
 osh-usage        test/osh-usage.sh soil-run            -
 headless         client/run.sh soil-run-cpp            -
 asan             test/asan.sh soil-run                 -
-ltrace           test/ltrace.sh soil-run               -
 micro-syntax     doctools/micro-syntax.sh soil-run     -
 src-tree         doctools/src-tree.sh soil-run         _tmp/src-tree-www/index.html
 line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/-wwz-index
