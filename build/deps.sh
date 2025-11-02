@@ -1232,8 +1232,8 @@ boxed-clean() {
   time sudo rm -r -f _build/boxed
 }
 
-uftrace-boxed() {
-  ### until we can move uftrace to ../oils.DEPS/wedge
+boxed-uftrace-OLD() {
+  ### uftrace /wedge build: until we can move it to ../oils.DEPS/wedge
 
   deps/wedge.sh boxed deps/source.medo/uftrace/ '' $ROOT_WEDGE_DIR debian-12
 }

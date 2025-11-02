@@ -61,7 +61,7 @@ case $DOCKER in
     docker_prefix=( sudo -E DOCKER_BUILDKIT=1 $DOCKER )
     ;;
   podman)
-    # this can be rootless?
+    # this can be rootless!  Unlike deps/wedge.sh
     docker_prefix=( podman )
     ;;
   *)

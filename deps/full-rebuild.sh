@@ -12,11 +12,37 @@
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
+
+# TODO
+# 1. wedge-bootstrap: rename uke0 -> uke
+#    - hopefully this fixes the uftrace wedge
+# 2. make deps/wedge.sh boxed builds work with rootless podman
+#    - right now deps/images.sh can run rootless
+# 3. migrate to --network none
+#    - for wedge builds
+#    - for image builds
+#      - not sure how it interacts with apt
+# 4. everything with raw crun - requires some other rewrites
+# 5. coarse tree-shaking for task-five.sh, etc.
+
+# MORE WEDGES
+# - uftrace, as mentioned above
+# - test/wild.sh - oil_DEPS ->
+# - ovm-tarball - oil_DEPS -> ../oils.DEPS/wedge/python2-slice
+# - clang binary - contributors use this
+# - benchmarks/osh-runtime files
+# - py3-libs wedge - it has dependencies
+#   - py3-libs depends on python3, and on mypy-requirements.txt
+#   - uftrace depends on python3 - is it system python3?
+# - other stuff in the release
+#   - smoosh tests
+#   - spec-compat?
+
 _build-soil-images() {
   # this excludes the test image
 
   deps/images.sh list soil | while read -r image; do
-    each-one deps/images.sh build $image T
+    deps/images.sh build $image T
   done
 }
 
@@ -38,6 +64,7 @@ _soil-all() {
   local resume2=${2:-}
   local resume3=${3:-}
   local resume4=${4:-}
+  local resume5=${5:-}
 
   if test -z "$resume1"; then
     download-for-soil
@@ -53,44 +80,33 @@ _soil-all() {
   fi
 
   if test -z "$resume3"; then
+    # for now, use this /wedge build, because the ../oils.DEPS one has a bug
+    # possibly related to uke0 versus uke user
+    build/deps.sh boxed-uftrace-OLD
+  fi
+
+  if test -z "$resume4"; then
     # build to populate apt-cache
     deps/images.sh build wedge-bootstrap-debian-12
     deps/images.sh build soil-debian-12
   fi
 
-  if test -z "$resume4"; then
+  if test -z "$resume5"; then
     build-soil-images
   fi
 
   push-all-images
-
-  # Full rebuilds DONE:
-  # a. soil-debian-12 rebuild - with python2 etc.
-  # b. Remove commented out code from dockerfiles
-  #
-  # TODO
-  # 1. wedge-boostrap: rename uke0 -> uke
-  #    - hopefully this fixes the uftrace wedge
-  # 2. everything with podman - build on hoover machine
-  # 3. everything with rootless podman
-  # 4. migrate to --network none for one container build at a time
-  #    - not sure how it interacts with apt
-  # 5. everything with raw crun - requires some other rewrites
-  # 6. coarse tree-shaking for task-five.sh, etc.
-
-  # MORE WEDGES
-  # - test/wild.sh - oil_DEPS ->
-  # - ovm-tarball - oil_DEPS -> ../oils.DEPS/wedge/python2-slice
-  # - clang binary - contributors use this
-  # - benchmarks/osh-runtime files
-
-  # Dependencies
-  # - py3-libs depends on python3, and on mypy-requirements.txt
-  # - uftrace depends on python3 - is it system python3?
 }
 
 soil-all() {
   time _soil-all "$@"
+}
+
+soil-all-podman() {
+  # deps/wedge.sh respects $DOCKER for wedge builds - needs root now
+  # deps/images.sh respects $DOCKER for image builds - rootless
+
+  DOCKER=podman soil-all "$@"
 }
 
 task-five "$@"

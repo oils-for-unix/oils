@@ -22,15 +22,8 @@ live-image-tag() {
   ### image ID -> Docker tag name
   local image_id=$1
 
-  case $image_id in
-    dummy|pea)
-      echo 'v-2025-11-02'  # podman!
-      return
-      ;;
-  esac
-
-  # 2025-10-30-a: full rebuild after clean
-  echo 'v-2025-10-30-a'
+  # podman build migration!
+  echo 'v-2025-11-02'
   return
 
   case $image_id in
