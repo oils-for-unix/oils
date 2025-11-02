@@ -279,6 +279,7 @@ After this success, we expanded our testing:
   - [2025-10-16](2025-10-16.wwz/_tmp/aports-report/2025-10-16/diff_merged.html) - down to **35** after `x=1>` and `cd x y` fixes
   - [2025-10-22](2025-10-22.wwz/_tmp/aports-report/2025-10-22/diff_merged.html) - down to **24** after `((` and `$(false)` fixes
   - [2025-10-26-cause](2025-10-26-cause.wwz/_tmp/aports-report/2025-10-26-cause/diff_merged.html) - updated causes
+  - [2025-11-01-main-cause](2025-11-01-main-cause.wwz/_tmp/aports-report/2025-11-01-main-cause/diff_merged.html) - updated causes
 
 ### community
 
@@ -286,6 +287,7 @@ After this success, we expanded our testing:
   - [2025-10-16-comm-disagree](2025-10-16-comm-disagree.wwz/_tmp/aports-report/2025-10-16-comm-disagree/diff_merged.html) - **71** disagreements
   - [2025-10-22-comm](2025-10-22-comm.wwz/_tmp/aports-report/2025-10-22-comm/diff_merged.html) - down to **65** after `((` and `$(false)` fixes
   - [2025-10-26-comm-cause](2025-10-26-comm-cause.wwz/_tmp/aports-report/2025-10-26-comm-cause/diff_merged.html) - updated causes
+  - [2025-11-01-comm-cause](2025-11-01-comm-cause.wwz/_tmp/aports-report/2025-11-01-comm-cause/diff_merged.html) - updated causes
 
 ';
   } | cmark 
@@ -782,6 +784,17 @@ extract-old-wwz() {
   local old_epoch
   old_epoch=$(basename $wwz .wwz)
   mv -v --no-target-directory $tmp_dir/_tmp/aports-report/$old_epoch $dest_dir
+}
+
+sync-extract-both() {
+  local main=2025-10-22.wwz
+  local comm=2025-10-22-comm.wwz
+
+  sync-old-wwz $main
+  sync-old-wwz $comm
+
+  extract-old-wwz 2025-11-01-main-cause $main
+  extract-old-wwz 2025-11-01-comm-cause $comm
 }
 
 #

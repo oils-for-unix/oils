@@ -98,8 +98,8 @@ patch-aports() {
 }
 
 
-# 2025-10-22, after $(false) and (( fixes
-readonly TARBALL_ID='10439'
+# 2025-11-01, after several contributed fixes
+readonly TARBALL_ID='10703'
 
 download-oils() {
   local tarball_id=${1:-$TARBALL_ID}

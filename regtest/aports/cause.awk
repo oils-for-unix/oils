@@ -121,7 +121,7 @@ BEGIN {
   patterns["#2500"] = "readlink disk/by-label/EFI"
 
   # zeitgeist
-  patterns["#2528"] = "Unexpected argument to \'exit\'"
+  patterns["#2528"] = "Unexpected argument to 'exit'"
 
   # dircproxy
   patterns["#2535"] = "fatal: Pat Sub op expected Str, BashArray, or BashAssoc, got Int"
