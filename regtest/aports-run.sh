@@ -162,6 +162,7 @@ package-dirs() {
           B) package_filter='^xz' ;;    # failure
           C) package_filter='^lz' ;;    # 3 packages
           D) package_filter='^jq$' ;;   # produces autotools test-suite.log
+          P) package_filter='^xz$|^shorewall' ;;   # patches
           *) package_filter='^perl-http-daemon' ;;   # test out perl
         esac
         ;;

@@ -23,8 +23,8 @@ Signed-off-by: Andrii Sultanov <sultanovandriy@gmail.com>
 
 diff --git a/Shorewall-core/configure b/Shorewall-core/configure
 index 741f74475..09b8f2bb7 100755
---- a/Shorewall-core/configure
-+++ b/Shorewall-core/configure
+--- a/configure
++++ b/configure
 @@ -93,7 +93,7 @@ done
  
  cd $(dirname $0)

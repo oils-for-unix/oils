@@ -70,27 +70,49 @@ checkout-stable() {
 
 patch-aports() {
   local cur_dir=$PWD
+
   pushd ../../alpinelinux/aports
 
-  # Add our patches alongside Alpine's own patches
-  # abuild's default_prepare() applies all patches inside $srcdir, but they
-  # also need to be specified in the 'source=' and 'sha512sums=' lists in APKBUILD
   for patch_dir in $cur_dir/regtest/patches/*; do
-      local patch_dir=$(basename $patch_dir)
-      local apkbuild=main/$patch_dir/APKBUILD
+      local package_name
+      package_name=$(basename $patch_dir)
+
+      local apkbuild=main/$package_name/APKBUILD
       git restore $apkbuild
-      for patch in $cur_dir/regtest/patches/$patch_dir/*; do
-          if [[ $patch == *.patch ]]; then
-              cp $patch main/$patch_dir/
-              local patch_name=$(basename $patch)
-              local shasum=$(sha512sum $patch | cut -d " " -f1)
+
+      for mod_file in $cur_dir/regtest/patches/$package_name/*; do
+          echo
+          echo "*** Processing $mod_file"
+
+          case $mod_file in
+            *.patch)
+              # A patch to the source code
+
+              # Add our patches alongside Alpine's own patches
+
+              cp -v $mod_file main/$package_name/
+
+              # abuild's default_prepare() applies all patches inside $srcdir,
+              # but they also need to be specified in the 'source=' and
+              # 'sha512sums=' lists in APKBUILD
+              local patch_name=$(basename $mod_file)
+              local shasum=$(sha512sum $mod_file | cut -d ' ' -f1)
               sed -i "/source='*/ a $patch_name" $apkbuild
               sed -i "/sha512sums='*/ a $shasum  $patch_name" $apkbuild
-          elif [[ $patch == *.copy ]]; then
-              cp $patch main/$patch_dir/
-          elif [[ $patch == *.apkbuild ]]; then
-              git apply $patch
-          fi
+              ;;
+
+            *.apkbuild)
+              # A patch to the APKBUILD file
+              set -x
+              git apply $mod_file
+              set +x
+              ;;
+
+            *.copy)
+              # A file to copy
+              cp -v $mod_file main/$package_name/
+              ;;
+          esac
       done
   done
 

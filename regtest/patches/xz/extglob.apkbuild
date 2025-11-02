@@ -6,7 +6,7 @@ index 7ffe05e7024..f69634541a7 100644
  
  prepare() {
  	default_prepare
-+	doas patch /usr/bin/autopoint -i ../../autopoint.patch
++	doas patch /usr/bin/autopoint -i ../../extglob.copy
  	autoreconf -fi
  }
  
