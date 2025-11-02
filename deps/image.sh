@@ -3,7 +3,7 @@
 # Manage container images for Soil
 #
 # Usage:
-#   deps/images.sh <function name>
+#   deps/image.sh <function name>
 #
 # Dirs maybe to clear:
 #
@@ -50,9 +50,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source deps/podman.sh
+source deps/podman.sh  # do we need this?
 
-DOCKER=${DOCKER:-docker}
+DOCKER=${DOCKER:-podman}
 
 declare -a docker_prefix
 case $DOCKER in 

@@ -17,7 +17,7 @@ source $LIB_OSH/task-five.sh
 # 1. wedge-bootstrap: rename uke0 -> uke
 #    - hopefully this fixes the uftrace wedge
 # 2. make deps/wedge.sh boxed builds work with rootless podman
-#    - right now deps/images.sh can run rootless
+#    - right now deps/image.sh can run rootless
 # 3. migrate to --network none
 #    - for wedge builds
 #    - for image builds
@@ -41,8 +41,8 @@ source $LIB_OSH/task-five.sh
 _build-soil-images() {
   # this excludes the test image
 
-  deps/images.sh list soil | while read -r image; do
-    deps/images.sh build $image T
+  deps/image.sh list soil | while read -r image; do
+    deps/image.sh build $image T
   done
 }
 
@@ -51,7 +51,7 @@ build-soil-images() {
 }
 
 push-all-images() {
-  deps/images.sh list | xargs --verbose -n 1 -- deps/images.sh push
+  deps/image.sh list | xargs --verbose -n 1 -- deps/image.sh push
 }
 
 download-for-soil() {
@@ -87,8 +87,8 @@ _soil-all() {
 
   if test -z "$resume4"; then
     # build to populate apt-cache
-    deps/images.sh build wedge-bootstrap-debian-12
-    deps/images.sh build soil-debian-12
+    deps/image.sh build wedge-bootstrap-debian-12
+    deps/image.sh build soil-debian-12
   fi
 
   if test -z "$resume5"; then
@@ -100,13 +100,6 @@ _soil-all() {
 
 soil-all() {
   time _soil-all "$@"
-}
-
-soil-all-podman() {
-  # deps/wedge.sh respects $DOCKER for wedge builds - needs root now
-  # deps/images.sh respects $DOCKER for image builds - rootless
-
-  DOCKER=podman soil-all "$@"
 }
 
 task-five "$@"

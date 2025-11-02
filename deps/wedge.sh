@@ -435,7 +435,7 @@ unboxed() {
 
 readonly DEFAULT_DISTRO=debian-10  # Debian Buster
 
-DOCKER=${DOCKER:-docker}
+DOCKER=${DOCKER:-podman}
 
 declare -a docker_prefix
 case $DOCKER in 
