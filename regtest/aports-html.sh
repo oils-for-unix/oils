@@ -280,8 +280,9 @@ After this success, we expanded our testing:
   - [2025-10-22](2025-10-22.wwz/_tmp/aports-report/2025-10-22/diff_merged.html) - down to **24** after `((` and `$(false)` fixes
   - [2025-10-26-cause](2025-10-26-cause.wwz/_tmp/aports-report/2025-10-26-cause/diff_merged.html) - updated causes
   - [2025-11-01-main-cause](2025-11-01-main-cause.wwz/_tmp/aports-report/2025-11-01-main-cause/diff_merged.html) - updated causes
-  - [2025-11-01-main-again](2025-11-01-main-again.wwz/_tmp/aports-report/2025-11-01-main-again/diff_merged.html) - down to **18**
-  - [2025-11-02-main-patch](2025-11-02-main-patch.wwz/_tmp/aports-report/2025-11-02-main-patch/diff_merged.html) - down to **14**
+  - [2025-11-01-main-again](2025-11-01-main-again.wwz/_tmp/aports-report/2025-11-01-main-again/diff_merged.html) - **18** disagreements
+  - [2025-11-02-main-patch](2025-11-02-main-patch.wwz/_tmp/aports-report/2025-11-02-main-patch/diff_merged.html) - **14** disagreements
+  - [2025-11-09-main-cause](2025-11-09-main-cause.wwz/_tmp/aports-report/2025-11-09-main-cause/diff_merged.html) - updated causes
 
 ### community
 
@@ -290,6 +291,8 @@ After this success, we expanded our testing:
   - [2025-10-22-comm](2025-10-22-comm.wwz/_tmp/aports-report/2025-10-22-comm/diff_merged.html) - down to **65** after `((` and `$(false)` fixes
   - [2025-10-26-comm-cause](2025-10-26-comm-cause.wwz/_tmp/aports-report/2025-10-26-comm-cause/diff_merged.html) - updated causes
   - [2025-11-01-comm-cause](2025-11-01-comm-cause.wwz/_tmp/aports-report/2025-11-01-comm-cause/diff_merged.html) - updated causes
+  - [2025-11-02-comm-patch](2025-11-02-comm-patch.wwz/_tmp/aports-report/2025-11-02-comm-patch/diff_merged.html) - **64** disagreements, **45** of unknown cause
+  - [2025-11-09-comm-cause](2025-11-09-comm-cause.wwz/_tmp/aports-report/2025-11-09-comm-cause/diff_merged.html) - updated causes, **20** of unknown cause
 
 ';
   } | cmark 
@@ -752,12 +755,13 @@ deploy-published() {
 
 readonly EDIT_DIR=_tmp/aports-edit
 
-readonly EDITING_APORTS_EPOCH='2025-10-22-comm.wwz'
+readonly EDITING_APORTS_EPOCH='2025-11-02-main-patch.wwz'
 
 sync-old-wwz() {
   local wwz=${1:-$EDITING_APORTS_EPOCH}
 
   mkdir -p $EDIT_DIR
+  rm -f -v $EDIT_DIR/$wwz
 
   wget --directory $EDIT_DIR \
     "https://$WEB_HOST/aports-build/$wwz"
@@ -789,15 +793,22 @@ extract-old-wwz() {
   mv -v --no-target-directory $tmp_dir/_tmp/aports-report/$old_epoch $dest_dir
 }
 
-sync-extract-both() {
-  local main=2025-10-22.wwz
-  local comm=2025-10-22-comm.wwz
+rebuild-both() {
+  for a_repo in main comm; do
+    local old=2025-11-02-${a_repo}-patch.wwz
+    sync-old-wwz $old
+    local new=2025-11-09-${a_repo}-cause
 
-  sync-old-wwz $main
-  sync-old-wwz $comm
+    rm -r -f _tmp/aports-report/$new
 
-  extract-old-wwz 2025-11-01-main-cause $main
-  extract-old-wwz 2025-11-01-comm-cause $comm
+    extract-old-wwz $new $old
+
+    write-disagree-reports _tmp/aports-report/$new
+
+    make-wwz _tmp/aports-report/$new
+
+    deploy-wwz-op _tmp/aports-report/$new.wwz
+  done
 }
 
 #

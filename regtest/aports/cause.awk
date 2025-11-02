@@ -52,7 +52,6 @@ BEGIN {
   # For the other test cases: I am not sure these are real bugs: it might be that esh
   # expects and exact code string?
   patterns["#2547"] = "Undefined variable 'OPTARG'"
-  patterns[9] = "fatal: Undefined variable"
 
   # mawk, openvpn: trap 0
   patterns["#2339"] = "requires a signal or hook name"
