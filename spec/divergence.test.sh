@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 4
+## oils_failures_allowed: 5
 
 # This file relates to:
 #
@@ -143,4 +143,11 @@ status=0
 ## STDOUT:
 141
 141
+## END
+
+
+#### f() g() definition
+f() g() { echo 'hi'; }; g
+## STDOUT:
+hi
 ## END
