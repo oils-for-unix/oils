@@ -332,7 +332,7 @@ build-oils() {
   enter-rootfs-user sh -c '
   cd oils-for-unix-*
   ./configure
-  _build/oils.sh --skip-rebuild
+  _build/oils.sh  # do not --skip-rebuild
   doas ./install
   '
 }

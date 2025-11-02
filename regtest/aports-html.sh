@@ -280,6 +280,7 @@ After this success, we expanded our testing:
   - [2025-10-22](2025-10-22.wwz/_tmp/aports-report/2025-10-22/diff_merged.html) - down to **24** after `((` and `$(false)` fixes
   - [2025-10-26-cause](2025-10-26-cause.wwz/_tmp/aports-report/2025-10-26-cause/diff_merged.html) - updated causes
   - [2025-11-01-main-cause](2025-11-01-main-cause.wwz/_tmp/aports-report/2025-11-01-main-cause/diff_merged.html) - updated causes
+  - [2025-11-01-main-again](2025-11-01-main-again.wwz/_tmp/aports-report/2025-11-01-main-again/diff_merged.html) - down to **18**
 
 ### community
 
@@ -333,12 +334,13 @@ readonly BUILD_HOST=he.oils.pub
 
 sync-results() {
   local host=${1:-$BUILD_HOST}
+  local prefix=${2:-}
   mkdir -p $REPORT_DIR
 
   # Exclude .apk files, because they are large.  We only need the metadata
   my-rsync \
     --exclude '*.apk' \
-    $host:~/git/oils-for-unix/oils/_tmp/aports-build/ \
+    "$host:~/git/oils-for-unix/oils/_tmp/aports-build/$prefix*" \
     $REPORT_DIR/
 }
 
