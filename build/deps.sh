@@ -1068,13 +1068,15 @@ install-wedge-list() {
 }
 
 write-task-report() {
-  local tasks_tsv=$WEDGE_LOG_DIR/tasks.tsv
+  local log_dir=${1:-$WEDGE_LOG_DIR}
 
-  python3 devtools/tsv_concat.py $WEDGE_LOG_DIR/*.task.tsv > $tasks_tsv
+  local tasks_tsv=$log_dir/tasks.tsv
+
+  python3 devtools/tsv_concat.py $log_dir/*.task.tsv > $tasks_tsv
   log "Wrote $tasks_tsv"
 
   # TODO: version can be right-justified?
-  here-schema-tsv-4col >$WEDGE_LOG_DIR/tasks.schema.tsv <<EOF
+  here-schema-tsv-4col >$log_dir/tasks.schema.tsv <<EOF
 column_name   type      precision strftime
 status        integer   0         -
 elapsed_secs  float     1         -
@@ -1089,8 +1091,8 @@ wedge_HREF    string    0         -
 version       string    0         -
 EOF
 
-  index-html $tasks_tsv > $WEDGE_LOG_DIR/index.html
-  log "Wrote $WEDGE_LOG_DIR/index.html"
+  index-html $tasks_tsv > $log_dir/index.html
+  log "Wrote $log_dir/index.html"
 }
 
 fake-py3-libs-wedge() {
@@ -1314,6 +1316,9 @@ do-boxed-wedge-list() {
 _boxed-wedges-2025() {
   local which_wedges=${1:-contrib}  # contrib | soil | smoke
 
+  # deps/wedge.sh reads this
+  export DOCKER=${2:-docker}
+
   # For contributor setup: we need to use this BEFORE running build/py.sh all
   #build/py.sh time-helper
 
@@ -1328,7 +1333,7 @@ _boxed-wedges-2025() {
 
   echo "   END  $(timestamp)"
 
-  write-task-report
+  write-task-report $BOXED_LOG_DIR
 }
 
 boxed-wedges-2025() {

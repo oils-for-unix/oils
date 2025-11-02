@@ -54,7 +54,22 @@ source deps/podman.sh
 
 DOCKER=${DOCKER:-docker}
 
-readonly LATEST_TAG='v-2025-10-30-a'  # clobbered with make-bin.sh and zsh upgrade
+declare -a docker_prefix
+case $DOCKER in 
+  docker)
+    # Do we still need -E to preserve CONTAINERS_REGISTRIES_CONF?
+    docker_prefix=( sudo -E DOCKER_BUILDKIT=1 $DOCKER )
+    ;;
+  podman)
+    # this can be rootless?
+    docker_prefix=( podman )
+    ;;
+  *)
+    die "Invalid docker $DOCKER"
+    ;;
+esac
+
+readonly LATEST_TAG='v-2025-11-02'  # podman
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'
@@ -102,12 +117,14 @@ list() {
 }
 
 list-tagged() {
-  sudo $DOCKER images 'oilshell/*' #:v-*'
+  "${docker_prefix[@]}" \
+    images 'oilshell/*' #:v-*'
 }
 
 _latest-one() {
   local name=$1
-  $DOCKER images "oilshell/$name" | head -n 3
+  "${docker_prefix[@]}" \
+    images "oilshell/$name" | head -n 3
 }
 
 _list-latest() {
@@ -149,7 +166,8 @@ tag-latest() {
   local tag_built_with=${2:-$LATEST_TAG}
 
   set -x  # 'docker tag' is annoyingly silent
-  sudo $DOCKER tag oilshell/$name:{$tag_built_with,latest}
+  "${docker_prefix[@]}" \
+    tag oilshell/$name:{$tag_built_with,latest}
 }
 
 build() {
@@ -177,28 +195,13 @@ build() {
 
   # can't preserve the entire env: https://github.com/containers/buildah/issues/3887
   #sudo --preserve-env=CONTAINERS_REGISTRIES_CONF --preserve-env=REGISTRY_AUTH_FILE \
-  sudo -E DOCKER_BUILDKIT=1 \
-    $DOCKER build "${flags[@]}" \
+  "${docker_prefix[@]}" \
+    build "${flags[@]}" \
     --tag "oilshell/$name:$LATEST_TAG" \
     --file deps/Dockerfile.$name .
 
   # Avoid hassle by also tagging it
   tag-latest $name
-}
-
-build-cached() {
-  local name=${1:-soil-dummy}
-  build "$name" T
-}
-
-build-many() {
-  echo 'TODO: use_cache should be automatic - all but 2 images use it'
-}
-
-build-all() {
-  # Should rebuild all these
-  # Except I also want to change the Dockerfile to use Debian 12
-  list-images | egrep -v 'test-image|ovm-tarball|benchmarks|wedge-bootstrap|debian-12'
 }
 
 push() {
@@ -213,11 +216,13 @@ push() {
   set -x
 
   # -E for export-podman vars
-  sudo -E $DOCKER push $image
+  "${docker_prefix[@]}" \
+    push $image
   #sudo -E $DOCKER --log-level=debug push $image
 
   # Also push the 'latest' tag, to avoid getting out of sync
-  sudo -E $DOCKER push oilshell/$name:latest
+  "${docker_prefix[@]}" \
+    push oilshell/$name:latest
 }
 
 push-many() {

@@ -437,6 +437,22 @@ readonly DEFAULT_DISTRO=debian-10  # Debian Buster
 
 DOCKER=${DOCKER:-docker}
 
+declare -a docker_prefix
+case $DOCKER in 
+  docker)
+    # -E to preserve CONTAINERS_REGISTRIES_CONF
+    docker_prefix=( sudo -E $DOCKER )
+    ;;
+  podman)
+    # Hm rootless podman gives mkdir permission error, but sudo podman works
+    docker_prefix=( sudo -E podman )
+    ;;
+  *)
+    die "Invalid docker $DOCKER"
+    ;;
+esac
+
+
 boxed() {
   ### Build inside a container, and put output in a specific place.
 
@@ -498,8 +514,7 @@ boxed() {
   # - Bind mount WEDGE_DEPS='', space separated list of paths
   #   - py3-libs depends on python3 and mypy wedges!
 
-  # -E to preserve CONTAINERS_REGISTRIES_CONF
-  sudo -E $DOCKER run "${docker_flags[@]}" \
+  "${docker_prefix[@]}" run "${docker_flags[@]}" \
     --mount "type=bind,source=$REPO_ROOT,target=/home/uke0/oil" \
     --mount "type=bind,source=$PWD/$wedge_host_dir,target=$wedge_guest_dir" \
     $bootstrap_image \
@@ -565,7 +580,7 @@ boxed-2025() {
   #   - py3-libs depends on python3 and mypy wedges!
 
   # -E to preserve CONTAINERS_REGISTRIES_CONF
-  sudo -E $DOCKER run "${docker_flags[@]}" \
+  "${docker_prefix[@]}" run "${docker_flags[@]}" \
     --env WEDGE_2025=1 \
     --mount "type=bind,source=$REPO_ROOT,target=$guest_repo_root" \
     --mount "type=bind,source=$PWD/$wedge_host_dir,target=$guest_wedge_out_dir" \
@@ -599,7 +614,7 @@ smoke-test() {
   else
     wedge_mount_dir=/home/uke0/wedge
   fi
-  sudo $DOCKER run "${docker_flags[@]}" \
+  "${docker_prefix[@]}" run "${docker_flags[@]}" \
     --network none \
     --mount "type=bind,source=$REPO_ROOT,target=$OILS_GUEST_DIR" \
     --mount "type=bind,source=$PWD/$wedge_out_dir,target=$wedge_mount_dir" \

@@ -12,17 +12,12 @@
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
-each-one() {
-  # like xargs -n 1, but RESPECTS ERREXIT!
-  while read -r task; do
-    "$@" "$task"
-  done
-}
-
 _build-soil-images() {
   # this excludes the test image
 
-  deps/images.sh list soil | each-one deps/images.sh build-cached
+  deps/images.sh list soil | while read -r image; do
+    each-one deps/images.sh build $image T
+  done
 }
 
 build-soil-images() {
