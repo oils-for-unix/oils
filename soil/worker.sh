@@ -74,7 +74,7 @@ fetch            build/deps.sh fetch                -
 install-wedges   build/deps.sh install-wedges-soil  _build/wedge/logs/index.html
 py-all-and-ninja soil/worker.sh py-all-and-ninja    -
 smoke-test       build/dev-setup-test.sh smoke-test -
-wedge-report     build/deps.sh wedge-report         -
+wedge-report     deps/wedge-report.sh show          -
 EOF
 }
 

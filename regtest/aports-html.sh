@@ -281,6 +281,7 @@ After this success, we expanded our testing:
   - [2025-10-26-cause](2025-10-26-cause.wwz/_tmp/aports-report/2025-10-26-cause/diff_merged.html) - updated causes
   - [2025-11-01-main-cause](2025-11-01-main-cause.wwz/_tmp/aports-report/2025-11-01-main-cause/diff_merged.html) - updated causes
   - [2025-11-01-main-again](2025-11-01-main-again.wwz/_tmp/aports-report/2025-11-01-main-again/diff_merged.html) - down to **18**
+  - [2025-11-02-main-patch](2025-11-02-main-patch.wwz/_tmp/aports-report/2025-11-02-main-patch/diff_merged.html) - down to **14**
 
 ### community
 
