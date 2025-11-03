@@ -449,6 +449,187 @@ class Wait(vm._Builtin):
         return status
 
 
+class SymbolicClauseParser:
+
+    WHO = "ugoa"
+    PERMCOPY = "ugo"
+    OP = "+-="
+    PERM = "rwxXst"
+    PERM_U_PERMCOPY = PERM + PERMCOPY
+
+    def __init__(self, clause):
+        # type: (str) -> None
+        self.clause = clause
+        self.i = 0
+
+    # NOTE: bitsets are a great way to store fixed width sets & add / remove
+    # items easily. Thus, we use different bitsets for $wholist, $permlist,
+    # $perm, and $mask
+
+    @staticmethod
+    def _WhoCharToBitset(who_ch):
+        # type: (str) -> int
+        if who_ch == "u":
+            return 0o4
+        elif who_ch == "g":
+            return 0o2
+        elif who_ch == "o":
+            return 0o1
+        elif who_ch == "a":
+            return 0o7
+        # TODO: what to do on fail?
+
+    @staticmethod
+    def _PermlistCharToBitset(permlist_ch):
+        # type: (str) -> int
+        if permlist_ch == "r":
+            return 0o400
+        elif permlist_ch == "w":
+            return 0o200
+        elif permlist_ch == "x":
+            return 0o100
+        elif permlist_ch == "X":
+            return 0o040
+        elif permlist_ch == "s":
+            return 0o020
+        elif permlist_ch == "t":
+            return 0o010
+        elif permlist_ch == "u":
+            return 0o004
+        elif permlist_ch == "g":
+            return 0o002
+        elif permlist_ch == "o":
+            return 0o001
+
+    # perm = [rwx][Xst][ugo]
+    @staticmethod
+    def _PermlistToBits(permlist, initial_mask):
+        # type (int, int) -> int:
+        perm = 0o0
+        if (permlist & 0o400) != 0:
+            perm |= 0o4  # r
+        if (permlist & 0o200) != 0:
+            perm |= 0o2  # w
+        if (permlist & 0o100) != 0:
+            perm |= 0o1  # x
+        if (permlist & 0o040) != 0 and (initial_mask & 0o111) != 0:
+            # X == x iff one of the execute bits are set on the mask
+            perm |= 0o1  # X
+        if (permlist & 0o020) != 0:
+            # does nothing b/c umask ignores the set-on-execution bits
+            perm |= 0o0  # s
+        if (permlist & 0o010) != 0:
+            # also does nothing
+            perm |= 0o0  # t
+        if (permlist & 0o4) != 0:
+            perm |= (~initial_mask & 0o700) >> 6  # u
+        if (permlist & 0o2) != 0:
+            perm |= (~initial_mask & 0o070) >> 3  # g
+        if (permlist & 0o1) != 0:
+            perm |= (~initial_mask & 0o007) >> 0  # o
+        return perm
+
+    @staticmethod
+    def _SetMask(wholist, perm, mask):
+        # type: (int, int, int) -> int
+        if (wholist & 0o4) != 0:
+            mask |= perm << 6
+        if (wholist & 0o2) != 0:
+            mask |= perm << 3
+        if (wholist & 0o1) != 0:
+            mask |= perm << 0
+        return mask
+
+    # can these be done with |= ?
+    @staticmethod
+    def _ClearMask(wholist, perm, mask):
+        # type: (int, int, int) -> int
+        if (wholist & 0o4) != 0:
+            mask &= 0o777 - (perm << 6)
+        if (wholist & 0o2) != 0:
+            mask &= 0o777 - (perm << 3)
+        if (wholist & 0o1) != 0:
+            mask &= 0o777 - (perm << 0)
+        return mask
+
+    def DoneParsing(self):
+        # type: () -> bool
+        return self.i >= len(self.clause)
+
+    def Ch(self):
+        # type: () -> str
+        return self.clause[self.i]
+
+    def ParseWholist(self):
+        # type: () -> int
+        WHO = SymbolicClauseParser.WHO
+
+        if self.Ch() not in WHO:
+            return 0o7
+
+        wholist = 0o0
+        while not self.DoneParsing():
+            ch = self.Ch()
+            if ch not in WHO:
+                break
+
+            wholist |= SymbolicClauseParser._WhoCharToBitset(ch)
+            self.i += 1
+
+        return wholist
+
+    # An actionlist is a sequence of actions. An action always starts with an op.
+    # returns success
+    def ParseNextAction(self, wholist, mask, initial_mask):
+        # type: (int, int, int) -> Tuple[bool, int]
+        OP = SymbolicClauseParser.OP
+        PERM_U_PERMCOPY = SymbolicClauseParser.PERM_U_PERMCOPY
+
+        if self.Ch() not in OP:
+            print_stderr(
+                "oils warning: expected one of `+-=` at start of action instead of `%s`"
+                % op)
+            return False, 0
+
+        op = self.Ch()
+        self.i += 1
+
+        if op == "=":
+            mask = SymbolicClauseParser._SetMask(wholist, 0o7, mask)
+
+        if self.DoneParsing() or self.Ch() not in PERM_U_PERMCOPY:
+            if op == "+" or op == "=":
+                return True, mask
+            elif op == "-":
+                return True, mask
+
+        # perm represents the bits [rwx] for a single permission
+        perm = 0o0
+
+        # While a list of permcopy chars mixed with permlist is not posix, both dash and mksh
+        # support it.
+        if self.Ch() in PERM_U_PERMCOPY:
+            # [rwx][Xst][ugo]
+            permlist = 0o000
+            while not (self.DoneParsing() or self.Ch() in OP):
+                ch = self.Ch()
+                if ch not in PERM_U_PERMCOPY:
+                    print_stderr(
+                        "oil warning: expected one of `%s` in permlist instead of `%s`"
+                        % (PERM_U_PERMCOPY, ch))
+                    return False, 0
+
+                permlist |= SymbolicClauseParser._PermlistCharToBitset(ch)
+                self.i += 1
+
+            perm = SymbolicClauseParser._PermlistToBits(permlist, initial_mask)
+
+        if op == "+" or op == "=":
+            return True, SymbolicClauseParser._ClearMask(wholist, perm, mask)
+        elif op == "-":
+            return True, SymbolicClauseParser._SetMask(wholist, perm, mask)
+
+
 class Umask(vm._Builtin):
 
     def __init__(self):
@@ -458,6 +639,7 @@ class Umask(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
+        # see https://pubs.opengroup.org/onlinepubs/009696899/utilities/chmod.html for more details
 
         argv = cmd_val.argv[1:]
         if len(argv) == 0:
@@ -483,14 +665,14 @@ class Umask(vm._Builtin):
 
                 posix.umask(new_mask)
                 return 0
+
             else:
-                # TODO: it's possible to avoid this extra syscall in cases where we don't care about
-                # the initial value (ex: umask u=rwx,a=rwx) although it's non-trivial to determine
+                # NOTE: it's possible to avoid this extra syscall in cases where we don't care about
+                # the initial value (ex: umask ...,a=rwx) although it's non-trivial to determine
                 # when, so it's probably not worth it
                 initial_mask = posix.umask(0)
-               
-                # TODO: when to split first_arg? is this fine?
-                ok, new_mask = self._MaskFromClauseList(initial_mask, first_arg.split(","))
+                ok, new_mask = self._ParseClauseList(initial_mask,
+                                                     first_arg.split(","))
                 if not ok:
                     posix.umask(initial_mask)
                     return 1
@@ -500,79 +682,36 @@ class Umask(vm._Builtin):
 
         e_usage("unexpected number of arguments", loc.Missing)
 
-    def _MaskFromClauseList(self, mask, clause_list):
+    def _ParseClauseList(self, initial_mask, clause_list):
         # type: (int, List[str]) -> Tuple[bool, int]
-
+        mask = initial_mask
         for clause in clause_list:
-            ok, mask = self._SymbolicToOctal(mask, clause)
+            ok, mask = self._ParseClause(mask, initial_mask, clause)
             if not ok:
-                return False, 0 
+                return False, 0
 
-        return True, mask 
-        
-    # TODO: update the naming convention here
-    def _SymbolicToOctal(self, initial_mask, arg_component):
-        # type: (int, str) -> Tuple[bool, int]
+        return True, mask
 
-        # TODO: location highlighting would be nice
-        if len(arg_component) == 0:
+    def _ParseClause(self, mask, initial_mask, clause):
+        # type: (int, int, str) -> Tuple[bool, int]
+        if len(clause) == 0:
+            # TODO: location highlighting would be nice
             print_stderr(
                 "oils warning: symbolic mode operator cannot be empty")
             return False, 0
-        elif arg_component[0] not in "ugoa":
-            print_stderr(
-                "oils warning: `%s` is an invalid symbolic mode operator" %
-                arg_component[0])
-            return False, 0
-        elif len(arg_component) == 1:
-            print_stderr(
-                "oils warning: expected `=+-` after `%s` in symbolic mode operator"
-                % arg_component[0])
-            return False, 0
-        elif arg_component[1] not in "=+-":
-            print_stderr(
-                "oils warning: `%s` is an invalid symbolic mode operator" %
-                arg_component[1])
+
+        parser = SymbolicClauseParser(clause)
+        wholist = parser.ParseWholist()
+        if parser.DoneParsing():
+            print_stderr("oils warning: actionlist is required")
             return False, 0
 
-        mask_digit = 0o7
-        for ch in arg_component[2:]:
-            if ch == 'r':
-                mask_digit &= (0o7 - 0o4)
-            elif ch == 'w':
-                mask_digit &= (0o7 - 0o2)
-            elif ch == 'x':
-                mask_digit &= (0o7 - 0o1)
-            else:
-                print_stderr(
-                    "oils warning: `%s` is an invalid symbolic mode character"
-                    % ch)
+        while True:
+            ok, mask = parser.ParseNextAction(wholist, mask, initial_mask)
+            if not ok:
                 return False, 0
-
-        if arg_component[0] == "u":
-            area_mask = 0o700
-            modifier = mask_digit << 6
-        elif arg_component[0] == "g":
-            area_mask = 0o070
-            modifier = mask_digit << 3
-        elif arg_component[0] == "o":
-            area_mask = 0o007
-            modifier = mask_digit
-        elif arg_component[0] == "a":
-            area_mask = 0o777
-            modifier = (mask_digit << 6) | (mask_digit << 3) | mask_digit
-
-        original_mask_area = initial_mask & ~area_mask
-        if arg_component[1] == "=":
-            new_mask = original_mask_area | modifier
-        elif arg_component[1] == "+":
-            new_mask = original_mask_area | (initial_mask & area_mask
-                                             & modifier)
-        elif arg_component[1] == "-":
-            new_mask = original_mask_area | (initial_mask |
-                                             (~modifier & area_mask))
-
-        return True, new_mask
+            elif parser.DoneParsing():
+                return True, mask
 
 
 def _LimitString(lim, factor):
