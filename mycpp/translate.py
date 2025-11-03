@@ -90,6 +90,20 @@ def Run(
     yield_out_params: Dict[FuncDef, Tuple[str, str]] = {}
     dunder_exit_special: Dict[FuncDef, bool] = {}
 
+    # [PASS]
+    timer.Section('mycpp pass: CONST')
+
+    global_strings = const_pass.GlobalStrings()
+    p_const = const_pass.Collect(types, global_strings)
+
+    for name, module in to_compile:
+        p_const.visit_mypy_file(module)
+        MaybeExitWithErrors(p_const)
+
+    global_strings.ComputeStableVarNames()
+    # Emit GLOBAL_STR(), never to header
+    global_strings.WriteConstants(f)
+
     # [PASS] namespace foo { class Spam; class Eggs; }
     timer.Section('mycpp pass: CONVERT')
 
@@ -154,20 +168,6 @@ def Run(
         timer.Section('mycpp: dumping control flow graph to %s' %
                       facts_out_dir)
         pass_state.DumpControlFlowGraphs(cflow_graphs, facts_out_dir)
-
-    # [PASS]
-    timer.Section('mycpp pass: CONST')
-
-    global_strings = const_pass.GlobalStrings()
-    p_const = const_pass.Collect(types, global_strings)
-
-    for name, module in to_compile:
-        p_const.visit_mypy_file(module)
-        MaybeExitWithErrors(p_const)
-
-    global_strings.ComputeStableVarNames()
-    # Emit GLOBAL_STR(), never to header
-    global_strings.WriteConstants(f)
 
     # [PASS] C++ declarations like:
     # class Foo { void method(); }; class Bar { void method(); };
