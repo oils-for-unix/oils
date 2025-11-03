@@ -154,13 +154,13 @@ class SymbolicClauseParser:
         OP = SymbolicClauseParser.OP
         PERM_U_PERMCOPY = SymbolicClauseParser.PERM_U_PERMCOPY
 
-        if self.Ch() not in OP:
+        op = self.Ch()
+        if op not in OP:
             print_stderr(
-                "oils warning: expected one of `+-=` at start of action instead of `%s`"
-                % op)
+                "oils warning: expected one of `%s` at start of action instead of `%s`"
+                % (OP, op))
             return False, 0
 
-        op = self.Ch()
         self.i += 1
 
         if op == "=":
@@ -171,6 +171,8 @@ class SymbolicClauseParser:
                 return True, mask
             elif op == "-":
                 return True, mask
+            else:
+                assert False, "unreachable"
 
         # perm represents the bits [rwx] for a single permission
         perm = 0o0
@@ -221,35 +223,35 @@ class Umask(vm._Builtin):
             print('0%03o' % mask)  # octal format
             return 0
 
-        if len(argv) == 1:
-            first_arg = argv[0]
-            if first_arg[0].isdigit():
-                try:
-                    new_mask = int(first_arg, 8)
-                except ValueError:
-                    # NOTE: This also happens when we have '8' or '9' in the input.
-                    print_stderr("oils warning: `%s` is not an octal number" %
-                                 first_arg)
-                    return 1
+        if len(argv) > 1:
+            e_usage("unexpected number of arguments", loc.Missing)
 
-                posix.umask(new_mask)
-                return 0
+        first_arg = argv[0]
+        if first_arg[0].isdigit():
+            try:
+                new_mask = int(first_arg, 8)
+            except ValueError:
+                # NOTE: This also happens when we have '8' or '9' in the input.
+                print_stderr("oils warning: `%s` is not an octal number" %
+                             first_arg)
+                return 1
 
-            else:
-                # NOTE: it's possible to avoid this extra syscall in cases where we don't care about
-                # the initial value (ex: umask ...,a=rwx) although it's non-trivial to determine
-                # when, so it's probably not worth it
-                initial_mask = posix.umask(0)
-                ok, new_mask = self._ParseClauseList(initial_mask,
-                                                     first_arg.split(","))
-                if not ok:
-                    posix.umask(initial_mask)
-                    return 1
+            posix.umask(new_mask)
+            return 0
 
-                posix.umask(new_mask)
-                return 0
+        else:
+            # NOTE: it's possible to avoid this extra syscall in cases where we don't care about
+            # the initial value (ex: umask ...,a=rwx) although it's non-trivial to determine
+            # when, so it's probably not worth it
+            initial_mask = posix.umask(0)
+            ok, new_mask = self._ParseClauseList(initial_mask,
+                                                 first_arg.split(","))
+            if not ok:
+                posix.umask(initial_mask)
+                return 1
 
-        e_usage("unexpected number of arguments", loc.Missing)
+            posix.umask(new_mask)
+            return 0
 
     def _ParseClauseList(self, initial_mask, clause_list):
         # type: (int, List[str]) -> Tuple[bool, int]
