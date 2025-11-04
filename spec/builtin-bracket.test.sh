@@ -791,10 +791,27 @@ echo status=$?
 set -- z; test $# -ne 0 -a "$1" != "--"
 echo status=$?
 
+# (
+test $# -ne 0 -a "(" != ")"
+echo status=$?
+
 ## STDOUT:
 status=0
 status=0
 status=0
 status=0
+status=0
+status=0
+## END
+
+#### paren is treated as a word in front of a binary operator
+
+test $# -eq 0 -a "(" == ")"
+echo status=$?
+
+## STDOUT:
+status=1
+## END
+## BUG mksh/bash/dash STDOUT:
 status=0
 ## END
