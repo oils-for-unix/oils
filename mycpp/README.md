@@ -94,27 +94,29 @@ wiki.
 
 ## Notes on the Algorithm / Architecture
 
+Though there is still some global state (in `visitor.py`, inherited by all the
+passes), we are trying to make the dependencies explicit (in `translate.py`).
+
 There are five passes over the MyPy AST.
 
-Passes that analyze:
-
-(1) `conversion_pass.py`
-    - compute virtual functions, locals, class members, yield, etc.
-    - this also computes forward_decls, and we write it in translate.py
-(2) `control_flow_pass.py`
-    - fully qualified function name -> control flow graph
-    - maybe run Souffle
-
-Passes that write:
-
-(3) Const (`const_pass.py`)
+(1) Const (`const_pass.py`) (analyzes and writes constants)
     - Collect string constants (e.g. turn the constant in `myfunc("foo")` into
     top-level `GLOBAL_STR(str1, "foo")`).
 
     class Foo;
     class Bar;
 
-(4) Decl (`cppgen_pass.Decl`)
+    - Collect classes and their method names
+    - Collect classes and their namespace names
+
+(2) `conversion_pass.py` (analyzes)
+    - compute virtual functions, locals, class members, yield, etc.
+    - this also computes forward_decls, and we write it in translate.py
+(3) `control_flow_pass.py` (analyzes)
+    - fully qualified function name -> control flow graph
+    - maybe run Souffle
+
+(4) Decl (`cppgen_pass.Decl`) (writes)
     - emit C++ declarations like:
 
     class Foo {
@@ -124,7 +126,7 @@ Passes that write:
       void method();
     };
 
-(5) Impl (`cppgen_pass.Impl`)
+(5) Impl (`cppgen_pass.Impl`) (writes)
 
 Note: I really wish we were not using visitors, but that's inherited from MyPy.
 

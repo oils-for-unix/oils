@@ -777,6 +777,8 @@ class Impl(_Shared):
             self,
             types: Dict[Expression, Type],
             global_strings: 'const_pass.GlobalStrings',
+            method_defs: 'const_pass.MethodDefs',
+            class_namespaces: 'const_pass.ClassNamespaces',
             yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
             dunder_exit_special: Dict[ClassDef, bool],
             all_member_vars: Optional[AllMemberVars] = None,
@@ -808,6 +810,9 @@ class Impl(_Shared):
         self.current_func_node: Optional[FuncDef] = None
 
         self.unique_id = 0
+
+        self.method_defs = method_defs
+        self.class_namespaces = class_namespaces
 
     def _NamespaceComment(self) -> str:
         # abstract method
@@ -1024,6 +1029,19 @@ class Impl(_Shared):
             self.write('to_float')
         elif callee_name == 'bool':
             self.write('to_bool')
+        elif isinstance(o.callee, NameExpr):
+            # CallExpr means a free function is called here, not a method
+
+            # If there are methods on the current class with the same name,
+            # prefix the free function with the current namespace to ensure
+            # it's not the method (shadowing the free function) that's called
+            if (current_class_name and self.method_defs.ClassHasMethod(
+                    current_class_name, callee_name)):
+                current_namespace = self.class_namespaces.GetClassNamespace(
+                    current_class_name)
+                self.write('%s::%s' % (current_namespace, callee_name))
+            else:
+                self.accept(o.callee)
         else:
             self.accept(o.callee)  # could be f() or obj.method()
 
