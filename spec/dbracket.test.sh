@@ -215,6 +215,7 @@ false
 #### Argument that looks like a real operator
 [[ -f < ]] && echo 'should be parse error'
 ## status: 2
+## OK osh status: 1
 ## OK mksh status: 1
 
 #### User array compared to "$@" (broken unless shopt -s strict_array)
