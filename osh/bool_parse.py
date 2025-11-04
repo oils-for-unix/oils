@@ -198,6 +198,41 @@ class BoolParser(object):
                 | WORD BINARY_OP WORD
                 | '(' Expr ')'
         """
+
+        # Peek ahead another token to see if the next token is a binary
+        # operator. If so, then treat the current token as a word (lhs of
+        # bin op), not a unary operator
+        t2 = self._LookAhead()
+        t2_bool_id = word_.BoolId(t2)
+        t2_bool_kind = consts.GetKind(t2_bool_id)
+        # Op for < and >, -a and -o pun
+        next_token_is_binary_operator = (t2_bool_kind == Kind.BoolBinary or
+                                         t2_bool_id
+                                         in (Id.Op_Less, Id.Op_Great))
+
+        if next_token_is_binary_operator:
+            left = self.cur_word
+
+            self._Next()
+            op = self.bool_id
+
+            if t2_bool_id == Id.BoolBinary_EqualTilde:
+                self._Next(lex_mode=lex_mode_e.BashRegex)
+            else:
+                self._Next()
+
+            right = self.cur_word
+            self._Next()
+
+            tilde = word_.TildeDetect(left)
+            if tilde:
+                left = tilde
+            tilde = word_.TildeDetect(right)
+            if tilde:
+                right = tilde
+
+            return bool_expr.Binary(op, left, right)
+
         if self.bool_kind == Kind.BoolUnary:
             # Just save the type and not the token itself?
             op = self.bool_id
@@ -217,45 +252,13 @@ class BoolParser(object):
             node = bool_expr.Unary(op, w)  # type: bool_expr_t
             return node
 
-        if self.bool_kind == Kind.Word:
-            # Peek ahead another token.
-            t2 = self._LookAhead()
-            t2_bool_id = word_.BoolId(t2)
-            t2_bool_kind = consts.GetKind(t2_bool_id)
-
-            #log('t2 %s / t2_bool_id %s / t2_bool_kind %s', t2, t2_bool_id, t2_bool_kind)
-            # Op for < and >, -a and -o pun
-            if t2_bool_kind == Kind.BoolBinary or t2_bool_id in (Id.Op_Less,
-                                                                 Id.Op_Great):
-                left = self.cur_word
-
-                self._Next()
-                op = self.bool_id
-
-                if t2_bool_id == Id.BoolBinary_EqualTilde:
-                    self._Next(lex_mode=lex_mode_e.BashRegex)
-                else:
-                    self._Next()
-
-                right = self.cur_word
-                self._Next()
-
-                tilde = word_.TildeDetect(left)
-                if tilde:
-                    left = tilde
-                tilde = word_.TildeDetect(right)
-                if tilde:
-                    right = tilde
-
-                return bool_expr.Binary(op, left, right)
-
-            else:  # [[ foo ]]
-                w = self.cur_word
-                tilde = word_.TildeDetect(w)
-                if tilde:
-                    w = tilde
-                self._Next()
-                return bool_expr.WordTest(w)
+        if self.bool_kind == Kind.Word:  # [[ foo ]]
+            w = self.cur_word
+            tilde = word_.TildeDetect(w)
+            if tilde:
+                w = tilde
+            self._Next()
+            return bool_expr.WordTest(w)
 
         if self.bool_id == Id.Op_LParen:
             self._Next()
