@@ -212,6 +212,8 @@ class BoolParser(object):
 
         if next_token_is_binary_operator:
             left = self.cur_word
+            left_kind = self.bool_kind
+            left_op = self.bool_id
 
             self._Next()
             op = self.bool_id
@@ -222,11 +224,17 @@ class BoolParser(object):
                 self._Next()
 
             right = self.cur_word
-            self._Next()
-
             tilde = word_.TildeDetect(left)
             if tilde:
                 left = tilde
+
+            # HACKY: If rhs is the end of the test expr, treat this as a
+            # unary operator and its argument
+            if self.bool_id == Id.Lit_DRightBracket and left_kind == Kind.BoolUnary:
+                return bool_expr.Unary(left_op, left)
+
+            self._Next()
+
             tilde = word_.TildeDetect(right)
             if tilde:
                 right = tilde
