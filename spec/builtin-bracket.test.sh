@@ -768,3 +768,33 @@ status=2
 status=0
 status=0
 ## END
+
+#### unary operator treated as a word in front of a binary operator
+
+# Minimal repro of sqsh build error (#2409)
+set -- -o; test $# -ne 0 -a "$1" != "--"
+echo status=$?
+
+# Now hardcode $1
+test $# -ne 0 -a "-o" != "--"
+echo status=$?
+
+# Remove quotes around -o
+test $# -ne 0 -a -o != "--"
+echo status=$?
+
+# How about a different flag?
+set -- -z; test $# -ne 0 -a "$1" != "--"
+echo status=$?
+
+# A non-flag?
+set -- z; test $# -ne 0 -a "$1" != "--"
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+status=0
+status=0
+status=0
+## END
