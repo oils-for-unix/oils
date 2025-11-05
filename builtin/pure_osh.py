@@ -489,10 +489,11 @@ class GetOptsState(object):
 
 
 def _GetOpts(
-        spec,  # type: Dict[str, bool]
-        argv,  # type: List[str]
-        my_state,  # type: GetOptsState
-        errfmt,  # type: ui.ErrorFormatter
+spec,  # type: Dict[str, bool]
+argv,  # type: List[str]
+my_state,  # type: GetOptsState
+errfmt,  # type: ui.ErrorFormatter
+        silent,  # type: bool
 ):
     # type: (...) -> Tuple[int, str]
     current = my_state.GetArg(argv)
@@ -517,7 +518,11 @@ def _GetOpts(
         more_chars = False
 
     if flag_char not in spec:  # Invalid flag
-        return 0, '?'
+        if silent:
+            my_state.SetArg(flag_char)
+        else:
+            my_state.Fail()
+    return 0, '?'
 
     if spec[flag_char]:  # does it need an argument?
         if more_chars:
@@ -526,14 +531,18 @@ def _GetOpts(
             optarg = my_state.GetArg(argv)
             if optarg is None:
                 my_state.Fail()
-                # TODO: Add location info
-                errfmt.Print_('getopts: option %r requires an argument.' %
-                              current)
-                tmp = [j8_lite.MaybeShellEncode(a) for a in argv]
-                print_stderr('(getopts argv: %s)' % ' '.join(tmp))
-
-                # Hm doesn't cause status 1?
-                return 0, '?'
+                if not silent:
+                    # TODO: Add location info
+                    errfmt.Print_('getopts: option %r requires an argument.' %
+                                  current)
+                    tmp = [j8_lite.MaybeShellEncode(a) for a in argv]
+                    print_stderr('(getopts argv: %s)' % ' '.join(tmp))
+                    my_state.SetArg(flag_char)
+                    # Hm doesn't cause status 1?
+                    return 0, '?'
+                else:
+                    my_state.SetArg(flag_char)
+                    return 0, ':'
         my_state.IncIndex()
         my_state.SetArg(optarg)
     else:
@@ -569,6 +578,9 @@ class GetOpts(vm._Builtin):
         # NOTE: If first char is a colon, error reporting is different.  Alpine
         # might not use that?
         spec_str = arg_r.ReadRequired('requires an argspec')
+        silent = spec_str.startswith(':')
+        if silent:
+            spec_str = spec_str[1:]
 
         var_name, var_loc = arg_r.ReadRequired2(
             'requires the name of a variable to set')
@@ -581,7 +593,7 @@ class GetOpts(vm._Builtin):
         user_argv = self.mem.GetArgv() if arg_r.AtEnd() else arg_r.Rest()
         #log('user_argv %s', user_argv)
         status, flag_char = _GetOpts(spec, user_argv, self.my_state,
-                                     self.errfmt)
+        self.errfmt, silent)
 
         if match.IsValidVarName(var_name):
             state.BuiltinSetString(self.mem, var_name, flag_char)
