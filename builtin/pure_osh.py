@@ -533,10 +533,9 @@ errfmt,  # type: ui.ErrorFormatter
                 my_state.Fail()
                 if not silent:
                     # TODO: Add location info
-                    errfmt.Print_('getopts: option %r requires an argument.' %
-                                  current)
+                    errfmt.Print_('getopts: option requires an argument: ' + current)
                     tmp = [j8_lite.MaybeShellEncode(a) for a in argv]
-                    print_stderr('(getopts argv: %s)' % ' '.join(tmp))
+                    print_stderr('(getopts argv: ' + ' '.join(tmp) + ')')
                     my_state.SetArg(flag_char)
                     # Hm doesn't cause status 1?
                     return 0, '?'
