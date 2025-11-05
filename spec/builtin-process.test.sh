@@ -252,7 +252,7 @@ umask | tail -c 4
 701
 ## END
 
-#### umask a=rwx is allowed
+#### umask a is valid who
 umask 0732
 umask a=rwx
 umask | tail -c 4
@@ -269,6 +269,273 @@ umask | tail -c 4
 000
 120
 564
+## END
+
+#### umask X perm
+umask 0124
+umask a=X
+echo ret0 = $?
+umask | tail -c 4
+
+umask 0246
+umask a=X
+echo ret1 = $?
+umask | tail -c 4
+
+umask 0246
+umask a-X
+echo ret2 = $?
+umask | tail -c 4
+## status: 0
+## STDOUT:
+ret0 = 0
+666
+ret1 = 0
+777
+ret2 = 0
+246
+## END
+## BUG dash/mksh STDOUT:
+ret0 = 0
+666
+ret1 = 0
+666
+ret2 = 0
+357
+## END
+## N-I bash/zsh STDOUT:
+ret0 = 1
+124
+ret1 = 1
+246
+ret2 = 1
+246
+## END
+
+#### umask s perm
+umask 0124
+umask a-s
+echo ret0 = $?
+umask | tail -c 4
+
+umask 0124
+umask a+s
+echo ret1 = $?
+umask | tail -c 4
+
+umask 0124
+umask a=s
+echo ret2 = $?
+umask | tail -c 4
+## status: 0
+## STDOUT: 
+ret0 = 0
+124
+ret1 = 0
+124
+ret2 = 0
+777
+## END
+## N-I bash/zsh STDOUT:
+ret0 = 1
+124
+ret1 = 1
+124
+ret2 = 1
+124
+## END
+
+#### umask t perm
+umask 0124
+umask a-t
+echo ret0 = $?
+umask | tail -c 4
+
+umask 0124
+umask a+t
+echo ret1 = $?
+umask | tail -c 4
+
+umask 0124
+umask a=t
+echo ret2 = $?
+umask | tail -c 4
+## status: 0
+## STDOUT: 
+ret0 = 0
+124
+ret1 = 0
+124
+ret2 = 0
+777
+## END
+## N-I bash/zsh/mksh STDOUT:
+ret0 = 1
+124
+ret1 = 1
+124
+ret2 = 1
+124
+## END
+## N-I dash STDOUT:
+ret0 = 2
+124
+ret1 = 2
+124
+ret2 = 2
+124
+## END
+
+#### umask default who
+umask 0124
+umask =
+umask | tail -c 4
+
+umask 0124
+umask =rx
+echo ret = $?
+umask | tail -c 4
+
+umask 0124
+umask +
+umask | tail -c 4
+
+umask 0124
+# zsh ALSO treats this as just `umask`
+umask - >/dev/null
+umask | tail -c 4
+## status: 0
+## STDOUT: 
+777
+ret = 0
+222
+124
+124
+## END
+## BUG zsh STDOUT:
+777
+ret = 1
+124
+124
+124
+## END
+
+#### umask bare op
+umask 0124
+umask =+=
+umask | tail -c 4
+
+umask 0124
+umask +=
+umask | tail -c 4
+
+umask 0124
+umask =+rwx+rx
+umask | tail -c 4
+## status: 0
+## STDOUT: 
+777
+777
+000
+## END
+## N-I bash STDOUT: 
+124
+124
+124
+## END
+## BUG zsh status: 1
+## BUG zsh STDOUT:
+## END
+
+#### umask bare op -
+umask 0124
+umask -rwx
+umask | tail -c 4
+
+umask 0124
+umask -wx
+umask | tail -c 4
+
+umask 0124
+umask -=+
+umask | tail -c 4
+## status: 0
+## STDOUT:
+777
+337
+777
+## END
+## N-I dash/bash/mksh/zsh STDOUT:
+124
+124
+124
+## END
+
+#### umask permcopy
+umask 0124 
+umask a=u
+umask | tail -c 4
+
+umask 0365
+umask a=g
+umask | tail -c 4
+
+umask 0124
+umask a=o
+umask | tail -c 4
+## status: 0
+## STDOUT:
+111
+666
+444
+## END
+## N-I bash/zsh STDOUT:
+124
+365
+124
+## END
+
+#### umask permcopy running value
+umask 0124
+umask a=,a=u
+umask | tail -c 4
+
+umask 0124
+umask a=
+umask a=u
+umask | tail -c 4
+## status: 0
+## STDOUT:
+111
+777
+## END
+## N-I bash/zsh STDOUT:
+124
+777
+## END
+
+#### umask sequential actions
+umask 0124
+umask u+r+w+x
+umask | tail -c 4
+
+umask 0124
+umask a+r+w+x,o-w
+umask | tail -c 4
+
+umask 0124
+umask a+x+wr-r
+umask | tail -c 4
+## status: 0
+## STDOUT: 
+024
+002
+444
+## END
+## N-I bash/zsh STDOUT:
+124
+124
+124
 ## END
 
 
