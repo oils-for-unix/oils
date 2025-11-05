@@ -414,10 +414,6 @@ ret = 0
 ## END
 ## BUG zsh STDOUT:
 777
-ret = 1
-124
-124
-124
 ## END
 
 #### umask bare op
