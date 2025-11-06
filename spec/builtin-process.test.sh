@@ -1,4 +1,4 @@
-## compare_shells: dash bash mksh zsh-5.9
+## compare_shells: dash bash mksh zsh
 ## oils_failures_allowed: 4
 ## oils_cpp_failures_allowed: 5
 # case #24 with ulimit -f 1 is different under C++ for some reason - could be due to the python2
@@ -405,6 +405,7 @@ umask 0124
 umask - >/dev/null
 umask | tail -c 4
 ## status: 0
+## BUG zsh status: 1
 ## STDOUT: 
 777
 ret = 0
@@ -414,10 +415,6 @@ ret = 0
 ## END
 ## BUG zsh STDOUT:
 777
-ret = 1
-124
-124
-124
 ## END
 
 #### umask bare op
@@ -446,7 +443,6 @@ umask | tail -c 4
 ## END
 ## BUG zsh STDOUT: 
 ## END
-
 
 #### umask bare op -
 umask 0124
