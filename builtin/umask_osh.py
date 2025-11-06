@@ -29,7 +29,6 @@ def _WhoCharToBitset(who_ch):
         return 0o7
     else:
         assert False, "unreachable"
-        return 0o0
 
 
 def _PermlistCharToBitset(permlist_ch):
@@ -54,7 +53,6 @@ def _PermlistCharToBitset(permlist_ch):
         return 0o001
     else:
         assert False, "unreachable"
-        return 0o000
 
 
 # perm = [rwx][Xst][ugo]
@@ -150,7 +148,7 @@ class SymbolicClauseParser:
     # An actionlist is a sequence of actions. An action always starts with an op.
     # returns success
     def ParseNextAction(self, wholist, mask, initial_mask):
-        # type: (int, int, int) -> Tuple[bool, int]
+        # type: (int, int, int) -> typing.Tuple[bool, int]
         OP = SymbolicClauseParser.OP
         PERM_U_PERMCOPY = SymbolicClauseParser.PERM_U_PERMCOPY
 
@@ -171,8 +169,6 @@ class SymbolicClauseParser:
                 return True, mask
             elif op == "-":
                 return True, mask
-            else:
-                assert False, "unreachable"
 
         # perm represents the bits [rwx] for a single permission
         perm = 0o0
@@ -244,17 +240,23 @@ class Umask(vm._Builtin):
             # the initial value (ex: umask ...,a=rwx) although it's non-trivial to determine
             # when, so it's probably not worth it
             initial_mask = posix.umask(0)
-            ok, new_mask = self._ParseClauseList(initial_mask,
-                                                 first_arg.split(","))
-            if not ok:
-                posix.umask(initial_mask)
-                return 1
+            try:
+                ok, new_mask = self._ParseClauseList(initial_mask,
+                                                     first_arg.split(","))
+                if not ok:
+                    posix.umask(initial_mask)
+                    return 1
 
-            posix.umask(new_mask)
-            return 0
+                posix.umask(new_mask)
+                return 0
+
+            except Exception as e:
+                # this guard protects the umask value against any accidental exceptions
+                posix.umask(initial_mask)
+                raise
 
     def _ParseClauseList(self, initial_mask, clause_list):
-        # type: (int, List[str]) -> Tuple[bool, int]
+        # type: (int, typing.List[str]) -> typing.Tuple[bool, int]
         mask = initial_mask
         for clause in clause_list:
             ok, mask = self._ParseClause(mask, initial_mask, clause)
@@ -264,7 +266,7 @@ class Umask(vm._Builtin):
         return True, mask
 
     def _ParseClause(self, mask, initial_mask, clause):
-        # type: (int, int, str) -> Tuple[bool, int]
+        # type: (int, int, str) -> typing.Tuple[bool, int]
         if len(clause) == 0:
             # TODO: location highlighting would be nice
             print_stderr(
