@@ -1721,12 +1721,10 @@ class CommandEvaluator(object):
                     if val_ops.MatchRegex(to_match, eggex_val, self.mem):
                         status = self._ExecuteList(case_arm.action)
                         done = True
-                        break
 
                 elif case(pat_e.Else):
                     status = self._ExecuteList(case_arm.action)
                     done = True
-                    break
 
                 else:
                     raise AssertionError()
