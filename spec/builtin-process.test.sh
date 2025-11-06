@@ -1,4 +1,4 @@
-## compare_shells: dash bash mksh zsh
+## compare_shells: dash bash mksh zsh-5.9
 ## oils_failures_allowed: 4
 ## oils_cpp_failures_allowed: 5
 # case #24 with ulimit -f 1 is different under C++ for some reason - could be due to the python2
