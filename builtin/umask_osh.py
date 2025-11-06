@@ -15,6 +15,12 @@ import posix_ as posix
 
 from typing import List, Tuple
 
+_WHO = "ugoa"
+_PERMCOPY = "ugo"
+_OP = "+-="
+_PERM = "rwxXst"
+_PERM_U_PERMCOPY = _PERM + _PERMCOPY
+
 # NOTE: bitsets are a great way to store fixed width sets & add / remove
 # items easily. Thus, we use different bitsets for $wholist, $permlist,
 # $perm, and $mask.
@@ -60,7 +66,7 @@ def _PermlistCharToBitset(permlist_ch):
 
 # perm = [rwx][Xst][ugo]
 def _PermlistToBits(permlist, initial_mask):
-    # type (int, int) -> int:
+    # type: (int, int) -> int
     perm = 0o0
     if (permlist & 0o400) != 0:
         perm |= 0o4  # r
@@ -111,12 +117,6 @@ def _ClearMask(wholist, perm, mask):
 
 class SymbolicClauseParser:
 
-    WHO = "ugoa"
-    PERMCOPY = "ugo"
-    OP = "+-="
-    PERM = "rwxXst"
-    PERM_U_PERMCOPY = PERM + PERMCOPY
-
     def __init__(self, clause):
         # type: (str) -> None
         self.clause = clause
@@ -132,18 +132,15 @@ class SymbolicClauseParser:
 
     def ParseWholist(self):
         # type: () -> int
-        WHO = SymbolicClauseParser.WHO
-
-        if self.Ch() not in WHO:
+        if self.Ch() not in _WHO:
             return 0o7
 
         wholist = 0o0
         while not self.AtEnd():
-            ch = self.Ch()
-            if ch not in WHO:
+            if self.Ch() not in _WHO:
                 break
 
-            wholist |= _WhoCharToBitset(ch)
+            wholist |= _WhoCharToBitset(self.Ch())
             self.i += 1
 
         return wholist
@@ -152,14 +149,12 @@ class SymbolicClauseParser:
     # returns success
     def ParseNextAction(self, wholist, mask, initial_mask):
         # type: (int, int, int) -> Tuple[bool, int]
-        OP = SymbolicClauseParser.OP
-        PERM_U_PERMCOPY = SymbolicClauseParser.PERM_U_PERMCOPY
 
         op = self.Ch()
-        if op not in OP:
+        if op not in _OP:
             print_stderr(
                 "oils warning: expected one of `%s` at start of action instead of `%s`"
-                % (OP, op))
+                % (_OP, op))
             return False, 0
 
         self.i += 1
@@ -167,7 +162,7 @@ class SymbolicClauseParser:
         if op == "=":
             mask = _SetMask(wholist, 0o7, mask)
 
-        if self.AtEnd() or self.Ch() not in PERM_U_PERMCOPY:
+        if self.AtEnd() or self.Ch() not in _PERM_U_PERMCOPY:
             if op == "+" or op == "=":
                 return True, mask
             elif op == "-":
@@ -176,28 +171,28 @@ class SymbolicClauseParser:
         # perm represents the bits [rwx] for a single permission
         perm = 0o0
 
-        # While a list of permcopy chars mixed with permlist is not posix, both dash and mksh
-        # support it.
-        if self.Ch() in PERM_U_PERMCOPY:
-            # permlist = [rwx][Xst][ugo]
-            permlist = 0o000
-            while not (self.AtEnd() or self.Ch() in OP):
-                ch = self.Ch()
-                if ch not in PERM_U_PERMCOPY:
-                    print_stderr(
-                        "oil warning: expected one of `%s` in permlist instead of `%s`"
-                        % (PERM_U_PERMCOPY, ch))
-                    return False, 0
+        # permlist = [rwx][Xst][ugo]
+        permlist = 0o000
+        while not (self.AtEnd() or self.Ch() in _OP):
+            # While a list of permcopy chars mixed with permlist is not posix, both dash and mksh
+            # support it.
+            if self.Ch() not in _PERM_U_PERMCOPY:
+                print_stderr(
+                    "oil warning: expected one of `%s` in permlist instead of `%s`"
+                    % (_PERM_U_PERMCOPY, self.Ch()))
+                return False, 0
 
-                permlist |= _PermlistCharToBitset(ch)
-                self.i += 1
+            permlist |= _PermlistCharToBitset(self.Ch())
+            self.i += 1
 
-            perm = _PermlistToBits(permlist, initial_mask)
+        perm = _PermlistToBits(permlist, initial_mask)
 
         if op == "+" or op == "=":
             return True, _ClearMask(wholist, perm, mask)
         elif op == "-":
             return True, _SetMask(wholist, perm, mask)
+
+        assert False, "unreachable"
 
 
 class Umask(vm._Builtin):
