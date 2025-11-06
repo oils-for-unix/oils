@@ -5,12 +5,15 @@ umask_osh.py - Implements the umask builtin, including parsing
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.runtime_asdl import cmd_value
 
 from core.error import e_usage
 from core import vm
 from mycpp.mylib import print_stderr
 
 import posix_ as posix
+
+from typing import List, Tuple
 
 # NOTE: bitsets are a great way to store fixed width sets & add / remove
 # items easily. Thus, we use different bitsets for $wholist, $permlist,
@@ -148,7 +151,7 @@ class SymbolicClauseParser:
     # An actionlist is a sequence of actions. An action always starts with an op.
     # returns success
     def ParseNextAction(self, wholist, mask, initial_mask):
-        # type: (int, int, int) -> typing.Tuple[bool, int]
+        # type: (int, int, int) -> Tuple[bool, int]
         OP = SymbolicClauseParser.OP
         PERM_U_PERMCOPY = SymbolicClauseParser.PERM_U_PERMCOPY
 
@@ -256,7 +259,7 @@ class Umask(vm._Builtin):
                 raise
 
     def _ParseClauseList(self, initial_mask, clause_list):
-        # type: (int, typing.List[str]) -> typing.Tuple[bool, int]
+        # type: (int, List[str]) -> Tuple[bool, int]
         mask = initial_mask
         for clause in clause_list:
             ok, mask = self._ParseClause(mask, initial_mask, clause)
@@ -266,7 +269,7 @@ class Umask(vm._Builtin):
         return True, mask
 
     def _ParseClause(self, mask, initial_mask, clause):
-        # type: (int, int, str) -> typing.Tuple[bool, int]
+        # type: (int, int, str) -> Tuple[bool, int]
         if len(clause) == 0:
             # TODO: location highlighting would be nice
             print_stderr(
