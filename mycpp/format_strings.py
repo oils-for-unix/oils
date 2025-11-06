@@ -55,7 +55,7 @@ PAT = re.compile(
     '''
 ([^%]*)
 (?:
-  %([0-9]*)(.)   # optional number, and then character code
+  %-?([0-9]*)(.)   # optional number, and then character code
 )?
 ''', re.VERBOSE)
 
