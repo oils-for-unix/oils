@@ -99,8 +99,8 @@ BEGIN {
   # BUGS that only occur with OSH as BASH
   #
 
-  # chrony
-  patterns["#2426"] = "In expressions, remove $ and use `OPTIND`"
+  # chrony and x42-plugins
+  patterns["#2426"] = "In expressions, remove $ and use"
 
   # shorewall - BAD version detection - fixed
   #patterns["#2427"] = "ERROR: This program requires Bash 4.0 or later"
