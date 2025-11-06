@@ -414,6 +414,10 @@ ret = 0
 ## END
 ## BUG zsh STDOUT:
 777
+ret = 1
+124
+124
+124
 ## END
 
 #### umask bare op
@@ -429,6 +433,7 @@ umask 0124
 umask =+rwx+rx
 umask | tail -c 4
 ## status: 0
+## BUG zsh status: 1
 ## STDOUT: 
 777
 777
@@ -439,9 +444,9 @@ umask | tail -c 4
 124
 124
 ## END
-## BUG zsh status: 1
-## BUG zsh STDOUT:
+## BUG zsh STDOUT: 
 ## END
+
 
 #### umask bare op -
 umask 0124
