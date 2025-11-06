@@ -38,6 +38,7 @@ def _WhoCharToBitset(who_ch):
         return 0o7
     else:
         assert False, "unreachable"
+        return 0o0
 
 
 def _PermlistCharToBitset(permlist_ch):
@@ -62,6 +63,7 @@ def _PermlistCharToBitset(permlist_ch):
         return 0o001
     else:
         assert False, "unreachable"
+        return 0o0
 
 
 # perm = [rwx][Xst][ugo]
@@ -193,6 +195,7 @@ class SymbolicClauseParser:
             return True, _SetMask(wholist, perm, mask)
 
         assert False, "unreachable"
+        return False, 0
 
 
 class Umask(vm._Builtin):
