@@ -16,10 +16,8 @@ import posix_ as posix
 from typing import List, Tuple
 
 _WHO = "ugoa"
-_PERMCOPY = "ugo"
 _OP = "+-="
-_PERM = "rwxXst"
-_PERM_U_PERMCOPY = _PERM + _PERMCOPY
+_PERM_U_PERMCOPY = "rwxXstugo"
 
 # NOTE: bitsets are a great way to store fixed width sets & add / remove
 # items easily. Thus, we use different bitsets for $wholist, $permlist,
