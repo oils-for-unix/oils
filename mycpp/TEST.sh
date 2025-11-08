@@ -247,6 +247,9 @@ test-invalid-examples() {
       */invalid_partialtype.py)
         expected_status=2
         ;;
+      */invalid_format_strings.py)
+        expected_status=3
+        ;;
     esac
 
     if test $status -ne $expected_status; then

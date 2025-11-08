@@ -136,9 +136,16 @@ class Collect(visitor.TypedVisitor):
 
         self.current_file_name: Optional[str] = None
 
+    def verify_format_string(self, fmt: StrExpr) -> None:
+        try:
+            format_strings.Parse(fmt.value)
+        except RuntimeError as e:
+            self.report_error(fmt, e)
+
     def oils_visit_format_expr(self, left: Expression,
                                right: Expression) -> None:
         if isinstance(left, StrExpr):
+            self.verify_format_string(left)
             # Do NOT visit the left, because we write it literally
             pass
         else:
@@ -155,6 +162,7 @@ class Collect(visitor.TypedVisitor):
 
     def oils_visit_log_call(self, fmt: StrExpr,
                             args: List[Expression]) -> None:
+        self.verify_format_string(fmt)
         if len(args) == 0:
             self.accept(fmt)
             return
