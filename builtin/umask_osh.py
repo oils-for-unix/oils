@@ -197,6 +197,39 @@ class SymbolicClauseParser:
         return False, 0
 
 
+def _ParseClause(mask, initial_mask, clause):
+    # type: (int, int, str) -> Tuple[bool, int]
+    if len(clause) == 0:
+        # TODO: location highlighting would be nice
+        print_stderr(
+            "oils warning: symbolic mode operator cannot be empty")
+        return False, 0
+
+    parser = SymbolicClauseParser(clause)
+    wholist = parser.ParseWholist()
+    if parser.AtEnd():
+        print_stderr("oils warning: actionlist is required")
+        return False, 0
+
+    while True:
+        ok, mask = parser.ParseNextAction(wholist, mask, initial_mask)
+        if not ok:
+            return False, 0
+        elif parser.AtEnd():
+            return True, mask
+
+
+def _ParseClauseList(initial_mask, clause_list):
+    # type: (int, List[str]) -> Tuple[bool, int]
+    mask = initial_mask
+    for clause in clause_list:
+        ok, mask = _ParseClause(mask, initial_mask, clause)
+        if not ok:
+            return False, 0
+
+    return True, mask
+
+
 class Umask(vm._Builtin):
 
     def __init__(self):
@@ -211,7 +244,7 @@ class Umask(vm._Builtin):
         attrs, arg_r = flag_util.ParseCmdVal('umask', cmd_val)
 
         if arg_r.AtEnd():  # no args
-            # umask() has a dumb API: you can't get it without modifying it first!
+            # umask() has a dumb API: to get the umask, we must modify it
             # see: https://man7.org/linux/man-pages/man2/umask.2.html
             # NOTE: dash disables interrupts around the two umask() calls, but that
             # shouldn't be a concern for us.  Signal handlers won't call umask().
@@ -235,53 +268,20 @@ class Umask(vm._Builtin):
             posix.umask(new_mask)
             return 0
 
-        else:
-            # NOTE: it's possible to avoid this extra syscall in cases where we don't care about
-            # the initial value (ex: umask ...,a=rwx) although it's non-trivial to determine
-            # when, so it's probably not worth it
-            initial_mask = posix.umask(0)
-            try:
-                ok, new_mask = self._ParseClauseList(initial_mask,
-                                                     first_arg.split(","))
-                if not ok:
-                    posix.umask(initial_mask)
-                    return 1
-
-                posix.umask(new_mask)
-                return 0
-
-            except Exception as e:
-                # this guard protects the umask value against any accidental exceptions
+        # NOTE: it's possible to avoid this extra syscall in cases where we don't care about
+        # the initial value (ex: umask ...,a=rwx) although it's non-trivial to determine
+        # when, so it's probably not worth it
+        initial_mask = posix.umask(0)
+        try:
+            ok, new_mask = _ParseClauseList(initial_mask, first_arg.split(","))
+            if not ok:
                 posix.umask(initial_mask)
-                raise
+                return 1
 
-    def _ParseClauseList(self, initial_mask, clause_list):
-        # type: (int, List[str]) -> Tuple[bool, int]
-        mask = initial_mask
-        for clause in clause_list:
-            ok, mask = self._ParseClause(mask, initial_mask, clause)
-            if not ok:
-                return False, 0
+            posix.umask(new_mask)
+            return 0
 
-        return True, mask
-
-    def _ParseClause(self, mask, initial_mask, clause):
-        # type: (int, int, str) -> Tuple[bool, int]
-        if len(clause) == 0:
-            # TODO: location highlighting would be nice
-            print_stderr(
-                "oils warning: symbolic mode operator cannot be empty")
-            return False, 0
-
-        parser = SymbolicClauseParser(clause)
-        wholist = parser.ParseWholist()
-        if parser.AtEnd():
-            print_stderr("oils warning: actionlist is required")
-            return False, 0
-
-        while True:
-            ok, mask = parser.ParseNextAction(wholist, mask, initial_mask)
-            if not ok:
-                return False, 0
-            elif parser.AtEnd():
-                return True, mask
+        except Exception as e:
+            # this guard protects the umask value against any accidental exceptions
+            posix.umask(initial_mask)
+            raise
