@@ -1269,6 +1269,13 @@ test-kill-builtin-usage() {
   _osh-error-2 'kill -L 15 9999 16'
 }
 
+test-umask-errors() {
+  # BUG here
+  #_osh-error-1 'umask ""'
+
+  _osh-error-1 'umask "a"'
+}
+
 #
 # TEST DRIVER
 #
