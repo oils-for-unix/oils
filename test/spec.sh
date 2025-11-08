@@ -350,6 +350,10 @@ introspect() {
   test/spec-py.sh run-file introspect "$@"
 }
 
+known-differences() {
+  test/spec-py.sh run-file known-differences "$@"
+}
+
 let() {
   test/spec-py.sh run-file let "$@"
 }
