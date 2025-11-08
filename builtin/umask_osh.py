@@ -4,10 +4,7 @@ umask_osh.py - Implements the umask builtin, including parsing
 """
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.runtime_asdl import cmd_value
-
-from core.error import e_usage
 from core import vm
 from frontend import flag_util
 from mycpp.mylib import print_stderr
