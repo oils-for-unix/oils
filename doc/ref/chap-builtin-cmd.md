@@ -1156,15 +1156,58 @@ function.
 
 ### umask
 
-    umask MODE?
+    umask OCTAL
+    umask SYMBOLIC[,SYMBOLIC]...
+
+    umask FLAG*  # print the mask
 
 Sets the bit mask that determines the permissions for new files and
 directories.  The mask is subtracted from 666 for files and 777 for
 directories.
 
-Oils currently supports writing masks in octal.
-
 If no MODE, show the current mask.
+
+Flags:
+
+    -p  print in a form that may be reused as input
+    -S  print in symbolic form
+
+Symbolic mask:
+
+    A SYMBOLIC clause is of the form '[ugoa]*([-+=]([rwxXstugo]*))*', the same as is accepted by chmod.
+
+    who :: u | g | o | a
+    operator :: + | - | =
+    permission :: r | w | x | X | s | t | u | g | o
+
+    Who:
+        ugo  set the user, group, or other parts of the file mode bits, respectively
+        a    equivalent to all of ugo
+
+    Operator:
+        +  removes specified permission bits from the umask according to who
+        -  adds specified permission bits to the umask according to who
+        =  set all who permissions to 0777, then remove specified permission bits from the umask according to who
+
+    Permission:
+        rwx  set the read, write, or execute bit respectively
+        X    set the execute bit iff the umask before this operation has one of its 3 execute bits set
+        st   does nothing, but exists for POSIX compatibility
+        ugo  set permission equal to the umask's u, g, and o bits before this operation
+
+Examples:
+
+    umask  # get the current umask in octal form
+
+    umask 0124
+
+    umask ug=rwx,o-r  # clauses may be joined using commas
+
+    umask u+rwx-x-w-r  # operators can be chained
+
+    umask a=u  # [ugo] after the operator represents the initial umask permissions
+
+    umask =u  # equivalent to `umask a=u`
 
 ### ulimit
 
