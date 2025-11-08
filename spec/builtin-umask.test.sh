@@ -4,14 +4,25 @@
 #### 'umask' prints the umask
 umask | tail --bytes 4  # 0022 versus 022
 echo status=$?
+
 ## STDOUT:
 022
+status=0
+## END
+
+#### 'umask -S' prints symbolic umask
+umask -S | grep 'u=[rwx]*,g=[rwx]*,o=[rwx]*' 
+echo status=$?
+
+## STDOUT:
+u=rwx,g=rx,o=rx
 status=0
 ## END
 
 #### 'umask -p' prints a form that can be eval'd
 umask -p
 echo status=$?
+
 ## STDOUT:
 umask 0022
 status=0
@@ -24,12 +35,14 @@ status=2
 ## END
 
 #### 'umask 0002' sets the umask
-rm -f $TMP/umask-one $TMP/umask-two
 umask 0002
 echo one > $TMP/umask-one
+
 umask 0022
 echo two > $TMP/umask-two
+
 stat -c '%a' $TMP/umask-one $TMP/umask-two
+
 ## status: 0
 ## STDOUT:
 664
@@ -40,23 +53,20 @@ stat -c '%a' $TMP/umask-one $TMP/umask-two
 #### set umask with symbolic mode: g-w,o-w
 
 umask 0002  # begin in a known state for the test
-rm -f $TMP/umask-one $TMP/umask-two
 # open()s 'umask-one' with mask 0666, then subtracts 0002 -> 0664
 echo one > $TMP/umask-one
+
 umask g-w,o-w
 echo two > $TMP/umask-two
+
 stat -c '%a' $TMP/umask-one $TMP/umask-two
+
 ## status: 0
 ## STDOUT:
 664
 644
 ## END
 ## stderr-json: ""
-
-#### umask -S
-# current mask as symbolic
-umask -S | grep 'u=[rwx]*,g=[rwx]*,o=[rwx]*' 
-## status: 0
 
 #### umask symbolic parsing
 
