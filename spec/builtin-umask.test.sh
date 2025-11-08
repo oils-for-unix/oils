@@ -1,5 +1,5 @@
 ## compare_shells: dash bash mksh zsh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 #### 'umask' prints the umask
 umask | tail --bytes 4  # 0022 versus 022
