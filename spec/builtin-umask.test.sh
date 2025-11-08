@@ -1,13 +1,29 @@
 ## compare_shells: dash bash mksh zsh
-## oils_failures_allowed: 3
-# case #24 with ulimit -f 1 is different under C++ for some reason - could be due to the python2
-# intepreter and SIGXFSZ
+## oils_failures_allowed: 4
 
-#### get umask
-umask | grep '[0-9]\+'  # check for digits
-## status: 0
+#### 'umask' prints the umask
+umask | tail --bytes 4  # 0022 versus 022
+echo status=$?
+## STDOUT:
+022
+status=0
+## END
 
-#### set umask in octal
+#### 'umask -p' prints a form that can be eval'd
+umask -p
+echo status=$?
+## STDOUT:
+umask 0022
+status=0
+## END
+## N-I mksh/zsh STDOUT:
+status=1
+## END
+## N-I dash STDOUT:
+status=2
+## END
+
+#### 'umask 0002' sets the umask
 rm -f $TMP/umask-one $TMP/umask-two
 umask 0002
 echo one > $TMP/umask-one
@@ -21,7 +37,8 @@ stat -c '%a' $TMP/umask-one $TMP/umask-two
 ## END
 ## stderr-json: ""
 
-#### set umask symbolically
+#### set umask with symbolic mode: g-w,o-w
+
 umask 0002  # begin in a known state for the test
 rm -f $TMP/umask-one $TMP/umask-two
 # open()s 'umask-one' with mask 0666, then subtracts 0002 -> 0664
@@ -35,11 +52,6 @@ stat -c '%a' $TMP/umask-one $TMP/umask-two
 644
 ## END
 ## stderr-json: ""
-
-#### umask -p
-umask -p | grep 'umask [0-9][0-9][0-9][0-9]'
-## status: 0
-## N-I dash/mksh/zsh status: 1
 
 #### umask -S
 # current mask as symbolic
