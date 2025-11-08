@@ -1165,7 +1165,7 @@ Sets the bit mask that determines the permissions for new files and
 directories.  The mask is subtracted from 666 for files and 777 for
 directories.
 
-If no MODE, show the current mask.
+If no argument is provided, show the current mask.
 
 Flags:
 
