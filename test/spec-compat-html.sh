@@ -6,7 +6,7 @@
 #   test/spec-compat-html.sh <function name>
 #
 # Examples:
-#   $0 deploy 2025-11-02  # Deploys result of test/spec-compat.sh osh-all to ../pages/
+#   $0 deploy   # Deploys result of test/spec-compat.sh osh-all to ../pages/
 #
 # TODO:
 #   - improve pages.oils.pub/ index.html
@@ -391,7 +391,7 @@ write-tree-html() {
 multi() { ~/git/tree-tools/bin/multi "$@"; }
 
 deploy() {
-  local epoch=${1:-2025-11-02}
+  local epoch=${1:-2025-07-28}
 
   local dest=$PWD/../pages/spec-compat/$epoch
 
