@@ -1274,6 +1274,8 @@ test-umask-errors() {
   #_osh-error-1 'umask ""'
 
   _osh-error-1 'umask "a"'
+
+  _osh-error-2 'umask a b'
 }
 
 #

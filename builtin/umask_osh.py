@@ -9,6 +9,7 @@ from _devbuild.gen.runtime_asdl import cmd_value
 
 from core.error import e_usage
 from core import vm
+from frontend import flag_util
 from mycpp.mylib import print_stderr
 
 import posix_ as posix
@@ -207,8 +208,9 @@ class Umask(vm._Builtin):
         # type: (cmd_value.Argv) -> int
         # see https://pubs.opengroup.org/onlinepubs/009696899/utilities/chmod.html for more details
 
-        argv = cmd_val.argv[1:]
-        if len(argv) == 0:
+        attrs, arg_r = flag_util.ParseCmdVal('umask', cmd_val)
+
+        if arg_r.AtEnd():  # no args
             # umask() has a dumb API: you can't get it without modifying it first!
             # see: https://man7.org/linux/man-pages/man2/umask.2.html
             # NOTE: dash disables interrupts around the two umask() calls, but that
@@ -218,10 +220,9 @@ class Umask(vm._Builtin):
             print('0%03o' % mask)  # octal format
             return 0
 
-        if len(argv) > 1:
-            e_usage("unexpected number of arguments", loc.Missing)
+        first_arg, first_loc = arg_r.ReadRequired2('expected an argument')
+        arg_r.Done()  # only one arg
 
-        first_arg = argv[0]
         if first_arg[0].isdigit():
             try:
                 new_mask = int(first_arg, 8)

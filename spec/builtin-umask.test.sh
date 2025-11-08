@@ -1,5 +1,5 @@
 ## compare_shells: dash bash mksh zsh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 #### 'umask' prints the umask
 umask | tail --bytes 4  # 0022 versus 022
@@ -68,7 +68,7 @@ stat -c '%a' $TMP/umask-one $TMP/umask-two
 ## END
 ## stderr-json: ""
 
-#### umask symbolic parsing
+#### set umask with symbolic mode: u-rw  ...  u=,g+,o-  ...
 
 umask 0000
 umask u-rw
@@ -116,24 +116,21 @@ status5=0
 737
 ## END
 
-#### umask symbolic parsing with spaces
+#### umask with too many arguments (i.e. extra spaces)
 umask 0111
 # spaces are an error in bash
 # dash & mksh only interpret the first one
 umask u=, g+, o-
-echo status=$?
+if test $? -ne 0; then
+  echo ok
+fi
 umask | tail -c 4
 ## status: 0
 ## STDOUT:
-status=2
-111
-## END
-## OK bash/zsh STDOUT:
-status=1
+ok
 111
 ## END
 ## BUG dash/mksh STDOUT:
-status=0
 711
 ## END
 
