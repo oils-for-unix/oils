@@ -85,6 +85,13 @@ BEGIN {
   # note: with glibc, a different string will appear
   patterns["#2336"] = "Extended glob won't work without FNM_EXTMATCH support in libc"
 
+  # lua-*
+  # umask with symbolic input not implemented yet
+  patterns["#2484"] = "umask with symbolic input isn't implemented"
+
+  # tclx
+  patterns["#2557"] = "oils: Invalid applet "
+
   #
   # BUGS that only occur with OSH as BUSYBOX ASH
   #
@@ -95,12 +102,15 @@ BEGIN {
   # nginx
   patterns["#2425"] = "'cd' got too many arguments"
 
+  # xcb-util-render-util
+  patterns["#2552"] = "/home/udu/aports/community/xcb-util-renderutil/APKBUILD:16: Unexpected word while parsing compound command"
+
   #
   # BUGS that only occur with OSH as BASH
   #
 
-  # chrony
-  patterns["#2426"] = "In expressions, remove $ and use `OPTIND`"
+  # chrony and x42-plugins
+  patterns["#2426"] = "In expressions, remove $ and use"
 
   # shorewall - BAD version detection - fixed
   #patterns["#2427"] = "ERROR: This program requires Bash 4.0 or later"
