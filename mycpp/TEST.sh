@@ -249,6 +249,9 @@ test-invalid-examples() {
         ;;
       */invalid_switch_break.py)
         expected_status=3
+        ;;      
+      */invalid_format_strings.py)
+        expected_status=3
         ;;
     esac
 

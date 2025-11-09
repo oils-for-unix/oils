@@ -48,8 +48,10 @@ BEGIN {
   patterns[8] = "find a separator character in"
 
   # esh package: OSH string
-  # I am not sure these are real bugs: it might be that esh expects and exact
-  # code string?
+  # One case is definitely related to the linked issue, but multiple tests are failing.
+  # For the other test cases: I am not sure these are real bugs: it might be that esh
+  # expects and exact code string?
+  patterns["#2547"] = "Undefined variable 'OPTARG'"
   patterns[9] = "fatal: Undefined variable"
 
   # mawk, openvpn: trap 0
@@ -85,6 +87,22 @@ BEGIN {
   # note: with glibc, a different string will appear
   patterns["#2336"] = "Extended glob won't work without FNM_EXTMATCH support in libc"
 
+  # lua-*
+  # umask with symbolic input not implemented yet
+  patterns["#2484"] = "umask with symbolic input isn't implemented"
+
+  # tclx
+  patterns["#2557"] = "oils: Invalid applet "
+
+  # shunit2
+  patterns["#2561"] = "assert message was not generated"
+
+  # ifupdown-ng
+  patterns["#2546"] = "Fail: regexp local "
+
+  # py3-adblock
+  patterns["#2562"] = "Invalid descriptor"
+
   #
   # BUGS that only occur with OSH as BUSYBOX ASH
   #
@@ -95,12 +113,18 @@ BEGIN {
   # nginx
   patterns["#2425"] = "'cd' got too many arguments"
 
+  # xcb-util-render-util
+  patterns["#2552"] = "/home/udu/aports/community/xcb-util-renderutil/APKBUILD:16: Unexpected word while parsing compound command"
+
+  # py3-userpath
+  patterns["#2563"] = "Exception: Unable to find "
+
   #
   # BUGS that only occur with OSH as BASH
   #
 
-  # chrony
-  patterns["#2426"] = "In expressions, remove $ and use `OPTIND`"
+  # chrony and x42-plugins
+  patterns["#2426"] = "In expressions, remove $ and use"
 
   # shorewall - BAD version detection - fixed
   #patterns["#2427"] = "ERROR: This program requires Bash 4.0 or later"
@@ -131,6 +155,9 @@ BEGIN {
 
   # libidn
   patterns["#2523"] = "ERROR: libidn2: check failed"
+
+  # R, rkward
+  patterns["#2560"] = "fatal: Assignment builtin expected NAME=value"
 
   found = 0
 }
