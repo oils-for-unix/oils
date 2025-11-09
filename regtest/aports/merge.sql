@@ -33,7 +33,7 @@ create table timeout as
   from diff_merged
   where timeout == 1;
 
--- drop 2 columns from each of 3 tables (sqlite is verbose)
+-- Drop 2 columns from each of 3 tables (sqlite is verbose)
 
 alter table notable_disagree
 drop column disagree;
@@ -54,3 +54,13 @@ alter table timeout
 drop column disagree;
 alter table timeout
 drop column timeout;
+
+-- Create cause histogram
+
+create table cause_hist as
+  -- sqlite is dumb: count(*) doesn't have integer type by default, you have to cast it!
+  select cast(count(*) as integer) as num, cause, cause_HREF
+  from notable_disagree
+  group by cause
+  having count(*) > 1 -- causes that happen more than once
+  order by num desc;

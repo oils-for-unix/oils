@@ -70,10 +70,48 @@ TODO
 EOF
 }
 
-diff-metrics-html() {
+diff-summary-html() {
   local db=${1:-_tmp/aports-report/2025-08-03/diff_merged.db}
 
   sqlite3 $db < regtest/aports/summary.sql
+
+  echo '
+  <p></p>
+
+  <div class="side-by-side">
+    <section>
+      <h3>Task Summary</h3>
+  '
+  sqlite3 $db < regtest/aports/summary2.sql
+
+  cmark << 'EOF'
+</section>
+
+<section>
+
+### Common Causes of Disagreements
+EOF
+
+  tsv2html3 $base_dir/cause_hist.tsv
+
+  sqlite3 $db << 'EOF'
+select
+  printf(
+    '<p>Unique causes: %d </p>',
+    count(distinct cause)
+  )
+from notable_disagree
+where cause != 'unknown';
+EOF
+
+  cmark <<'EOF'
+Source: [regtest/aports/cause.awk](https://github.com/oils-for-unix/oils/blob/master/regtest/aports/cause.awk)
+EOF
+
+  echo '
+    </section>
+  </div> <!-- side-by-side -->
+  '
 }
 
 table-page-html() {
@@ -123,6 +161,24 @@ merge-diff-html() {
 
   table-sort-begin 'width60'  # <body> <p>
 
+  # Put two parts side-by-side with flexbox
+  echo '
+  <style>
+  .side-by-side {
+    display: flex;
+    gap: 1em;
+
+    padding-left: 1em;
+    padding-right: 1em;
+    background-color: #eee;
+  }
+
+  .side-by-side section {
+    flex: 1;
+  }
+  </style>
+  '
+
   cmark <<EOF
 <p id="home-link">
   <a href="../index.html">Up</a> |
@@ -133,12 +189,12 @@ merge-diff-html() {
 
 EOF
 
-  diff-metrics-html $base_dir/diff_merged.db
+  diff-summary-html $base_dir/diff_merged.db
 
   cmark << 'EOF'
 [tree](tree.html) &nbsp;&nbsp; [metrics](metrics.html) &nbsp;&nbsp; [disagree-packages.txt](disagree-packages.txt)
 
-## Notable Disagreements
+## All Notable Disagreements
 
 <div style="color: #666;">
 
@@ -605,6 +661,8 @@ merge-diffs() {
   db-to-tsv $db baseline_only 'order by pkg'
   db-to-tsv $db other_fail 'order by pkg'
   db-to-tsv $db timeout 'order by pkg'
+
+  db-to-tsv $db cause_hist
 
   # For re-running failures
   sqlite3 diff_merged.db >disagree-packages.txt <<EOF
