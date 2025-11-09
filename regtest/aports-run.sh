@@ -486,9 +486,11 @@ abridge-logs2() {
     if test "$size" -lt "$threshold"; then
       cp -v $src $dest
     else
-      { echo "*** This log is abridged to its last 1000 lines:"
+      # Bug fix: abriding to 1000 lines isn't sufficient.  We got some logs
+      # that were hundreds of MB, with less than 1000 lines!
+      { echo "*** This log is abridged to its last 500 KB:"
         echo
-        tail -n 1000 $src
+        tail --bytes 500000 $src
       } > $dest
     fi
   done
