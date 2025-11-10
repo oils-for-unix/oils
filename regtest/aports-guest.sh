@@ -46,7 +46,7 @@ build-one-package() {
   local a_repo=${2:-main}
   local xargs_slot=${3:-99}  # recorded in tasks.tsv
   local more_abuild_flags=${4:-}  # e.g. for -k
-  local timeout_secs=${5:-$(( 5 * 60 ))}  # 5 minutes by default
+  local timeout_secs=${5:-$(( 15 * 60 ))}  # 15 minutes by default
 
   printf -v xargs_str '%2s' $xargs_slot
   echo "  TASK  $xargs_str  $(timestamp)  $pkg"
