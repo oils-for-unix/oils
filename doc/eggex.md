@@ -343,13 +343,13 @@ string, respectively.
 
 Newlines are also ignored in `dot` and `![abc]` patterns.
 
-    = u'\n' ~ / . /                                 # true
-    = u'\n' ~ / !digit /                            # true
+    = u'\n' ~ / . ; reg_newline /                   # false
+    = u'\n' ~ / !digit ; reg_newline /              # false
 
 Without this flag, the newline `\n` is treated as an ordinary character.
 
-    = u'\n' ~ / . ; reg_newline /                   # false
-    = u'\n' ~ / !digit ; reg_newline /              # false
+    = u'\n' ~ / . /                                 # true
+    = u'\n' ~ / !digit /                            # true
 
 ### Multiline Syntax
 
