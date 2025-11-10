@@ -44,6 +44,13 @@ build-one-package() {
 
   local pkg=${1:-lua5.4}
   local a_repo=${2:-main}
+  local more_abuild_flags=${3:-}  # e.g. for -k
+  local timeout_secs=${4:-$(( 5 * 60 ))}  # 5 minutes by default
+
+  local xargs_slot=${TRAVIS_HACK:-99}
+
+  printf -v xargs_str '%2s' $xargs_slot
+  echo "  TASK  $xargs_str  $(timestamp)  $pkg"
 
   local task_file=$LOG_DIR/$pkg.task.tsv
   local log_file=$LOG_DIR/$pkg.log.txt
@@ -56,24 +63,18 @@ build-one-package() {
     --field pkg_HREF \
     --output $task_file
 
-  # Packages live in /home/udu/aports/main
-  # -f forces rebuild: needed for different configs
-  # -r: install missing deps from system repository?
-  #local -a cmd=( abuild -f -r -C ~/aports/main/$pkg rootbld )
-
   # DISABLE rootbld for now - bwrap doesn't work inside chroot, because user
   # namespaces don't compose with chroots
-  local -a cmd=( abuild -f -r -C ~/aports/$a_repo/$pkg )
+  local -a cmd=( abuild -f -r -C ~/aports/$a_repo/$pkg $more_abuild_flags )
 
   # Give it 1 second to respond to SIGTERM, then SIGKILL
-  local seconds=$(( 5 * 60 ))  # 5 minutes max for now, save time!
-  local -a timeout_cmd=( timeout -k 1 $seconds "${cmd[@]}" )
+  local -a timeout_cmd=( timeout -k 1 $timeout_secs "${cmd[@]}" )
 
   #set -x
   # NOTE: log/foo.log.txt is the relative path after copy-results; sync-results
   set +o errexit
   my-time-tsv \
-    --field "${XARGS_SLOT:-99}" \
+    --field "$xargs_slot" \
     --field "$pkg" \
     --field "log/$pkg.log.txt" \
     --append \
@@ -84,9 +85,9 @@ build-one-package() {
   set -o errexit
 
   if test "$status" -eq 0; then
-    echo "    OK  $(timestamp)  $pkg"
+    echo "    OK      $(timestamp)  $pkg"
   else
-    echo "  FAIL  $(timestamp)  $pkg"
+    echo "  FAIL      $(timestamp)  $pkg"
   fi
 
   # Note: should we try not to fetch here?  I think the caching of "abuilt
