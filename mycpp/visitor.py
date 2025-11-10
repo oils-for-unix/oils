@@ -737,6 +737,19 @@ class TypedVisitor(SimpleVisitor):
         SimpleVisitor.__init__(self)
         self.types = types
 
+    def _GetType(self, expr: Expression) -> Optional[Type]:
+        if expr in self.types:
+            return self.types[expr]
+        else:
+            self.report_error(expr, "Expression is missing a type: statement may be unreachable")
+            return None
+
+    def _GetTypeOptional(self, expr: Expression) -> Optional[Type]:
+        if expr in self.types:
+            return self.types[expr]
+        else:
+            return None
+
     def oils_visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> None:
         self.accept(o.left)
         self.accept(o.right)
@@ -748,7 +761,7 @@ class TypedVisitor(SimpleVisitor):
         self.accept(right)
 
     def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> None:
-        if o.op == '%' and util.IsStr(self.types[o.left]):
+        if o.op == '%' and util.IsStr(self._GetType(o.left)):
             # 'x = %r' % x
             self.oils_visit_format_expr(o.left, o.right)
             return
