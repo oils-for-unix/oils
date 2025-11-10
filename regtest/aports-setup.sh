@@ -120,8 +120,8 @@ patch-aports() {
 }
 
 
-# 2025-11-01, after several contributed fixes
-readonly TARBALL_ID='10703'
+# 2025-11-09, adding parallelism
+readonly TARBALL_ID='10772'
 
 download-oils() {
   local tarball_id=${1:-$TARBALL_ID}
@@ -425,7 +425,9 @@ create-package-dirs() {
   #       gzip/
   #       xz/
 
-  mkdir -v -p _chroot/package.overlay/{merged,work}
+  # obsolete after $XARGS_SLOT
+  # mkdir -v -p _chroot/package.overlay/{merged,work}
+  true
 }
 
 archived-distfiles() {
