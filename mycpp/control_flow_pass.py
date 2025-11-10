@@ -41,15 +41,14 @@ def GetObjectTypeName(t: Type) -> SymbolPath:
 INVALID_ID = -99  # statement IDs are positive
 
 
-class Build(visitor.SimpleVisitor):
+class Build(visitor.TypedVisitor):
 
     def __init__(self, types: Dict[Expression,
                                    Type], virtual: pass_state.Virtual,
                  local_vars: 'cppgen_pass.AllLocalVars',
                  dot_exprs: 'conversion_pass.DotExprs') -> None:
-        visitor.SimpleVisitor.__init__(self)
+        visitor.TypedVisitor.__init__(self, types)
 
-        self.types = types
         self.cflow_graphs: Dict[
             SymbolPath, pass_state.ControlFlowGraph] = collections.defaultdict(
                 pass_state.ControlFlowGraph)

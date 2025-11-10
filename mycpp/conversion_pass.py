@@ -41,7 +41,7 @@ class Primitive(Instance):
 MYCPP_INT = Primitive('builtins.int')
 
 
-class Pass(visitor.SimpleVisitor):
+class Pass(visitor.TypedVisitor):
 
     def __init__(
         self,
@@ -54,10 +54,7 @@ class Pass(visitor.SimpleVisitor):
         yield_out_params: Dict[FuncDef, Tuple[str, str]],  # output
         dunder_exit_special: Dict[FuncDef, bool],
     ) -> None:
-        visitor.SimpleVisitor.__init__(self)
-
-        # Input
-        self.types = types
+        visitor.TypedVisitor.__init__(self, types)
 
         # These are all outputs we compute
         self.virtual = virtual
