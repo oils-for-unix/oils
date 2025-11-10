@@ -5,6 +5,7 @@ myglobal=global
 
 var myarray = :| $myglobal $'line\n' ${z:-default} |
 spec/bin/argv.py @myarray
+shopt -s parse_subexpr_shorthand
 echo len=$[len(myarray)]
 echo
 
