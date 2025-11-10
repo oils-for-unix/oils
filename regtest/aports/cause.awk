@@ -53,6 +53,12 @@ BEGIN {
   # expects and exact code string?
   patterns["#2547"] = "Undefined variable 'OPTARG'"
 
+  # crosstool-ng - $[] is not being treated identical to $(())
+  patterns["#2566"] = "Undefined variable 'pkg_nforks'"
+
+  # bmake - oils ... syntax may conflict
+  patterns["#2464"] = "<not found: ...>"
+
   # mawk, openvpn: trap 0
   patterns["#2339"] = "requires a signal or hook name"
 
