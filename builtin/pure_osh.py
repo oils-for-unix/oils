@@ -537,14 +537,17 @@ def _GetOpts(
         else:
             optarg = my_state.GetArg(argv)
             if optarg is None:
+                if silent:
+                    my_state.SetArg(flag_char)
+                    return 0, ':'
+
                 my_state.Fail()
-                if not silent and opterr != 0:
-                    # TODO: Add location info
-                    errfmt.Print_('getopts: option requires an argument: ' + current)
-                    tmp = [j8_lite.MaybeShellEncode(a) for a in argv]
-                    print_stderr('(getopts argv: ' + ' '.join(tmp) + ')')
-                # OPTARG remains '' from Fail()
-                return 0, ':'
+                if opterr != 0:
+                    # POSIX says the format is unspecified, but this is what bash and
+                    # mksh do.
+                    errfmt.Print_('getopts: option requires an argument -- %s' %
+                                  flag_char)
+                return 0, '?'
         my_state.IncIndex()
         my_state.SetArg(optarg)
     else:
