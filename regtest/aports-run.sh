@@ -521,4 +521,34 @@ compare-speed() {
   build-many-shards2 shardC
 }
 
+demo-build() {
+  local pkg=${1:-gzip}  # in shardA, uses many cores
+  local do_pin=${2:-}
+
+  local -a prefix
+  if test -n "$do_pin"; then
+    echo "*** Pinning to CPU 0 ***"
+    prefix=( taskset -c 0 )
+  fi
+
+  "${prefix[@]}" $CHROOT_DIR/enter-chroot -u udu sh -c '
+  pkg=$1
+
+  echo "nproc = $(nproc)"
+
+  cd oils
+  set -x
+
+  # Note the user / real ratio!  How many cores did we use?
+  time regtest/aports-guest.sh build-one-package $pkg
+  ' dummy0 $pkg
+}
+
+test-taskset() {
+  local pkg=${1:-gzip}  # in shardA, uses many cores
+
+  demo-build $pkg ''
+  demo-build $pkg T
+}
+
 task-five "$@"
