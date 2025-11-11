@@ -393,6 +393,10 @@ public:
 
 StatResult* stat(BigStr* filename);
 
+int rand(int max_value);
+
+void srand(int seed_value);
+
 }  // namespace mylib
 
 #endif  // MYCPP_GC_MYLIB_H
