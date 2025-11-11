@@ -2430,9 +2430,16 @@ class Mem(object):
             elif case('RANDOM'):
                 if self.random_gen_enabled:
                     # Park-Miller pseudo-random number generator
-                    self.previous_random_number = (
-                        (48271 * self.previous_random_number) % 2147483647) & 32767
-                    return value.Int(mops.BigInt(self.previous_random_number))
+                    # Avoid overflow - use only 32-bit arithmetic
+                    div = self.previous_random_number / 44488
+                    rem = self.previous_random_number % 44488
+
+                    result = rem * 48271 - div * 3399
+                    if result < 0:
+                        result += 0x7fffffff
+                    result &= 32767 # Clamp to bash's RANDOM range
+                    self.previous_random_number = result
+                    return value.Int(mops.BigInt(result))
             else:
                 pass
 
