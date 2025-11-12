@@ -194,7 +194,7 @@ EOF
   cmark << 'EOF'
 [tree](tree.html) &nbsp;&nbsp; [metrics](metrics.html) &nbsp;&nbsp; [disagree-packages.txt](disagree-packages.txt)
 
-## All Notable Disagreements
+## Notable OSH Disagreements
 
 <div style="color: #666;">
 
@@ -208,7 +208,15 @@ EOF
   tsv2html3 $base_dir/$name.tsv
 
   cmark <<EOF
+[$name.tsv]($name.tsv)
 
+## All Disagreements with Timeout
+EOF
+
+  local name=timeout_disagree
+  tsv2html3 $base_dir/$name.tsv
+
+  cmark <<EOF
 [$name.tsv]($name.tsv)
 
 ## Baseline-Only Failures
@@ -219,12 +227,13 @@ EOF
   tsv2html3 $base_dir/$name.tsv
 
   cmark <<EOF
+
 [$name.tsv]($name.tsv)
 
-## Other Failures
+## Both Timed Out
 EOF
 
-  name=other_fail
+  name=both_timeout
   table-sort-begin 'width60'
   tsv2html3 $base_dir/$name.tsv
 
@@ -232,20 +241,21 @@ EOF
 
 [$name.tsv]($name.tsv)
 
-## Timeouts
+## Both Failed
 EOF
 
-  name=timeout
+  name=both_fail
   table-sort-begin 'width60'
   tsv2html3 $base_dir/$name.tsv
 
   cmark <<EOF
-
 [$name.tsv]($name.tsv)
+
 EOF
 
-  # Sort these 3 tables
-  table-sort-end-many notable_disagree baseline_only other_fail timeout
+  # Sort these tables
+  table-sort-end-many \
+    notable_disagree timeout_disagree baseline_only both_fail both_timeout
 }
 
 tasks-html()  {
@@ -339,6 +349,7 @@ After this success, we expanded our testing:
   - [2025-11-01-main-again](2025-11-01-main-again.wwz/_tmp/aports-report/2025-11-01-main-again/diff_merged.html) - **18** disagreements
   - [2025-11-02-main-patch](2025-11-02-main-patch.wwz/_tmp/aports-report/2025-11-02-main-patch/diff_merged.html) - **14** disagreements
   - [2025-11-09-main-cause](2025-11-09-main-cause.wwz/_tmp/aports-report/2025-11-09-main-cause/diff_merged.html) - updated causes
+- [2025-11-11-main-full](2025-11-11-main-full.wwz/_tmp/aports-report/2025-11-11-main-full/diff_merged.html) - full run with 10 package builds in parallel, 2 cores each
 
 ### community
 
@@ -658,9 +669,10 @@ merge-diffs() {
   db-to-tsv $db metrics
 
   db-to-tsv $db notable_disagree 'order by pkg'
+  db-to-tsv $db timeout_disagree 'order by pkg'
   db-to-tsv $db baseline_only 'order by pkg'
-  db-to-tsv $db other_fail 'order by pkg'
-  db-to-tsv $db timeout 'order by pkg'
+  db-to-tsv $db both_fail 'order by pkg'
+  db-to-tsv $db both_timeout 'order by pkg'
 
   db-to-tsv $db cause_hist
 
