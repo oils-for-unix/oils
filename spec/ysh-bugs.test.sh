@@ -1,5 +1,6 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 6
+## oils_cpp_failures_allowed: 3
 
 #### fastlex: NUL byte inside shebang line
 
