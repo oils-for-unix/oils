@@ -11,26 +11,17 @@ import sys
 import time
 
 
-def log(msg: str, *args) -> None:
+def log(msg, *args):
     if args:
         msg = msg % args
-    #print('%.2f %s' % (time.time() - START_TIME, msg), file=sys.stderr)
     print(msg, file=sys.stderr)
 
 
-def Options() -> optparse.OptionParser:
+def Options():
     """Returns an option parser instance."""
 
     p = optparse.OptionParser()
-    p.add_option('-v',
-                 '--verbose',
-                 dest='verbose',
-                 action='store_true',
-                 default=False,
-                 help='Show details about translation')
 
-    # Control which modules are exported to the header.  Used by
-    # build/translate.sh.
     p.add_option('--out-dir',
                  dest='out_dir',
                  default='_tmp',
@@ -56,7 +47,7 @@ def Handler(signum, frame):
     sys.exit(0)
 
 
-def main(argv: list[str]) -> int:
+def main(argv):
     o = Options()
     opts, argv = o.parse_args(argv)
 
@@ -93,13 +84,12 @@ def main(argv: list[str]) -> int:
                     #log('line %r', line)
                     o_vm.write('%s %s' % (t, line))
 
-        time.sleep(opts.sleep_secs)
-
         # So we can tail -f
         if i % 10 == 0:
             o_stat.flush()
             o_vm.flush()
 
+        time.sleep(opts.sleep_secs)
         i += 1
 
     return 0

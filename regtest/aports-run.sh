@@ -451,7 +451,6 @@ remove-shard-files() {
 }
 
 build-many-shards-overlayfs() {
-  echo
   sudo -k
 
   local a_repo=${A_REPO:-main}  # env var like $APORTS_EPOCH
@@ -464,12 +463,17 @@ build-many-shards-overlayfs() {
   time for shard_name in "$@"; do
     _build-many-configs-overlayfs "$shard_name" "$APORTS_EPOCH" "$a_repo"
 
-    # Move to _chroot/shard10, etc.
+    # Move layer files to _chroot/shard10/{baseline,osh}/...
     mv -v --no-target-directory _chroot/package-layers _chroot/$shard_name
 
+    # Make it rsync-able in _tmp/aports-build ($BASE_DIR)
     make-shard-tree $shard_name $a_repo
 
+    # Remove big files
     remove-shard-files _chroot/$shard_name
+
+    # TODO: we should publish and clean up after every PACKAGE, rather than
+    # each shard
   done
 }
 
