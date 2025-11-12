@@ -580,7 +580,7 @@ class Decl(_Shared):
         # declaration inside class { }
         func_name = o.name
 
-        # Why can't we get this Type object with self.types[o]?
+        # Why can't we get this Type object with self._GetType(o)?
         c_ret_type, _, _ = GetCReturnType(o.type.ret_type)
 
         self.write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type, func_name)
@@ -607,7 +607,7 @@ class Decl(_Shared):
             # Top level can't have foo.bar = baz
             assert isinstance(lval, NameExpr), lval
             if not util.SkipAssignment(lval.name):
-                c_type = GetCType(self.types[lval])
+                c_type = GetCType(self._GetType(lval))
                 self.write('extern %s %s;\n', c_type, lval.name)
 
         # TODO: we don't traverse here, so _CheckCondition() isn't called
@@ -832,7 +832,7 @@ class Impl(_Shared):
 
         self.write('\n')
 
-        # Why can't we get this Type object with self.types[o]?
+        # Why can't we get this Type object with self._GetType(o)?
         c_ret_type, _, _ = GetCReturnType(o.type.ret_type)
 
         self.write_ind('%s%s %s(', noreturn, c_ret_type, func_name)
@@ -922,7 +922,7 @@ class Impl(_Shared):
 
     def _IsInstantiation(self, o: 'mypy.nodes.CallExpr') -> bool:
         callee_name = o.callee.name
-        callee_type = self.types[o.callee]
+        callee_type = self._GetType(o.callee)
 
         # e.g. int() takes str, float, etc.  It doesn't matter for translation.
         if isinstance(callee_type, Overloaded):
@@ -961,7 +961,7 @@ class Impl(_Shared):
         self.write('%s(%s, %s', macro, o.args[0].value, o.args[1].value)
 
         for arg in o.args[2:]:
-            arg_type = self.types[arg]
+            arg_type = self._GetType(arg)
             self.write(', ')
             if util.IsStr(arg_type):  # TODO: doesn't know it's an Instance
                 self.write('%s->data()' % arg.name)
@@ -1060,7 +1060,7 @@ class Impl(_Shared):
             self.accept(left)
         #log('right_type %s', right_type)
 
-        right_type = self.types[right]
+        right_type = self._GetType(right)
 
         # TODO: Can we restore some type checking?
         if 0:
@@ -1092,8 +1092,8 @@ class Impl(_Shared):
     def oils_visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> None:
         # a + b when a and b are strings.  (Can't use operator overloading
         # because they're pointers.)
-        left_type = self.types[o.left]
-        right_type = self.types[o.right]
+        left_type = self._GetType(o.left)
+        right_type = self._GetType(o.right)
 
         # NOTE: Need GetCType to handle Optional[BigStr*] in ASDL schemas.
         # Could tighten it up later.
@@ -1166,8 +1166,8 @@ class Impl(_Shared):
             self.accept(o.operands[1])
             return
 
-        t0 = self.types[left]
-        t1 = self.types[right]
+        t0 = self._GetType(left)
+        t1 = self._GetType(right)
 
         # 0: not a special case
         # 1: str
@@ -1215,7 +1215,7 @@ class Impl(_Shared):
 
         if operator == 'in':
             if isinstance(right, TupleExpr):
-                left_type = self.types[left]
+                left_type = self._GetType(left)
 
                 equals_func = _EqualsFunc(left_type)
 
@@ -1251,7 +1251,7 @@ class Impl(_Shared):
 
         if operator == 'not in':
             if isinstance(right, TupleExpr):
-                left_type = self.types[left]
+                left_type = self._GetType(left)
                 equals_func = _EqualsFunc(left_type)
 
                 # x not in (1, 2, 3) => (x != 1 && x != 2 && x != 3)
@@ -1302,7 +1302,7 @@ class Impl(_Shared):
         self.write('}')
 
     def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> None:
-        list_type = self.types[o]
+        list_type = self._GetType(o)
         # Note: need a lookup function that understands ListExpr -> Instance
         assert isinstance(list_type, Instance), list_type
 
@@ -1324,7 +1324,7 @@ class Impl(_Shared):
             self.write(')')
 
     def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> None:
-        dict_type = self.types[o]
+        dict_type = self._GetType(o)
         # Note: need a lookup function that understands DictExpr -> Instance
         assert isinstance(dict_type, Instance), dict_type
 
@@ -1352,7 +1352,7 @@ class Impl(_Shared):
         self.write(')')
 
     def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> None:
-        tuple_type = self.types[o]
+        tuple_type = self._GetType(o)
         c_type = GetCType(tuple_type)
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
@@ -1367,7 +1367,7 @@ class Impl(_Shared):
     def visit_index_expr(self, o: 'mypy.nodes.IndexExpr') -> None:
         self.accept(o.base)
 
-        #base_type = self.types[o.base]
+        #base_type = self._GetType(o.base)
         #self.log('*** BASE TYPE %s', base_type)
 
         if isinstance(o.index, SliceExpr):
@@ -1488,11 +1488,11 @@ class Impl(_Shared):
 
         We also have:
 
-            self.d = NewDict() 
+            self.d = NewDict()
         ->
             this->d = Alloc<Dict<int, int>)();
         """
-        lval_type = self.types[lval]
+        lval_type = self._GetType(lval)
         #self.log('lval type %s', lval_type)
 
         # Fix for Dict[str, value]? in ASDL
@@ -1507,7 +1507,7 @@ class Impl(_Shared):
     def _AssignCastImpl(self, lval: Expression, rval: CallExpr) -> None:
         """
         is_downcast_and_shadow idiom:
-        
+
            src = cast(source__SourcedFile, UP_src)
         -> source__SourcedFile* src = static_cast<source__SourcedFile>(UP_src)
         """
@@ -1582,7 +1582,7 @@ class Impl(_Shared):
         """
         Special case for list comprehensions.  Note that the LHS MUST be on the
         LHS, so we can append to it.
-        
+
         y = [i+1 for i in x[1:] if i]
           =>
         y = []
@@ -1600,12 +1600,12 @@ class Impl(_Shared):
                 "Can't use var %r in list comprehension because it would "
                 "be overwritten" % lval.name)
 
-        c_type = GetCType(self.types[lval])
+        c_type = GetCType(self._GetType(lval))
         # Write empty container as initialization.
         assert c_type.endswith('*'), c_type  # Hack
         self.write('Alloc<%s>();\n' % c_type[:-1])
 
-        over_type = self.types[seq]
+        over_type = self._GetType(seq)
         assert isinstance(over_type, Instance), over_type
 
         if over_type.type.fullname == 'builtins.list':
@@ -1679,7 +1679,7 @@ class Impl(_Shared):
                 return
             #self.log('    GLOBAL: %s', lval.name)
 
-            lval_type = self.types[lval]
+            lval_type = self._GetType(lval)
 
             # Global
             #   L = [1, 2]  # type: List[int]
@@ -1760,14 +1760,14 @@ class Impl(_Shared):
                 self._AssignCastImpl(lval, rval)
                 return
 
-            rval_type = self.types[rval]
+            rval_type = self._GetType(rval)
             if (isinstance(rval_type, Instance) and
                     rval_type.type.fullname == 'typing.Iterator'):
                 self._AssignToGenerator(o, lval, rval_type)
                 return
 
         if isinstance(lval, NameExpr):
-            lval_type = self.types[lval]
+            lval_type = self._GetType(lval)
             #c_type = GetCType(lval_type, local=self.indent != 0)
             c_type = GetCType(lval_type)
 
@@ -1810,7 +1810,7 @@ class Impl(_Shared):
             # int x = tup1->at0()
             # BigStr* y = tup1->at1()
 
-            rvalue_type = self.types[rval]
+            rvalue_type = self._GetType(rval)
 
             # type alias upgrade for MyPy 0.780
             if isinstance(rvalue_type, TypeAliasType):
@@ -1952,7 +1952,7 @@ class Impl(_Shared):
             index_expr = o.index
             iterated_over = o.expr
 
-        over_type = self.types[iterated_over]
+        over_type = self._GetType(iterated_over)
 
         if isinstance(over_type, TypeAliasType):
             over_type = over_type.alias.target
@@ -2736,7 +2736,7 @@ class Impl(_Shared):
         if o.expr:
             if not (isinstance(o.expr, NameExpr) and o.expr.name == 'None'):
 
-                # Note: the type of the return expression (self.types[o.expr])
+                # Note: the type of the return expression (self._GetType(o.expr))
                 # and the return type of the FUNCTION are different.  Use the
                 # latter.
                 ret_type = self.current_func_node.type.ret_type
