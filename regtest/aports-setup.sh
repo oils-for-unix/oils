@@ -130,8 +130,8 @@ download-oils() {
 
   rm -f -v _tmp/oils-for-unix.tar
 
-  #wget --no-clobber --directory _tmp "$url"
-  wget --directory _tmp "$url"
+  #wget --no-clobber --directory-prefix _tmp "$url"
+  wget --directory-prefix _tmp "$url"
 }
 
 make-chroot() {
