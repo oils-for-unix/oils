@@ -2509,6 +2509,8 @@ class Impl(_Shared):
         self.write('}\n')
 
     def _WritePopRoots(self, member_vars):
+        # type: (Dict[str, MemberVar]) -> None
+
         # gHeap.PopRoot() for all the pointer members
 
         for name in sorted(member_vars):

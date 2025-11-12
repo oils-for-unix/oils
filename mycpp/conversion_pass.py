@@ -52,7 +52,7 @@ class Pass(visitor.SimpleVisitor):
         all_local_vars: 'cppgen_pass.AllLocalVars',
         module_dot_exprs: DotExprs,
         yield_out_params: Dict[FuncDef, Tuple[str, str]],  # output
-        dunder_exit_special: Dict[FuncDef, bool],
+        dunder_exit_special: Dict[ClassDef, bool],
     ) -> None:
         visitor.SimpleVisitor.__init__(self)
 
@@ -71,7 +71,7 @@ class Pass(visitor.SimpleVisitor):
         self.dunder_exit_special = dunder_exit_special
 
         # Internal state
-        self.inside_dunder_exit = None
+        self.inside_dunder_exit = None  # type: Optional[ClassDef]
         self.current_member_vars: Dict[str, 'cppgen_pass.MemberVar'] = {}
         self.current_local_vars: List[Tuple[str, Type]] = []
 
