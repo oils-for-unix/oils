@@ -63,7 +63,7 @@ them in your `oshrc`.
 [original]: http://www.solipsys.co.uk/new/BashInitialisationFiles.html
 
 I describe my own `oshrc` file on the Wiki: [How To Test
-OSH](https://github.com/ols-for-unix/oils/wiki/How-To-Test-OSH).
+OSH](https://github.com/oils-for-unix/oils/wiki/How-To-Test-OSH).
 
 ### Setting the Prompt
 
