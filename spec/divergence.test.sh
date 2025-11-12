@@ -134,6 +134,52 @@ status=0
 status=0
 ## END
 
+#### set -u failure in eval doesn't exit the parent process
+set -u
+test_function() {
+    x=$1
+}
+
+echo "before"
+eval test_function
+# bash spec says that set -u failures should exit the shell
+# posix spec says that eval shall read and execute a command by the current shell, so the
+# running shell should exit too
+echo "after"
+## status: 1
+## OK ash/dash status: 2
+## BUG mksh/zsh status: 0
+## STDOUT:
+before
+## END
+## BUG zsh/mksh STDOUT:
+before
+after
+## END
+
+#### set -u nested evals
+set -u
+test_function_2() {
+    x=$blarg
+}
+test_function() {
+    eval "test_function_2"
+}
+
+echo "before"
+eval test_function
+echo "after"
+## status: 1
+## OK ash/dash status: 2
+## BUG mksh/zsh status: 0
+## STDOUT:
+before
+## END
+## BUG zsh/mksh STDOUT:
+before
+after
+## END
+
 #### builtin cat crashes a subshell (#2530)
 
 ((/usr/bin/cat </dev/zero; echo $? >&7) | true) 7>&1
