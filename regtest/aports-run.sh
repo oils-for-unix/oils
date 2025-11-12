@@ -9,7 +9,7 @@
 # Common usage:
 #
 #   export APORTS_EPOCH=2025-08-04-foo        # optional override
-#   $0 build-many-shards shard{0..16}         # build all 17 shards in 2 configs
+#   $0 build-many-shards-overlayfs shard{0..16}         # build all 17 shards in 2 configs
 #
 # Also useful:
 #
@@ -451,6 +451,7 @@ remove-shard-files() {
 }
 
 build-many-shards-overlayfs() {
+  echo
   sudo -k
 
   local a_repo=${A_REPO:-main}  # env var like $APORTS_EPOCH
@@ -470,6 +471,21 @@ build-many-shards-overlayfs() {
 
     remove-shard-files _chroot/$shard_name
   done
+}
+
+build-and-stat() {
+  # Measure resource utilization
+  local stat_dir="$BASE_DIR/$APORTS_EPOCH" 
+  mkdir -v -p $stat_dir
+  regtest/stat_log.py --out-dir $stat_dir --sleep-secs 5 &
+  local stat_log_pid=$!
+
+  sleep 0.05  # prevent overlapping sudo prompt
+
+  build-many-shards-overlayfs "$@"
+
+  kill $stat_log_pid
+  wc -l $stat_dir/*stat.txt
 }
 
 make-shard-tree() {
@@ -521,12 +537,12 @@ make-shard-tree() {
     time md5sum $shard_dir/$config/*/home/udu/packages/$a_repo/x86_64/*.apk > $dest_dir/apk.txt \
       || true
 
-    abridge-logs2 $shard_dir/$config $dest_dir
+    abridge-logs $shard_dir/$config $dest_dir
 
   done
 }
 
-abridge-logs2() {
+abridge-logs() {
   local config_src_dir=${1:-_chroot/shardD/osh-as-sh}
   local dest_dir=${2:-$BASE_DIR/shardD/osh-as-sh}
 
@@ -575,16 +591,6 @@ abridge-logs2() {
   du --si -s $log_dest_dir
 }
 
-compare-speed() {
-  ### reusing the chroot reuses is a LITTLE faster, but not a lot
-
-  # single chroot
-  build-many-shards shardC
-
-  # 3 chroots + overlayfs mounts
-  build-many-shards2 shardC
-}
-
 demo-build() {
   local pkg=${1:-gzip}  # in shardA, uses many cores
   local do_pin=${2:-}
@@ -613,6 +619,19 @@ test-taskset() {
 
   demo-build $pkg ''
   demo-build $pkg T
+}
+
+test-stat-log() {
+  if false; then
+    regtest/stat_log.py
+    return
+  fi
+
+  regtest/stat_log.py &
+  local pid=$!
+  sleep 3.1  # should get 3 entries
+  kill $pid
+  wc -l _tmp/*stat.txt
 }
 
 task-five "$@"
