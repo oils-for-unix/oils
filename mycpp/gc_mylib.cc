@@ -1,6 +1,7 @@
 #include "mycpp/gc_mylib.h"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <math.h>
 #include <stdio.h>
 #include <unistd.h>  // isatty
@@ -104,51 +105,55 @@ Tuple2<BigStr*, BigStr*> split_once(BigStr* s, BigStr* delim) {
 LineReader* gStdin;
 
 LineReader* open(BigStr* path) {
-  // TODO: Don't use C I/O; use POSIX I/O!
-  FILE* f = fopen(path->data_, "r");
-  if (f == nullptr) {
+  int fd = ::open(path->data_, O_RDONLY);
+
+  if (fd < 0) {
     throw Alloc<IOError>(errno);
   }
 
-  return reinterpret_cast<LineReader*>(Alloc<CFile>(f));
+  return reinterpret_cast<LineReader*>(Alloc<CFile>(fd));
 }
 
 BigStr* CFile::readline() {
-  char* line = nullptr;
-  size_t allocated_size = 0;  // unused
-
   // Reset errno because we turn the EOF error into empty string (like Python).
   errno = 0;
-  ssize_t len = getline(&line, &allocated_size, f_);
-  // log("getline = %d", len);
-  if (len < 0) {
-    // Reset EOF flag so the next readline() will get a line.
-    clearerr(f_);
 
-    // man page says the buffer should be freed even if getline fails
-    free(line);
+  size_t i = 0;
+  bool null_terminated = false;
+  for (; i < 131071; i++) {
+    ssize_t len = read(fd_, &(line_[i]), 1);
+    if (len == 0) {
+      line_[i] = '\0';
+      null_terminated = true;
+      break;
+    } else if (line_[i] == '\n') {
+      line_[i + 1] = '\0';
+      i++;
+      null_terminated = true;
+      break;
+    } else if (len < 0) {
+      // Raise KeyboardInterrupt like mylib.Stdin().readline() does in Python!
+      // This affects _PlainPromptInput() in frontend/reader.py.
+      if (errno == EINTR && iolib::gSignalSafe->PollUntrappedSigInt()) {
+        throw Alloc<KeyboardInterrupt>();
+      }
 
-    // Raise KeyboardInterrupt like mylib.Stdin().readline() does in Python!
-    // This affects _PlainPromptInput() in frontend/reader.py.
-    if (errno == EINTR && iolib::gSignalSafe->PollUntrappedSigInt()) {
-      throw Alloc<KeyboardInterrupt>();
+      if (errno != 0) {  // Unexpected error
+        throw Alloc<IOError>(errno);
+      }
+      return kEmptyString;  // Indicate EOF with empty string, like Python
     }
-
-    if (errno != 0) {  // Unexpected error
-      // log("getline() error: %s", strerror(errno));
-      throw Alloc<IOError>(errno);
-    }
-    return kEmptyString;  // Indicate EOF with empty string, like Python
   }
+  if (!null_terminated)
+    throw Alloc<IOError>(90);  // Line too long, didn't reach the newline char
 
-  // Note: getline() NUL-terminates the buffer
-  BigStr* result = ::StrFromC(line, len);
-  free(line);
+  BigStr* result = ::StrFromC(line_, i);
+
   return result;
 }
 
 bool CFile::isatty() {
-  return ::isatty(fileno(f_));
+  return ::isatty(fd_);
 }
 
 // Problem: most BigStr methods like index() and slice() COPY so they have a
@@ -197,7 +202,7 @@ Writer* gStderr;
 void CFile::write(BigStr* s) {
   // Writes can be short!
   int n = len(s);
-  int num_written = ::fwrite(s->data_, sizeof(char), n, f_);
+  int num_written = ::write(fd_, s->data_, n);
   // Similar to CPython fileobject.c
   if (num_written != n) {
     throw Alloc<IOError>(errno);
@@ -205,13 +210,11 @@ void CFile::write(BigStr* s) {
 }
 
 void CFile::flush() {
-  if (::fflush(f_) != 0) {
-    throw Alloc<IOError>(errno);
-  }
+  // no-op for now
 }
 
 void CFile::close() {
-  if (::fclose(f_) != 0) {
+  if (::close(fd_) != 0) {
     throw Alloc<IOError>(errno);
   }
 }
