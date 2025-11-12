@@ -479,9 +479,9 @@ build-many-shards-overlayfs() {
 
 build-and-stat() {
   # Measure resource utilization
-  local stat_dir="$BASE_DIR/$APORTS_EPOCH" 
-  mkdir -v -p $stat_dir
-  regtest/stat_log.py --out-dir $stat_dir --sleep-secs 5 &
+  local proc_dir="$BASE_DIR/$APORTS_EPOCH/proc-log"
+  mkdir -v -p $proc_dir
+  regtest/stat_log.py --out-dir $proc_dir --sleep-secs 5 &
   local stat_log_pid=$!
 
   sleep 0.05  # prevent overlapping sudo prompt
@@ -489,7 +489,7 @@ build-and-stat() {
   build-many-shards-overlayfs "$@"
 
   kill $stat_log_pid
-  wc -l $stat_dir/*stat.txt
+  wc -l $proc_dir/*.txt
 }
 
 make-shard-tree() {
@@ -625,17 +625,15 @@ test-taskset() {
   demo-build $pkg T
 }
 
-test-stat-log() {
-  if false; then
-    regtest/stat_log.py
-    return
-  fi
+test-proc-log() {
+  local out_dir=_tmp/proc-log
+  mkdir -p $out_dir
 
-  regtest/stat_log.py &
+  regtest/stat_log.py --out-dir $out_dir &
   local pid=$!
   sleep 3.1  # should get 3 entries
   kill $pid
-  wc -l _tmp/*stat.txt
+  wc -l $out_dir/*.txt
 }
 
 task-five "$@"
