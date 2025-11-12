@@ -180,6 +180,18 @@ before
 after
 ## END
 
+#### set -u no eval
+set -u
+
+echo "before"
+x=$blarg
+echo "after"
+## status: 1
+## OK ash/dash status: 2
+## STDOUT:
+before
+## END
+
 #### builtin cat crashes a subshell (#2530)
 
 ((/usr/bin/cat </dev/zero; echo $? >&7) | true) 7>&1
