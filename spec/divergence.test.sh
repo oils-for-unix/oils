@@ -192,6 +192,22 @@ echo "after"
 before
 ## END
 
+#### exit under eval should exit the parent process
+set -u
+test_function() {
+    exit 1
+}
+
+echo "before"
+eval test_function
+# posix spec says that eval shall read and execute a command by the current shell, so the
+# running shell should exit too
+echo "after"
+## status: 1
+## STDOUT:
+before
+## END
+
 #### builtin cat crashes a subshell (#2530)
 
 ((/usr/bin/cat </dev/zero; echo $? >&7) | true) 7>&1
