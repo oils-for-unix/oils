@@ -481,14 +481,14 @@ build-and-stat() {
   # Measure resource utilization
   local proc_dir="$BASE_DIR/$APORTS_EPOCH/proc-log"
   mkdir -v -p $proc_dir
-  regtest/stat_log.py --out-dir $proc_dir --sleep-secs 5 &
-  local stat_log_pid=$!
+  regtest/proc_log.py --out-dir $proc_dir --sleep-secs 5 &
+  local proc_log_pid=$!
 
   sleep 0.05  # prevent overlapping sudo prompt
 
   build-many-shards-overlayfs "$@"
 
-  kill $stat_log_pid
+  kill -s TERM $proc_log_pid
   wc -l $proc_dir/*.txt
 }
 
@@ -629,7 +629,7 @@ test-proc-log() {
   local out_dir=_tmp/proc-log
   mkdir -p $out_dir
 
-  regtest/stat_log.py --out-dir $out_dir &
+  regtest/proc_log.py --out-dir $out_dir &
   local pid=$!
   sleep 3.1  # should get 3 entries
   kill $pid
