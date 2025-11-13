@@ -654,6 +654,10 @@ ysh-command-sub() {
   test/spec-py.sh run-file ysh-command-sub "$@"
 }
 
+ysh-command() {
+  test/spec-py.sh run-file ysh-command "$@"
+}
+
 ysh-completion() {
   test/spec-py.sh run-file ysh-completion "$@"
 }
