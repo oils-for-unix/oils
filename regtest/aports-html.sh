@@ -833,7 +833,7 @@ sync-old-wwz() {
   mkdir -p $EDIT_DIR
   rm -f -v $EDIT_DIR/$wwz
 
-  wget --directory $EDIT_DIR \
+  wget --directory-prefix $EDIT_DIR \
     "https://$WEB_HOST/aports-build/$wwz"
 
   ls -l $EDIT_DIR

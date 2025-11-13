@@ -33,7 +33,7 @@ readonly BASE_DIR=$REPO_ROOT/$BASE_DIR_RELATIVE
 readonly PY_CONF=$REPO_ROOT/Python-2.7.13/configure
 
 download() {
-  wget --no-clobber --directory $BASE_DIR \
+  wget --no-clobber --directory-prefix $BASE_DIR \
     'https://www.oilshell.org/blob/testdata/util-linux-2.40.tar.xz'
   cd $BASE_DIR
   tar --verbose -x --xz < util-linux-*.xz

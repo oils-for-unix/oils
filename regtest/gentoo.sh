@@ -19,8 +19,8 @@ readonly CHROOT_DIR=_chroot/gentoo
 readonly PORTAGE_URL='http://distfiles.gentoo.org/snapshots/portage-20180202.tar.xz'
 
 download() {
-  wget --no-clobber --directory _tmp $ROOTFS_URL
-  wget --no-clobber --directory _tmp $PORTAGE_URL
+  wget --no-clobber --directory-prefix _tmp $ROOTFS_URL
+  wget --no-clobber --directory-prefix _tmp $PORTAGE_URL
 }
 
 _extract() {

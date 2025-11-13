@@ -50,7 +50,7 @@ readonly MANDOC_DIR='_deps/mdocml-1.14.1'
 
 download-mandoc() {
   mkdir -p _deps
-  wget --no-clobber --directory _deps \
+  wget --no-clobber --directory-prefix _deps \
     https://mandoc.bsd.lv/snapshots/mdocml-1.14.1.tar.gz
 }
 
