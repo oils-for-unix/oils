@@ -163,6 +163,7 @@ package-dirs() {
           C) package_filter='^lz' ;;    # 3 packages
           D) package_filter='^jq$' ;;   # produces autotools test-suite.log
           E) package_filter='^py3-p' ;;   # many packages in parallel
+          F) package_filter='^py3-pathspec' ;;   # very fast package
           P) package_filter='^xz$|^shorewall' ;;   # patches
           *) package_filter='^perl-http-daemon' ;;   # test out perl
         esac
@@ -334,22 +335,6 @@ build-package-overlayfs() {
   unmount-loop $merged
 }
 
-# old serial version
-OLD-build-many-packages-overlayfs() {
-  local package_filter=${1:-}
-  local config=${2:-baseline}
-  local a_repo=${3:-main}
-
-  local -a package_dirs
-  package_dirs=( $(package-dirs "$package_filter" "$a_repo") )
-
-  banner "Building ${#package_dirs[@]} packages (filter=$package_filter a_repo=$a_repo)"
-
-  for pkg in "${package_dirs[@]}"; do
-    build-package-overlayfs "$config" "$pkg" "$a_repo"
-  done 
-}
-
 build-pkg() {
   ### trivial wrapper around build-package-overlayfs - change arg order for xargs
   local config=${1:-baseline}
@@ -357,6 +342,118 @@ build-pkg() {
   local pkg=${3:-lua5.4}
 
   build-package-overlayfs "$config" "$pkg" "$a_repo"
+
+  # TODO:
+  # - we should only do this after we've done BOTH configs, so it appears
+  #   atomically
+  save-package-files $config $a_repo $pkg
+
+  # TODO: blow away the layer dir, since we saved the "tombstone".
+  # We're not doing this now because we're still reporting off DEPRECATED shard
+  # files.
+}
+
+LOG_SIZE_THRESHOLD=$(( 500 * 1000 ))  # 500 KB
+#LOG_SIZE_THRESHOLD=$(( 1 * 1000 ))
+
+abridge-one-log() {
+  local src=$1
+  local dest=$2
+
+  local size
+  size=$(stat --format '%s' $src)
+  if test $size -lt $LOG_SIZE_THRESHOLD; then
+    cp --verbose $src $dest
+  else
+    # Bug fix: abridging to 1000 lines isn't sufficient.  We got some logs
+    # that were hundreds of MB, with less than 1000 lines!
+    { echo "*** This log is abridged to its last $LOG_SIZE_THRESHOLD bytes"
+      echo
+      tail --bytes $LOG_SIZE_THRESHOLD $src
+    } > $dest
+  fi
+}
+
+# save-package-files creates a tree we can rsync
+# For EACH PACKAGE, without shards
+#
+# TODO: Both baseline and osh-as-sh should appear atomically?
+
+# Source tree:
+#
+# _chroot/package-layers/
+#   baseline/
+#     jq/
+#       home/udu/
+#         oils/_tmp/aports-guest/
+#           jq.log.txt
+#           jq.task.tsv
+#         packages/main/x86_64
+#           jq-*.apk
+#         aports/main/jq/
+#           src/jq-1.8.0/test-suite.log
+#
+# _tmp/aports-build/ 
+#   2025-11-12/
+#     shard0/   # TODO: remove shards
+#       baseline/
+# NEW:
+#         apk/
+#           jq.apk.txt        # md5sum
+#         layer/
+#           jq.tombstone.txt  # find '%s %P\n'
+#         task/
+#           jq.task.tsv
+# EXISTING:
+#         apk.txt
+#         tasks.tsv
+#         log/
+#           jq.log.txt
+#         test-suite/
+#           jq/  TODO: support multiple logs
+#             test-suite.log 
+
+save-package-files() {
+  ### Copy some files from _chroot/package-layers/ -> _tmp/aports-build
+
+  local config=${1:-baseline}
+  local a_repo=${2:-main}
+  local pkg=${3:-jq}
+
+  local layer_dir=_chroot/package-layers/$config/$pkg
+  local dest_dir=$BASE_DIR/$APORTS_EPOCH/$config
+
+  # 5 directories
+  mkdir -p $dest_dir/{apk,layer,task,log,test-suite}
+
+  cp --verbose \
+    $layer_dir/home/udu/oils/_tmp/aports-guest/$pkg.task.tsv \
+    $dest_dir/task
+
+  abridge-one-log \
+    $layer_dir/home/udu/oils/_tmp/aports-guest/$pkg.log.txt \
+    $dest_dir/log/$pkg.log.txt
+
+  # Abridge this log too
+  find $layer_dir/home/udu/aports/$a_repo/$pkg -name 'test-suite.log' |
+  while read -r log_src; do
+    local test_suite_dest_dir=$dest_dir/test-suite/$pkg
+    mkdir -p $test_suite_dest_dir
+    abridge-one-log \
+      $log_src \
+      $test_suite_dest_dir/test-suite.log.txt
+  done
+
+  md5sum $layer_dir/home/udu/packages/$a_repo/x86_64/*.apk \
+    > $dest_dir/apk/$pkg.apk.txt || true  # allow failure if nothing built
+
+  find $layer_dir -printf '%s %P\n' \
+    > $dest_dir/layer/$pkg.tombstone.txt || true
+
+  #tree $dest_dir
+
+  # log.txt
+  # log.txt
 }
 
 NUM_CORES=$(( $(nproc) ))
@@ -436,8 +533,6 @@ _build-many-configs-overlayfs() {
 remove-shard-files() {
   local shard_dir=${1:-_chroot/shardC}
 
-  log "Removing big files in shard $shard_dir"
-
   # For all packages packages, for baseline and osh-as-sh, clean up the aports source dir
   # For linux, clang, etc. it becomes MANY GIGABYTES
   # 
@@ -447,7 +542,11 @@ remove-shard-files() {
   # rm: cannot remove '_chroot/shard6/baseline/llvm19/home/udu/aports/main/llvm19/src/llvm-project-19.1.7.src/build/lib': Directory not empty
   # real    1041m46.464s
 
-  sudo rm -r -f $shard_dir/*/*/home/udu/aports/ || true
+  #log "Removing big files in shard $shard_dir"
+  #sudo rm -r -f $shard_dir/*/*/home/udu/aports/ || true
+
+  log "Removing all files in $shard_dir"
+  sudo rm -r -f $shard_dir || true
 }
 
 build-many-shards-overlayfs() {
@@ -495,7 +594,7 @@ build-and-stat() {
 make-shard-tree() {
   ### Put outputs in rsync-able format, for a SINGLE shard
 
-  # The dire structure is like this:
+  # The dir structure is like this:
   #
   # _tmp/aports-build/
   #   2025-09-10-overlayfs/
@@ -533,6 +632,26 @@ make-shard-tree() {
     local dest_dir=$BASE_DIR/$epoch/$shard_name/$config
     mkdir -p $dest_dir
     #ls -l $shard_dir/$config
+
+    # Four outputs
+    # 1) log.txt for each package
+    # 2) Optional test-suite.txt for each package
+    # 3) merged tasks.tsv
+    #    - comes from .task.tsv
+    # 4) merged apk.txt
+    #
+    # So 3 and 4 should not be merged yet
+    #
+    # _tmp/aports-build/
+    #   2025-11-12/
+    #     shardP/
+    #       baseline/
+    #         log/
+    #         test-suite/
+    #         apk.txt
+    #         tasks.tsv
+    #
+    # We want to
 
     time python3 devtools/tsv_concat.py \
       $shard_dir/$config/*/home/udu/oils/_tmp/aports-guest/*.task.tsv > $dest_dir/tasks.tsv
