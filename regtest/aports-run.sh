@@ -363,7 +363,8 @@ abridge-one-log() {
   local size
   size=$(stat --format '%s' $src)
   if test $size -lt $LOG_SIZE_THRESHOLD; then
-    cp --verbose $src $dest
+    #cp --verbose $src $dest
+    cp $src $dest
   else
     # Bug fix: abridging to 1000 lines isn't sufficient.  We got some logs
     # that were hundreds of MB, with less than 1000 lines!
@@ -426,7 +427,7 @@ save-package-files() {
   # 5 directories
   mkdir -p $dest_dir/{apk,layer,task,log,test-suite}
 
-  cp --verbose \
+  cp \
     $layer_dir/home/udu/oils/_tmp/aports-guest/$pkg.task.tsv \
     $dest_dir/task
 
@@ -435,7 +436,7 @@ save-package-files() {
     $dest_dir/log/$pkg.log.txt
 
   # Abridge this log too
-  find $layer_dir/home/udu/aports/$a_repo/$pkg -name 'test-suite.log' |
+  { find $layer_dir/home/udu/aports/$a_repo/$pkg -name 'test-suite.log' 2> /dev/null || true; } |
   while read -r log_src; do
     local test_suite_dest_dir=$dest_dir/test-suite/$pkg
     mkdir -p $test_suite_dest_dir
@@ -445,10 +446,11 @@ save-package-files() {
   done
 
   md5sum $layer_dir/home/udu/packages/$a_repo/x86_64/*.apk \
-    > $dest_dir/apk/$pkg.apk.txt || true  # allow failure if nothing built
+    > $dest_dir/apk/$pkg.apk.txt 2> /dev/null || true  # allow failure if nothing built
 
-  find $layer_dir -printf '%s %P\n' \
-    > $dest_dir/layer/$pkg.tombstone.txt || true
+  # Truncate large listings - e.g. clang packages have over 120K files
+  { find $layer_dir -printf '%s %P\n' 2> /dev/null || true; } |
+    head -n 1000 > $dest_dir/layer/$pkg.tombstone.txt 
 
   #tree $dest_dir
 
@@ -657,8 +659,8 @@ make-shard-tree() {
       $shard_dir/$config/*/home/udu/oils/_tmp/aports-guest/*.task.tsv > $dest_dir/tasks.tsv
 
     # Allowed to fail if zero .apk are built
-    time md5sum $shard_dir/$config/*/home/udu/packages/$a_repo/x86_64/*.apk > $dest_dir/apk.txt \
-      || true
+    time md5sum $shard_dir/$config/*/home/udu/packages/$a_repo/x86_64/*.apk \
+      > $dest_dir/apk.txt 2> /dev/null || true
 
     abridge-logs $shard_dir/$config $dest_dir
 
@@ -678,7 +680,7 @@ abridge-logs() {
   # this assumes the build process doesn't create *.log.txt
   # test-suite.log is the name used by the autotools test runner - we want to save those too
   # ignore permission errors with || true
-  { find $config_src_dir -name '*.log.txt' -a -printf '%s\t%P\n' || true; } |
+  { find $config_src_dir -name '*.log.txt' -a -printf '%s\t%P\n' 2> /dev/null || true; } |
   while read -r size path; do
     local src=$config_src_dir/$path
     # Remove text until last slash (shortest match)
@@ -687,7 +689,7 @@ abridge-logs() {
     local dest=$log_dest_dir/$filename
 
     if test "$size" -lt "$threshold"; then
-      cp -v $src $dest
+      cp $src $dest
     else
       # Bug fix: abriding to 1000 lines isn't sufficient.  We got some logs
       # that were hundreds of MB, with less than 1000 lines!
@@ -698,7 +700,7 @@ abridge-logs() {
     fi
   done
 
-  { find $config_src_dir -name 'test-suite.log' -a -printf '%P\n' || true; } |
+  { find $config_src_dir -name 'test-suite.log' -a -printf '%P\n' 2> /dev/null || true; } |
   while read -r path; do
     local src=$config_src_dir/$path
 
