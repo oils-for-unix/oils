@@ -557,7 +557,7 @@ build-many-shards-overlayfs() {
   local a_repo=${A_REPO:-main}  # env var like $APORTS_EPOCH
 
   # Clean up old runs
-  sudo rm -r -f _chroot/shard* _chroot/disagree*
+  sudo rm -r -f _chroot/package-layers _chroot/shard* _chroot/disagree*
 
   banner "$APORTS_EPOCH $a_repo: building shards: $*"
 
@@ -689,7 +689,7 @@ abridge-logs() {
     local dest=$log_dest_dir/$filename
 
     if test "$size" -lt "$threshold"; then
-      cp $src $dest
+      cp -v $src $dest
     else
       # Bug fix: abriding to 1000 lines isn't sufficient.  We got some logs
       # that were hundreds of MB, with less than 1000 lines!
