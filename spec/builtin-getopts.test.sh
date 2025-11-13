@@ -389,3 +389,76 @@ err:?
 err:?
 err:?
 ## END
+
+#### getopts processes options before '--' normally #2579
+set -- "-a" "--"
+while getopts "a" name; do
+        case "$name" in
+                a)
+                        echo "a"
+                        ;;
+                ?)
+                        echo "?"
+                        ;;
+        esac
+done
+## STDOUT:
+a
+## END
+
+#### getopts sets name to '?' when encountering '--' #2579
+set -- "-a" "--"
+while getopts "a" name; do
+        case "$name" in
+                a)
+                        echo "a"
+                        ;;
+                ?)
+                        echo "?"
+                        ;;
+        esac
+done
+echo "name=$name"
+## STDOUT:
+a
+name=?
+## END
+
+#### getopts sets OPTIND to first operand after '--' #2579
+set -- "-a" "--" "-c" "operand"
+while getopts "a" name; do
+        case "$name" in
+                a)
+                        echo "a"
+                        ;;
+                ?)
+                        echo "?"
+                        ;;
+        esac
+done
+echo "$OPTIND"
+## STDOUT:
+a
+3
+## END
+
+#### getopts leaves all args after '--' as operands (including '-c') #2579
+set -- "-a" "--" "-c" "operand"
+while getopts "a" name; do
+        case "$name" in
+                a)
+                        echo "a"
+                        ;;
+                ?)
+                        echo "?"
+                        ;;
+        esac
+done
+shift $((OPTIND - 1))
+echo "$#"
+echo "$@"
+## STDOUT:
+a
+2
+-c operand
+## END
