@@ -297,7 +297,7 @@ build-package-overlayfs() {
     $merged
 
   local -a prefix
-  if test -n "$XARGS_SLOT"; then
+  if test -n "${XARGS_SLOT:-}"; then
     local x=$XARGS_SLOT
 
     # run slot 0 on cores 0 and 1
