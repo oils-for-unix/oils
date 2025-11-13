@@ -108,6 +108,9 @@ BEGIN {
   # py3-adblock
   patterns["#2562"] = "Invalid descriptor"
 
+  # makepasswd
+  patterns["#2579"] = "Usage: docbook.sh"
+
   #
   # BUGS that only occur with OSH as BUSYBOX ASH
   #
