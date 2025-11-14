@@ -1446,16 +1446,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if self.exec_opts.nounset():
             tok_str = lexer.TokenVal(name_tok)
             name = tok_str[1:] if tok_str.startswith('$') else tok_str
-            # TODO: probably turn this into its own special error that moves this behaviour into cmd_eval.py like errexit
-            if not self.exec_opts.interactive():
-                self.errfmt.PrettyPrintError(
-                    error.FatalRuntime(1, 'Undefined variable %r' % name, name_tok),
-                    prefix='fatal: '
-                )
-                # TODO: does using UserExit have any unexpected side-effects?
-                raise util.UserExit(1)
-            else:
-                e_die('Undefined variable %r' % name, name_tok)
+            # same as e_die, except when non-interactive it exits
+            raise error.NoUnset(1, 'Undefined variable %r' % name, name_tok)
 
         return value.Str('')
 
