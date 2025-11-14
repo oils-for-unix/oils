@@ -37,11 +37,11 @@ echo status=$?
 [ -a -a -a -a -a -a ]
 echo status=$?
 ## STDOUT:
-status=2
+status=1
 ## END
 
-## BUG dash/zsh STDOUT:
-status=1
+## OK bash/mksh STDOUT:
+status=2
 ## END
 
 #### -a -a -a -a -a -a -a

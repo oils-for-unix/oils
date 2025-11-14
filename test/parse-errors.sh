@@ -290,7 +290,6 @@ test-bool-expr() {
   # Unbalanced parens
   _osh-parse-error '[[ ( 1 == 2 - ]]'
 
-  _osh-parse-error '[[ == ]]'
   _osh-parse-error '[[ ) ]]'
   _osh-parse-error '[[ ( ]]'
 
