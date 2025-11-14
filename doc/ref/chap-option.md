@@ -224,26 +224,27 @@ simply quote it like `'@literal'` to fix the problem.
 
 Details on each option:
 
-      parse_at                echo @array @[arrayfunc(x, y)]
-      parse_brace             if true { ... }; cd ~/src { ... }
-      parse_equals            x = 'val' in Caps { } config blocks
-      parse_paren             if (x > 0) ...
-      parse_proc              proc p { ... }
-      parse_triple_quote      """$x"""  '''x''' (command mode)
-      parse_ysh_string        echo r'\' u'\\' b'\\' (command mode)
-      command_sub_errexit     Synchronous errexit check
-      process_sub_fail        Analogous to pipefail for process subs
-      sigpipe_status_ok       status 141 -> 0 in pipelines
-      simple_word_eval        No splitting, static globbing
-      xtrace_rich             Hierarchical and process tracing
-      no_xtrace_osh           Disable OSH tracing with +
-      no_dash_glob            Avoid globbing files like -rf
-      env_obj                 Init ENV Obj at startup; use it when starting
-                              child processes
-      init_ysh_globals        Init ARGV List at startup
-      for_loop_frames         YSH can create closures from loop vars
-      verbose_errexit         Whether to print detailed errors
-      verbose_warn            Print various warnings to stderr
+      parse_at                   echo @array @[arrayfunc(x, y)]
+      parse_brace                if true { ... }; cd ~/src { ... }
+      parse_equals               x = 'val' in Caps { } config blocks
+      parse_paren                if (x > 0) ...
+      parse_proc                 proc p { ... }
+      parse_triple_quote         """$x"""  '''x''' (command mode)
+      parse_ysh_string           echo r'\' u'\\' b'\\' (command mode)
+      parse_ysh_expr_sub         $[] is YSH expression sub, not synonym for $(( ))
+      command_sub_errexit        Synchronous errexit check
+      process_sub_fail           Analogous to pipefail for process subs
+      sigpipe_status_ok          status 141 -> 0 in pipelines
+      simple_word_eval           No splitting, static globbing
+      xtrace_rich                Hierarchical and process tracing
+      no_xtrace_osh              Disable OSH tracing with +
+      no_dash_glob               Avoid globbing files like -rf
+      env_obj                    Init ENV Obj at startup; use it when starting
+                                 child processes
+      init_ysh_globals           Init ARGV List at startup
+      for_loop_frames            YSH can create closures from loop vars
+      verbose_errexit            Whether to print detailed errors
+      verbose_warn               Print various warnings to stderr
 
 <h3 id="ysh:all">ysh:all</h3>
 

@@ -837,7 +837,11 @@ class WordParser(WordEmitter):
             # return self._ReadCommandSub(Id.Left_DollarParen, d_quoted=True)
 
         if self.token_type == Id.Left_DollarBracket:
-            return self._ReadExprSub(lex_mode_e.DQ)
+
+            if self.parse_opts.parse_ysh_expr_sub():
+                return self._ReadExprSub(lex_mode_e.DQ)
+            else:
+                return self._ReadArithSub(end_id=Id.Arith_RBracket)
 
         if self.token_type == Id.Left_DollarBraceZsh:
             return self._ReadZshVarSub(self.cur_token)
@@ -970,7 +974,10 @@ class WordParser(WordEmitter):
             # return self._ReadCommandSub(Id.Left_DollarParen, d_quoted=True)
 
         if self.token_type == Id.Left_DollarBracket:
-            return self._ReadExprSub(lex_mode_e.ShCommand)
+            if self.parse_opts.parse_ysh_expr_sub():
+                return self._ReadExprSub(lex_mode_e.ShCommand)
+            else:
+                return self._ReadArithSub(end_id=Id.Arith_RBracket)
 
         if self.token_type == Id.Left_DollarBraceZsh:
             return self._ReadZshVarSub(self.cur_token)
@@ -1544,12 +1551,14 @@ class WordParser(WordEmitter):
                 loc.Word(self.a_parser.cur_word))
         return anode
 
-    def _ReadArithSub(self):
-        # type: () -> word_part.ArithSub
+    def _ReadArithSub(self, end_id=Id.Arith_RParen):
+        # type: (Id_t) -> word_part.ArithSub
         """Read an arith substitution, which contains an arith expression, e.g.
 
         $((a + 1)).
         """
+        assert end_id in (Id.Arith_RParen, Id.Arith_RBracket)
+
         left_tok = self.cur_token
 
         # The second one needs to be disambiguated in stuff like stuff like:
@@ -1568,14 +1577,17 @@ class WordParser(WordEmitter):
 
         self._NextNonSpace()
         if self.token_type != Id.Arith_RParen:
-            anode = self._ReadArithExpr(Id.Arith_RParen)
+            anode = self._ReadArithExpr(end_id)
 
         self._SetNext(lex_mode_e.ShCommand)
 
-        # Ensure we get closing )
-        self._GetToken()
-        if self.token_type != Id.Right_DollarDParen:
-            p_die('Expected second ) to end arith sub', self.cur_token)
+        if end_id == Id.Arith_RParen:
+            # Ensure we get closing ) if we are looking for double ))
+            # (In backwards compat mode, ] can also be the closing bracket, and
+            # it would already be the current token, no need to skip further
+            self._GetToken()
+            if self.token_type != Id.Right_DollarDParen:
+                p_die('Expected second ) to end arith sub', self.cur_token)
 
         right_tok = self.cur_token
         return word_part.ArithSub(left_tok, anode, right_tok)
