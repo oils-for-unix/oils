@@ -1,4 +1,6 @@
 #### bool() conversion
+shopt --set parse_ysh_expr_sub
+
 echo "$[bool(1234)]"
 echo "$[bool(0)]"
 echo "$[bool('foo')]"
@@ -35,6 +37,8 @@ true
 
 
 #### int() conversion
+shopt --set parse_ysh_expr_sub
+
 echo "$[int(1234)]"
 echo "$[int('1234')]"
 echo "$[int(1.234)]"
@@ -64,6 +68,8 @@ code=3
 ## END
 
 #### float() conversion
+shopt --set parse_ysh_expr_sub
+
 echo "$[float(1234)]"
 echo "$[float('1.234')]"
 echo "$[float(2.345)]"
@@ -90,6 +96,8 @@ inf
 ## END
 
 #### str() conversion
+shopt --set parse_ysh_expr_sub
+
 echo $[str(1234)]
 echo $[str(1.234)]
 echo $[str('foo')]
@@ -131,6 +139,8 @@ json write (dict(foo))
 ## END
 
 #### dict() does shallow copy
+shopt --set parse_ysh_expr_sub
+
 var d = {'a': 1}
 var d2 = d
 setvar d2['b'] = 2
@@ -149,6 +159,8 @@ true
 ## END
 
 #### list() does shallow copy
+shopt --set parse_ysh_expr_sub
+
 var l = [1]
 var l2 = l
 call l2->append(2)

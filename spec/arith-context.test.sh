@@ -91,15 +91,43 @@ echo $a $((1 + (2 * (3+4))))
 15 15
 ## END
 
-#### ExprSub $[] happens to behave the same on simple cases
-echo $[1 + 2] "$[3 * 4]"
+#### $[ is $((
+echo $[1+2]
+
 ## STDOUT:
-3 12
+3
 ## END
-## N-I mksh STDOUT:
-$[1 + 2] $[3 * 4]
+## BUG dash/mksh STDOUT:
+$[1+2]
 ## END
 
+#### $[$var is $(($var (#2426)
+var=1
+echo $[$var+2]
+
+## STDOUT:
+3
+## END
+## BUG dash/mksh STDOUT:
+$[1+2]
+## END
+
+#### $[$undefined] is $(($undefined (#2566)
+a[0]=$[1+3]
+b[0]=$[b[0]]
+c[0]=$[b[0]]
+echo ${c[0]}
+
+## STDOUT:
+0
+## END
+## BUG dash/zsh STDOUT:
+## END
+## BUG mksh STDOUT:
+$[b[0]]
+## END
+## BUG zsh status: 1
+## BUG dash status: 2
 
 #### Empty expression (( ))  $(( ))
 

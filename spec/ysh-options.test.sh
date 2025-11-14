@@ -189,6 +189,7 @@ shopt -s parse_func
 shopt -s parse_paren
 shopt -s parse_proc
 shopt -s parse_triple_quote
+shopt -s parse_ysh_expr_sub
 shopt -s parse_ysh_string
 shopt -s pipefail
 shopt -s process_sub_fail

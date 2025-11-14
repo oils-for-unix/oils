@@ -164,6 +164,8 @@ x=4
 
 #### Augmented assignment of Dict
 
+shopt -s parse_ysh_expr_sub
+
 var d = {x: 42}
 
 setvar d['x'] += 1.5
@@ -204,6 +206,8 @@ echo @mylist
 ## END
 
 #### Dict with nonexistent key (bug fix)
+
+shopt -s parse_ysh_expr_sub
 
 var d = {x: 42}
 
