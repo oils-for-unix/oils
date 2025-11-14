@@ -192,6 +192,18 @@ echo "after"
 before
 ## END
 
+#### set -u no eval
+set -u
+
+echo "before"
+blarghjxjxjx
+echo "after"
+## status: 0
+## STDOUT:
+before
+after
+## END
+
 #### exit under eval should exit the parent process
 set -u
 test_function() {

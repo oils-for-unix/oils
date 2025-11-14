@@ -1442,13 +1442,22 @@ class AbstractWordEvaluator(StringWordEvaluator):
                       array_tok)
             else:
                 return value.InternalStringArray([])
-        else:
-            if self.exec_opts.nounset():
-                tok_str = lexer.TokenVal(name_tok)
-                name = tok_str[1:] if tok_str.startswith('$') else tok_str
-                e_die('Undefined variable %r' % name, name_tok)
+
+        if self.exec_opts.nounset():
+            tok_str = lexer.TokenVal(name_tok)
+            name = tok_str[1:] if tok_str.startswith('$') else tok_str
+            # TODO: probably turn this into its own special error that moves this behaviour into cmd_eval.py like errexit
+            if not self.exec_opts.interactive():
+                self.errfmt.PrettyPrintError(
+                    error.FatalRuntime(1, 'Undefined variable %r' % name, name_tok),
+                    prefix='fatal: '
+                )
+                # TODO: does using UserExit have any unexpected side-effects?
+                raise util.UserExit(1)
             else:
-                return value.Str('')
+                e_die('Undefined variable %r' % name, name_tok)
+
+        return value.Str('')
 
     def _EvalBracketOp(self, val, part, quoted, vsub_state, vtest_place):
         # type: (value_t, BracedVarSub, bool, VarSubState, VTestPlace) -> value_t
