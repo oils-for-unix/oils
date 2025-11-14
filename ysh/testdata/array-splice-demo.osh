@@ -1,22 +1,14 @@
 
-shopt -s oil-parse-at static-word-eval
-
 myglobal=global
 
 var myarray = :| $myglobal $'line\n' ${z:-default} |
+
 spec/bin/argv.py @myarray
-shopt -s parse_subexpr_shorthand
-echo len=$[len(myarray)]
-echo
 
 append _ '1 2' ${myglobal:-default} (myarray)
 spec/bin/argv.py @myarray
-echo len=$[len(myarray)]
 echo
 
 for item in (myarray) {
   echo "  $item"
 }
-
-# NOTE: This doesn't work for arrays
-#setvar myarray += %(more stuff)
