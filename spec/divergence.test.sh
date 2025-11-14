@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 4
+## oils_failures_allowed: 6
 
 # This file relates to:
 #
@@ -143,4 +143,48 @@ status=0
 ## STDOUT:
 141
 141
+## END
+
+#### test builtin: ( = ) is confusing: equality test or non-empty string test
+
+# here it's equality
+test '(' = ')'
+echo status=$?
+
+# here it's like -n =
+test 0 -eq 0 -a '(' = ')'
+echo status=$?
+
+## STDOUT:
+status=1
+status=0
+## END
+
+## BUG zsh STDOUT:
+status=0
+status=1
+## END
+
+#### test builtin: ( == ) is confusing: equality test or non-empty string test
+
+# here it's equality
+test '(' == ')'
+echo status=$?
+
+# here it's like -n ==
+test 0 -eq 0 -a '(' == ')'
+echo status=$?
+
+## STDOUT:
+status=1
+status=0
+## END
+
+## BUG dash STDOUT:
+status=0
+status=0
+## END
+
+## BUG-2 zsh status: 1
+## BUG-2 zsh STDOUT:
 ## END
