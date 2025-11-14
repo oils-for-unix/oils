@@ -9,7 +9,7 @@ set -o errexit
 
 # Copied into vendor/ afterward
 download-greatest() {
-  wget --directory _tmp \
+  wget --directory-prefix _tmp \
     https://github.com/silentbicycle/greatest/archive/v1.4.2.tar.gz
 }
 

@@ -244,11 +244,17 @@ test-invalid-examples() {
       */invalid_switch.py)
         expected_status=5
         ;;
-      */invalid_ctx_raise.py)
-        expected_status=2
-        ;;
       */invalid_partialtype.py)
         expected_status=2
+        ;;
+      */invalid_switch_break.py)
+        expected_status=3
+        ;;      
+      */invalid_format_strings.py)
+        expected_status=3
+        ;;
+      */invalid_unreachable_code.py)
+        expected_status=4
         ;;
     esac
 

@@ -55,7 +55,7 @@ expressions in important ways.  So we call them *eggexes* rather than
 
 Here's a longer example:
 
-    # Define a subpattern.  'digit' and 'd' are the same.
+    # Define a subpattern.  'digit' and 'D' are the same.
     $ var D = / digit{1,3} /
 
     # Use the subpattern
@@ -343,13 +343,13 @@ string, respectively.
 
 Newlines are also ignored in `dot` and `![abc]` patterns.
 
-    = u'\n' ~ / . /                                 # true
-    = u'\n' ~ / !digit /                            # true
+    = u'\n' ~ / . ; reg_newline /                   # false
+    = u'\n' ~ / !digit ; reg_newline /              # false
 
 Without this flag, the newline `\n` is treated as an ordinary character.
 
-    = u'\n' ~ / . ; reg_newline /                   # false
-    = u'\n' ~ / !digit ; reg_newline /              # false
+    = u'\n' ~ / . /                                 # true
+    = u'\n' ~ / !digit /                            # true
 
 ### Multiline Syntax
 

@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 
 download() {
-  wget --directory _deps \
+  wget --directory-prefix _deps \
     https://github.com/mozilla/rr/releases/download/5.3.0/rr-5.3.0-Linux-$(uname -m).deb
 }
 

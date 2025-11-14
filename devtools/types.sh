@@ -94,6 +94,35 @@ check-mycpp() {
   mypy-check "${flags[@]}" "${files[@]}"
 }
 
+assert-mycpp() {
+  ### Invoked by CI to check the exact number of errors
+
+  local tmp=_tmp/check-mycpp.txt
+  { check-mycpp T || true; } > $tmp
+  cat $tmp
+
+  banner 'Results'
+
+  awk -v allowed_errors=22 '
+  END {
+    # Get the last line (stored in $0 after reading all input)
+    if (match($0, /([0-9]+) errors/, arr)) {
+      error_count = arr[1]
+      if (error_count > allowed_errors) {
+        printf("Got %d errors, expected %d or fewer\n", error_count, allowed_errors)
+        exit 1
+      } else {
+        printf("OK (%d errors)\n", error_count)
+        exit 0
+      }
+    } else {
+      printf("Could not parse N errors\n")
+      exit 2
+    }
+  }
+  ' $tmp
+}
+
 check-doctools() {
   if false; then
     local -a files=(
@@ -125,10 +154,6 @@ soil-run() {
 
   check-oils
   check-more
-
-  # 2025-10-31: 27 errors in 5 files
-  # allow it to fail for now
-  check-mycpp || true
 }
 
 name=$(basename $0)

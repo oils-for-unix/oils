@@ -9,7 +9,7 @@
 # Common usage:
 #
 #   export APORTS_EPOCH=2025-08-04-foo        # optional override
-#   $0 build-many-shards shard{0..16}         # build all 17 shards in 2 configs
+#   $0 build-many-shards-overlayfs shard{0..16}         # build all 17 shards in 2 configs
 #
 # Also useful:
 #
@@ -162,6 +162,8 @@ package-dirs() {
           B) package_filter='^xz' ;;    # failure
           C) package_filter='^lz' ;;    # 3 packages
           D) package_filter='^jq$' ;;   # produces autotools test-suite.log
+          E) package_filter='^py3-p' ;;   # many packages in parallel
+          F) package_filter='^py3-pathspec' ;;   # very fast package
           P) package_filter='^xz$|^shorewall' ;;   # patches
           *) package_filter='^perl-http-daemon' ;;   # test out perl
         esac
@@ -264,11 +266,15 @@ build-package-overlayfs() {
   #   _chroot/osh-as-sh.overlay/layer        # this has the symlink
   #   _chroot/package-upper/osh-as-sh/gzip   # upper dir / layer dir
 
-  local merged=_chroot/package.overlay/merged
-  local work=_chroot/package.overlay/work
+  # allow concurrency
+  local xargs_slot="${XARGS_SLOT:-99}"
+  local ov_base_dir=_chroot/package-slot${xargs_slot}.overlay
+
+  local merged=$ov_base_dir/merged
+  local work=$ov_base_dir/work
 
   local layer_dir=_chroot/package-layers/$config/$pkg
-  mkdir -p $layer_dir
+  mkdir -p $merged $work $layer_dir
 
   local overlay_opts
   case $config in 
@@ -290,14 +296,29 @@ build-package-overlayfs() {
     -o "$overlay_opts" \
     $merged
 
-  $merged/enter-chroot -u udu sh -c '
+  local -a prefix
+  if test -n "${XARGS_SLOT:-}"; then
+    local x=$XARGS_SLOT
+
+    # run slot 0 on cores 0 and 1
+    # run slot 9 on cores 18 and 19
+    local cores="$(( x*2 )),$(( x*2 + 1 ))"
+
+    # oversubscribe
+    # run slot 0 on cores 0 and 1
+    # run slot 19 on cores 19 and 0
+    #local cores="$(( x )),$(( (x + 1) % NUM_CORES ))"
+    prefix=( taskset -c "$cores" )
+  fi
+
+  "${prefix[@]}" $merged/enter-chroot -u udu sh -c '
   cd oils
 
   # show the effect of the overlay
   #ls -l /bin/sh
 
   regtest/aports-guest.sh build-one-package "$@"
-  ' dummy0 "$pkg" "$a_repo"
+  ' dummy0 "$pkg" "$a_repo" "$xargs_slot"
 
   if test -n "$INTERACTIVE"; then
     echo "Starting interactive shell in overlayfs environment for package $a_repo/$pkg"
@@ -314,20 +335,162 @@ build-package-overlayfs() {
   unmount-loop $merged
 }
 
+build-pkg() {
+  ### trivial wrapper around build-package-overlayfs - change arg order for xargs
+  local config=${1:-baseline}
+  local a_repo=${2:-main}
+  local pkg=${3:-lua5.4}
+
+  build-package-overlayfs "$config" "$pkg" "$a_repo"
+
+  # TODO:
+  # - we should only do this after we've done BOTH configs, so it appears
+  #   atomically
+  save-package-files $config $a_repo $pkg
+
+  # TODO: blow away the layer dir, since we saved the "tombstone".
+  # We're not doing this now because we're still reporting off DEPRECATED shard
+  # files.
+}
+
+LOG_SIZE_THRESHOLD=$(( 500 * 1000 ))  # 500 KB
+#LOG_SIZE_THRESHOLD=$(( 1 * 1000 ))
+
+abridge-one-log() {
+  local src=$1
+  local dest=$2
+
+  local size
+  size=$(stat --format '%s' $src)
+  if test $size -lt $LOG_SIZE_THRESHOLD; then
+    #cp --verbose $src $dest
+    cp $src $dest
+  else
+    # Bug fix: abridging to 1000 lines isn't sufficient.  We got some logs
+    # that were hundreds of MB, with less than 1000 lines!
+    { echo "*** This log is abridged to its last $LOG_SIZE_THRESHOLD bytes"
+      echo
+      tail --bytes $LOG_SIZE_THRESHOLD $src
+    } > $dest
+  fi
+}
+
+# save-package-files creates a tree we can rsync
+# For EACH PACKAGE, without shards
+#
+# TODO: Both baseline and osh-as-sh should appear atomically?
+
+# Source tree:
+#
+# _chroot/package-layers/
+#   baseline/
+#     jq/
+#       home/udu/
+#         oils/_tmp/aports-guest/
+#           jq.log.txt
+#           jq.task.tsv
+#         packages/main/x86_64
+#           jq-*.apk
+#         aports/main/jq/
+#           src/jq-1.8.0/test-suite.log
+#
+# _tmp/aports-build/ 
+#   2025-11-12/
+#     shard0/   # TODO: remove shards
+#       baseline/
+# NEW:
+#         apk/
+#           jq.apk.txt        # md5sum
+#         layer/
+#           jq.tombstone.txt  # find '%s %P\n'
+#         task/
+#           jq.task.tsv
+# EXISTING:
+#         apk.txt
+#         tasks.tsv
+#         log/
+#           jq.log.txt
+#         test-suite/
+#           jq/  TODO: support multiple logs
+#             test-suite.log 
+
+save-package-files() {
+  ### Copy some files from _chroot/package-layers/ -> _tmp/aports-build
+
+  local config=${1:-baseline}
+  local a_repo=${2:-main}
+  local pkg=${3:-jq}
+
+  local layer_dir=_chroot/package-layers/$config/$pkg
+  local dest_dir=$BASE_DIR/$APORTS_EPOCH/$config
+
+  # 5 directories
+  mkdir -p $dest_dir/{apk,layer,task,log,test-suite}
+
+  cp \
+    $layer_dir/home/udu/oils/_tmp/aports-guest/$pkg.task.tsv \
+    $dest_dir/task
+
+  abridge-one-log \
+    $layer_dir/home/udu/oils/_tmp/aports-guest/$pkg.log.txt \
+    $dest_dir/log/$pkg.log.txt
+
+  # Abridge this log too
+  { find $layer_dir/home/udu/aports/$a_repo/$pkg -name 'test-suite.log' 2> /dev/null || true; } |
+  while read -r log_src; do
+    local test_suite_dest_dir=$dest_dir/test-suite/$pkg
+    mkdir -p $test_suite_dest_dir
+    abridge-one-log \
+      $log_src \
+      $test_suite_dest_dir/test-suite.log.txt
+  done
+
+  md5sum $layer_dir/home/udu/packages/$a_repo/x86_64/*.apk \
+    > $dest_dir/apk/$pkg.apk.txt 2> /dev/null || true  # allow failure if nothing built
+
+  # Truncate large listings - e.g. clang packages have over 120K files
+  { find $layer_dir -printf '%s %P\n' 2> /dev/null || true; } |
+    head -n 1000 > $dest_dir/layer/$pkg.tombstone.txt 
+
+  #tree $dest_dir
+
+  # log.txt
+  # log.txt
+}
+
+NUM_CORES=$(( $(nproc) ))
+
+# 2 cores per package build
+NUM_PAR=$(( NUM_CORES / 2 ))
+
+# over-subscribe - allow 20 processes to see 2 cores each
+# Note: this causes more timeouts.  TODO: get rid of shards to get rid of
+# stragglers, and then raise the timeout to 20 minutes or more.
+# NUM_PAR=$(( NUM_CORES ))
+
+# TODO: we ran into the env.sh race condition in the enter-chroot script
+# generated by alpine-chroot-install
 build-many-packages-overlayfs() {
   local package_filter=${1:-}
   local config=${2:-baseline}
   local a_repo=${3:-main}
+  local parallel=${4:-T}
 
-  local -a package_dirs
-  package_dirs=( $(package-dirs "$package_filter" "$a_repo") )
+  banner "Building packages (filter=$package_filter a_repo=$a_repo)"
 
-  banner "Building ${#package_dirs[@]} packages (filter=$package_filter a_repo=$a_repo)"
+  local -a flags
+  if test -n "$parallel"; then
+    log "(with $NUM_PAR jobs in parallel)"
+    flags=( -P $NUM_PAR )
+  else
+    log '(serially)'
+  fi
 
-  for pkg in "${package_dirs[@]}"; do
-    build-package-overlayfs "$config" "$pkg" "$a_repo"
-  done 
+  package-dirs "$package_filter" $a_repo |
+    xargs "${flags[@]}" -n 1 --process-slot-var=XARGS_SLOT -- \
+    $0 build-pkg $config $a_repo
 }
+
 
 clean-host-and-guest() {
   # host dir _tmp/aports-build
@@ -372,8 +535,6 @@ _build-many-configs-overlayfs() {
 remove-shard-files() {
   local shard_dir=${1:-_chroot/shardC}
 
-  log "Removing big files in shard $shard_dir"
-
   # For all packages packages, for baseline and osh-as-sh, clean up the aports source dir
   # For linux, clang, etc. it becomes MANY GIGABYTES
   # 
@@ -383,7 +544,11 @@ remove-shard-files() {
   # rm: cannot remove '_chroot/shard6/baseline/llvm19/home/udu/aports/main/llvm19/src/llvm-project-19.1.7.src/build/lib': Directory not empty
   # real    1041m46.464s
 
-  sudo rm -r -f $shard_dir/*/*/home/udu/aports/ || true
+  #log "Removing big files in shard $shard_dir"
+  #sudo rm -r -f $shard_dir/*/*/home/udu/aports/ || true
+
+  log "Removing all files in $shard_dir"
+  sudo rm -r -f $shard_dir || true
 }
 
 build-many-shards-overlayfs() {
@@ -392,26 +557,46 @@ build-many-shards-overlayfs() {
   local a_repo=${A_REPO:-main}  # env var like $APORTS_EPOCH
 
   # Clean up old runs
-  sudo rm -r -f _chroot/shard* _chroot/disagree*
+  sudo rm -r -f _chroot/package-layers _chroot/shard* _chroot/disagree*
 
   banner "$APORTS_EPOCH $a_repo: building shards: $*"
 
   time for shard_name in "$@"; do
     _build-many-configs-overlayfs "$shard_name" "$APORTS_EPOCH" "$a_repo"
 
-    # Move to _chroot/shard10, etc.
+    # Move layer files to _chroot/shard10/{baseline,osh}/...
     mv -v --no-target-directory _chroot/package-layers _chroot/$shard_name
 
+    # Make it rsync-able in _tmp/aports-build ($BASE_DIR)
     make-shard-tree $shard_name $a_repo
 
+    # Remove big files
     remove-shard-files _chroot/$shard_name
+
+    # TODO: we should publish and clean up after every PACKAGE, rather than
+    # each shard
   done
+}
+
+build-and-stat() {
+  # Measure resource utilization
+  local proc_dir="$BASE_DIR/$APORTS_EPOCH/proc-log"
+  mkdir -v -p $proc_dir
+  regtest/proc_log.py --out-dir $proc_dir --sleep-secs 5 &
+  local proc_log_pid=$!
+
+  sleep 0.05  # prevent overlapping sudo prompt
+
+  build-many-shards-overlayfs "$@"
+
+  kill -s TERM $proc_log_pid
+  wc -l $proc_dir/*.txt
 }
 
 make-shard-tree() {
   ### Put outputs in rsync-able format, for a SINGLE shard
 
-  # The dire structure is like this:
+  # The dir structure is like this:
   #
   # _tmp/aports-build/
   #   2025-09-10-overlayfs/
@@ -450,19 +635,39 @@ make-shard-tree() {
     mkdir -p $dest_dir
     #ls -l $shard_dir/$config
 
+    # Four outputs
+    # 1) log.txt for each package
+    # 2) Optional test-suite.txt for each package
+    # 3) merged tasks.tsv
+    #    - comes from .task.tsv
+    # 4) merged apk.txt
+    #
+    # So 3 and 4 should not be merged yet
+    #
+    # _tmp/aports-build/
+    #   2025-11-12/
+    #     shardP/
+    #       baseline/
+    #         log/
+    #         test-suite/
+    #         apk.txt
+    #         tasks.tsv
+    #
+    # We want to
+
     time python3 devtools/tsv_concat.py \
       $shard_dir/$config/*/home/udu/oils/_tmp/aports-guest/*.task.tsv > $dest_dir/tasks.tsv
 
     # Allowed to fail if zero .apk are built
-    time md5sum $shard_dir/$config/*/home/udu/packages/$a_repo/x86_64/*.apk > $dest_dir/apk.txt \
-      || true
+    time md5sum $shard_dir/$config/*/home/udu/packages/$a_repo/x86_64/*.apk \
+      > $dest_dir/apk.txt 2> /dev/null || true
 
-    abridge-logs2 $shard_dir/$config $dest_dir
+    abridge-logs $shard_dir/$config $dest_dir
 
   done
 }
 
-abridge-logs2() {
+abridge-logs() {
   local config_src_dir=${1:-_chroot/shardD/osh-as-sh}
   local dest_dir=${2:-$BASE_DIR/shardD/osh-as-sh}
 
@@ -475,7 +680,7 @@ abridge-logs2() {
   # this assumes the build process doesn't create *.log.txt
   # test-suite.log is the name used by the autotools test runner - we want to save those too
   # ignore permission errors with || true
-  { find $config_src_dir -name '*.log.txt' -a -printf '%s\t%P\n' || true; } |
+  { find $config_src_dir -name '*.log.txt' -a -printf '%s\t%P\n' 2> /dev/null || true; } |
   while read -r size path; do
     local src=$config_src_dir/$path
     # Remove text until last slash (shortest match)
@@ -486,14 +691,16 @@ abridge-logs2() {
     if test "$size" -lt "$threshold"; then
       cp -v $src $dest
     else
-      { echo "*** This log is abridged to its last 1000 lines:"
+      # Bug fix: abriding to 1000 lines isn't sufficient.  We got some logs
+      # that were hundreds of MB, with less than 1000 lines!
+      { echo "*** This log is abridged to its last 500 KB:"
         echo
-        tail -n 1000 $src
+        tail --bytes 500000 $src
       } > $dest
     fi
   done
 
-  { find $config_src_dir -name 'test-suite.log' -a -printf '%P\n' || true; } |
+  { find $config_src_dir -name 'test-suite.log' -a -printf '%P\n' 2> /dev/null || true; } |
   while read -r path; do
     local src=$config_src_dir/$path
 
@@ -509,14 +716,45 @@ abridge-logs2() {
   du --si -s $log_dest_dir
 }
 
-compare-speed() {
-  ### reusing the chroot reuses is a LITTLE faster, but not a lot
+demo-build() {
+  local pkg=${1:-gzip}  # in shardA, uses many cores
+  local do_pin=${2:-}
 
-  # single chroot
-  build-many-shards shardC
+  local -a prefix
+  if test -n "$do_pin"; then
+    echo "*** Pinning to CPU 0 ***"
+    prefix=( taskset -c 0 )
+  fi
 
-  # 3 chroots + overlayfs mounts
-  build-many-shards2 shardC
+  "${prefix[@]}" $CHROOT_DIR/enter-chroot -u udu sh -c '
+  pkg=$1
+
+  echo "nproc = $(nproc)"
+
+  cd oils
+  set -x
+
+  # Note the user / real ratio!  How many cores did we use?
+  time regtest/aports-guest.sh build-one-package $pkg
+  ' dummy0 $pkg
+}
+
+test-taskset() {
+  local pkg=${1:-gzip}  # in shardA, uses many cores
+
+  demo-build $pkg ''
+  demo-build $pkg T
+}
+
+test-proc-log() {
+  local out_dir=_tmp/proc-log
+  mkdir -p $out_dir
+
+  regtest/proc_log.py --out-dir $out_dir &
+  local pid=$!
+  sleep 3.1  # should get 3 entries
+  kill $pid
+  wc -l $out_dir/*.txt
 }
 
 task-five "$@"

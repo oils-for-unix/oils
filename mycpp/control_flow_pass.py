@@ -41,15 +41,14 @@ def GetObjectTypeName(t: Type) -> SymbolPath:
 INVALID_ID = -99  # statement IDs are positive
 
 
-class Build(visitor.SimpleVisitor):
+class Build(visitor.TypedVisitor):
 
     def __init__(self, types: Dict[Expression,
                                    Type], virtual: pass_state.Virtual,
                  local_vars: 'cppgen_pass.AllLocalVars',
                  dot_exprs: 'conversion_pass.DotExprs') -> None:
-        visitor.SimpleVisitor.__init__(self)
+        visitor.TypedVisitor.__init__(self, types)
 
-        self.types = types
         self.cflow_graphs: Dict[
             SymbolPath, pass_state.ControlFlowGraph] = collections.defaultdict(
                 pass_state.ControlFlowGraph)
@@ -63,6 +62,9 @@ class Build(visitor.SimpleVisitor):
         # statement object -> SymbolPath of the callee
         self.callees: Dict['mypy.nodes.CallExpr', SymbolPath] = {}
         self.current_lval: Optional[Expression] = None
+
+        self.inside_switch = False
+        self.inside_loop = False
 
     def current_cfg(self) -> pass_state.ControlFlowGraph:
         if not self.current_func_node:
@@ -138,7 +140,7 @@ class Build(visitor.SimpleVisitor):
                         return None
 
             else:
-                t = self.types.get(o.callee.expr)
+                t = self._GetType(o.callee.expr)
                 if isinstance(t, Instance):
                     return SplitPyName(t.type.fullname) + (o.callee.name, )
 
@@ -233,7 +235,7 @@ class Build(visitor.SimpleVisitor):
                         (dot_expr.member, ))
 
         elif isinstance(expr, IndexExpr):
-            if isinstance(self.types[expr.base], TupleType):
+            if isinstance(self._GetType(expr.base), TupleType):
                 assert isinstance(expr.index, IntExpr)
                 return self.get_ref_name(expr.base) + (str(expr.index.value), )
 
@@ -272,12 +274,18 @@ class Build(visitor.SimpleVisitor):
 
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> None:
         cfg = self.current_cfg()
+        was_inside_loop = self.inside_loop
+        self.inside_loop = True
         with pass_state.CfgLoopContext(
                 cfg, entry=self.current_statement_id) as loop:
             self.accept(o.expr)
             self.loop_stack.append(loop)
             self.accept(o.body)
             self.loop_stack.pop()
+
+        # Let the outer loop toggle this off
+        if not was_inside_loop:
+            self.inside_loop = False
 
     def _handle_switch(self, expr: Expression, o: 'mypy.nodes.WithStmt',
                        cfg: pass_state.ControlFlowGraph) -> None:
@@ -312,15 +320,27 @@ class Build(visitor.SimpleVisitor):
         #assert isinstance(expr.callee, NameExpr), expr.callee
         callee_name = expr.callee.name
 
+        was_inside_loop = self.inside_loop
         if callee_name == 'switch':
+            self.inside_switch = True
+            self.inside_loop = False
             self._handle_switch(expr, o, cfg)
         elif callee_name == 'str_switch':
+            self.inside_switch = True
+            self.inside_loop = False
             self._handle_switch(expr, o, cfg)
         elif callee_name == 'tagswitch':
+            self.inside_switch = True
+            self.inside_loop = False
             self._handle_switch(expr, o, cfg)
         else:
             with pass_state.CfgBlockContext(cfg, self.current_statement_id):
                 self.accept(o.body)
+
+        self.inside_switch = False
+        # Restore if we were inside a loop
+        if was_inside_loop:
+            self.inside_loop = True
 
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
                             current_class_name: Optional[util.SymbolPath],
@@ -352,12 +372,18 @@ class Build(visitor.SimpleVisitor):
 
     def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> None:
         cfg = self.current_cfg()
+        was_inside_loop = self.inside_loop
+        self.inside_loop = True
         with pass_state.CfgLoopContext(
                 cfg, entry=self.current_statement_id) as loop:
             self.accept(o.expr)
             self.loop_stack.append(loop)
             self.accept(o.body)
             self.loop_stack.pop()
+
+        # Let the outer loop toggle this off
+        if not was_inside_loop:
+            self.inside_loop = False
 
     def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> None:
         cfg = self.current_cfg()
@@ -386,6 +412,11 @@ class Build(visitor.SimpleVisitor):
                     self.accept(o.else_body)
 
     def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> None:
+        if self.inside_switch and not self.inside_loop:
+            # since it will break out of the loop in Python, but only leave
+            # the switch case in C++, # disallow break inside a switch
+            self.report_error(
+                o, "'break' is not allowed to be used inside a switch")
         if len(self.loop_stack):
             self.loop_stack[-1].AddBreak(self.current_statement_id)
 
@@ -448,7 +479,7 @@ class Build(visitor.SimpleVisitor):
 
             assert len(lval_names), lval
 
-            rval_type = self.types[rval]
+            rval_type = self._GetType(rval)
             rval_names: List[Optional[util.SymbolPath]] = []
             if isinstance(rval, CallExpr):
                 # The RHS is either an object constructor or something that
