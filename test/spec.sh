@@ -222,6 +222,10 @@ builtin-type() {
   test/spec-py.sh run-file builtin-type "$@"
 }
 
+builtin-umask() {
+  test/spec-py.sh run-file builtin-umask "$@"
+}
+
 builtin-vars() {
   test/spec-py.sh run-file builtin-vars "$@"
 }
