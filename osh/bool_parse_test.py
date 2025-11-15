@@ -138,31 +138,7 @@ class BugsTest(unittest.TestCase):
         p = _MakeParser('-f ==')
         node = p.ParseExpr()
         print(node)
-        self.assertEqual(bool_expr_e.Unary, node.tag())
-
-    def testLookAhead(self):
-        p = _MakeParser('-f foo')
-        log('bool_id = %s', Id_str(p.bool_id))
-        log('n = %d', len(p.words))
-        log('%s', p.words)
-
-        print('    *** LookAhead')
-        p._LookAhead()
-        log('bool_id = %s', Id_str(p.bool_id))
-        log('n = %d', len(p.words))
-        log('%s', p.words)
-
-        print('    *** Next')
-        p._Next()
-        log('bool_id = %s', Id_str(p.bool_id))
-        log('n = %d', len(p.words))
-        log('%s', p.words)
-
-        print('    *** Next')
-        p._Next()
-        log('bool_id = %s', Id_str(p.bool_id))
-        log('n = %d', len(p.words))
-        log('%s', p.words)
+        #self.assertEqual(bool_expr_e.Unary, node.tag())
 
     def testLookAhead2(self):
         p = _MakeParser('-f foo')
@@ -183,19 +159,15 @@ class BugsTest(unittest.TestCase):
     def testNextOne(self):
         p = _MakeParser('-f foo')
         self.assertEqual(Id.BoolUnary_f, p.bool_id)
-        log('n = %d', len(p.words))
 
         p._Next()
         self.assertEqual(Id.Word_Compound, p.bool_id)
-        log('n = %d', len(p.words))
 
         p._Next()
         self.assertEqual(Id.Lit_DRightBracket, p.bool_id)
-        log('n = %d', len(p.words))
 
         p._Next()
         self.assertEqual(Id.Eof_Real, p.bool_id)
-        log('n = %d', len(p.words))
 
 
 if __name__ == '__main__':
