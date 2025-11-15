@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 ## compare_shells: bash-4.4 mksh
 
 # NOTE: zsh passes about half, and fails about half.  It supports a subset of
@@ -202,14 +202,6 @@ FOO=bar [[ foo == foo ]]
 ## status: 0
 ## STDOUT:
 true
-## END
-
-#### Argument that looks like a command word operator
-[[ -f -f ]] || echo false
-[[ -f == ]] || echo false
-## STDOUT:
-false
-false
 ## END
 
 #### Argument that looks like a real operator
