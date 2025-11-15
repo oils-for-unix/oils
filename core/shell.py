@@ -424,7 +424,7 @@ def Main(
     if flag.xtrace_to_debug_file:
         trace_f = debug_f
     else:
-        trace_f = util.DebugFile(mylib.Stderr())
+        trace_f = util.DebugFile(fd_state.OpenForWrite("/dev/stderr"))
 
     trace_dir = environ.get('OILS_TRACE_DIR', '')
     dumps = environ.get('OILS_TRACE_DUMPS', '')
