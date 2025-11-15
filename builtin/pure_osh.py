@@ -506,6 +506,10 @@ def _GetOpts(
         my_state.Fail()
         return 1, '?'
 
+    if current == "--": # special case, stop processing remaining args
+        my_state.IncIndex()
+        return 1, '?'
+
     flag_char = current[my_state.flag_pos]
 
     if my_state.flag_pos < len(current) - 1:
