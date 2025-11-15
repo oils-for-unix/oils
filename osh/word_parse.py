@@ -1067,8 +1067,8 @@ class WordParser(WordEmitter):
 
         p_die('Expected word after ( opening bash regex group', self.cur_token)
 
-    def _ReadLikeDQ(self, left_token, is_ysh_expr, out_parts):
-        # type: (Optional[Token], bool, List[word_part_t]) -> None
+    def _ReadLikeDQ(self, left_token, is_ysh_expr, out_parts, is_here_doc=False):
+        # type: (Optional[Token], bool, List[word_part_t], bool) -> None
         """
         Args:
           left_token: A token if we are reading a double quoted part, or None if
@@ -1094,8 +1094,17 @@ class WordParser(WordEmitter):
                 if self.token_type == Id.Lit_EscapedChar:
                     tok = self.cur_token
                     ch = lexer.TokenSliceLeft(tok, 1)
-                    part = word_part.EscapedLiteral(tok,
-                                                    ch)  # type: word_part_t
+                    if ch == "\"" and is_here_doc:
+                        # in here docs \" should not be escaped, staying as literal characters
+                        part = Token(
+                            Id.Lit_Chars,
+                            tok.length,
+                            tok.col, tok.line,
+                            tok.tval
+                        )
+                    else:
+                        part = word_part.EscapedLiteral(tok,
+                                                        ch)  # type: word_part_t
                 else:
                     if self.token_type == Id.Lit_BadBackslash:
                         # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
@@ -2332,9 +2341,9 @@ class WordParser(WordEmitter):
     def ReadHereDocBody(self, parts):
         # type: (List[word_part_t]) -> None
         """
-        A here doc is like a double quoted context, except " isn't special.
+        A here doc is like a double quoted context, except " and \" aren't special.
         """
-        self._ReadLikeDQ(None, False, parts)
+        self._ReadLikeDQ(None, False, parts, is_here_doc=True)
         # Returns nothing
 
     def ReadForPlugin(self):
