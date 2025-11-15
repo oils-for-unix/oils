@@ -3,12 +3,13 @@
 #ifndef MYCPP_GC_MYLIB_H
 #define MYCPP_GC_MYLIB_H
 
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "mycpp/gc_alloc.h"  // gHeap
 #include "mycpp/gc_dict.h"   // for dict_erase()
 #include "mycpp/gc_mops.h"
 #include "mycpp/gc_tuple.h"
-
-#include <sys/stat.h>
 
 template <class K, class V>
 class Dict;
@@ -155,7 +156,7 @@ class File {
 // Wrap a FILE* for read and write
 class CFile : public File {
  public:
-  explicit CFile(FILE* f) : File(), f_(f) {
+  explicit CFile(int fd) : File(), fd_(fd) {
   }
   // Writer
   void write(BigStr* s) override;
@@ -178,7 +179,8 @@ class CFile : public File {
   }
 
  private:
-  FILE* f_;
+  int fd_;
+  char line_[131072];
 
   DISALLOW_COPY_AND_ASSIGN(CFile)
 };
@@ -234,7 +236,7 @@ extern LineReader* gStdin;
 
 inline LineReader* Stdin() {
   if (gStdin == nullptr) {
-    gStdin = reinterpret_cast<LineReader*>(Alloc<CFile>(stdin));
+    gStdin = reinterpret_cast<LineReader*>(Alloc<CFile>(STDIN_FILENO));
   }
   return gStdin;
 }
@@ -331,7 +333,7 @@ extern Writer* gStdout;
 
 inline Writer* Stdout() {
   if (gStdout == nullptr) {
-    gStdout = reinterpret_cast<Writer*>(Alloc<CFile>(stdout));
+    gStdout = reinterpret_cast<Writer*>(Alloc<CFile>(STDOUT_FILENO));
     gHeap.RootGlobalVar(gStdout);
   }
   return gStdout;
@@ -341,7 +343,7 @@ extern Writer* gStderr;
 
 inline Writer* Stderr() {
   if (gStderr == nullptr) {
-    gStderr = reinterpret_cast<Writer*>(Alloc<CFile>(stderr));
+    gStderr = reinterpret_cast<Writer*>(Alloc<CFile>(STDERR_FILENO));
     gHeap.RootGlobalVar(gStderr);
   }
   return gStderr;
