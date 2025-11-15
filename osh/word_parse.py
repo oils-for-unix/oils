@@ -1096,15 +1096,16 @@ class WordParser(WordEmitter):
                     ch = lexer.TokenSliceLeft(tok, 1)
                     if ch == "\"" and is_here_doc:
                         # in here docs \" should not be escaped, staying as literal characters
-                        part = Token(
+                        out_parts.append(Token(
                             Id.Lit_Chars,
                             tok.length,
                             tok.col, tok.line,
                             tok.tval
-                        )
+                        ))
                     else:
                         part = word_part.EscapedLiteral(tok,
                                                         ch)  # type: word_part_t
+                        out_parts.append(part)
                 else:
                     if self.token_type == Id.Lit_BadBackslash:
                         # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
@@ -1122,7 +1123,7 @@ class WordParser(WordEmitter):
                                   self.cur_token)
 
                     part = self.cur_token
-                out_parts.append(part)
+                    out_parts.append(part)
 
             elif self.token_kind == Kind.Left:
                 if self.token_type == Id.Left_Backtick and is_ysh_expr:
