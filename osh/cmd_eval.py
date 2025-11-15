@@ -2351,6 +2351,7 @@ class CommandEvaluator(object):
         is_return = False
         is_fatal = False
         is_errexit = False
+        is_nounset = False
 
         err = None  # type: error.FatalRuntime
         status = -1  # uninitialized
@@ -2389,6 +2390,9 @@ class CommandEvaluator(object):
         except error.ErrExit as e:
             err = e
             is_errexit = True
+        except error.NoUnset as e:
+            err = e
+            is_nounset = True
         except error.FatalRuntime as e:
             err = e
 
@@ -2410,6 +2414,11 @@ class CommandEvaluator(object):
                                              posix.getpid())
             else:
                 self.errfmt.PrettyPrintError(err, prefix='fatal: ')
+
+            # bash docs on `set -u`:
+            # An error message will be written to stderr, and a non-interactive shell will exit.
+            if is_nounset and not self.exec_opts.interactive():
+                raise util.UserExit(status)
 
         assert status >= 0, 'Should have been initialized'
 
