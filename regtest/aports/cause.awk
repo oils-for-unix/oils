@@ -160,6 +160,9 @@ BEGIN {
 
   # jq
   patterns["#2540"] = "FAIL: tests/shtest"
+  # gphoto2
+  patterns["##2540"] = "[Makefile:461: check-recursive] Error 1"
+
 
   # libidn
   patterns["#2523"] = "ERROR: libidn2: check failed"
