@@ -489,12 +489,18 @@ class GetOptsState(object):
 
 
 def _GetOpts(
-        spec,  # type: Dict[str, bool]
-        argv,  # type: List[str]
-        my_state,  # type: GetOptsState
-        errfmt,  # type: ui.ErrorFormatter
+    spec_str,  # type: str
+    argv,  # type: List[str]
+    my_state,  # type: GetOptsState
+    errfmt,  # type: ui.ErrorFormatter
+    opterr,  # type: int
 ):
     # type: (...) -> Tuple[int, str]
+    silent = spec_str.startswith(':')
+    if silent:
+        spec_str = spec_str[1:]
+    spec = _ParseOptSpec(spec_str)
+
     current = my_state.GetArg(argv)
     #log('current %s', current)
 
@@ -517,6 +523,12 @@ def _GetOpts(
         more_chars = False
 
     if flag_char not in spec:  # Invalid flag
+        if silent:
+            my_state.SetArg(flag_char)
+        else:
+            my_state.Fail()
+            if opterr != 0:
+                errfmt.Print_('getopts: illegal option -- ' + flag_char)
         return 0, '?'
 
     if spec[flag_char]:  # does it need an argument?
@@ -526,14 +538,13 @@ def _GetOpts(
             optarg = my_state.GetArg(argv)
             if optarg is None:
                 my_state.Fail()
-                # TODO: Add location info
-                errfmt.Print_('getopts: option %r requires an argument.' %
-                              current)
-                tmp = [j8_lite.MaybeShellEncode(a) for a in argv]
-                print_stderr('(getopts argv: %s)' % ' '.join(tmp))
-
-                # Hm doesn't cause status 1?
-                return 0, '?'
+                if not silent and opterr != 0:
+                    # TODO: Add location info
+                    errfmt.Print_('getopts: option requires an argument: ' + current)
+                    tmp = [j8_lite.MaybeShellEncode(a) for a in argv]
+                    print_stderr('(getopts argv: ' + ' '.join(tmp) + ')')
+                # OPTARG remains '' from Fail()
+                return 0, ':'
         my_state.IncIndex()
         my_state.SetArg(optarg)
     else:
@@ -573,15 +584,16 @@ class GetOpts(vm._Builtin):
         var_name, var_loc = arg_r.ReadRequired2(
             'requires the name of a variable to set')
 
-        spec = self.spec_cache.get(spec_str)
-        if spec is None:
-            spec = _ParseOptSpec(spec_str)
-            self.spec_cache[spec_str] = spec
+        # OPTERR defaults to 1
+        try:
+            opterr = state.GetInteger(self.mem, 'OPTERR')
+        except error.Runtime:
+            opterr = 1
 
         user_argv = self.mem.GetArgv() if arg_r.AtEnd() else arg_r.Rest()
         #log('user_argv %s', user_argv)
-        status, flag_char = _GetOpts(spec, user_argv, self.my_state,
-                                     self.errfmt)
+        status, flag_char = _GetOpts(spec_str, user_argv, self.my_state,
+                                      self.errfmt, opterr)
 
         if match.IsValidVarName(var_name):
             state.BuiltinSetString(self.mem, var_name, flag_char)
