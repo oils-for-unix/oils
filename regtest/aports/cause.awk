@@ -108,6 +108,9 @@ BEGIN {
   # py3-adblock
   patterns["#2562"] = "Invalid descriptor"
 
+  # makepasswd
+  patterns["#2579"] = "Usage: docbook.sh"
+
   #
   # BUGS that only occur with OSH as BUSYBOX ASH
   #
@@ -157,6 +160,9 @@ BEGIN {
 
   # jq
   patterns["#2540"] = "FAIL: tests/shtest"
+  # gphoto2
+  patterns["##2540"] = "[Makefile:461: check-recursive] Error 1"
+
 
   # libidn
   patterns["#2523"] = "ERROR: libidn2: check failed"
