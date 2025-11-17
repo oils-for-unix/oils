@@ -61,16 +61,6 @@ show-config() {
   '
 }
 
-save-default-config() {
-  enter-rootfs sh -c '
-  set -x
-  dest=/bin/bash.ORIG
-  cp /bin/bash $dest
-  '
-  show-config
-}
-
-
 set-baseline() {
   # ensure we have the default config
   enter-rootfs sh -c '

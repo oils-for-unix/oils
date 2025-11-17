@@ -119,9 +119,8 @@ patch-aports() {
   popd >/dev/null
 }
 
-
-# 2025-11-09, adding parallelism
-readonly TARBALL_ID='10772'
+# 2025-11-16: fresh run
+readonly TARBALL_ID='10856'
 
 download-oils() {
   local tarball_id=${1:-$TARBALL_ID}
@@ -359,10 +358,6 @@ build-oils() {
   '
 }
 
-save-default-config() {
-  regtest/aports-run.sh save-default-config
-}
-
 create-osh-overlay() {
   # _chroot/
   #   aports-build/  # chroot image
@@ -410,24 +405,6 @@ remove-osh-overlay() {
 
 remove-shard-layers() {
   sudo rm -r -f _chroot/shard*
-}
-
-create-package-dirs() {
-  # _chroot/
-  #   package.overlay/
-  #     merged/      # mounted and unmounted each time
-  #     work/
-  #   package-layers/
-  #     baseline/
-  #       gzip/
-  #       xz/
-  #     osh-as-sh/
-  #       gzip/
-  #       xz/
-
-  # obsolete after $XARGS_SLOT
-  # mkdir -v -p _chroot/package.overlay/{merged,work}
-  true
 }
 
 archived-distfiles() {
@@ -525,11 +502,7 @@ prepare-all() {
 
   oils-in-chroot  
 
-  # TODO: Don't need this for overlayfs
-  save-default-config
-
   create-osh-overlay
-  create-package-dirs
 
   # makes a host file
   apk-manifest
