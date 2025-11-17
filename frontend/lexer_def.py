@@ -404,8 +404,17 @@ LEXER_DEF[lex_mode_e.DQ] = [
 ] + _LEFT_SUBS + _VARS + [
     R(r'[^$`"\0\\]+', Id.Lit_Chars),  # matches a line at most
     C('$', Id.Lit_Dollar),  # completion of var names relies on this
-    # NOTE: When parsing here doc line, this token doesn't end it.
     C('"', Id.Right_DoubleQuote),
+]
+
+LEXER_DEF[lex_mode_e.HereDoc] = [
+    R(r'\\[$`\\]', Id.Lit_EscapedChar), # \" is not an escaped char in here documents
+    C('\\\n', Id.Ignored_LineCont),
+    C('\\', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
+] + _LEFT_SUBS + _VARS + [
+    # remember [^] is set exclusion for regex
+    R(r'[^$`\0\\]+', Id.Lit_Chars),  # matches a line at most
+    C('$', Id.Lit_Dollar),  # completion of var names relies on this
 ]
 
 _VS_ARG_COMMON = [
@@ -417,7 +426,7 @@ _VS_ARG_COMMON = [
 ]
 
 # We don't execute zsh var subs, but to find the closing } properly, we need to
-# to recognize \} and '}' and "}" $'}' etc.
+## to recognize \} and '}' and "}" $'}' etc.
 LEXER_DEF[lex_mode_e.VSub_Zsh] = \
   _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + \
   [

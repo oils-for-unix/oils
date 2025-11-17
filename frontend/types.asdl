@@ -8,6 +8,7 @@ module types {
               generate [integers]
 
   # Fifteen lexer modes for OSH
+  # TODO(GABE): should this be 16 now?
 
   lex_mode =
     Undefined
@@ -20,6 +21,8 @@ module types {
   | DBracket
 
   | SQ_Raw | DQ | SQ_C | J8_Str
+
+  | HereDoc
 
   | Arith
   | ExtGlob

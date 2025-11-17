@@ -1066,9 +1066,47 @@ class WordParser(WordEmitter):
             return word_part.BashRegexGroup(left_token, w, self.cur_token)
 
         p_die('Expected word after ( opening bash regex group', self.cur_token)
+ 
+    # DQ and here documents both act similarly, so these parts are shared between them
+    def _ParseDQToken(self, is_ysh_expr, caller_kind):
+        # type: (bool, str) -> Optional[word_part_t]
+        if self.token_kind == Kind.Lit:
+            if self.token_type == Id.Lit_EscapedChar:
+                tok = self.cur_token
+                ch = lexer.TokenSliceLeft(tok, 1)
+                return word_part.EscapedLiteral(tok, ch)
+            elif self.token_type == Id.Lit_BadBackslash:
+                # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
+                # YSH.
+                # Slight hole: We don't catch 'x = ${undef:-"\z"} because of the
+                # recursion (unless no_parse_backslash)
+                if (is_ysh_expr or self.parse_opts.no_parse_backslash()):
+                    p_die(
+                        "Invalid char escape in %s (OILS-ERR-12)"
+                        % caller_kind, self.cur_token)
+            elif self.token_type == Id.Lit_Dollar:
+                if is_ysh_expr or self.parse_opts.no_parse_dollar():
+                    p_die("Literal $ should be quoted like \$",
+                          self.cur_token)
 
-    def _ReadLikeDQ(self, left_token, is_ysh_expr, out_parts, is_here_doc=False):
-        # type: (Optional[Token], bool, List[word_part_t], bool) -> None
+            return self.cur_token
+
+        elif self.token_kind == Kind.Left:
+            if self.token_type == Id.Left_Backtick and is_ysh_expr:
+                p_die("Backtick should be $(cmd) or \\` (OILS-ERR-18)",
+                      self.cur_token)
+
+            return self._ReadDoubleQuotedLeftParts()
+
+        elif self.token_kind == Kind.VSub:
+            return SimpleVarSub(self.cur_token)
+            # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
+            # later.
+
+        return None
+
+    def _ReadLikeDQ(self, left_token, is_ysh_expr, out_parts):
+        # type: (Token, bool, List[word_part_t]) -> None
         """
         Args:
           left_token: A token if we are reading a double quoted part, or None if
@@ -1076,85 +1114,31 @@ class WordParser(WordEmitter):
           is_ysh_expr: Whether to disallow backticks and invalid char escapes
           out_parts: list of word_part to append to
         """
-        if left_token:
-            if left_token.id in (Id.Left_TDoubleQuote,
-                                 Id.Left_DollarTDoubleQuote):
-                expected_end_tokens = 3
-            else:
-                expected_end_tokens = 1
+        if left_token.id in (Id.Left_TDoubleQuote,
+                             Id.Left_DollarTDoubleQuote):
+            expected_end_tokens = 3
         else:
-            expected_end_tokens = 1000  # here doc will break
+            expected_end_tokens = 1
 
         num_end_tokens = 0
         while num_end_tokens < expected_end_tokens:
             self._SetNext(lex_mode_e.DQ)
             self._GetToken()
 
-            if self.token_kind == Kind.Lit:
-                if self.token_type == Id.Lit_EscapedChar:
-                    tok = self.cur_token
-                    ch = lexer.TokenSliceLeft(tok, 1)
-                    if ch == "\"" and is_here_doc:
-                        # in here docs \" should not be escaped, staying as literal characters
-                        out_parts.append(Token(
-                            Id.Lit_Chars,
-                            tok.length,
-                            tok.col, tok.line,
-                            tok.tval
-                        ))
-                    else:
-                        part = word_part.EscapedLiteral(tok,
-                                                        ch)  # type: word_part_t
-                        out_parts.append(part)
-                else:
-                    if self.token_type == Id.Lit_BadBackslash:
-                        # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
-                        # YSH.
-                        # Slight hole: We don't catch 'x = ${undef:-"\z"} because of the
-                        # recursion (unless no_parse_backslash)
-                        if (is_ysh_expr or
-                                self.parse_opts.no_parse_backslash()):
-                            p_die(
-                                "Invalid char escape in double quoted string (OILS-ERR-12)",
-                                self.cur_token)
-                    elif self.token_type == Id.Lit_Dollar:
-                        if is_ysh_expr or self.parse_opts.no_parse_dollar():
-                            p_die("Literal $ should be quoted like \$",
-                                  self.cur_token)
-
-                    part = self.cur_token
-                    out_parts.append(part)
-
-            elif self.token_kind == Kind.Left:
-                if self.token_type == Id.Left_Backtick and is_ysh_expr:
-                    p_die("Backtick should be $(cmd) or \\` (OILS-ERR-18)",
-                          self.cur_token)
-
-                part = self._ReadDoubleQuotedLeftParts()
+            part = self._ParseDQToken(is_ysh_expr, "double quoted string")
+            if part is not None:
                 out_parts.append(part)
+                continue
 
-            elif self.token_kind == Kind.VSub:
-                tok = self.cur_token
-                part = SimpleVarSub(tok)
-                out_parts.append(part)
-                # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
-                # later.
-
-            elif self.token_kind == Kind.Right:
+            if self.token_kind == Kind.Right:
                 assert self.token_type == Id.Right_DoubleQuote, self.token_type
-                if left_token:
-                    num_end_tokens += 1
-
-                # In a here doc, the right quote is literal!
+                num_end_tokens += 1
                 out_parts.append(self.cur_token)
 
             elif self.token_kind == Kind.Eof:
-                if left_token:
-                    p_die(
-                        'Unexpected EOF reading double-quoted string that began here',
-                        left_token)
-                else:  # here docs will have an EOF in their token stream
-                    break
+                p_die(
+                    'Unexpected EOF reading double-quoted string that began here',
+                    left_token)
 
             else:
                 raise AssertionError(self.cur_token)
@@ -1175,6 +1159,29 @@ class WordParser(WordEmitter):
             word_compile.RemoveLeadingSpaceDQ(out_parts)
 
         # Return nothing, since we appended to 'out_parts'
+
+    def _ReadLikeHereDoc(self, is_ysh_expr, out_parts):
+        # type: (bool, List[word_part_t]) -> None
+        """
+        Args:
+          is_ysh_expr: Whether to disallow backticks and invalid char escapes
+          out_parts: list of word_part to append to
+        """
+        while True:
+            self._SetNext(lex_mode_e.HereDoc)
+            self._GetToken()
+
+            part = self._ParseDQToken(is_ysh_expr, "here document")
+            if part is not None:
+                out_parts.append(part)
+                continue
+            
+            if self.token_kind == Kind.Eof:
+                # Return nothing, since we appended to 'out_parts'
+                return
+
+            else:
+                raise AssertionError(self.cur_token)
 
     def _ReadDoubleQuoted(self, left_token):
         # type: (Token) -> DoubleQuoted
@@ -2344,8 +2351,7 @@ class WordParser(WordEmitter):
         """
         A here doc is like a double quoted context, except " and \" aren't special.
         """
-        self._ReadLikeDQ(None, False, parts, is_here_doc=True)
-        # Returns nothing
+        self._ReadLikeHereDoc(False, parts)
 
     def ReadForPlugin(self):
         # type: () -> CompoundWord
@@ -2355,7 +2361,7 @@ class WordParser(WordEmitter):
         well as the typical substitutions ${x} $(echo hi) $((1 + 2)).
         """
         w = CompoundWord([])
-        self._ReadLikeDQ(None, False, w.parts)
+        self._ReadLikeHereDoc(False, w.parts)
         return w
 
     def EmitDocToken(self, b):
