@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### echo keyword
 echo done
@@ -434,3 +434,18 @@ len=2
 ## status: 127
 ## STDOUT:
 ## END
+
+#### Crash after changing $[] to be alias of $(( ))
+echo $[i + 1]
+case foo in
+  foo) echo hello ;;
+esac
+## STDOUT:
+1
+hello
+## END
+## N-I dash/mksh/ash STDOUT:
+$[i + 1]
+hello
+## END
+

@@ -40,10 +40,6 @@ index-html() {
   html-head --title "aports Build" \
     "$base_url/base.css"
 
-  # TODO:
-  # - Stats for each config:
-  #   - number of non-zero exit codes, total packages
-
   cmark <<'EOF'
 <body class="width35">
 
@@ -190,6 +186,13 @@ merge-diff-html() {
 EOF
 
   diff-summary-html $base_dir/diff_merged.db
+
+  # TODO:
+  # - separate fetch-failed causes
+  # - separate OSH timeouts from other timeouts -- in case OSH being slow is a root cause
+  # - show the number of table rows above each section
+  # - make a unified table of all packages and times
+  #   - this might come after removing shards?
 
   cmark << 'EOF'
 [tree](tree.html) &nbsp;&nbsp; [metrics](metrics.html) &nbsp;&nbsp; [disagree-packages.txt](disagree-packages.txt)
@@ -350,6 +353,7 @@ After this success, we expanded our testing:
   - [2025-11-02-main-patch](2025-11-02-main-patch.wwz/_tmp/aports-report/2025-11-02-main-patch/diff_merged.html) - **14** disagreements
   - [2025-11-09-main-cause](2025-11-09-main-cause.wwz/_tmp/aports-report/2025-11-09-main-cause/diff_merged.html) - updated causes
 - [2025-11-11-main-full](2025-11-11-main-full.wwz/_tmp/aports-report/2025-11-11-main-full/diff_merged.html) - full run with 10 package builds in parallel, 2 cores each
+- [2025-11-16-main-full](2025-11-16-main-full.wwz/_tmp/aports-report/2025-11-16-main-full/diff_merged.html) - **17** disagreements - regression after `$[]` change
 
 ### community
 

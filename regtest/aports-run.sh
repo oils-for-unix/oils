@@ -568,7 +568,7 @@ build-many-shards-overlayfs() {
   done
 }
 
-build-and-stat() {
+build-and-proc-log() {
   # Measure resource utilization
   local proc_dir="$BASE_DIR/$APORTS_EPOCH/proc-log"
   mkdir -v -p $proc_dir
