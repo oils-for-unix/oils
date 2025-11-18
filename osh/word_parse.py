@@ -1563,7 +1563,8 @@ class WordParser(WordEmitter):
 
         # The second one needs to be disambiguated in stuff like stuff like:
         # $(echo $(( 1+2 )) )
-        self.lexer.PushHint(Id.Op_RParen, Id.Right_DollarDParen)
+        if end_id == Id.Arith_RParen:
+            self.lexer.PushHint(Id.Op_RParen, Id.Right_DollarDParen)
 
         # NOTE: To disambiguate $(( as arith sub vs. command sub and subshell, we
         # could save the lexer/reader state here, and retry if the arithmetic parse
