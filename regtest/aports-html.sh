@@ -354,6 +354,7 @@ After this success, we expanded our testing:
   - [2025-11-09-main-cause](2025-11-09-main-cause.wwz/_tmp/aports-report/2025-11-09-main-cause/diff_merged.html) - updated causes
 - [2025-11-11-main-full](2025-11-11-main-full.wwz/_tmp/aports-report/2025-11-11-main-full/diff_merged.html) - full run with 10 package builds in parallel, 2 cores each
 - [2025-11-16-main-full](2025-11-16-main-full.wwz/_tmp/aports-report/2025-11-16-main-full/diff_merged.html) - **17** disagreements - regression after `$[]` change
+- [2025-11-18](2025-11-18.wwz/_tmp/aports-report/2025-11-18/diff_merged.html) - **12** disagreements - fixed regression
 
 ### community
 
@@ -364,7 +365,7 @@ After this success, we expanded our testing:
   - [2025-11-01-comm-cause](2025-11-01-comm-cause.wwz/_tmp/aports-report/2025-11-01-comm-cause/diff_merged.html) - updated causes
   - [2025-11-02-comm-patch](2025-11-02-comm-patch.wwz/_tmp/aports-report/2025-11-02-comm-patch/diff_merged.html) - **64** disagreements, **45** of unknown cause
   - [2025-11-09-comm-cause](2025-11-09-comm-cause.wwz/_tmp/aports-report/2025-11-09-comm-cause/diff_merged.html) - updated causes, **20** of unknown cause
-
+  - [2025-11-18-comm-disagree](2025-11-18-comm-disagree.wwz/_tmp/aports-report/2025-11-18-comm-disagree/diff_merged.html) - **60** disagreements
 ';
   } | cmark 
 
