@@ -114,40 +114,89 @@ LineReader* open(BigStr* path) {
   return reinterpret_cast<LineReader*>(Alloc<CFile>(fd));
 }
 
+void CFile::read_into_buffer() {
+  ssize_t len = 0;
+
+  while (end_ < (BUF_SIZE-1)) {
+    len = ::read(fd_, buffer_+end_, BUF_SIZE-end_);
+
+    if (len < 0) {
+      if (errno == EINTR && iolib::gSignalSafe->PollUntrappedSigInt()) {
+        // Raise KeyboardInterrupt like mylib.Stdin().readline() does in Python!
+        // This affects _PlainPromptInput() in frontend/reader.py.
+        throw Alloc<KeyboardInterrupt>();
+      } else if (errno == EINTR) {
+        continue;
+      } else if (end_ > 0) {
+        eof_ = true;
+        break;
+      } else {
+        throw Alloc<IOError>(errno);
+      }
+    } else if (len == 0) {
+      eof_ = true;
+      break;
+    }
+    end_ += len;
+  }
+}
+
 BigStr* CFile::readline() {
   // Reset errno because we turn the EOF error into empty string (like Python).
   errno = 0;
 
-  size_t i = 0;
-  bool null_terminated = false;
-  for (; i < 131071; i++) {
-    ssize_t len = read(fd_, &(line_[i]), 1);
-    if (len == 0) {
-      line_[i] = '\0';
-      null_terminated = true;
-      break;
-    } else if (line_[i] == '\n') {
-      line_[i + 1] = '\0';
-      i++;
-      null_terminated = true;
-      break;
-    } else if (len < 0) {
-      // Raise KeyboardInterrupt like mylib.Stdin().readline() does in Python!
-      // This affects _PlainPromptInput() in frontend/reader.py.
-      if (errno == EINTR && iolib::gSignalSafe->PollUntrappedSigInt()) {
-        throw Alloc<KeyboardInterrupt>();
-      }
-
-      if (errno != 0) {  // Unexpected error
-        throw Alloc<IOError>(errno);
-      }
-      return kEmptyString;  // Indicate EOF with empty string, like Python
-    }
+  // Fill the buffer if it's empty
+  // Check if any more data came in since the last EOF
+  if (end_ == 0 || eof_) {
+    eof_ = false;
+    read_into_buffer();
   }
-  if (!null_terminated)
-    throw Alloc<IOError>(90);  // Line too long, didn't reach the newline char
 
-  BigStr* result = ::StrFromC(line_, i);
+  size_t line_len = 0;
+  char* newline_found = static_cast<char*>(memchr(buffer_ + pos_, '\n', end_ - pos_));
+  if (newline_found != NULL) {
+    line_len = newline_found - buffer_ - pos_ + 1;
+  } else if (eof_) {
+    line_len = end_ - pos_;
+  } else if (pos_ > 0) {
+
+      size_t new_pos = end_ - pos_;
+
+      if (pos_ > 0 && pos_ < end_) {
+          // Move the leftover data to the beginning of the buffer
+          // [ ....\n|XXXXX] -> [XXXXXYYYYY]
+          //         ^           ^
+          //        pos_        pos_
+
+          // Check if there will be an overlap during the move
+          if (pos_ >= (end_ - pos_)) {
+              // No overlap, safe to use memcpy
+              memcpy(buffer_, &(buffer_[pos_]), new_pos);
+          } else {
+              // Overlap, need to use memmove
+              memmove(buffer_, &(buffer_[pos_]), new_pos);
+          }
+      }
+      pos_ = 0;
+
+      // Read more data to fill the rest of the buffer
+      end_ = new_pos;
+      read_into_buffer();
+      line_len = end_;
+      if (end_ > new_pos) {
+        newline_found = static_cast<char*>(memchr(buffer_ + new_pos, '\n', end_ - new_pos));
+        if (newline_found != NULL) {
+          line_len = newline_found - buffer_ + 1;
+        } else {
+          throw Alloc<IOError>(90);  // Line too long, didn't reach the newline char
+        }
+      }
+  } else {
+    throw Alloc<IOError>(90);  // Line too long, didn't reach the newline char
+  }
+
+  BigStr* result = ::StrFromC(buffer_ + pos_, line_len);
+  pos_ += line_len;
 
   return result;
 }

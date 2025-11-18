@@ -153,6 +153,8 @@ class File {
   }
 };
 
+#define BUF_SIZE 131072
+
 // Wrap a FILE* for read and write
 class CFile : public File {
  public:
@@ -179,8 +181,13 @@ class CFile : public File {
   }
 
  private:
+  void read_into_buffer();
+
   int fd_;
-  char line_[131072];
+  char buffer_[BUF_SIZE];
+  size_t pos_ = 0;
+  size_t end_ = 0;
+  bool eof_ = false;
 
   DISALLOW_COPY_AND_ASSIGN(CFile)
 };
