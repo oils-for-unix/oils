@@ -969,7 +969,7 @@ case (s) {
 echo hi
 
 try myproc
-if (_status !== 0) {
+if failed {
   echo failed
 }
 '
@@ -981,7 +981,6 @@ test-trim-utf8-error() {
 
   # error is missed
   call " a$[badUtf]b " => trim()
-  echo status=$_status
 
   # error is found
   call "$[badUtf]b " => trim()
