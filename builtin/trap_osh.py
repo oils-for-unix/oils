@@ -312,6 +312,13 @@ class Trap(vm._Builtin):
         # Print in order of signal number
         n = signal_def.MaxSigNumber() + 1
         for sig_num in xrange(n):
+            # Check for explicitly ignored signals
+            if sig_num in self.trap_state.ignored_sigs:
+                sig_name = signal_def.GetName(sig_num)
+                assert sig_name is not None
+                print("trap -- '' %s" % sig_name)
+                continue
+
             handler = self.trap_state.GetTrap(sig_num)
             if handler is None:
                 continue

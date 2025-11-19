@@ -561,3 +561,49 @@ ok07
 trap-exit
 failure
 ## END
+
+#### trap '' sets handler to empty string (SIG_IGN)
+
+trap '' USR1
+trap
+
+## STDOUT:
+trap -- '' SIGUSR1
+## END
+
+#### trap '' with multiple signals
+
+trap '' USR1 USR2
+trap
+
+## STDOUT:
+trap -- '' SIGUSR1
+trap -- '' SIGUSR2
+## END
+
+#### trap '' rejects hooks
+
+trap '' EXIT
+echo should not get here
+
+## STDOUT:
+## END
+## status: 2
+
+#### trap '' rejects STOP signal
+
+trap '' STOP
+echo should not get here
+
+## STDOUT:
+## END
+## status: 2
+
+#### trap '' rejects KILL signal
+
+trap '' KILL  
+echo should not get here
+
+## STDOUT:
+## END
+## status: 2
