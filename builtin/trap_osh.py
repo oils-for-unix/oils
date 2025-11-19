@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
-from signal import SIG_DFL, SIGINT, SIGWINCH
+from signal import SIG_DFL, SIG_IGN, SIGINT, SIGWINCH
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
@@ -49,6 +49,7 @@ class TrapState(object):
         self.signal_safe = signal_safe
         self.hooks = {}  # type: Dict[str, command_t]
         self.traps = {}  # type: Dict[int, command_t]
+        self.ignored_sigs = {}  # type: Dict[int, bool]  # Signals set to SIG_IGN
 
     def ClearForSubProgram(self, inherit_errtrace):
         # type: (bool) -> None
@@ -62,6 +63,7 @@ class TrapState(object):
             self.hooks['ERR'] = hook_err
 
         self.traps.clear()
+        self.ignored_sigs.clear()
 
     def GetHook(self, hook_name):
         # type: (str) -> command_t
@@ -93,6 +95,7 @@ class TrapState(object):
         # type: (int) -> None
 
         mylib.dict_erase(self.traps, sig_num)
+        mylib.dict_erase(self.ignored_sigs, sig_num)
 
         if sig_num == SIGINT:
             self.signal_safe.SetSigIntTrapped(False)
@@ -109,6 +112,20 @@ class TrapState(object):
             # interactive shells, but it might be more correct.  See what other
             # shells do.
             iolib.sigaction(sig_num, SIG_DFL)
+
+    def _IgnoreSignal(self, sig_num):
+        # type: (int) -> None
+        """Set a signal to be ignored (SIG_IGN)."""
+        mylib.dict_erase(self.traps, sig_num)
+        self.ignored_sigs[sig_num] = True
+
+        if sig_num == SIGINT:
+            # Don't disturb SIGINT handling
+            self.signal_safe.SetSigIntTrapped(False)
+        elif sig_num == SIGWINCH:
+            self.signal_safe.SetSigWinchCode(iolib.UNTRAPPED_SIGWINCH)
+        else:
+            iolib.sigaction(sig_num, SIG_IGN)
 
     def AddItem(self, parsed_id, handler):
         # type: (str, command_t) -> None
@@ -346,6 +363,31 @@ class Trap(vm._Builtin):
             self.trap_state.RemoveItem(parsed_id)
             arg_r.Next()
 
+    def _IgnoreTheRest(self, arg_r):
+        # type: (args.Reader) -> int
+        """Ignore (set to SIG_IGN) all remaining signal arguments"""
+        while not arg_r.AtEnd():
+            arg_str, arg_loc = arg_r.Peek2()
+            parsed_id = ParseSignalOrHook(arg_str, arg_loc, allow_legacy=True)
+
+            if parsed_id in _HOOK_NAMES:
+                self.errfmt.Print_(
+                    "trap: can't ignore hook %r" % arg_str,
+                    blame_loc=arg_loc)
+                return 2
+
+            sig_num = signal_def.GetNumber(parsed_id)
+            assert sig_num is not signal_def.NO_SIGNAL
+
+            if parsed_id == 'STOP' or parsed_id == 'KILL':
+                self.errfmt.Print_("Signal %r can't be handled" % arg_str,
+                                   blame_loc=arg_loc)
+                return 2
+
+            self.trap_state._IgnoreSignal(sig_num)
+            arg_r.Next()
+        return 0
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_util.ParseCmdVal('trap',
@@ -356,6 +398,9 @@ class Trap(vm._Builtin):
         if arg.add:  # trap --add
             cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
             return self._AddTheRest(arg_r, cmd_frag, allow_legacy=False)
+
+        if arg.ignore:  # trap --ignore
+            return self._IgnoreTheRest(arg_r)
 
         if arg.remove:  # trap --remove
             self._RemoveTheRest(arg_r, allow_legacy=False)
@@ -395,6 +440,10 @@ class Trap(vm._Builtin):
             return 0
 
         arg_r.Next()
+
+        # If first arg is empty string '', ignore the specified signals
+        if first_arg == '':
+            return self._IgnoreTheRest(arg_r)
 
         # Legacy behavior for only one arg: 'trap SIGNAL' removes the handler
         if arg_r.AtEnd():
