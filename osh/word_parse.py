@@ -1067,12 +1067,8 @@ class WordParser(WordEmitter):
 
         p_die('Expected word after ( opening bash regex group', self.cur_token)
 
-    def _ReadLikeDQ(self,
-                    left_token,
-                    is_ysh_expr,
-                    out_parts,
-                    is_here_doc=False):
-        # type: (Optional[Token], bool, List[word_part_t], bool) -> None
+    def _ReadLikeDQ(self, left_token, is_ysh_expr, out_parts):
+        # type: (Optional[Token], bool, List[word_part_t]) -> None
         """
         Args:
           left_token: A token if we are reading a double quoted part, or None if
@@ -1103,8 +1099,7 @@ class WordParser(WordEmitter):
 
                 elif self.token_type == Id.Lit_EscapedDoubleQuote:
                     if left_token:
-                        part = word_part.EscapedLiteral(
-                            tok, "\"")
+                        part = word_part.EscapedLiteral(tok, "\"")
                     else:
                         # in here docs \" should not be escaped, staying as literal characters
                         tok = self.cur_token
@@ -2350,7 +2345,7 @@ class WordParser(WordEmitter):
         """
         A here doc is like a double quoted context, except " and \" aren't special.
         """
-        self._ReadLikeDQ(None, False, parts, is_here_doc=True)
+        self._ReadLikeDQ(None, False, parts)
         # Returns nothing
 
     def ReadForPlugin(self):
