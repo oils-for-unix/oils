@@ -1099,7 +1099,8 @@ class WordParser(WordEmitter):
 
                 elif self.token_type == Id.Lit_EscapedDoubleQuote:
                     if left_token:
-                        part = word_part.EscapedLiteral(tok, "\"")
+                        ch = lexer.TokenSliceLeft(tok, 1)
+                        part = word_part.EscapedLiteral(tok, ch)
                     else:
                         # in here docs \" should not be escaped, staying as literal characters
                         part = Token(Id.Lit_Chars, tok.length, tok.col,
