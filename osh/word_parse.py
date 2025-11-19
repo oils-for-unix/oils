@@ -1067,7 +1067,11 @@ class WordParser(WordEmitter):
 
         p_die('Expected word after ( opening bash regex group', self.cur_token)
 
-    def _ReadLikeDQ(self, left_token, is_ysh_expr, out_parts, is_here_doc=False):
+    def _ReadLikeDQ(self,
+                    left_token,
+                    is_ysh_expr,
+                    out_parts,
+                    is_here_doc=False):
         # type: (Optional[Token], bool, List[word_part_t], bool) -> None
         """
         Args:
@@ -1094,18 +1098,19 @@ class WordParser(WordEmitter):
                 if self.token_type == Id.Lit_EscapedChar:
                     tok = self.cur_token
                     ch = lexer.TokenSliceLeft(tok, 1)
-                    if ch == "\"" and is_here_doc:
-                        # in here docs \" should not be escaped, staying as literal characters
-                        out_parts.append(Token(
-                            Id.Lit_Chars,
-                            tok.length,
-                            tok.col, tok.line,
-                            tok.tval
-                        ))
+                    part = word_part.EscapedLiteral(tok,
+                                                    ch)  # type: word_part_t
+
+                elif self.token_type == Id.Lit_EscapedDoubleQuote:
+                    if left_token:
+                        part = word_part.EscapedLiteral(
+                            tok, "\"")
                     else:
-                        part = word_part.EscapedLiteral(tok,
-                                                        ch)  # type: word_part_t
-                        out_parts.append(part)
+                        # in here docs \" should not be escaped, staying as literal characters
+                        tok = self.cur_token
+                        part = Token(Id.Lit_Chars, tok.length, tok.col,
+                                     tok.line, tok.tval)
+
                 else:
                     if self.token_type == Id.Lit_BadBackslash:
                         # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
@@ -1123,7 +1128,8 @@ class WordParser(WordEmitter):
                                   self.cur_token)
 
                     part = self.cur_token
-                    out_parts.append(part)
+
+                out_parts.append(part)
 
             elif self.token_kind == Kind.Left:
                 if self.token_type == Id.Left_Backtick and is_ysh_expr:
