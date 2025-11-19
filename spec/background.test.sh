@@ -54,7 +54,7 @@ wait -n
 #### wait with jobspec syntax %nonexistent
 wait %nonexistent
 ## status: 127
-## OK dash status: 2
+## N-I dash status: 2
 
 #### wait with invalid PID
 wait 12345678
@@ -161,6 +161,10 @@ echo status=$?
 ## STDOUT:
 status=0
 status=99
+## END
+## N-I mksh STDOUT:
+status=0
+status=127
 ## END
 
 #### Wait for job and PIPESTATUS
