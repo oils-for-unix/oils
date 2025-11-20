@@ -41,15 +41,16 @@ set -u -- x y z
 echo "$@"
 ## stdout: x y z
 
-#### set -u with undefined variables exits the interpreter
-$SH -c '
-set -u
+#### set -u with undefined variable exits the interpreter
 
-echo "before"
-x=$blarg
-echo "after"
-'
-# status must be non-zero: bash uses 1, ash/dash exit 2
+# non-interactive
+$SH -c 'set -u; echo before; echo $x; echo after'
+if test $? -ne 0; then
+  echo OK
+fi
+
+# interactive
+$SH -i -c 'set -u; echo before; echo $x; echo after'
 if test $? -ne 0; then
   echo OK
 fi
@@ -57,24 +58,26 @@ fi
 ## STDOUT:
 before
 OK
+before
+OK
 ## END
 
-#### set -u error in eval should exit when non-interactive
-$SH -c '
-set -u
-test_function() {
-  x=$1
-}
+#### set -u with undefined var in interactive shell does NOT exit the interpreter
 
-echo before
-eval test_function
-# bash spec says that set -u failures should exit the shell
-# posix spec says that eval shall read and execute a command by the current shell, so the
-# running shell should exit too
+# In bash, it aborts the LINE only.  The next line is executed!
 
-echo after
+# non-interactive
+$SH -c 'set -u; echo before; echo $x; echo after
+echo line2
 '
-# status must be non-zero: bash uses 1, ash/dash exit 2
+if test $? -ne 0; then
+  echo OK
+fi
+
+# interactive
+$SH -i -c 'set -u; echo before; echo $x; echo after
+echo line2
+'
 if test $? -ne 0; then
   echo OK
 fi
@@ -82,10 +85,15 @@ fi
 ## STDOUT:
 before
 OK
-## END
-## BUG zsh/mksh STDOUT:
 before
-after
+line2
+## END
+
+## BUG dash/mksh/zsh STDOUT:
+before
+OK
+before
+OK
 ## END
 
 #### set -u error can break out of nested evals
