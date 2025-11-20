@@ -1,4 +1,4 @@
-## oils_failures_allowed: 14
+## oils_failures_allowed: 1
 ## compare_shells: bash
 ## legacy_tmp_dir: true
 
