@@ -1097,7 +1097,7 @@ class WordParser(WordEmitter):
                     part = word_part.EscapedLiteral(tok,
                                                     ch)  # type: word_part_t
 
-                elif self.token_type == Id.Lit_EscapedDoubleQuote:
+                elif self.token_type == Id.Lit_BackslashDoubleQuote:
                     if left_token:
                         ch = lexer.TokenSliceLeft(tok, 1)
                         part = word_part.EscapedLiteral(tok, ch)
