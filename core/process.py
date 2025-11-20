@@ -13,6 +13,8 @@ from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
 from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
                     SIGTTOU, SIGTTIN, SIGWINCH)
 
+import libc
+
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (job_state_e, job_state_t,
                                         job_state_str, wait_status,
@@ -2070,6 +2072,17 @@ W1_NO_CHANGE = -14  # WNOHANG was passed and there were no state changes
 NO_ARG = -20
 
 
+
+
+
+def GetSignalMessage(sig_num):
+    # type: (int) -> Optional[str]
+    """Get signal message from libc."""
+    if mylib.PYTHON:
+        return libc.strsignal(sig_num)
+    return None
+
+
 class Waiter(object):
     """A capability to wait for processes.
 
@@ -2192,6 +2205,18 @@ class Waiter(object):
             # Print newline after Ctrl-C.
             if term_sig == SIGINT:
                 print('')
+            else:
+                msg = GetSignalMessage(term_sig)
+                if msg is not None:
+                    if mylib.PYTHON:
+                        # WCOREDUMP is only available on some systems
+                        try:
+                            from os import WCOREDUMP  # type: ignore
+                            if WCOREDUMP(status):
+                                msg = msg + ' (core dumped)'
+                        except (ImportError, AttributeError):
+                            pass
+                    print_stderr(msg)
 
             if proc:
                 proc.WhenExited(pid, status)
