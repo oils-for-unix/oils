@@ -18,20 +18,25 @@ create table notable_disagree as
   from diff_merged
   where disagree == 1 and status1 == 0 and timeout == 0;
 
+create table timeout_disagree as
+  select *
+  from diff_merged
+  where disagree == 1 and timeout == 1;
+
 create table baseline_only as
   select *
   from diff_merged
   where disagree == 1 and status2 == 0 and timeout == 0;
 
-create table other_fail as
+create table both_timeout as
+  select *
+  from diff_merged
+  where disagree == 0 and timeout == 1;
+
+create table both_fail as
   select *
   from diff_merged
   where disagree == 0 and timeout == 0;
-
-create table timeout as
-  select *
-  from diff_merged
-  where timeout == 1;
 
 -- Drop 2 columns from each of 3 tables (sqlite is verbose)
 
@@ -40,19 +45,24 @@ drop column disagree;
 alter table notable_disagree
 drop column timeout;
 
+alter table timeout_disagree
+drop column disagree;
+alter table timeout_disagree
+drop column timeout;
+
 alter table baseline_only
 drop column disagree;
 alter table baseline_only
 drop column timeout;
 
-alter table other_fail
+alter table both_fail
 drop column disagree;
-alter table other_fail
+alter table both_fail
 drop column timeout;
 
-alter table timeout
+alter table both_timeout
 drop column disagree;
-alter table timeout
+alter table both_timeout
 drop column timeout;
 
 -- Create cause histogram

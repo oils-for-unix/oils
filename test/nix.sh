@@ -9,7 +9,7 @@ set -o errexit
 
 # This is a 66-line bootstrap script.
 download() {
-  wget --directory _tmp https://nixos.org/nix/install
+  wget --directory-prefix _tmp https://nixos.org/nix/install
   chmod +x _tmp/install
 }
 

@@ -63,7 +63,7 @@ foo
 ## END
 
 #### hay names at top level
-shopt --set parse_brace parse_at
+shopt --set parse_brace parse_at parse_ysh_expr_sub
 shopt --unset errexit
 
 hay define Package
@@ -233,7 +233,7 @@ EOF
 
 
 #### _hay() register
-shopt --set parse_paren parse_brace parse_equals parse_proc
+shopt --set parse_paren parse_brace parse_equals parse_proc parse_ysh_expr_sub
 
 hay define user
 
@@ -263,7 +263,7 @@ write -- $[len(_hay()['children'])]
 
 
 #### haynode builtin can define nodes
-shopt --set parse_paren parse_brace parse_equals parse_proc
+shopt --set parse_paren parse_brace parse_equals parse_proc parse_ysh_expr_sub
 
 # It prints JSON by default?  What about the code blocks?
 # Or should there be a --json flag?
@@ -310,7 +310,7 @@ level 0 children
 
 
 #### haynode: usage errors (name or block required)
-shopt --set parse_brace parse_equals parse_proc
+shopt --set parse_brace parse_equals parse_proc parse_ysh_expr_sub
 
 # should we make it name or block required?
 # license { ... } might be useful?
@@ -610,7 +610,7 @@ OK
 
 
 #### Code Blocks: parseHay() then shvar _DIALECT= { evalHay() }
-shopt --set parse_brace parse_proc
+shopt --set parse_brace parse_proc parse_ysh_expr_sub
 
 hay define TASK
 
@@ -667,7 +667,7 @@ status 3
 ## END
 
 #### Attribute / Data Blocks (package-manager)
-shopt --set parse_proc
+shopt --set parse_proc parse_ysh_expr_sub
 
 const path = "$REPO_ROOT/spec/testdata/config/package-manager.oil"
 

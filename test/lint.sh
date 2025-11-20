@@ -22,7 +22,7 @@ source devtools/common.sh  # banner
 
 get-cpplint() {
   mkdir -p _tmp
-  wget --directory _tmp \
+  wget --directory-prefix _tmp \
     https://raw.githubusercontent.com/google/styleguide/gh-pages/cpplint/cpplint.py
   chmod +x _tmp/cpplint.py
 }

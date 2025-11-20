@@ -206,12 +206,12 @@ npm-comp() {
 download-bash-completion-xenial() {
   # binary package
   if false; then
-    wget --directory _tmp \
+    wget --directory-prefix _tmp \
       http://mirrors.kernel.org/ubuntu/pool/main/b/bash-completion/bash-completion_2.1-4.2ubuntu1_all.deb
   fi
 
   # source package
-  wget --directory _tmp \
+  wget --directory-prefix _tmp \
     http://archive.ubuntu.com/ubuntu/pool/main/b/bash-completion/bash-completion_2.1.orig.tar.bz2
 }
 
@@ -219,9 +219,9 @@ download-bash-completion-xenial() {
 # /usr/share/bash-completion/git.  It seems to use the _git() and _gitk() entry
 # points.
 download-git-package() {
-  true || wget --directory _tmp \
+  true || wget --directory-prefix _tmp \
     http://archive.ubuntu.com/ubuntu/pool/main/g/git/git_2.7.4.orig.tar.xz
-  wget --directory _tmp \
+  wget --directory-prefix _tmp \
     http://security.ubuntu.com/ubuntu/pool/main/g/git/git_2.7.4-0ubuntu1.6_amd64.deb
 }
 
