@@ -389,3 +389,9 @@ err:?
 err:?
 err:?
 ## END
+
+#### getopts silent error reporting
+set -- -Z
+getopts ':a:' opt
+echo "status=$? opt=$opt OPTARG=$OPTARG"
+## stdout: status=0 opt=? OPTARG=Z
