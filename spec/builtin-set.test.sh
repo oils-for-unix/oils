@@ -41,6 +41,24 @@ set -u -- x y z
 echo "$@"
 ## stdout: x y z
 
+#### set -u with undefined variables exits the interpreter
+$SH -c '
+set -u
+
+echo "before"
+x=$blarg
+echo "after"
+'
+# status must be non-zero: bash uses 1, ash/dash exit 2
+if test $? -ne 0; then
+  echo OK
+fi
+
+## STDOUT:
+before
+OK
+## END
+
 #### set -u error in eval should exit when non-interactive
 $SH -c '
 set -u
@@ -70,7 +88,7 @@ before
 after
 ## END
 
-#### set -u nested evals
+#### set -u error can break out of nested evals
 $SH -c '
 set -u
 test_function_2() {
@@ -96,24 +114,6 @@ OK
 ## BUG zsh/mksh STDOUT:
 before
 after
-## END
-
-#### set -u no eval
-$SH -c '
-set -u
-
-echo "before"
-x=$blarg
-echo "after"
-'
-# status must be non-zero: bash uses 1, ash/dash exit 2
-if test $? -ne 0; then
-  echo OK
-fi
-
-## STDOUT:
-before
-OK
 ## END
 
 #### reset option with long flag
