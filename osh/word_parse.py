@@ -1103,8 +1103,8 @@ class WordParser(WordEmitter):
                         part = word_part.EscapedLiteral(tok, ch)
                     else:
                         # in here docs \" should not be escaped, staying as literal characters
-                        part = Token(Id.Lit_Chars, tok.length, tok.col,
-                                     tok.line, tok.tval)
+                        tok.id = Id.Lit_Chars
+                        part = tok
 
                 else:
                     if self.token_type == Id.Lit_BadBackslash:
