@@ -1447,7 +1447,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             tok_str = lexer.TokenVal(name_tok)
             name = tok_str[1:] if tok_str.startswith('$') else tok_str
             # same as e_die, except when non-interactive it exits
-            raise error.NoUnset(1, 'Undefined variable %r' % name, name_tok)
+            raise error.NoUnset('Undefined variable %r' % name, name_tok)
 
         return value.Str('')
 

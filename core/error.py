@@ -174,9 +174,11 @@ class NoUnset(FatalRuntime):
     Is raised in WordEvaluator then caught in CommandEvaluator.
     """
 
-    def __init__(self, exit_status, msg, location):
-        # type: (int, str, loc_t) -> None
-        FatalRuntime.__init__(self, exit_status, msg, location)
+    def __init__(self, msg, location):
+        # type: (str, loc_t) -> None
+
+        # exit status is always 1
+        FatalRuntime.__init__(self, 1, msg, location)
 
 
 class Expr(FatalRuntime):
