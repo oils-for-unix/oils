@@ -1089,13 +1089,23 @@ class WordParser(WordEmitter):
         while num_end_tokens < expected_end_tokens:
             self._SetNext(lex_mode_e.DQ)
             self._GetToken()
+            tok = self.cur_token
 
             if self.token_kind == Kind.Lit:
                 if self.token_type == Id.Lit_EscapedChar:
-                    tok = self.cur_token
                     ch = lexer.TokenSliceLeft(tok, 1)
                     part = word_part.EscapedLiteral(tok,
                                                     ch)  # type: word_part_t
+
+                elif self.token_type == Id.Lit_BackslashDoubleQuote:
+                    if left_token:
+                        ch = lexer.TokenSliceLeft(tok, 1)
+                        part = word_part.EscapedLiteral(tok, ch)
+                    else:
+                        # in here docs \" should not be escaped, staying as literal characters
+                        tok.id = Id.Lit_Chars
+                        part = tok
+
                 else:
                     if self.token_type == Id.Lit_BadBackslash:
                         # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
@@ -1106,25 +1116,24 @@ class WordParser(WordEmitter):
                                 self.parse_opts.no_parse_backslash()):
                             p_die(
                                 "Invalid char escape in double quoted string (OILS-ERR-12)",
-                                self.cur_token)
+                                tok)
                     elif self.token_type == Id.Lit_Dollar:
                         if is_ysh_expr or self.parse_opts.no_parse_dollar():
-                            p_die("Literal $ should be quoted like \$",
-                                  self.cur_token)
+                            p_die("Literal $ should be quoted like \$", tok)
 
-                    part = self.cur_token
+                    part = tok
+
                 out_parts.append(part)
 
             elif self.token_kind == Kind.Left:
                 if self.token_type == Id.Left_Backtick and is_ysh_expr:
                     p_die("Backtick should be $(cmd) or \\` (OILS-ERR-18)",
-                          self.cur_token)
+                          tok)
 
                 part = self._ReadDoubleQuotedLeftParts()
                 out_parts.append(part)
 
             elif self.token_kind == Kind.VSub:
-                tok = self.cur_token
                 part = SimpleVarSub(tok)
                 out_parts.append(part)
                 # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
@@ -1136,7 +1145,7 @@ class WordParser(WordEmitter):
                     num_end_tokens += 1
 
                 # In a here doc, the right quote is literal!
-                out_parts.append(self.cur_token)
+                out_parts.append(tok)
 
             elif self.token_kind == Kind.Eof:
                 if left_token:
@@ -1147,7 +1156,7 @@ class WordParser(WordEmitter):
                     break
 
             else:
-                raise AssertionError(self.cur_token)
+                raise AssertionError(tok)
 
             if self.token_kind != Kind.Right:
                 num_end_tokens = 0  # """ must be CONSECUTIVE
@@ -2333,7 +2342,7 @@ class WordParser(WordEmitter):
     def ReadHereDocBody(self, parts):
         # type: (List[word_part_t]) -> None
         """
-        A here doc is like a double quoted context, except " isn't special.
+        A here doc is like a double quoted context, except " and \" aren't special.
         """
         self._ReadLikeDQ(None, False, parts)
         # Returns nothing
