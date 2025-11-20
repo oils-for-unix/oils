@@ -42,7 +42,7 @@ if ('foo42' ~ / <capture d+> /) {
 42
 ## END
 
-#### _status instead of _error.code
+#### _error.code (formerly _status)
 
 shopt --set ysh:upgrade
 
@@ -53,7 +53,7 @@ f() {
 try {
   f
 }
-echo status=$_status
+echo status=$[_error.code]
 
 ## STDOUT:
 status=42
