@@ -42,22 +42,28 @@ echo "$@"
 ## stdout: x y z
 
 #### set -u error in eval should exit when non-interactive
+$SH -c '
 set -u
 test_function() {
-    x=$1
+  x=$1
 }
 
-echo "before"
+echo before
 eval test_function
 # bash spec says that set -u failures should exit the shell
 # posix spec says that eval shall read and execute a command by the current shell, so the
 # running shell should exit too
-echo "after"
-## status: 1
-## OK ash/dash status: 2
-## BUG mksh/zsh status: 0
+
+echo after
+'
+# status must be non-zero: bash uses 1, ash/dash exit 2
+if test $? -ne 0; then
+  echo OK
+fi
+
 ## STDOUT:
 before
+OK
 ## END
 ## BUG zsh/mksh STDOUT:
 before
@@ -65,22 +71,27 @@ after
 ## END
 
 #### set -u nested evals
+$SH -c '
 set -u
 test_function_2() {
-    x=$blarg
+  x=$blarg
 }
 test_function() {
-    eval "test_function_2"
+  eval "test_function_2"
 }
 
-echo "before"
+echo before
 eval test_function
-echo "after"
-## status: 1
-## OK ash/dash status: 2
-## BUG mksh/zsh status: 0
+echo after
+'
+# status must be non-zero: bash uses 1, ash/dash exit 2
+if test $? -ne 0; then
+  echo OK
+fi
+
 ## STDOUT:
 before
+OK
 ## END
 ## BUG zsh/mksh STDOUT:
 before
@@ -88,15 +99,21 @@ after
 ## END
 
 #### set -u no eval
+$SH -c '
 set -u
 
 echo "before"
 x=$blarg
 echo "after"
-## status: 1
-## OK ash/dash status: 2
+'
+# status must be non-zero: bash uses 1, ash/dash exit 2
+if test $? -ne 0; then
+  echo OK
+fi
+
 ## STDOUT:
 before
+OK
 ## END
 
 #### reset option with long flag
