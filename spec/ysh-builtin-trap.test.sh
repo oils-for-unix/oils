@@ -44,3 +44,29 @@ register
 ## STDOUT:
 x = global
 ## END
+
+#### trap --ignore INT USR1
+
+trap --ignore INT USR1
+trap -p
+
+## STDOUT:
+trap -- '' SIGINT
+trap -- '' SIGUSR1
+## END
+
+#### trap --ignore rejects hooks
+
+trap --ignore EXIT
+
+## STDOUT:
+## END
+## status: 2
+
+#### trap --ignore rejects STOP
+
+trap --ignore STOP
+
+## STDOUT:
+## END
+## status: 2

@@ -203,6 +203,7 @@ TRAP_SPEC.ShortFlag('-p')
 TRAP_SPEC.ShortFlag('-l')
 TRAP_SPEC.LongFlag('--add')
 TRAP_SPEC.LongFlag('--remove')
+TRAP_SPEC.LongFlag('--ignore')  # YSH: ignore signals (same as trap '')
 
 KILL_SPEC = FlagSpec('kill')
 KILL_SPEC.ShortFlag('-l', args.Bool)
