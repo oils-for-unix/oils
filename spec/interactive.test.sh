@@ -323,6 +323,17 @@ $SH --rcfile myrc -i -c 'show-shell-state main'
 # comparisons.
 # The --details flag is useful
 
+#### rc file's fd is moved out of the way when requested by the user
+cat >$TMP/oshrc <<EOF
+exec 10>out
+echo hello>&10
+cat out
+EOF
+$SH --rcfile $TMP/oshrc -i -c 'echo hello'
+## STDOUT:
+hello
+hello
+## END
 
 #### HISTFILE is written in interactive shell
 
