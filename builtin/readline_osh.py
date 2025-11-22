@@ -364,8 +364,7 @@ class History(vm._Builtin):
             start_index = max(1, num_items + 1 - num_to_show)
 
         arg_r.Next()
-        if not arg_r.AtEnd():
-            e_usage('got too many arguments', loc.Missing)
+        arg_r.Done()
 
         # TODO:
         # - Exclude lines that don't parse from the history!  bash and zsh don't do
@@ -433,8 +432,7 @@ class Fc(vm._Builtin):
             last_index += num_items
         arg_r.Next()
 
-        if not arg_r.AtEnd():
-            e_usage('got too many arguments', loc.Missing)
+        arg_r.Done()
 
         if arg.l:
             is_reversed = first_index > last_index

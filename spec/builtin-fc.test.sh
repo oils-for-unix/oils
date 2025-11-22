@@ -245,3 +245,11 @@ case $SH in bash) echo '^D' ;; esac
 2	 echo 1
 ^D
 ## END
+
+#### fc with too many args
+fc -l 0 1 2 || echo too many args!
+## STDOUT:
+too many args!
+## END
+## N-I bash STDOUT:
+## END
