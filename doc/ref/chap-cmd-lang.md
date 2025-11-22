@@ -309,13 +309,18 @@ These are keywords in Oils, not builtins!
 
 Break out of a loop.  (Not used for case statements!)
 
+If optional argument N is specified, breaks N enclosing loops.
+
 ### continue
 
 Continue to the next iteration of a loop.
 
+If optional argument N is specified, resumes the Nth enclosing loop.
+
 ### return
 
-Return from a function.
+Return from a function with the given status (if value is omitted, the return
+status is that of the last command executed).
 
 ### exit
 

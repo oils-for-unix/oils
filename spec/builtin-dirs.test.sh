@@ -241,3 +241,13 @@ pushd . >/dev/null
 dirs
 ## stdout: /tmp /tmp
 ## status: 0
+
+#### dirs does not take arguments
+dirs a || echo failed
+dirs -l a || echo failed
+## STDOUT:
+failed
+failed
+## END
+## BUG zsh STDOUT:
+## END

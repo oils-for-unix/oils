@@ -119,9 +119,8 @@ class Cd(vm._Builtin):
 
         # At most 1 arg is accepted
         arg_r.Next()
-        extra, extra_loc = arg_r.Peek2()
-        if extra is not None and self.mem.exec_opts.strict_arg_parse():
-            raise error.Usage('got too many arguments', extra_loc)
+        if self.mem.exec_opts.strict_arg_parse():
+            arg_r.Done()
 
         if dest_dir == '-':
             # Note: $OLDPWD isn't an env var; it's a global
@@ -220,9 +219,7 @@ class Pushd(vm._Builtin):
             return 1
 
         arg_r.Next()
-        extra, extra_loc = arg_r.Peek2()
-        if extra is not None:
-            e_usage('got too many arguments', extra_loc)
+        arg_r.Done()
 
         # TODO: 'cd' uses normpath?  Is that inconsistent?
         dest_dir = os_path.abspath(dir_arg)
@@ -304,6 +301,7 @@ class Dirs(vm._Builtin):
 
         home_dir = state.MaybeString(self.mem, 'HOME')
         style = SINGLE_LINE
+        arg_r.Done()
 
         # Following bash order of flag priority
         if arg.l:
@@ -335,6 +333,9 @@ class Pwd(vm._Builtin):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_util.ParseCmdVal('pwd', cmd_val)
         arg = arg_types.pwd(attrs.attrs)
+
+        if self.mem.exec_opts.strict_arg_parse():
+            arg_r.Done()
 
         # NOTE: 'pwd' will succeed even if the directory has disappeared.  Other
         # shells behave that way too.
