@@ -1103,7 +1103,7 @@ check-for-failure() {
   NR == 1 { 
     col_name = $1
     if (col_name != "status") { 
-      printf("%s: Expected \"status\" as first column", FILENAME)
+      printf("%s: Expected \"status\" as first column\n", FILENAME)
       exit 2
     }
   }
@@ -1113,9 +1113,12 @@ check-for-failure() {
       printf("%s row %d: got failure %d\n", FILENAME, NR, status)
       failures += 1
     }
+    num_rows += 1
   }
   END {
-    if (failures != allowed_failures) {
+    if (failures == allowed_failures) {
+      printf("%s: %d tasks succeeded\n", FILENAME, num_rows)
+    } else {
       printf("%s: Expected %d failures, but got %d\n", FILENAME, allowed_failures, failures)
       exit 1
     }
