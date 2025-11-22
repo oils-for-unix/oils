@@ -78,17 +78,6 @@ wedge-report     deps/wedge-report.sh show          -
 EOF
 }
 
-spec-bin-for() {
-  local distro=$1
-  cat <<EOF
-os-info          soil/diagnose.sh os-info             -
-dump-env         soil/diagnose.sh dump-env            -
-wedge-deps       build/deps.sh wedge-deps-$distro     -
-fetch            build/deps.sh fetch                  -
-spec-bin         build/deps.sh install-spec-bin-fast  _build/wedge/logs/index.html
-EOF
-}
-
 dev-setup-debian-tasks() {
   # (task_name, script, action, result_html)
 
@@ -669,6 +658,8 @@ job-main() {
 }
 
 JOB-dummy() { job-main 'dummy'; }
+
+# These jobs run directly on VMs, not inside containers
 JOB-raw-vm() { job-main 'raw-vm'; }
 JOB-dev-setup-debian() { job-main 'dev-setup-debian'; }
 JOB-dev-setup-fedora() { job-main 'dev-setup-fedora'; }
