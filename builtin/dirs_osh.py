@@ -301,6 +301,7 @@ class Dirs(vm._Builtin):
 
         home_dir = state.MaybeString(self.mem, 'HOME')
         style = SINGLE_LINE
+        arg_r.Done()
 
         # Following bash order of flag priority
         if arg.l:
