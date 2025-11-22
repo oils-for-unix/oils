@@ -334,6 +334,9 @@ class Pwd(vm._Builtin):
         attrs, arg_r = flag_util.ParseCmdVal('pwd', cmd_val)
         arg = arg_types.pwd(attrs.attrs)
 
+        if self.mem.exec_opts.strict_arg_parse():
+            arg_r.Done()
+
         # NOTE: 'pwd' will succeed even if the directory has disappeared.  Other
         # shells behave that way too.
         pwd = self.mem.pwd
