@@ -1095,6 +1095,34 @@ EOF
   log "Wrote $log_dir/index.html"
 }
 
+check-for-failure() {
+  local tsv=${1:-$WEDGE_LOG_DIR/tasks.tsv}
+  local allowed_failures=${2:-0}
+
+  awk -F $'\t' -v allowed_failures="$allowed_failures" '
+  NR == 1 { 
+    col_name = $1
+    if (col_name != "status") { 
+      printf("%s: Expected \"status\" as first column", FILENAME)
+      exit 2
+    }
+  }
+  NR != 1 {
+    status = $1
+    if (status != 0) {
+      printf("%s row %d: got failure %d\n", FILENAME, NR, status)
+      failures += 1
+    }
+  }
+  END {
+    if (failures != allowed_failures) {
+      printf("%s: Expected %d failures, but got %d\n", FILENAME, allowed_failures, failures)
+      exit 1
+    }
+  }
+  ' $tsv >& 2
+}
+
 fake-py3-libs-wedge() {
   local wedge_out_dir=${1:-}
 
@@ -1185,7 +1213,9 @@ install-wedges-parallel() {
 
   echo "   END  $(timestamp)"
 
-  write-task-report
+  write-task-report $WEDGE_LOG_DIR
+
+  check-for-failure $WEDGE_LOG_DIR/tasks.tsv
 }
 
 install-wedges-OLD() {
