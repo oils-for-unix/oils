@@ -241,3 +241,11 @@ pushd . >/dev/null
 dirs
 ## stdout: /tmp /tmp
 ## status: 0
+
+#### pushd does not take more than one argument
+pushd . . >/dev/null || echo too many args!
+## N-I zsh STDOUT:
+## END
+## STDOUT:
+too many args!
+## END
