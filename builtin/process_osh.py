@@ -66,6 +66,9 @@ class Jobs(vm._Builtin):
         attrs, arg_r = flag_util.ParseCmdVal('jobs', cmd_val)
         arg = arg_types.jobs(attrs.attrs)
 
+        # osh doesn't support JOBSPEC arg
+        arg_r.Done()
+
         if arg.l:
             style = process.STYLE_LONG
         elif arg.p:
