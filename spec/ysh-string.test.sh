@@ -589,3 +589,14 @@ assert [true === 'абаба'.contains('')]
 assert [false === 'абаба'.contains('a')]
 assert [false === 'абаба'.contains('бабаба')]
 ## status: 0
+
+#### strcmp()
+
+assert [-1 === strcmp('a', 'z')]
+assert [-1 === strcmp('a', 'b')]
+assert [-1 === strcmp('a', 'aa')]
+assert [0 === strcmp('a', 'a')]
+assert [1 === strcmp('aa', 'a')]
+assert [1 === strcmp('b', 'a')]
+assert [1 === strcmp('z', 'a')]
+## status: 0
