@@ -407,7 +407,6 @@ BigStr* BigStr::rstrip(BigStr* chars) {
 
   // multiple chars, for word splitting
   if (num_chars > 1) {
-    const char* char_data = data_;
     int j = len(this);
     do {
       j--;
