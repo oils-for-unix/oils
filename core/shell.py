@@ -826,8 +826,10 @@ def Main(
         'split': method_str.Split(),
         'lines': method_str.Lines(),
 
-        # finds a substring, optional position to start at
-        'find': None,
+        # finds a substring, optional named parameters specifying the slice
+        # of the string to search in - [start:end]
+        'find': method_str.Find(method_str.START),
+        'findLast': method_str.Find(method_str.END),
 
         # replace substring, OR an eggex
         # takes count=3, the max number of replacements to do.
