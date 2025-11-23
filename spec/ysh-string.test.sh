@@ -574,3 +574,18 @@ assert [-1 === 'abc'.findLast('', start=7, end=8)]
 # test negative indices
 assert [3 === mystr.findLast('a', start=-3, end=-1)]
 ## status: 0
+
+#### str.contains()
+
+var mystr = 'abcaz'
+
+assert [true === mystr.contains('b')]
+assert [true === mystr.contains('z')]
+assert [false === mystr.contains('y')]
+# test with chars taking up two bytes
+assert [true === 'абаба'.contains('б')]
+assert [true === 'абаба'.contains('аб')]
+assert [true === 'абаба'.contains('')]
+assert [false === 'абаба'.contains('a')]
+assert [false === 'абаба'.contains('бабаба')]
+## status: 0
