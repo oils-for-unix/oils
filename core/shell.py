@@ -986,7 +986,7 @@ def Main(
     _AddBuiltinFunc(mem, 'encodeBytes', func_misc.EncodeBytes())
 
     # Str
-    #_AddBuiltinFunc(mem, 'strcmp', None)
+    _AddBuiltinFunc(mem, 'strcmp', func_misc.StrCmp())
     # TODO: This should be Python style splitting
     _AddBuiltinFunc(mem, 'split', func_misc.Split(splitter))
     _AddBuiltinFunc(mem, 'shSplit', func_misc.Split(splitter))
