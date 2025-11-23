@@ -323,6 +323,23 @@ class SearchMatch(vm._Callable):
         return RegexMatch(string, indices, capture)
 
 
+class Contains(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        string = rd.PosStr()
+        substr = rd.PosStr()
+
+        rd.Done()
+
+        x = string.find(substr)
+
+        return value.Bool(x != -1)
+
 class Find(vm._Callable):
 
     def __init__(self, direction):

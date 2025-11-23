@@ -831,6 +831,8 @@ def Main(
         'find': method_str.Find(method_str.START),
         'findLast': method_str.Find(method_str.END),
 
+        'contains': method_str.Contains(),
+
         # replace substring, OR an eggex
         # takes count=3, the max number of replacements to do.
         'replace': method_str.Replace(mem, expr_ev),
