@@ -540,3 +540,37 @@ double
 ## status: 2
 ## stdout-json: ""
 
+#### str.find()
+
+var mystr = 'abcaz'
+
+assert [1 === mystr.find('b')]
+assert [4 === mystr.find('z')]
+# test with chars taking up two bytes
+assert [2 === 'абаба'.find('б')]
+assert [6 === 'абаба'.find('б', start=3)]
+assert [-1 === 'абаба'.find('б', start=3, end=5)]
+assert [6 === 'абаба'.find('б', start=3, end=8)]
+assert [0 === 'абаба'.find('')]
+assert [2 === 'абаба'.find('', start=2, end=7)]
+assert [-1 === 'абаба'.find('a')] # different alphabet
+assert [-1 === 'abc'.find('', start=7, end=8)]
+# test negative indices
+assert [3 === mystr.find('a', start=-3, end=-1)]
+## status: 0
+
+#### str.findLast()
+var mystr = 'abcaz'
+assert [-1 === 'абаба'.findLast('a')] # different alphabet
+assert [4 === 'ababa'.findLast('a')]
+assert [3 === 'ababa'.findLast('b')]
+assert [6 === 'абаба'.findLast('б')]
+assert [-1 === 'абаба'.findLast('б', start=3, end=6)]
+assert [2 === 'абаба'.findLast('б', start=2, end=6)]
+assert [6 ==='абаба'.findLast('б', start=2, end=8)]
+assert [10 === 'абаба'.findLast('')]
+assert [8 === 'абаба'.findLast('', start=2, end=8)]
+assert [-1 === 'abc'.findLast('', start=7, end=8)]
+# test negative indices
+assert [3 === mystr.findLast('a', start=-3, end=-1)]
+## status: 0
