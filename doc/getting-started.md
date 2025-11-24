@@ -90,8 +90,7 @@ Example:
 
 ### Editor Support
 
-See [YSH Editor Support]($wiki) on the wiki.
-
+See [YSH Editor Support](https://github.com/oils-for-unix/oils/wiki/YSH-Editor-Support) on the wiki.
 ## Getting Help
 
 Type `help` in `osh` or `ysh`, which links to URLs in the [Oils
