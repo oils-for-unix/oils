@@ -111,6 +111,9 @@ BEGIN {
   # makepasswd
   patterns["#2579"] = "Usage: docbook.sh"
 
+  # megacmd
+  patterns["#2461"] = "configure:23900: Unexpected word while parsing compound command (Id.Word_Compound)"
+
   #
   # BUGS that only occur with OSH as BUSYBOX ASH
   #
