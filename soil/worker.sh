@@ -64,6 +64,8 @@ EOF
 
 dev-setup-for() {
   local distro=$1
+  local allow_failure=${2:-}
+
   # (task_name, script, action, result_html)
 
   cat <<EOF
@@ -71,40 +73,37 @@ os-info          soil/diagnose.sh os-info           -
 dump-env         soil/diagnose.sh dump-env          -
 wedge-deps       build/deps.sh wedge-deps-$distro   -
 fetch            build/deps.sh fetch                -
-install-wedges   build/deps.sh install-wedges-soil  _build/wedge/logs/index.html
+EOF
+
+  if test -n "$allow_failure"; then
+    # variants that allow failure
+    echo "install-wedges   build/deps.sh install-wedges-$distro-fail _build/wedge/logs/index.html"
+  else
+    echo 'install-wedges   build/deps.sh install-wedges-soil  _build/wedge/logs/index.html'
+  fi
+
+  cat <<EOF
 py-all-and-ninja soil/worker.sh py-all-and-ninja    -
 smoke-test       build/dev-setup-test.sh smoke-test -
 wedge-report     deps/wedge-report.sh show          -
 EOF
 }
 
-spec-bin-for() {
-  local distro=$1
-  cat <<EOF
-os-info          soil/diagnose.sh os-info             -
-dump-env         soil/diagnose.sh dump-env            -
-wedge-deps       build/deps.sh wedge-deps-$distro     -
-fetch            build/deps.sh fetch                  -
-spec-bin         build/deps.sh install-spec-bin-fast  _build/wedge/logs/index.html
-EOF
-}
-
 dev-setup-debian-tasks() {
-  # (task_name, script, action, result_html)
-
   dev-setup-for debian
 }
 
-dev-setup-fedora-tasks() {
-  # (task_name, script, action, result_html)
-
-  dev-setup-for fedora
+# allow failure
+dev-setup-debian-fail-tasks() {
+  dev-setup-for debian T
 }
 
-dev-setup-alpine-tasks() {
-  # (task_name, script, action, result_html)
+dev-setup-fedora-fail-tasks() {
+  dev-setup-for fedora T
+}
 
-  dev-setup-for alpine
+dev-setup-alpine-fail-tasks() {
+  dev-setup-for alpine T
 }
 
 pea-tasks() {
@@ -143,6 +142,7 @@ repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
 asdl-types          asdl/TEST.sh check-types                     -
 oils-types          devtools/types.sh soil-run                   -
+mycpp-types         devtools/types.sh assert-mycpp               -
 unit                test/unit.sh minimal                         _test/py-unit/
 lossless            test/lossless.sh soil-run                    -
 parse-errors        test/parse-errors.sh soil-run-py             -
@@ -668,10 +668,13 @@ job-main() {
 }
 
 JOB-dummy() { job-main 'dummy'; }
+
+# These jobs run directly on VMs, not inside containers
 JOB-raw-vm() { job-main 'raw-vm'; }
 JOB-dev-setup-debian() { job-main 'dev-setup-debian'; }
-JOB-dev-setup-fedora() { job-main 'dev-setup-fedora'; }
-JOB-dev-setup-alpine() { job-main 'dev-setup-alpine'; }
+JOB-dev-setup-debian-fail() { job-main 'dev-setup-debian-fail'; }
+JOB-dev-setup-fedora-fail() { job-main 'dev-setup-fedora-fail'; }
+JOB-dev-setup-alpine-fail() { job-main 'dev-setup-alpine-fail'; }
 
 JOB-dev-minimal() { job-main 'dev-minimal'; }
 JOB-interactive() { job-main 'interactive'; }
@@ -698,11 +701,10 @@ JOB-wild() { job-main 'wild'; }
 JOB-maybe-merge() { job-main 'maybe-merge'; }
 
 list-jobs() {
-  # dev-setup-fedora for Fedora, disable
+  ### invoked by maybe-merge
 
-  # 2025-04: temporarily disable dev-setup-debian, after cmake build issue
-  # Need to rewrite that with a shell script!
-  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge|dev-setup-fedora|dev-setup-alpine'
+  # omit sourcehut jobs: dev-setup-*-fail
+  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge|dev-setup-.*-fail'
 }
 
 "$@"

@@ -937,7 +937,7 @@ class SubProgramThunk(Thunk):
             status = self.cmd_ev.LastStatus()
             # NOTE: We ignore the is_fatal return value.  The user should set -o
             # errexit so failures in subprocesses cause failures in the parent.
-        except util.UserExit as e:
+        except util.HardExit as e:
             status = e.status
 
         # Handle errors in a subshell.  These two cases are repeated from main()

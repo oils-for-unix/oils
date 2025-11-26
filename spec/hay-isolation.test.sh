@@ -85,7 +85,7 @@ status 127
 ## END
 
 #### procs in hay eval
-shopt --set parse_brace parse_at parse_proc
+shopt --set parse_brace parse_at parse_proc parse_ysh_expr_sub
 
 hay define Package
 

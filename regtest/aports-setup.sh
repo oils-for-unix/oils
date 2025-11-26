@@ -119,9 +119,8 @@ patch-aports() {
   popd >/dev/null
 }
 
-
-# 2025-11-01, after several contributed fixes
-readonly TARBALL_ID='10703'
+# 2025-11-16: fresh run
+readonly TARBALL_ID='10856'
 
 download-oils() {
   local tarball_id=${1:-$TARBALL_ID}
@@ -130,8 +129,8 @@ download-oils() {
 
   rm -f -v _tmp/oils-for-unix.tar
 
-  #wget --no-clobber --directory _tmp "$url"
-  wget --directory _tmp "$url"
+  #wget --no-clobber --directory-prefix _tmp "$url"
+  wget --directory-prefix _tmp "$url"
 }
 
 make-chroot() {
@@ -359,10 +358,6 @@ build-oils() {
   '
 }
 
-save-default-config() {
-  regtest/aports-run.sh save-default-config
-}
-
 create-osh-overlay() {
   # _chroot/
   #   aports-build/  # chroot image
@@ -410,22 +405,6 @@ remove-osh-overlay() {
 
 remove-shard-layers() {
   sudo rm -r -f _chroot/shard*
-}
-
-create-package-dirs() {
-  # _chroot/
-  #   package.overlay/
-  #     merged/      # mounted and unmounted each time
-  #     work/
-  #   package-layers/
-  #     baseline/
-  #       gzip/
-  #       xz/
-  #     osh-as-sh/
-  #       gzip/
-  #       xz/
-
-  mkdir -v -p _chroot/package.overlay/{merged,work}
 }
 
 archived-distfiles() {
@@ -523,11 +502,7 @@ prepare-all() {
 
   oils-in-chroot  
 
-  # TODO: Don't need this for overlayfs
-  save-default-config
-
   create-osh-overlay
-  create-package-dirs
 
   # makes a host file
   apk-manifest

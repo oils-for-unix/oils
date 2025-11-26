@@ -16,6 +16,7 @@
 @media screen and (min-width: 801px) {
   body {
     margin: 0 auto;
+    padding: 0 1em;    /* 2025-11 fix - iPad also needs padding */
     line-height: 1.4;  /* http://bettermotherfuckingwebsite.com/ */
     font-size: large;  /* 2024-01 - all pages deserve this */
   }

@@ -17,6 +17,7 @@ create table diff_baseline as
     cast('error' as text) as error_grep,
     cast(printf('error/%s.txt', b.pkg) as text) as error_grep_HREF,
     (b.status != o.status) as disagree,
+    -- TODO: deprecate this field?  It's nicer to compute this separately
     (b.status in (124, 143) or o.status in (124, 143)) as timeout
   from
     baseline.packages as b

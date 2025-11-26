@@ -85,7 +85,7 @@ download-wild() {
   ### Done outside the container
 
   mkdir -p $REPO_ROOT/_cache
-  wget --directory $REPO_ROOT/_cache --no-clobber \
+  wget --directory-prefix $REPO_ROOT/_cache --no-clobber \
     https://www.oilshell.org/blob/wild/wild-source.tar.gz
 }
 

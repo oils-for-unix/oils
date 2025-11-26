@@ -24,7 +24,7 @@ source test/common.sh  # escape-html
 readonly BASE_DIR=_tmp/uftrace
 
 download() {
-  wget --no-clobber --directory _cache \
+  wget --no-clobber --directory-prefix _cache \
     https://github.com/namhyung/uftrace/archive/refs/tags/v0.13.tar.gz
     #https://github.com/namhyung/uftrace/archive/v0.9.3.tar.gz
 

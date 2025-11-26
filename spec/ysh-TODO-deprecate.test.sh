@@ -81,6 +81,8 @@ OIL
 
 #### s.upper(), not s => upper() (might keep this)
 
+shopt --set parse_ysh_expr_sub
+
 echo $['foo' => upper()]
 
 ## STDOUT:

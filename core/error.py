@@ -168,6 +168,19 @@ class ErrExit(FatalRuntime):
         self.show_code = show_code
 
 
+class NoUnset(FatalRuntime):
+    """For set -u.
+
+    Is raised in WordEvaluator then caught in CommandEvaluator.
+    """
+
+    def __init__(self, msg, location):
+        # type: (str, loc_t) -> None
+
+        # exit status is always 1
+        FatalRuntime.__init__(self, 1, msg, location)
+
+
 class Expr(FatalRuntime):
     """e.g. KeyError, IndexError, ZeroDivisionError."""
 

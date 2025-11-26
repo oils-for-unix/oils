@@ -16,7 +16,7 @@ from frontend import match
 from frontend import typed_args
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import NewDict, iteritems, log, tagswitch
+from mycpp.mylib import NewDict, iteritems, log, tagswitch, str_cmp
 from ysh import val_ops
 
 from typing import TYPE_CHECKING, Dict, List, Optional, cast
@@ -486,6 +486,21 @@ class EncodeBytes(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         return value.Null
+
+
+class StrCmp(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        s = rd.PosStr()
+        s2 = rd.PosStr()
+        rd.Done()
+
+        return value.Int(mops.BigInt(str_cmp(s, s2)))
 
 
 class Split(vm._Callable):

@@ -115,7 +115,8 @@ def _command__Simple(obj):
     # type: (command.Simple) -> Optional[hnode_t]
     p_node = runtime.NewRecord('C')
     if (len(obj.more_env) or obj.typed_args is not None or
-            obj.block is not None or obj.is_last_cmd == True):
+            obj.block is not None or obj.is_last_cmd == True or
+            obj.redirects is not None):
         return None  # we have other fields to display; don't abbreviate
 
     p_node.unnamed_fields = []

@@ -826,8 +826,12 @@ def Main(
         'split': method_str.Split(),
         'lines': method_str.Lines(),
 
-        # finds a substring, optional position to start at
-        'find': None,
+        # finds a substring, optional named parameters specifying the slice
+        # of the string to search in - [start:end]
+        'find': method_str.Find(method_str.START),
+        'findLast': method_str.Find(method_str.END),
+
+        'contains': method_str.Contains(),
 
         # replace substring, OR an eggex
         # takes count=3, the max number of replacements to do.
@@ -982,7 +986,7 @@ def Main(
     _AddBuiltinFunc(mem, 'encodeBytes', func_misc.EncodeBytes())
 
     # Str
-    #_AddBuiltinFunc(mem, 'strcmp', None)
+    _AddBuiltinFunc(mem, 'strcmp', func_misc.StrCmp())
     # TODO: This should be Python style splitting
     _AddBuiltinFunc(mem, 'split', func_misc.Split(splitter))
     _AddBuiltinFunc(mem, 'shSplit', func_misc.Split(splitter))
@@ -1018,7 +1022,7 @@ def Main(
             try:
                 ok, status = main_loop.EvalFile(path, fd_state, parse_ctx,
                                                 cmd_ev, lang)
-            except util.UserExit as e:
+            except util.HardExit as e:
                 # Doesn't seem like we need this, and verbose_errexit isn't the right option
                 #if exec_opts.verbose_errexit():
                 #    print-stderr('oils: --eval exit')
@@ -1137,14 +1141,14 @@ def Main(
                 try:
                     SourceStartupFile(fd_state, rc_path, lang, parse_ctx,
                                       cmd_ev, errfmt)
-                except util.UserExit as e:
+                except util.HardExit as e:
                     return e.status
 
         loop = main_loop.Headless(cmd_ev, parse_ctx, errfmt)
         try:
             # TODO: What other exceptions happen here?
             status = loop.Loop()
-        except util.UserExit as e:
+        except util.HardExit as e:
             status = e.status
 
         # Same logic as interactive shell
@@ -1171,7 +1175,7 @@ def Main(
                 try:
                     SourceStartupFile(fd_state, rc_path, lang, parse_ctx,
                                       cmd_ev, errfmt)
-                except util.UserExit as e:
+                except util.HardExit as e:
                     return e.status
 
         completion_display = state.MaybeString(mem, 'OILS_COMP_UI')
@@ -1210,7 +1214,7 @@ def Main(
             try:
                 status = main_loop.Interactive(flag, cmd_ev, c_parser, display,
                                                prompt_plugin, waiter, errfmt)
-            except util.UserExit as e:
+            except util.HardExit as e:
                 status = e.status
 
             mut_status = IntParamBox(status)
@@ -1294,7 +1298,7 @@ def Main(
                                      c_parser,
                                      errfmt,
                                      cmd_flags=cmd_eval.IsMainProgram)
-        except util.UserExit as e:
+        except util.HardExit as e:
             status = e.status
         except KeyboardInterrupt:
             # The interactive shell handles this in main_loop.Interactive

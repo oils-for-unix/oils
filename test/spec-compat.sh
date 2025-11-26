@@ -48,7 +48,7 @@ readonly -a SHELLS=(bash dash ash zsh mksh ksh $TOYBOX_DIR/sh $SUSH $BRUSH $OSH)
 
 download-toybox() {
   #mkdir -p ~/src
-  wget --directory ~/src --no-clobber \
+  wget --directory-prefix ~/src --no-clobber \
     https://landley.net/toybox/downloads/toybox-0.8.12.tar.gz
 }
 

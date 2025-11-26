@@ -18,13 +18,14 @@ create table metrics (
   id integer primary key check (id = 1), -- ensure only one row
   elapsed_minutes real not null,
   num_failures integer not null,
+  num_timeouts integer not null,
   num_tasks integer not null,
   -- filled in later
   num_apk integer not null
 );
 
 -- dummy row
-insert into metrics values (1, -1.0, -1, -1, -1);
+insert into metrics values (1, -1.0, -1, -1, -1, -1);
 
 update metrics
 set elapsed_minutes = (select (max(end_time) - min(start_time)) / 60 from tasks)
@@ -32,6 +33,10 @@ where id = 1;
 
 update metrics
 set num_failures = (select count(*) from tasks where status != 0)
+where id = 1;
+
+update metrics
+set num_timeouts = (select count(*) from tasks where status in (124, 143))
 where id = 1;
 
 update metrics
