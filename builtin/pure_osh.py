@@ -436,6 +436,8 @@ class GetOptsState(object):
         self.errfmt = errfmt
         self._optind = -1
         self.flag_pos = 1  # position within the arg, public var
+        self.silent = False  # type: bool
+        self.opterr = 1      # type: int
 
     def _OptInd(self):
         # type: () -> int
@@ -482,10 +484,19 @@ class GetOptsState(object):
         """Set OPTARG."""
         state.BuiltinSetString(self.mem, 'OPTARG', optarg)
 
-    def Fail(self):
-        # type: () -> None
-        """On failure, reset OPTARG."""
-        state.BuiltinSetString(self.mem, 'OPTARG', '')
+    def Fail(self, flag_char='', error_msg=''):
+        # type: (str, str) -> None
+        """Handle getopts failures.
+
+        Silent mode (leading : in optspec) sets OPTARG to flag_char.
+        OPTERR=0 disables error messages but doesn't change OPTARG.
+        """
+        if self.silent and flag_char:
+            self.SetArg(flag_char)
+        else:
+            state.BuiltinSetString(self.mem, 'OPTARG', '')
+            if self.opterr != 0 and error_msg:
+                self.errfmt.Print_(error_msg)
 
 
 def _GetOpts(
@@ -496,10 +507,12 @@ def _GetOpts(
     opterr,  # type: int
 ):
     # type: (...) -> Tuple[int, str]
-    silent = spec_str.startswith(':')
-    if silent:
+    my_state.silent = spec_str.startswith(':')
+    if my_state.silent:
         spec_str = spec_str[1:]
     spec = _ParseOptSpec(spec_str)
+
+    my_state.opterr = opterr
 
     current = my_state.GetArg(argv)
     #log('current %s', current)
@@ -523,12 +536,7 @@ def _GetOpts(
         more_chars = False
 
     if flag_char not in spec:  # Invalid flag
-        if silent:
-            my_state.SetArg(flag_char)
-        else:
-            my_state.Fail()
-            if opterr != 0:
-                errfmt.Print_('getopts: illegal option -- ' + flag_char)
+        my_state.Fail(flag_char, 'getopts: illegal option -- ' + flag_char)
         return 0, '?'
 
     if spec[flag_char]:  # does it need an argument?
@@ -537,16 +545,14 @@ def _GetOpts(
         else:
             optarg = my_state.GetArg(argv)
             if optarg is None:
-                if silent:
-                    my_state.SetArg(flag_char)
+                # POSIX says the error format is unspecified, but this is what bash
+                # and mksh do.
+                my_state.Fail(flag_char,
+                              'getopts: option requires an argument -- %s' %
+                              flag_char)
+                # In silent mode, return ':' instead of '?'
+                if my_state.silent:
                     return 0, ':'
-
-                my_state.Fail()
-                if opterr != 0:
-                    # POSIX says the format is unspecified, but this is what bash and
-                    # mksh do.
-                    errfmt.Print_('getopts: option requires an argument -- %s' %
-                                  flag_char)
                 return 0, '?'
         my_state.IncIndex()
         my_state.SetArg(optarg)
