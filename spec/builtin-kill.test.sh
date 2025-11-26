@@ -194,6 +194,33 @@ status=1
 ## N-I dash/mksh STDOUT:
 ## END
 
+#### kill -l with exit code
+kill -l 134 # 128 + 6 (ABRT)
+## STDOUT:
+ABRT
+## END
+
+#### kill -l with 128 is invalid
+kill -l 128
+if [ $? -ne 0 ]; then
+    echo "invalid"
+fi
+## STDOUT:
+invalid
+## N-I mksh STDOUT:
+128
+## END
+
+#### kill -l 0 returns EXIT
+kill -l 0
+## STDOUT:
+EXIT
+## N-I dash status: 2
+## N-I dash STDOUT:
+## N-I mksh STDOUT:
+0
+## END
+
 #### kill -9999 is an invalid signal
 case $SH in dash)  exit ;; esac
 sleep 0.1 &
