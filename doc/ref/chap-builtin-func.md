@@ -160,7 +160,8 @@ Given a List of integer byte values, return a string.
 
 ### strcmp()
 
-TODO
+Compares 2 strings using lexicographic order on bytes.
+Returns 0 if s1 and s2 are equal, -1 if s1 is less than s2, and 1 if s1 is greater than s2.
 
 ### shSplit()
 

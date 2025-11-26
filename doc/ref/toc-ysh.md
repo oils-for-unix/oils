@@ -44,8 +44,8 @@ error handling, and more.
   [Numbers]        Int
                    Float
                    Range
-  [String]         Str       X find()         X findLast()
-                             X contains()       replace()
+  [String]         Str         find()           findLast()
+                               contains()       replace()
                                trim()           trimStart()       trimEnd()
                                startsWith()     endsWith()
                                upper()          lower()
@@ -88,7 +88,7 @@ error handling, and more.
                   str()             list()             dict()
                 X runes()         X encodeRunes()
                 X bytes()         X encodeBytes()
-  [Str]         X strcmp()          shSplit()
+  [Str]           strcmp()          shSplit()
   [List]          join()       
   [Dict]          keys()            values()           get()       
   [Float]         floatsEqual()   X isinf()          X isnan()

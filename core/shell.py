@@ -826,8 +826,12 @@ def Main(
         'split': method_str.Split(),
         'lines': method_str.Lines(),
 
-        # finds a substring, optional position to start at
-        'find': None,
+        # finds a substring, optional named parameters specifying the slice
+        # of the string to search in - [start:end]
+        'find': method_str.Find(method_str.START),
+        'findLast': method_str.Find(method_str.END),
+
+        'contains': method_str.Contains(),
 
         # replace substring, OR an eggex
         # takes count=3, the max number of replacements to do.
@@ -982,7 +986,7 @@ def Main(
     _AddBuiltinFunc(mem, 'encodeBytes', func_misc.EncodeBytes())
 
     # Str
-    #_AddBuiltinFunc(mem, 'strcmp', None)
+    _AddBuiltinFunc(mem, 'strcmp', func_misc.StrCmp())
     # TODO: This should be Python style splitting
     _AddBuiltinFunc(mem, 'split', func_misc.Split(splitter))
     _AddBuiltinFunc(mem, 'shSplit', func_misc.Split(splitter))
