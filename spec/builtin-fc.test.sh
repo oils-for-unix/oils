@@ -258,3 +258,7 @@ too many args!
 ## END
 ## N-I bash STDOUT:
 ## END
+
+#### fc -l when no history is present
+fc -l
+## status: 0

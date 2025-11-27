@@ -422,12 +422,11 @@ class Fc(vm._Builtin):
         arg_r.Next()
 
         last_arg, last_arg_loc = arg_r.Peek2()
-        if last_arg is None:
-            last_index = num_items - 1
-        else:
+        last_index = num_items - 1
+        if last_arg is not None:
             try:
                 # TODO: Support string arg
-                last_index = int(last_arg)
+                last_index = min(int(last_arg), last_index)
             except ValueError:
                 e_usage('got invalid argument %r' % last_arg, last_arg_loc)
         if last_index < 0:
@@ -456,6 +455,10 @@ class Fc(vm._Builtin):
                 step = 1
 
             i = first_index
+
+            if limit < -1:
+                return 0
+
             while i != limit:
                 item = readline.get_history_item(i)
                 if arg.n:
