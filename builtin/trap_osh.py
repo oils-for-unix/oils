@@ -372,16 +372,16 @@ class Trap(vm._Builtin):
 
     def _IgnoreTheRest(self, arg_r):
         # type: (args.Reader) -> int
-        """Ignore (set to SIG_IGN) all remaining signal arguments"""
+        """Ignore (set to SIG_IGN) all remaining signal arguments, or remove hooks"""
         while not arg_r.AtEnd():
             arg_str, arg_loc = arg_r.Peek2()
             parsed_id = ParseSignalOrHook(arg_str, arg_loc, allow_legacy=True)
 
             if parsed_id in _HOOK_NAMES:
-                self.errfmt.Print_(
-                    "trap: can't ignore hook %r" % arg_str,
-                    blame_loc=arg_loc)
-                return 2
+                # For hooks, trap '' behaves like trap - (removes the hook)
+                self.trap_state.RemoveItem(parsed_id)
+                arg_r.Next()
+                continue
 
             sig_num = signal_def.GetNumber(parsed_id)
             assert sig_num is not signal_def.NO_SIGNAL

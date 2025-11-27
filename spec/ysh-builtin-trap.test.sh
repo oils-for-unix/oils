@@ -55,18 +55,21 @@ trap -- '' SIGINT
 trap -- '' SIGUSR1
 ## END
 
-#### trap --ignore rejects hooks
+#### trap --ignore removes hooks (like trap -)
 
 trap --ignore EXIT
+echo done
 
 ## STDOUT:
+done
 ## END
-## status: 2
 
-#### trap --ignore rejects STOP
+#### trap --ignore with uncatchable STOP signal
 
+# YSH is stricter and returns an error, which triggers errexit
 trap --ignore STOP
+echo done
 
+## status: 2
 ## STDOUT:
 ## END
-## status: 2

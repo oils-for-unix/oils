@@ -570,6 +570,12 @@ trap
 ## STDOUT:
 trap -- '' SIGUSR1
 ## END
+## OK dash/ash STDOUT:
+trap -- '' USR1
+## END
+## OK mksh STDOUT:
+trap --  USR1
+## END
 
 #### trap '' with multiple signals
 
@@ -580,30 +586,38 @@ trap
 trap -- '' SIGUSR1
 trap -- '' SIGUSR2
 ## END
+## OK dash/ash STDOUT:
+trap -- '' USR1
+trap -- '' USR2
+## END
+## OK mksh STDOUT:
+trap --  USR1
+trap --  USR2
+## END
 
-#### trap '' rejects hooks
+#### trap '' removes hooks (like trap -)
 
 trap '' EXIT
-echo should not get here
+echo should get here
 
 ## STDOUT:
+should get here
 ## END
-## status: 2
 
-#### trap '' rejects STOP signal
+#### trap '' ignores uncatchable STOP signal
 
 trap '' STOP
-echo should not get here
+echo done
 
 ## STDOUT:
+done
 ## END
-## status: 2
 
-#### trap '' rejects KILL signal
+#### trap '' ignores uncatchable KILL signal
 
-trap '' KILL  
-echo should not get here
+trap '' KILL
+echo done
 
 ## STDOUT:
+done
 ## END
-## status: 2
