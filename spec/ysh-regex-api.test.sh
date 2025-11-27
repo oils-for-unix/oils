@@ -21,14 +21,14 @@ if (s ~ '[[:digit:]]+') {
 try {
   var x = _group(0)
 }
-if (_status === 3) {
+if (_error.code === 3) {
   echo 'got expected status 3'
 }
 
 try {
   var y = _group(1)
 }
-if (_status === 3) {
+if (_error.code === 3) {
   echo 'got expected status 3'
 }
 
@@ -932,7 +932,7 @@ func not_str(inp) {
 
 # should fail to stringify $1
 try { call mystr.replace(/ <capture d+ : not_str> /, ^"$1") }
-write status=$_status
+write status=$[_error.code]
 ## STDOUT:
 124
 123

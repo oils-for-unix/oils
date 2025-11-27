@@ -282,27 +282,27 @@ echo trim
 # We only decode UTF until the first non-space char. So the bad UTF-8 is
 # missed.
 try { call " a$[badUtf]b " => trim() }
-echo status=$_status
+echo status=$[_error.code]
 
 # These require trim to decode the badUtf, so an error is raised
 try { call "$[badUtf]b " => trim() }
-echo status=$_status
+echo status=$[_error.code]
 try { call " a$[badUtf]" => trim() }
-echo status=$_status
+echo status=$[_error.code]
 
 # Similarly, trim{Left,Right} will assume correct encoding until shown
 # otherwise.
 echo trimStart
 try { call " a$[badUtf]" => trimStart() }
-echo status=$_status
+echo status=$[_error.code]
 try { call "$[badUtf]b " => trimStart() }
-echo status=$_status
+echo status=$[_error.code]
 
 echo trimEnd
 try { call "$[badUtf]b " => trimEnd() }
-echo status=$_status
+echo status=$[_error.code]
 try { call " a$[badUtf]" => trimEnd() }
-echo status=$_status
+echo status=$[_error.code]
 
 ## STDOUT:
 trim
@@ -327,7 +327,7 @@ var badStrs = [
 
 for badStr in (badStrs) {
   try { call badStr => trimStart() }
-  echo status=$_status
+  echo status=$[_error.code]
 }
 
 ## STDOUT:
@@ -349,7 +349,7 @@ var badStrs = [
 
 for badStr in (badStrs) {
   try { call badStr => trimEnd() }
-  echo status=$_status
+  echo status=$[_error.code]
 }
 
 ## STDOUT:
@@ -645,7 +645,7 @@ json write (items => join(", "))  #  separator can be any number of chars
 try {
   json write (items => join(1))  # separator must be a string
 }
-echo "failed with status $_status"
+echo "failed with status $[_error.code]"
 ## STDOUT:
 "123"
 "1 2 3"

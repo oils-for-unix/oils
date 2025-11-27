@@ -320,7 +320,7 @@ try {
     haynode package
   }
 }
-echo "haynode attr $_status"
+echo "haynode attr $[_error.code]"
 var result = _hay()
 echo "LEN $[len(result['children'])]"
 
@@ -330,7 +330,7 @@ try {
     haynode TASK build
   }
 }
-echo "haynode code $_status"
+echo "haynode code $[_error.code]"
 echo "LEN $[len(result['children'])]"
 
 echo ---
@@ -341,7 +341,7 @@ try {
     package
   }
 }
-echo "define attr $_status"
+echo "define attr $[_error.code]"
 echo "LEN $[len(result['children'])]"
 
 try {
@@ -349,7 +349,7 @@ try {
     TASK build
   }
 }
-echo "define code $_status"
+echo "define code $[_error.code]"
 echo "LEN $[len(result['children'])]"
 
 ## STDOUT:
@@ -375,7 +375,7 @@ try {
     package glibc > /dev/null
   }
 }
-echo "status $_status"
+echo "status $[_error.code]"
 
 
 try {
@@ -383,7 +383,7 @@ try {
     TASK build
   }
 }
-echo "status $_status"
+echo "status $[_error.code]"
 
 ## STDOUT:
 status 0
@@ -648,17 +648,17 @@ shopt -s parse_brace
 try {
   var d = evalHay()
 }
-echo status $_status
+echo status $[_error.code]
 
 try {
   var d = evalHay(3)
 }
-echo status $_status
+echo status $[_error.code]
 
 try {
   var d = evalHay(^(echo hi), 5)
 }
-echo status $_status
+echo status $[_error.code]
 
 ## STDOUT:
 status 3

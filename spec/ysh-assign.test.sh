@@ -304,9 +304,9 @@ proc readonly-var {
 }
 
 try { eval 'local-var' }
-echo status=$_status
+echo status=$[_error.code]
 try { eval 'readonly-var' }
-echo status=$_status
+echo status=$[_error.code]
 
 ## STDOUT:
 x=2

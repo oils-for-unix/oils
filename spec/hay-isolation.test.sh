@@ -47,7 +47,7 @@ shvar PATH='' {
   try {
     true $(cp -v file /tmp >&2)
   }
-  echo _status $_status
+  echo _status $[_error.code]
 }
 
 ## STDOUT:
@@ -70,14 +70,14 @@ try {
     }
   }
 }
-echo "status $_status"
+echo "status $[_error.code]"
 
 try {
   hay eval :result {
     cd /tmp
   }
 }
-echo "status $_status"
+echo "status $[_error.code]"
 
 ## STDOUT:
 status 127

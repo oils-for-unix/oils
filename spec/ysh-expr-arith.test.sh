@@ -109,12 +109,12 @@ write -- $m $n $p
 try {
   var z = 'a' // 3
 }
-echo _status $_status
+echo _status $[_error.code]
 
 try {
   var z = 'z' % 3
 }
-echo _status $_status
+echo _status $[_error.code]
 
 ## STDOUT:
 2
@@ -130,17 +130,17 @@ shopt -s parse_brace
 try {
   = 42 / 0
 }
-echo "status / is $_status"
+echo "status / is $[_error.code]"
 
 try {
   = 42 // 0
 }
-echo "status // is $_status"
+echo "status // is $[_error.code]"
 
 try {
   = 42 % 0
 }
-echo "status % is $_status"
+echo "status % is $[_error.code]"
 
 ## STDOUT:
 status / is 3

@@ -88,7 +88,7 @@ set -x
 try {
   type -a ''
 }
-echo "type -a returned $_status"
+echo "type -a returned $[_error.code]"
 
 $(true)
 echo nope
