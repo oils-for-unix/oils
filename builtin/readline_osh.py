@@ -382,10 +382,12 @@ class Fc(vm._Builtin):
 
     def __init__(
             self,
+            mem,  # type: Mem
             readline,  # type: Optional[Readline]
             f,  # type: mylib.Writer
     ):
         # type: (...) -> None
+        self.mem = mem
         self.readline = readline
         self.f = f  # this hook is for unit testing only
 
@@ -432,7 +434,8 @@ class Fc(vm._Builtin):
             last_index += num_items
         arg_r.Next()
 
-        arg_r.Done()
+        if self.mem.exec_opts.strict_arg_parse():
+            arg_r.Done()
 
         if arg.l:
             is_reversed = first_index > last_index
