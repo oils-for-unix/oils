@@ -171,6 +171,7 @@ _UPGRADE_PARSE_OPTS = [
     'parse_paren',  # if (x > 0) ...
     'parse_ysh_string',  # r'' u'' b'' and multi-line versions
     'parse_triple_quote',  # for ''' and """
+    'parse_ysh_expr_sub',  # treat $[] as expression sub, not a backwards-compatible synonym for $(( ))
 ]
 
 # Extra stuff that breaks programs.

@@ -400,7 +400,7 @@ class ControlFlowBuiltin(vm._Builtin):
 
         if keyword_id == Id.ControlFlow_Exit:
             # handled differently than other control flow
-            raise util.UserExit(arg_int)
+            raise util.HardExit(arg_int)
         else:
             raise vm.IntControlFlow(keyword_id, keyword_str, keyword_loc,
                                     arg_int)
@@ -2128,7 +2128,7 @@ class CommandEvaluator(object):
     def RunPendingTrapsAndCatch(self):
         # type: () -> None
         """
-        Like the above, but calls ExecuteAndCatch(), which may raise util.UserExit
+        Like the above, but calls ExecuteAndCatch(), which may raise util.HardExit
         """
         trap_nodes = self.trap_state.GetPendingTraps()
         if trap_nodes is not None:
@@ -2141,7 +2141,7 @@ class CommandEvaluator(object):
                             # Note: exit status is lost
                             try:
                                 self.ExecuteAndCatch(trap_node, 0)
-                            except util.UserExit:
+                            except util.HardExit:
                                 # If user calls 'exit', stop running traps, but
                                 # we still run the EXIT trap later.
                                 break
@@ -2351,6 +2351,7 @@ class CommandEvaluator(object):
         is_return = False
         is_fatal = False
         is_errexit = False
+        is_nounset = False
 
         err = None  # type: error.FatalRuntime
         status = -1  # uninitialized
@@ -2389,6 +2390,9 @@ class CommandEvaluator(object):
         except error.ErrExit as e:
             err = e
             is_errexit = True
+        except error.NoUnset as e:
+            err = e
+            is_nounset = True
         except error.FatalRuntime as e:
             err = e
 
@@ -2410,6 +2414,11 @@ class CommandEvaluator(object):
                                              posix.getpid())
             else:
                 self.errfmt.PrettyPrintError(err, prefix='fatal: ')
+
+            # bash docs on `set -u`:
+            # An error message will be written to stderr, and a non-interactive shell will exit.
+            if is_nounset and not self.exec_opts.interactive():
+                raise util.HardExit(status)
 
         assert status >= 0, 'Should have been initialized'
 
@@ -2473,7 +2482,7 @@ class CommandEvaluator(object):
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
                 try:
                     is_return, is_fatal = self.ExecuteAndCatch(node, 0)
-                except util.UserExit as e:  # explicit exit
+                except util.HardExit as e:  # explicit exit
                     mut_status.i = e.status
                     return
                 if is_return:  # explicit 'return' in the trap handler!
@@ -2501,7 +2510,7 @@ class CommandEvaluator(object):
             with state.ctx_Registers(self.mem):  # prevent setting $? etc.
                 # for SetTokenForLine $LINENO
                 with state.ctx_DebugTrap(self.mem):
-                    # Don't catch util.UserExit, etc.
+                    # Don't catch util.HardExit, etc.
                     self._Execute(node)
 
     def _MaybeRunErrTrap(self):

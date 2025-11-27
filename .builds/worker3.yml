@@ -24,11 +24,11 @@ secrets:
 tasks:
   - dev-setup-debian: |
       cd oils
-      soil/worker.sh JOB-dev-setup-debian
+      soil/worker.sh JOB-dev-setup-debian-fail
 
   - publish-dev-setup-debian: |
       cd oils
-      soil/sourcehut.sh publish-html-assuming-ssh-key dev-setup-debian
+      soil/sourcehut.sh publish-html-assuming-ssh-key dev-setup-debian-fail
 
   #- mount-perms: |
   #    cd oils

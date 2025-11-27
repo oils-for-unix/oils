@@ -1095,6 +1095,37 @@ EOF
   log "Wrote $log_dir/index.html"
 }
 
+check-for-failure() {
+  local tsv=${1:-$WEDGE_LOG_DIR/tasks.tsv}
+  local allowed_failures=${2:-0}
+
+  awk -F $'\t' -v allowed_failures="$allowed_failures" '
+  NR == 1 { 
+    col_name = $1
+    if (col_name != "status") { 
+      printf("%s: Expected \"status\" as first column\n", FILENAME)
+      exit 2
+    }
+  }
+  NR != 1 {
+    status = $1
+    if (status != 0) {
+      printf("%s row %d: got failure %d\n", FILENAME, NR, status)
+      failures += 1
+    }
+    num_rows += 1
+  }
+  END {
+    if (failures == allowed_failures) {
+      printf("%s: %d tasks succeeded (%d allowed failures)\n", FILENAME, num_rows, allowed_failures)
+    } else {
+      printf("%s: Expected %d failures, but got %d\n", FILENAME, allowed_failures, failures)
+      exit 1
+    }
+  }
+  ' $tsv >& 2
+}
+
 fake-py3-libs-wedge() {
   local wedge_out_dir=${1:-}
 
@@ -1156,6 +1187,7 @@ print-wedge-list() {
 install-wedges-parallel() {
   local which_wedges=${1:-contrib}  # contrib | soil | smoke
   local how=${2:-legacy}            # boxed | unboxed | legacy
+  local allowed_failures=${3:-0}    # sourcehut CI jobs allows failures for now
 
   # For contributor setup: we need to use this BEFORE running build/py.sh all
   build/py.sh time-helper
@@ -1185,7 +1217,9 @@ install-wedges-parallel() {
 
   echo "   END  $(timestamp)"
 
-  write-task-report
+  write-task-report $WEDGE_LOG_DIR
+
+  check-for-failure $WEDGE_LOG_DIR/tasks.tsv "$allowed_failures"
 }
 
 install-wedges-OLD() {
@@ -1211,16 +1245,30 @@ install-wedges() {
 }
 
 install-wedges-soil() {
-  ### dev-setup-{debian,fedora,alpine} jobs call this
-
-  # Old wedges
-  # install-wedges-parallel soil legacy
+  ### Github Actions dev-setup-debian job calls this
+  local allowed_failures=${1:-0}
 
   # ../oils.DEPS/wedge
-  install-wedges-parallel soil unboxed
+  install-wedges-parallel soil unboxed "$allowed_failures"
 
   # ../oils.DEPS/bin
   deps/make-bin.sh contrib
+}
+
+#
+# Sourcehut dev-setup-{debian,fedora,alpine} jobs call these functions
+# 
+
+install-wedges-debian-fail() {
+  install-wedges-soil 2
+}
+
+install-wedges-fedora-fail() {
+  install-wedges-soil 2
+}
+
+install-wedges-alpine-fail() {
+  install-wedges-soil 4  # 4 allowed failures for now
 }
 
 #

@@ -41,7 +41,7 @@ class Primitive(Instance):
 MYCPP_INT = Primitive('builtins.int')
 
 
-class Pass(visitor.SimpleVisitor):
+class Pass(visitor.TypedVisitor):
 
     def __init__(
         self,
@@ -52,12 +52,9 @@ class Pass(visitor.SimpleVisitor):
         all_local_vars: 'cppgen_pass.AllLocalVars',
         module_dot_exprs: DotExprs,
         yield_out_params: Dict[FuncDef, Tuple[str, str]],  # output
-        dunder_exit_special: Dict[FuncDef, bool],
+        dunder_exit_special: Dict[ClassDef, bool],
     ) -> None:
-        visitor.SimpleVisitor.__init__(self)
-
-        # Input
-        self.types = types
+        visitor.TypedVisitor.__init__(self, types)
 
         # These are all outputs we compute
         self.virtual = virtual
@@ -71,7 +68,7 @@ class Pass(visitor.SimpleVisitor):
         self.dunder_exit_special = dunder_exit_special
 
         # Internal state
-        self.inside_dunder_exit = None
+        self.inside_dunder_exit = None  # type: Optional[ClassDef]
         self.current_member_vars: Dict[str, 'cppgen_pass.MemberVar'] = {}
         self.current_local_vars: List[Tuple[str, Type]] = []
 
@@ -117,9 +114,8 @@ class Pass(visitor.SimpleVisitor):
                 self.imported_names.add(name)
 
     def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
-        # Why is self.types[o] missing some types?  e.g. hnode.Record() call in
-        # asdl/runtime.py, failing with KeyError NameExpr
-        lhs_type = self.types.get(o.expr)  # type: Optional[Type]
+        # asdl/runtime.py is missing types, so call GetTypeOptional
+        lhs_type = self._GetTypeOptional(o.expr)  # type: Optional[Type]
 
         is_small_str = False
         if util.SMALL_STR:
@@ -180,7 +176,7 @@ class Pass(visitor.SimpleVisitor):
         self.all_member_vars[o] = self.current_member_vars
 
     def _ValidateDefaultArg(self, arg: Argument) -> None:
-        t = self.types[arg.initializer]
+        t = self._GetType(arg.initializer)
 
         valid = False
         if isinstance(t, NoneType):
@@ -289,7 +285,7 @@ class Pass(visitor.SimpleVisitor):
 
         # what about yield accumulator, like
         # it_g = g(n)
-        self.current_local_vars.append((lval.name, self.types[lval]))
+        self.current_local_vars.append((lval.name, self._GetType(lval)))
 
         super().oils_visit_assign_to_listcomp(lval, left_expr, index_expr, seq,
                                               cond)
@@ -311,7 +307,7 @@ class Pass(visitor.SimpleVisitor):
 
         if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
             #log('    lval.name %s', lval.name)
-            lval_type = self.types[lval]
+            lval_type = self._GetType(lval)
             c_type = cppgen_pass.GetCType(lval_type)
             is_managed = cppgen_pass.CTypeIsManaged(c_type)
             self.current_member_vars[lval.name] = (lval_type, c_type,
@@ -325,8 +321,9 @@ class Pass(visitor.SimpleVisitor):
         if isinstance(lval, MemberExpr):
             self._MaybeAddMember(lval, current_method_name, at_global_scope)
 
-        if lval in self.types and isinstance(self.types[lval], PartialType):
-            t = self.types[lval]
+        # TupleExpr will not be in self.types
+        t = self._GetTypeOptional(lval)  # type: Optional[Type]
+        if isinstance(t, PartialType):
             self.report_error(
                 o,
                 "Mismatched types: trying to assign expression of type '%s' to "
@@ -347,7 +344,7 @@ class Pass(visitor.SimpleVisitor):
         # Note: this has duplicates: the 'done' set in visit_block() handles
         # it.  Could make it a Dict.
         if isinstance(lval, NameExpr):
-            rval_type = self.types[rval]
+            rval_type = self._GetType(rval)
 
             # Two pieces of logic adapted from cppgen_pass: is_iterator and is_cast.
             # Can we simplify them?
@@ -369,7 +366,7 @@ class Pass(visitor.SimpleVisitor):
 
             if (not at_global_scope and not is_iterator and
                     not is_downcast_and_shadow):
-                self.current_local_vars.append((lval.name, self.types[lval]))
+                self.current_local_vars.append((lval.name, self._GetType(lval)))
 
         # Handle local vars, like _write_tuple_unpacking
 
@@ -383,7 +380,7 @@ class Pass(visitor.SimpleVisitor):
                     "or return (x, y) from a function instead.")
                 return
 
-            rval_type = self.types[rval]
+            rval_type = self._GetType(rval)
             assert isinstance(rval_type, TupleType), rval_type
 
             for i, (lval_item,

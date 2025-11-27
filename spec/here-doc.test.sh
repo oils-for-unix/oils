@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 ## compare_shells: dash bash mksh
 
 #### Here string
@@ -416,4 +416,14 @@ EOF
 
 ## STDOUT:
 a \"quote\"
+## END
+
+#### Here doc escapes
+# these are the chars from _DQ_ESCAPED_CHAR
+cat <<EOF
+\\ \" \$ \`
+EOF
+
+## STDOUT:
+\ \" $ `
 ## END

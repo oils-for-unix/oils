@@ -140,7 +140,7 @@ class Collect(visitor.TypedVisitor):
         try:
             format_strings.Parse(fmt.value)
         except RuntimeError as e:
-            self.report_error(fmt, e)
+            self.report_error(fmt, str(e))
 
     def oils_visit_format_expr(self, left: Expression,
                                right: Expression) -> None:

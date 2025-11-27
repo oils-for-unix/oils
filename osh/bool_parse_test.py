@@ -11,10 +11,11 @@ bool_parse_test.py: Tests for bool_parse.py
 
 import unittest
 
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import bool_expr_e
 from _devbuild.gen.types_asdl import lex_mode_e
 from core import test_lib
+from mycpp.mylib import log
 from osh import bool_parse  # module under test
 
 
@@ -32,6 +33,9 @@ def _ReadWords(w_parser):
 
 
 def _MakeParser(code_str):
+    print('    ----')
+    print('    CASE %s' % code_str)
+
     # NOTE: We need the extra ]] token
     arena = test_lib.MakeArena('<bool_parse_test.py>')
     w_parser = test_lib.InitWordParser(code_str + ' ]]', arena=arena)
@@ -116,6 +120,56 @@ class BoolParserTest(unittest.TestCase):
         node = p.ParseExpr()
         print(node)
         self.assertEqual(bool_expr_e.LogicalAnd, node.tag())
+
+
+class BugsTest(unittest.TestCase):
+
+    def testParse(self):
+        p = _MakeParser('-f foo')
+        node = p.ParseExpr()
+        print(node)
+        self.assertEqual(bool_expr_e.Unary, node.tag())
+
+        p = _MakeParser('-f == -f')
+        node = p.ParseExpr()
+        print(node)
+        self.assertEqual(bool_expr_e.Binary, node.tag())
+
+        p = _MakeParser('-f ==')
+        node = p.ParseExpr()
+        print(node)
+        #self.assertEqual(bool_expr_e.Unary, node.tag())
+
+    def testLookAhead2(self):
+        p = _MakeParser('-f foo')
+        p._Dump()
+
+        log('    *** LookAhead')
+        p._LookAhead()
+        p._Dump()
+
+        log('    *** Next')
+        p._Next()
+        p._Dump()
+
+        log('    *** Next')
+        p._Next()
+        p._Dump()
+
+    def testNextOne(self):
+        p = _MakeParser('-f foo')
+        self.assertEqual(Id.BoolUnary_f, p.bool_id)
+
+        p._Next()
+        self.assertEqual(Id.Word_Compound, p.bool_id)
+
+        p._Next()
+        self.assertEqual(Id.Lit_DRightBracket, p.bool_id)
+
+        p._Next()
+        self.assertEqual(Id.Eof_Real, p.bool_id)
+
+        log('bool_id %s', Id_str(p.bool_id))
 
 
 if __name__ == '__main__':

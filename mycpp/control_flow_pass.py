@@ -41,15 +41,14 @@ def GetObjectTypeName(t: Type) -> SymbolPath:
 INVALID_ID = -99  # statement IDs are positive
 
 
-class Build(visitor.SimpleVisitor):
+class Build(visitor.TypedVisitor):
 
     def __init__(self, types: Dict[Expression,
                                    Type], virtual: pass_state.Virtual,
                  local_vars: 'cppgen_pass.AllLocalVars',
                  dot_exprs: 'conversion_pass.DotExprs') -> None:
-        visitor.SimpleVisitor.__init__(self)
+        visitor.TypedVisitor.__init__(self, types)
 
-        self.types = types
         self.cflow_graphs: Dict[
             SymbolPath, pass_state.ControlFlowGraph] = collections.defaultdict(
                 pass_state.ControlFlowGraph)
@@ -141,7 +140,7 @@ class Build(visitor.SimpleVisitor):
                         return None
 
             else:
-                t = self.types.get(o.callee.expr)
+                t = self._GetType(o.callee.expr)
                 if isinstance(t, Instance):
                     return SplitPyName(t.type.fullname) + (o.callee.name, )
 
@@ -236,7 +235,7 @@ class Build(visitor.SimpleVisitor):
                         (dot_expr.member, ))
 
         elif isinstance(expr, IndexExpr):
-            if isinstance(self.types[expr.base], TupleType):
+            if isinstance(self._GetType(expr.base), TupleType):
                 assert isinstance(expr.index, IntExpr)
                 return self.get_ref_name(expr.base) + (str(expr.index.value), )
 
@@ -480,7 +479,7 @@ class Build(visitor.SimpleVisitor):
 
             assert len(lval_names), lval
 
-            rval_type = self.types[rval]
+            rval_type = self._GetType(rval)
             rval_names: List[Optional[util.SymbolPath]] = []
             if isinstance(rval, CallExpr):
                 # The RHS is either an object constructor or something that

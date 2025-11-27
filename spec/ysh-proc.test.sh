@@ -239,7 +239,7 @@ p
 ## END
 
 #### procs are in same namespace as variables
-shopt --set parse_proc
+shopt --set parse_proc parse_ysh_expr_sub
 
 proc myproc {
   echo hi

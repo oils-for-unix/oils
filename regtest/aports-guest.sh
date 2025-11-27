@@ -45,8 +45,10 @@ build-one-package() {
   local pkg=${1:-lua5.4}
   local a_repo=${2:-main}
   local xargs_slot=${3:-99}  # recorded in tasks.tsv
-  local more_abuild_flags=${4:-}  # e.g. for -k
-  local timeout_secs=${5:-$(( 5 * 60 ))}  # 5 minutes by default
+  # -k: keep built packages
+  # -K: keep build time temp files
+  local more_abuild_flags=${4:-'-k -K'} 
+  local timeout_secs=${5:-$(( 15 * 60 ))}  # 15 minutes by default
 
   printf -v xargs_str '%2s' $xargs_slot
   echo "  TASK  $xargs_str  $(timestamp)  $pkg"

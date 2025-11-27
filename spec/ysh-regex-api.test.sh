@@ -308,6 +308,8 @@ start=-1 end=-1
 
 #### Str->search() method returns value.Match object
 
+shopt --set parse_ysh_expr_sub
+
 var s = '= Hi5- Bye6-'
 
 var m = s.search(/ <capture [a-z]+ > <capture d+> '-' ; i /)
@@ -367,6 +369,7 @@ pat=([[:digit:]]+)-
 
 
 #### search() and leftMatch() accept ERE string
+shopt --set parse_ysh_expr_sub
 
 var s = '= hi5- bye6-'
 
@@ -904,6 +907,8 @@ for count in (-2..<4) {
 ## END
 
 #### Str.replace(Str, Str), empty new/old strings
+shopt --set parse_ysh_expr_sub
+
 var mystr = 'abca'
 write $[mystr.replace('abc', '')]            # Empty substitution
 write $[mystr.replace('', 'new')]            # Empty substring

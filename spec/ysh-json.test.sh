@@ -639,6 +639,7 @@ json8 b'\yed\yb4\ya6'
 ## END
 
 #### toJson() toJson8()
+shopt --set parse_ysh_expr_sub
 
 var obj = [42, 1.5, null, true, "hi", b'\yf0']
 
@@ -932,6 +933,7 @@ null
 ## END
 
 #### NaN is encoded as null, like JavaScript
+shopt --set parse_ysh_expr_sub
 
 pp test_ (NAN)
 
@@ -1251,6 +1253,7 @@ json write (assoc)
 ## END
 
 #### type_errors=false
+shopt --set parse_ysh_expr_sub
 
 var o = Obj.new({}, null)
 

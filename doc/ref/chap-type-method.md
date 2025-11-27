@@ -141,19 +141,45 @@ An `Obj` instance representing the string type.  Let's use this definition:
 
 ### find()
 
-TODO:
+Returns the index of the first occurrence of the substring found within
+the slice of string[start:end]. Optional named parameters 'start' and
+'end' are byte indices into the searched string.
+
+If the substring is empty, it's always immediately found (unless the sliced
+range points past the string).
+
+If the substring is not found, returns -1.
 
 ```raw
 var i = mystr.find('y')
+var i = mystr.find('y', start=0, end=2)
 ```
 
-This is similar to
+### findLast()
+
+Returns the index of the last occurrence of the substring found within
+the slice of string[start:end]. Optional named parameters 'start' and
+'end' are byte indices into the searched string.
+
+If the substring is empty, it's always immediately found (unless the sliced
+range points past the string).
+
+If the substring is not found, returns -1.
+
+```raw
+var i = mystr.findLast('y')
+var i = mystr.findLast('y', start=0, end=2)
+```
+
+### contains()
+
+Returns true if the substring occurs in the string, false otherwise.
 
 ```raw
 = mystr.contains('y')
 ```
 
-Both of them do substring search.  Also similar to `mystr.search(/ 'y' /)`.
+For functions performing a regex search, see [`search`](#search).
 
 <!-- Note: Python also has start, end indices, to reduce allocations -->
 

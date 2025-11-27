@@ -53,6 +53,12 @@ BEGIN {
   # expects and exact code string?
   patterns["#2547"] = "Undefined variable 'OPTARG'"
 
+  # crosstool-ng - $[] is not being treated identical to $(())
+  patterns["#2566"] = "Undefined variable 'pkg_nforks'"
+
+  # bmake - oils ... syntax may conflict
+  patterns["#2464"] = "<not found: ...>"
+
   # mawk, openvpn: trap 0
   patterns["#2339"] = "requires a signal or hook name"
 
@@ -101,6 +107,12 @@ BEGIN {
 
   # py3-adblock
   patterns["#2562"] = "Invalid descriptor"
+
+  # makepasswd
+  patterns["#2579"] = "Usage: docbook.sh"
+
+  # megacmd
+  patterns["#2461"] = "configure:23900: Unexpected word while parsing compound command (Id.Word_Compound)"
 
   #
   # BUGS that only occur with OSH as BUSYBOX ASH
@@ -151,6 +163,9 @@ BEGIN {
 
   # jq
   patterns["#2540"] = "FAIL: tests/shtest"
+  # gphoto2
+  patterns["##2540"] = "[Makefile:461: check-recursive] Error 1"
+
 
   # libidn
   patterns["#2523"] = "ERROR: libidn2: check failed"

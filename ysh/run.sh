@@ -18,18 +18,16 @@ OSH_CPP=_bin/cxx-asan/osh
 
 parse-one() {
   echo ---
-  # TODO: these tests can be removed once the rest of ysh/ is translated
-  if test "$OSH" = "$OSH_CPP"; then
-    local prog="$1"
-    local skip=''
-    case $prog in
-      (*/assign.osh) skip=T ;;
-    esac
 
-    if test -n "$skip"; then
-      echo "skipping $prog"
-      return
-    fi
+  local prog="$1"
+  local skip=''
+  case $prog in
+    */assign.osh) skip=T ;;
+  esac
+
+  if test -n "$skip"; then
+    echo "skipping $prog"
+    return
   fi
 
   set +o errexit
@@ -101,12 +99,8 @@ soil-run() {
 }
 
 soil-run-cpp() {
-  local osh=$OSH_CPP
-
-  ninja $osh
-
-  # TODO: replace with run-test-funcs once the rest of ysh is translated
-  OILS_GC_ON_EXIT=1 OSH=$osh test-parse-osh
+  ninja $OSH_CPP
+  OSH=$OSH_CPP run-test-funcs
 }
 
 run-for-release() {
