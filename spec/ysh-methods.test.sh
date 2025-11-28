@@ -552,6 +552,19 @@ pp test_ (book)
 (Dict)   {"title":"The Histories"}
 ## END
 
+#### Dict -> clear()
+var book = {title: "The Histories", author: "Herodotus"}
+call book->clear()
+pp test_ (book)
+# confirm method is idempotent
+call book->clear()
+pp test_ (book)
+## status: 0
+## STDOUT:
+(Dict)   {}
+(Dict)   {}
+## END
+
 #### Dict -> get()
 var book = {title: "Hitchhiker's Guide", published: 1979}
 pp test_ (book => get("title", ""))
