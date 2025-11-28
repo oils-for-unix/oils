@@ -64,6 +64,22 @@ class Erase(vm._Callable):
         return value.Null
 
 
+class Clear(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        dictionary = rd.PosDict()
+        rd.Done()
+
+        dictionary.clear()
+        return value.Null
+
+
 class Get(vm._Callable):
 
     def __init__(self):
