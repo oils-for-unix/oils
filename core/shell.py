@@ -854,11 +854,7 @@ def Main(
         # code shouldn't use the List of Lists representation.
         'M/erase': method_dict.Erase(),
         'M/clear': method_dict.Clear(),
-        # could be d->tally() or d->increment(), but inc() is short
-        #
-        # call d->inc('mycounter')
-        # call d->inc('mycounter', 3)
-        'M/inc': None,
+        'M/add': method_dict.Add(),
 
         # call d->accum('mygroup', 'value')
         'M/accum': None,

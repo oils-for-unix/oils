@@ -59,7 +59,7 @@ error handling, and more.
                                insert()         remove()
                                reverse()        List/clear()
                    Dict        erase()          Dict/clear()    X accum()
-                             X update()
+                             X update()         add()
                    Place       setValue()
   [Code Types]     Func        
                    BuiltinFunc

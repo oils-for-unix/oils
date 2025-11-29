@@ -577,6 +577,45 @@ pp test_ (book => get("author", ""))
 (Str)   ""
 ## END
 
+#### Dict -> add() with ints
+var histogram = {a: 1979}
+call histogram->add('a')
+assert [{"a": 1980} === histogram]
+call histogram->add('a', 3)
+assert [{"a": 1983} === histogram]
+call histogram->add('b')
+assert [{"a": 1983, "b": 1} === histogram]
+call histogram->add('c', 3)
+assert [{"a": 1983, "b": 1, "c": 3} === histogram]
+## status: 0
+
+#### Dict -> add() with floats
+var histogram = {a: 2.5}
+call histogram->add('a')
+pp test_ (histogram)
+call histogram->add('a', 2)
+pp test_ (histogram)
+call histogram->add('a', 3.5)
+pp test_ (histogram)
+call histogram->add('b', 3.5)
+pp test_ (histogram)
+call histogram->add('b', 2)
+pp test_ (histogram)
+call histogram->add('c', 1)
+pp test_ (histogram)
+call histogram->add('c', 3.0)
+pp test_ (histogram)
+## status: 0
+## STDOUT:
+(Dict)   {"a":3.5}
+(Dict)   {"a":5.5}
+(Dict)   {"a":9.0}
+(Dict)   {"a":9.0,"b":3.5}
+(Dict)   {"a":9.0,"b":5.5}
+(Dict)   {"a":9.0,"b":5.5,"c":1}
+(Dict)   {"a":9.0,"b":5.5,"c":4.0}
+## END
+
 #### Separation of -> attr and () calling
 const check = "abc" => startsWith
 pp test_ (check("a"))

@@ -3,12 +3,14 @@
 from __future__ import print_function
 
 from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj)
+from _devbuild.gen.runtime_asdl import coerced_e
 
 from core import error
 from core import vm
 from frontend import typed_args
-from mycpp import mylib
+from mycpp import mylib, mops
 from mycpp.mylib import log, tagswitch
+from ysh import expr_eval
 
 from typing import cast, List
 
@@ -77,6 +79,45 @@ class Clear(vm._Callable):
         rd.Done()
 
         dictionary.clear()
+        return value.Null
+
+
+class Add(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        dictionary = rd.PosDict()
+        key = rd.PosStr()
+        inc_val = rd.OptionalValue()
+        rd.Done()
+
+        # If inc_val is provided, we treat it as the definitive type of the
+        # value to be incremented, if it isn't, we rely on the existing
+        # value in the dictionary (if that doesn't exist, the default is 0)
+        if inc_val is None:
+            right = value.Int(mops.ONE)  # type: value_t
+        else:
+            right = inc_val
+
+        if key in dictionary:
+            left = dictionary[key]
+        else:
+            left = value.Int(mops.ZERO)
+
+        c, i1, i2, f1, f2 = expr_eval.ConvertForBinaryOp(left, right)
+
+        if c == coerced_e.Int:
+            res = value.Int(mops.Add(i1, i2))  # type: value_t
+        elif c == coerced_e.Float:
+            res = value.Float(f1 + f2)
+
+        dictionary[key] = res
+
         return value.Null
 
 
