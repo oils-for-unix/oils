@@ -8,7 +8,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, scope_e
 from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.value_asdl import value, value_e, value_str
-from core import pyutil, state, vm
+from core import pyutil, state, vm, optview
 from core.error import e_usage
 from frontend import flag_util, location
 from mycpp import mops
@@ -382,12 +382,12 @@ class Fc(vm._Builtin):
 
     def __init__(
             self,
-            mem,  # type: Mem
+            exec_opts,  # type: optview.Exec
             readline,  # type: Optional[Readline]
             f,  # type: mylib.Writer
     ):
         # type: (...) -> None
-        self.mem = mem
+        self.exec_opts = exec_opts
         self.readline = readline
         self.f = f  # this hook is for unit testing only
 
@@ -433,7 +433,7 @@ class Fc(vm._Builtin):
             last_index += num_items
         arg_r.Next()
 
-        if self.mem.exec_opts.strict_arg_parse():
+        if self.exec_opts.strict_arg_parse():
             arg_r.Done()
 
         if arg.l:
