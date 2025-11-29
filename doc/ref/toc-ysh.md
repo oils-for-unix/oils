@@ -58,7 +58,7 @@ error handling, and more.
                                indexOf()        lastIndexOf()   X includes()
                                insert()         remove()
                                reverse()        List/clear()
-                   Dict        erase()        X Dict/clear()    X accum()
+                   Dict        erase()          Dict/clear()    X accum()
                              X update()
                    Place       setValue()
   [Code Types]     Func        
