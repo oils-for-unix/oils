@@ -649,13 +649,12 @@ setvar mydict['k'] += 3  # TODO: default value of 0
 
 ### Dict/clear()
 
-TODO:
-
 Remove all entries from the Dict:
 
-```raw
-call mydict->clear()
-```
+    var d = {key: 'val'}
+    = len(d)  # => 1
+    call d->clear()
+    = len(d)  # => 0
 
 ### Place
 
