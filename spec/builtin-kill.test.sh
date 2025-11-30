@@ -221,6 +221,18 @@ EXIT
 0
 ## END
 
+#### kill -l 0 INT lists both signals
+kill -l 0 INT
+## STDOUT:
+EXIT
+2
+## N-I dash status: 2
+## N-I dash STDOUT:
+## N-I mksh status: 1
+## N-I mksh STDOUT:
+0
+## END
+
 #### kill -9999 is an invalid signal
 case $SH in dash)  exit ;; esac
 sleep 0.1 &
