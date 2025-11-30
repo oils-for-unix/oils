@@ -9,14 +9,14 @@
 # Examples:
 #   build/deps.sh fetch
 #   build/deps.sh install-wedges       # contributor wedges, to build both Python and C++
-#   build/deps.sh install-wedges soil  # more wedges for Soil CI container, on host
+#   build/deps.sh install-wedges-soil  # more wedges for Soil CI container, on host
 #   build/deps.sh boxed-wedges-2025    # build for copying inside OCI container
+#
+# More:
+#   build/deps.sh print-wedge-list     # print manifest
 #
 # Note: could be build/deps.sh unboxed-wedges versus boxed-wedges, and then
 # install-wedges as an ALIAS
-#
-#   build/deps.sh rm-oils-crap  # rm -r -f /wedge ~/wedge to start over
-#
 
 # Contributed sanity check, for getting started
 if ! test -d stdlib/osh; then
@@ -1227,7 +1227,7 @@ install-wedges-OLD() {
   install-wedges-parallel contrib legacy
 }
 
-install-wedges-contrib-2025() {
+install-wedges-contrib-unboxed() {
   ### Install in ../oils.DEPS (aka unboxed)
 
   # ../oils.DEPS/wedge
@@ -1241,7 +1241,7 @@ install-wedges() {
   ### What we tell users to run
 
   # Migrated as of 2025-10
-  install-wedges-contrib-2025 "$@"
+  install-wedges-contrib-unboxed "$@"
 }
 
 install-wedges-soil() {
