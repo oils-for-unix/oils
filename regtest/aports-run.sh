@@ -280,10 +280,13 @@ build-package-overlayfs() {
       ;;
   esac
 
+  # -o index=off fixes this error: fsconfig() failed: Stale file handle
+  # See also https://oilshell.zulipchat.com/#narrow/channel/522730-distros/topic/setting.20up.20regtest.2Faports-setup.2Esh/with/544318771
   sudo mount \
     -t overlay \
     aports-package \
     -o "$overlay_opts" \
+    -o index=off \
     $merged
 
   local -a prefix
