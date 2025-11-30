@@ -40,13 +40,10 @@ type.
 For example:
 
     var d = {'foo': 'bar'}
-    var n = 1337
+    var n = 42
 
-    $ = type(d)
-    (Str)    'Dict'
-
-    $ = type(n)
-    (Str)    'Int'
+    = type(d)    # => (Str)    'Dict'
+    = type(n)    # => (Str)    'Int'
 
 Similar names: [type][]
 
@@ -68,35 +65,35 @@ Returns `true` for all other values.
 
 Given a float, returns the largest integer that is less than its argument (i.e. `floor()`).
 
-    $ = int(1.99)
-    (Int)    1
+    = int(1.99)  # => (Int)    1
 
 Given a string, `Int()` will attempt to convert the string to a base-10
-integer. The base can be overridden by calling with a second argument.
+integer.
 
-    $ = int('10')
-    (Int)   10
+    = int('10')  # => (Int)   10
 
-    $ = int('10', 2)
-    (Int)   2
+<!-- TODO
+The base can be overridden by calling with a second argument.
+    = int('10', base=2)  # => (Int)   2
+-->
 
-    ysh$ = Int('foo')
-    # fails with an expression error
+```raw
+= int('not_an_integer')  # fails with an expression error
+```
 
 ### float()
 
 Given an integer, returns the corresponding floating point representation.
 
-    $ = float(1)
-    (Float)   1.0
+    = float(1)       # => (Float)   1.0
 
 Given a string, `Float()` will attempt to convert the string to float.
 
-    $ = float('1.23')
-    (Float)   1.23
+    = float('1.23')  # => (Float)   1.23
 
-    ysh$ = float('bar')
-    # fails with an expression error
+```raw
+= float('bar')  # fails with an expression error
+```
 
 ### str()
 
@@ -106,14 +103,12 @@ Converts a `Float` or `Int` to a string.
 
 Given a list, returns a shallow copy of the original.
 
+    = list({'a': 1, 'b': 2})  # => (List)   ['a', 'b']
+
 Given an iterable value (e.g. a range or dictionary), returns a list containing
 one element for each item in the original collection.
 
-    $ = list({'a': 1, 'b': 2})
-    (List)   ['a', 'b']
-
-    $ = list(1:5)
-    (List)   [1, 2, 3, 4, 5]
+    = list(1 ..= 5)           # =>  (List)   [1, 2, 3, 4, 5]
 
 ### dict()
 
@@ -128,7 +123,9 @@ Given a string, decodes UTF-8 into a List of integer "runes" (aka code points).
 Each rune is in the range `U+0` to `U+110000`, and **excludes** the surrogate
 range.
 
-    runes(s, start=-1, end=-1)
+```raw
+runes(s, start=-1, end=-1)
+```
 
 TODO: How do we signal errors?
 
@@ -180,11 +177,10 @@ separator is the empty string.
 
     var x = ['a', 'b', 'c']
 
-    $ echo $[join(x)]
-    abc
+    echo $[join(x)]       # => abc
 
-    $ echo $[join(x, ' ')]  # optional separator
-    a b c
+    # optional separator
+    echo $[join(x, ' ')]  # => a b c
 
 As a reminder, you can call it with the [fat-arrow][] operator `=>` for function chaining:
 
@@ -252,22 +248,27 @@ If not specified, the default value is `null`:
 
 Check if two floating point numbers are equal.
 
-    = floatsEqual(42.0, 42.0)
-    (Bool)   true
+    = floatsEqual(42.0, 42.0)  # => (Bool)   true
 
 It's usually better to make an approximate comparison:
 
-    = abs(float1 - float2) < 0.001
-    (Bool)   false
+    use $LIB_YSH/math.ysh --pick abs
+    var f1 = 0.3
+    var f2 = 0.4
+    = abs(f1 - f2) < 0.001    # => (Bool)   false
 
 ## Obj
+
+Let's use this definition:
+
+    var fields = {x: 42}
+    var obj = Obj.new(fields, null)
 
 ### first()
 
 Get the Dict that contains an object's properties.
 
-    ysh$ = first(obj)
-    (Dict)  {x: 42}
+    = first(obj)  # => (Dict)  {x: 42}
 
 The Dict and Obj share the same storage.  So if the Dict is modified, the
 object is too.
@@ -278,8 +279,7 @@ If you want a copy, use `dict(obj)`.
 
 Get the "prototype" of an Obj, which is another Obj, or null:
 
-    ysh$ = rest(obj)
-    (Null)  null
+    = rest(obj)  # => (Null)  null
 
 ## Word
 
@@ -295,18 +295,15 @@ See `glob-pat` topic for syntax.
 
 Convert an object in memory to JSON text:
 
-    $ = toJson({name: "alice"})
-    (Str)   '{"name":"alice"}'
+    = toJson({name: "alice"})          # => (Str)   '{"name":"alice"}'
 
 Add indentation by passing the `space` param:
 
-    $ = toJson([42], space=2)
-    (Str)   "[\n  42\n]"
+    = toJson([42], space=2)            # => (Str)   "[\n  42\n]"
 
 Turn non-serializable types into `null`, instead of raising an error:
 
-    $ = toJson(/d+/, type_errors=false)
-    (Str)   'null'
+    = toJson(/d+/, type_errors=false)  # => (Str)   'null'
 
 The `toJson()` function is to `json write (x)`, except the default value of
 `space` is 0.
@@ -319,8 +316,7 @@ See [err-json-encode][] for errors.
 
 Convert JSON text to an object in memory:
 
-    = fromJson('{"name":"alice"}')
-    (Dict)   {"name": "alice"}
+    = fromJson('{"name":"alice"}')     # => (Dict)   {"name": "alice"}
 
 Similar to `json read <<< '{"name": "alice"}'`.
 
@@ -383,8 +379,8 @@ This function is like [`io->eval()`][io/eval], but it disallows I/O.
 
 Example:
 
-    var cmd = ^(const x = 42)
-    var d = eval(cmd, to_dict=true)  # {x: 42}
+    var cmd = ^(const x = 42; )
+    = eval(cmd, to_dict=true)  # => (Dict)   {x: 42}
 
 [io/eval]: chap-type-method.html#io/eval
 
@@ -411,7 +407,7 @@ It's meant to be used with `shvar`:
 
     proc proc1 {
       shvar PATH=/tmp {  # temporarily set PATH in this stack frame
-        my-proc
+        echo
       }
 
       proc2
@@ -438,9 +434,8 @@ to distinguish an undefined variable from one that's `null`.
 
 Given a variable name, return its value.
 
-    $ var x = 42
-    $ echo $[getVar('x')]
-    42
+    var x = 42
+    = getVar('x')  # => (Int)   42
 
 The variable may be local or global.  (Compare with `shvarGet()`.) the "dynamic
 scope" rule.)

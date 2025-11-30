@@ -692,6 +692,7 @@ run-code-in-doc() {
 run-code-all() {
   run-code-in-doc 'ysh-io'
   run-code-in-doc 'ref/chap-type-method'
+  run-code-in-doc 'ref/chap-builtin-func'
 
   # TODO: add more docs here
 }
