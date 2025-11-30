@@ -40,25 +40,32 @@ pre-render-wikilinks() {
   ## This function converts that syntax to the traditional
   ## [link syntax](./link-syntax.html) which will render correctly once fed to
   ## doctools.
-  python3 <<'EOF'
+  local script=$(cat <<'EOF'
 import sys
 import re
 
 def slugify(text: str) -> str:
-    """Convert link text to a filename slug."""
-    return text.strip().lower().replace(" ", "-").replace(",", "")
+    """
+    The links are given in "human-form" but we need to turn then into links or
+    "slugs" which correspond to the rendered file name.
 
-pattern = re.compile(r"\[\[(.*?)\]\]")
+    Note: Some titles have commas in them. These are not present in the slug.
+    """
+    return text.replace(" ", "-").replace(",", "")
+
+link_pattern = re.compile(r"\[\[(.*?)\]\]")
 
 def replacer(match):
     text = match.group(1).strip()
-    slug = slugify(text)
-    return f"[{text}](./{slug}.html)"
+    return f"[{text}](./{slugify(text)}.html)"
 
 input_text = sys.stdin.read()
-output_text = pattern.sub(replacer, input_text)
+output_text = link_pattern.sub(replacer, input_text)
 sys.stdout.write(output_text)
 EOF
+)
+
+  python3 -c "$script"
 }
 
 build-one() {
@@ -67,15 +74,20 @@ build-one() {
   local name=${name%.md}  # Remove .md extension
   local name=${name/,//}  # Remove commas in names (breaks doctools)
   local title=$(echo "$name" | sed 's/ /-/g')
+
   mkdir -p "$HTML_BASE_DIR/doc/wiki/"
+
   local web_url="../../web"
-  build/doc.sh render-only <(pre-render-wikilinks <"$path") "$HTML_BASE_DIR/doc/wiki/$name.html" "$web_url/base.css $eb_url/manual.css $web_url/toc.css $web_url/language.css $web_url/code.css" "$title"
+  build/doc.sh render-only \
+    <(pre-render-wikilinks <"$path") \
+    "$HTML_BASE_DIR/doc/wiki/$name.html" \
+    "$web_url/base.css $web_url/manual.css $web_url/toc.css $web_url/language.css $web_url/code.css" \
+    "$title"
 }
 
 build-dev-guide() {
   clone-wiki
-  # find "$WIKI_DIR" -name '*.md' -print0 | xargs "-P$(nproc)" -I {} -0 -- $0 build-one {}
-  find "$WIKI_DIR" -name '*.md' -print0 | xargs -P1 -I {} -0 -- $0 build-one {}
+  find "$WIKI_DIR" -name '*.md' -print0 | xargs -I {} -0 -- $0 build-one {}
 }
 
 "$@"
