@@ -121,6 +121,34 @@ class Add(vm._Callable):
         return value.Null
 
 
+class Append(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        dictionary = rd.PosDict()
+        key = rd.PosStr()
+        append_val = rd.PosValue()
+        rd.Done()
+
+        if key in dictionary:
+            UP_obj = dictionary[key]
+            if UP_obj.tag() == value_e.List:
+                lst = cast(value.List, UP_obj)
+                lst.items.append(append_val)
+            else:
+                raise error.TypeErr(UP_obj, 'append() expected the key to point to List',
+                                    rd.BlamePos())
+        else:
+            dictionary[key] = value.List([append_val])
+
+        return value.Null
+
+
 class Get(vm._Callable):
 
     def __init__(self):

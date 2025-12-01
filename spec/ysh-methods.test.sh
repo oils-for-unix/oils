@@ -616,6 +616,19 @@ pp test_ (histogram)
 (Dict)   {"a":9.0,"b":5.5,"c":4.0}
 ## END
 
+#### Dict -> append()
+var mydict = {a: [1]}
+call mydict->append('a', 2)
+assert [{"a": [1,2]} === mydict]
+call mydict->append('a', 'b')
+assert [{"a": [1,2,'b']} === mydict]
+call mydict->append('b', 1)
+assert [{"a": [1,2,'b'], "b": [1]} === mydict]
+call mydict->append('c', [1,2])
+# list of lists
+assert [{"a": [1,2,'b'], "b": [1], "c": [[1,2]]} === mydict]
+## status: 0
+
 #### Separation of -> attr and () calling
 const check = "abc" => startsWith
 pp test_ (check("a"))
