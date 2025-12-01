@@ -855,9 +855,7 @@ def Main(
         'M/erase': method_dict.Erase(),
         'M/clear': method_dict.Clear(),
         'M/add': method_dict.Add(),
-
-        # call d->accum('mygroup', 'value')
-        'M/accum': None,
+        'M/append': method_dict.Append(),
 
         # DEPRECATED - use free functions
         'get': method_dict.Get(),
