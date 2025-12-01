@@ -1337,6 +1337,7 @@ Examples:
     kill -l                # List all signals; -l is a synonym for -L
     kill -L USR1 USR2      # prints '10 12'
     kill -L USR1 15        # prints '10 TERM'
+    kill -L 134            # you can also pass exit codes, this prints 'ABRT'
 
 ## External
 
