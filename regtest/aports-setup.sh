@@ -410,7 +410,7 @@ remove-shard-layers() {
   sudo rm -r -f _chroot/shard*
 }
 
-archived-distfiles() {
+make-distfiles-tar() {
   local a_repo=$1  # 'main' or 'community'
 
   local tar=_chroot/distfiles-${a_repo}.tar
