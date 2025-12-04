@@ -417,6 +417,7 @@ module syntax
 
   command =
     NoOp
+  | IgnoredTrap  # only used for the 'trap' builtin
 
     # can wrap many children, e.g. { }, loops, functions
   | Redirect(command child, List[Redir] redirects)

@@ -77,7 +77,7 @@ class TrapState(object):
         """ e.g. SIGUSR1 """
         self.traps[sig_num] = handler
 
-        if handler.tag() == command_e.NoOp:
+        if handler.tag() == command_e.IgnoredTrap:
             # This is the case:
             #     trap '' SIGINT SIGWINCH
             # It's handled the same as removing a trap:
@@ -299,7 +299,7 @@ class Trap(vm._Builtin):
 
     def _PrintTrapEntry(self, handler, name):
         # type: (command_t, str) -> None
-        if handler.tag() == command_e.NoOp:
+        if handler.tag() == command_e.IgnoredTrap:
             print("trap -- '' %s" % name)
         else:
             code = self._GetCommandSourceCode(handler)
@@ -376,7 +376,9 @@ class Trap(vm._Builtin):
             return self._AddTheRest(arg_r, cmd_frag, allow_legacy=False)
 
         if arg.ignore:  # trap --ignore
-            return self._AddTheRest(arg_r, command.NoOp, allow_legacy=False)
+            return self._AddTheRest(arg_r,
+                                    command.IgnoredTrap,
+                                    allow_legacy=False)
 
         if arg.remove:  # trap --remove
             self._RemoveTheRest(arg_r, allow_legacy=False)
@@ -419,7 +421,7 @@ class Trap(vm._Builtin):
 
         # If first arg is empty string '', ignore the specified signals
         if len(first_arg) == 0:
-            return self._AddTheRest(arg_r, command.NoOp)
+            return self._AddTheRest(arg_r, command.IgnoredTrap)
 
         # Legacy behavior for only one arg: 'trap SIGNAL' removes the handler
         if arg_r.AtEnd():

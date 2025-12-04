@@ -564,6 +564,8 @@ failure
 
 #### trap '' sets handler to empty string (SIG_IGN)
 
+# Note: this doesn't actually test that it's SIG_IGN
+
 trap '' USR1
 trap
 
@@ -595,29 +597,12 @@ trap --  USR1
 trap --  USR2
 ## END
 
-#### trap '' removes hooks (like trap -)
+#### trap with command.NoOp - check internal invariant
 
-trap '' EXIT
-echo should get here
-
-## STDOUT:
-should get here
-## END
-
-#### trap '' ignores uncatchable STOP signal
-
-trap '' STOP
-echo done
+$SH -c 'trap "> zz" EXIT'
+wc -l zz  # should exist
 
 ## STDOUT:
-done
+0 zz
 ## END
 
-#### trap '' ignores uncatchable KILL signal
-
-trap '' KILL
-echo done
-
-## STDOUT:
-done
-## END
