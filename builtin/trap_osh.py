@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
-from signal import SIG_DFL, SIGINT, SIGWINCH
+from signal import SIG_DFL, SIG_IGN, SIGINT, SIGWINCH
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
@@ -77,17 +77,33 @@ class TrapState(object):
         """ e.g. SIGUSR1 """
         self.traps[sig_num] = handler
 
-        if sig_num == SIGINT:
-            # Don't disturb the underlying runtime's SIGINT handllers
-            # 1. CPython has one for KeyboardInterrupt
-            # 2. mycpp runtime simulates KeyboardInterrupt:
-            #    pyos::InitSignalSafe() calls RegisterSignalInterest(SIGINT),
-            #    then we PollSigInt() in the osh/cmd_eval.py main loop
-            self.signal_safe.SetSigIntTrapped(True)
-        elif sig_num == SIGWINCH:
-            self.signal_safe.SetSigWinchCode(SIGWINCH)
+        if handler.tag() == command_e.NoOp:
+            # This is the case:
+            #     trap '' SIGINT SIGWINCH
+            # It's handled the same as removing a trap:
+            #     trap - SIGINT SIGWINCH
+            #
+            # That is, the signal_safe calls are the same.  This seems right
+            # because the shell interpreter itself cares about SIGINT and
+            # SIGWINCH too -- not just user traps.
+            if sig_num == SIGINT:
+                self.signal_safe.SetSigIntTrapped(False)
+            elif sig_num == SIGWINCH:
+                self.signal_safe.SetSigWinchCode(iolib.UNTRAPPED_SIGWINCH)
+            else:
+                iolib.sigaction(sig_num, SIG_IGN)
         else:
-            iolib.RegisterSignalInterest(sig_num)
+            if sig_num == SIGINT:
+                # Don't disturb the underlying runtime's SIGINT handllers
+                # 1. CPython has one for KeyboardInterrupt
+                # 2. mycpp runtime simulates KeyboardInterrupt:
+                #    pyos::InitSignalSafe() calls RegisterSignalInterest(SIGINT),
+                #    then we PollSigInt() in the osh/cmd_eval.py main loop
+                self.signal_safe.SetSigIntTrapped(True)
+            elif sig_num == SIGWINCH:
+                self.signal_safe.SetSigWinchCode(SIGWINCH)
+            else:
+                iolib.RegisterSignalInterest(sig_num)
 
     def _RemoveUserTrap(self, sig_num):
         # type: (int) -> None
@@ -96,7 +112,6 @@ class TrapState(object):
 
         if sig_num == SIGINT:
             self.signal_safe.SetSigIntTrapped(False)
-            pass
         elif sig_num == SIGWINCH:
             self.signal_safe.SetSigWinchCode(iolib.UNTRAPPED_SIGWINCH)
         else:
@@ -284,8 +299,11 @@ class Trap(vm._Builtin):
 
     def _PrintTrapEntry(self, handler, name):
         # type: (command_t, str) -> None
-        code = self._GetCommandSourceCode(handler)
-        print("trap -- %s %s" % (j8_lite.ShellEncode(code), name))
+        if handler.tag() == command_e.NoOp:
+            print("trap -- '' %s" % name)
+        else:
+            code = self._GetCommandSourceCode(handler)
+            print("trap -- %s %s" % (j8_lite.ShellEncode(code), name))
 
     def _PrintState(self):
         # type: () -> None
@@ -357,6 +375,9 @@ class Trap(vm._Builtin):
             cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
             return self._AddTheRest(arg_r, cmd_frag, allow_legacy=False)
 
+        if arg.ignore:  # trap --ignore
+            return self._AddTheRest(arg_r, command.NoOp, allow_legacy=False)
+
         if arg.remove:  # trap --remove
             self._RemoveTheRest(arg_r, allow_legacy=False)
             return 0
@@ -395,6 +416,10 @@ class Trap(vm._Builtin):
             return 0
 
         arg_r.Next()
+
+        # If first arg is empty string '', ignore the specified signals
+        if len(first_arg) == 0:
+            return self._AddTheRest(arg_r, command.NoOp)
 
         # Legacy behavior for only one arg: 'trap SIGNAL' removes the handler
         if arg_r.AtEnd():
