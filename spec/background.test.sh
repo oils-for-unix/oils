@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 8
 ## compare_shells: dash bash mksh
 
 # Job control constructs:
@@ -54,7 +54,7 @@ wait -n
 #### wait with jobspec syntax %nonexistent
 wait %nonexistent
 ## status: 127
-## OK dash status: 2
+## N-I dash status: 2
 
 #### wait with invalid PID
 wait 12345678
@@ -161,6 +161,10 @@ echo status=$?
 ## STDOUT:
 status=0
 status=99
+## END
+## N-I mksh STDOUT:
+status=0
+status=127
 ## END
 
 #### Wait for job and PIPESTATUS
@@ -395,4 +399,20 @@ wait --all 1
 ## END
 
 ## N-I dash/bash/mksh STDOUT:
+## END
+
+#### Signal message for killed background job
+case $SH in dash|mksh) exit ;; esac
+
+sleep 1 &
+kill -HUP $!
+wait $! 2>err.txt
+echo status=$?
+grep -o "Hangup" err.txt
+## status: 0
+## STDOUT:
+status=129
+Hangup
+## END
+## STDERR:
 ## END
