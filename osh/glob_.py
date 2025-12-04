@@ -469,25 +469,25 @@ class Globber(object):
     def _GetGlobIgnorePatterns(self):
         # type: () -> Optional[List[str]]
         """Get GLOBIGNORE patterns as a list, or None if not set."""
-                
+
         val = self.mem.GetValue('GLOBIGNORE', scope_e.GlobalOnly)
         if val.tag() != value_e.Str:
             return None
-        
+
         globignore = cast(value.Str, val).s  # type: str
         if len(globignore) == 0:
             return None
-        
+
         if globignore in self._globignore_cache:
             return self._globignore_cache[globignore]
-        
+
         # Split by colon to get individual patterns, but don't split colons
         # inside bracket expressions like [[:alnum:]]
         patterns = []  # type: List[str]
         current = []  # type: List[str]
         in_bracket = False
-        
-        for i, c in enumerate(globignore):
+
+        for c in globignore:
             if c == '[':
                 in_bracket = True
                 current.append(c)
@@ -500,36 +500,36 @@ class Globber(object):
                     del current[:]
             else:
                 current.append(c)
-        
+
         if len(current):
             patterns.append(''.join(current))
-        
+
         self._globignore_cache[globignore] = patterns
-        
+
         return patterns
 
     def _MatchesGlobIgnore(self, filename, patterns):
         # type: (str, List[str]) -> bool
         """Check if filename matches any GLOBIGNORE pattern.
-        
+
         Filenames . and .. are always ignored when GLOBIGNORE is set.
         """
         basename = os_path.basename(filename)
         if basename in ('.', '..'):
             return True
-        
+
         flags = 0
-        
+
         for pattern in patterns:
             if libc.fnmatch(pattern, filename, flags):
                 return True
-        
+
         return False
 
     def _Glob(self, arg, out):
         # type: (str, List[str]) -> int
         globignore_patterns = self._GetGlobIgnorePatterns()
-        
+
         try:
             flags = 0
             # GLOBIGNORE enables dotglob when set to a non-null value
@@ -577,7 +577,7 @@ class Globber(object):
                         dotfile_filtered.append(s)
                 results = dotfile_filtered
                 n = len(results)
-            
+
             out.extend(results)
             return n
 

@@ -162,3 +162,14 @@ echo *
 *
 *
 ## END
+
+#### . and .. always filtered when GLOBIGNORE is set
+# When GLOBIGNORE is set to any non-null value, . and .. are always filtered
+# even if they don't match the patterns
+shopt -u globskipdots
+touch .hidden
+GLOBIGNORE=*.txt
+echo .*
+## STDOUT:
+.hidden
+## END
