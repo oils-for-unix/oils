@@ -33,7 +33,7 @@ status=0
 ## END
 
 #### More shvar PATH=''
-shopt --set parse_brace command_sub_errexit parse_proc
+shopt --set parse_brace command_sub_errexit parse_proc parse_ysh_expr_sub
 
 shvar PATH='' {
   ( cp -v file /tmp >&2 )
@@ -58,7 +58,7 @@ _status 127
 
 
 #### builtins and externals not available in hay eval
-shopt --set parse_brace
+shopt --set parse_brace parse_ysh_expr_sub
 shopt --unset errexit
 
 hay define Package

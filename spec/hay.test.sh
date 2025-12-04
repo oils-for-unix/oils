@@ -366,7 +366,7 @@ LEN 0
 
 #### haynode: shell nodes require block args; attribute nodes don't
 
-shopt --set parse_brace parse_equals parse_proc
+shopt --set parse_brace parse_equals parse_proc parse_ysh_expr_sub
 
 hay define package TASK
 
@@ -643,7 +643,7 @@ publish-html
 ## END
 
 #### evalHay() usage
-shopt -s parse_brace
+shopt -s parse_brace parse_ysh_expr_sub
 
 try {
   var d = evalHay()

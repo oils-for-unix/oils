@@ -97,7 +97,7 @@ echo $i
 
 
 #### Operations That Convert to Integer: // % **
-shopt -s parse_brace
+shopt -s parse_brace parse_ysh_expr_sub
 
 var m = ' 5 ' // 2
 
@@ -126,7 +126,7 @@ _status 3
 ## END
 
 #### Division by zero
-shopt -s parse_brace
+shopt -s parse_brace parse_ysh_expr_sub
 
 try {
   = 42 / 0

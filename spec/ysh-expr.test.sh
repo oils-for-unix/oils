@@ -347,7 +347,7 @@ no
 ## END
 
 #### Type Errors
-shopt --set parse_brace
+shopt --set parse_brace parse_ysh_expr_sub
 
 # TODO: It might be nice to get a message
 try {

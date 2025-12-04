@@ -101,7 +101,6 @@ CASE-try() {
   src ysh <<'EOF'
 # TODO: Oils could expose strerror() like shpp
 
-#test
 try { zzz }
 if (_error.code === 127) {
   echo "zzz not installed"
