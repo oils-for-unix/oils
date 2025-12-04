@@ -5,7 +5,7 @@ import mypy
 
 from mypy.nodes import (Expression, NameExpr, MemberExpr, TupleExpr, CallExpr,
                         ClassDef, FuncDef, Argument)
-from mypy.types import Type, Instance, TupleType, NoneType
+from mypy.types import Type, Instance, TupleType, NoneType, PartialType
 
 from mycpp import util
 from mycpp.util import log, SplitPyName
@@ -41,7 +41,7 @@ class Primitive(Instance):
 MYCPP_INT = Primitive('builtins.int')
 
 
-class Pass(visitor.SimpleVisitor):
+class Pass(visitor.TypedVisitor):
 
     def __init__(
         self,
@@ -52,12 +52,9 @@ class Pass(visitor.SimpleVisitor):
         all_local_vars: 'cppgen_pass.AllLocalVars',
         module_dot_exprs: DotExprs,
         yield_out_params: Dict[FuncDef, Tuple[str, str]],  # output
-        dunder_exit_special: Dict[FuncDef, bool],
+        dunder_exit_special: Dict[ClassDef, bool],
     ) -> None:
-        visitor.SimpleVisitor.__init__(self)
-
-        # Input
-        self.types = types
+        visitor.TypedVisitor.__init__(self, types)
 
         # These are all outputs we compute
         self.virtual = virtual
@@ -71,7 +68,7 @@ class Pass(visitor.SimpleVisitor):
         self.dunder_exit_special = dunder_exit_special
 
         # Internal state
-        self.inside_dunder_exit = None
+        self.inside_dunder_exit = None  # type: Optional[ClassDef]
         self.current_member_vars: Dict[str, 'cppgen_pass.MemberVar'] = {}
         self.current_local_vars: List[Tuple[str, Type]] = []
 
@@ -117,9 +114,8 @@ class Pass(visitor.SimpleVisitor):
                 self.imported_names.add(name)
 
     def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
-        # Why is self.types[o] missing some types?  e.g. hnode.Record() call in
-        # asdl/runtime.py, failing with KeyError NameExpr
-        lhs_type = self.types.get(o.expr)  # type: Optional[Type]
+        # asdl/runtime.py is missing types, so call GetTypeOptional
+        lhs_type = self._GetTypeOptional(o.expr)  # type: Optional[Type]
 
         is_small_str = False
         if util.SMALL_STR:
@@ -167,19 +163,20 @@ class Pass(visitor.SimpleVisitor):
 
     def oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
-            base_class_sym: Optional[util.SymbolPath]) -> None:
+            base_class_sym: Optional[util.SymbolPath],
+            current_class_name: Optional[util.SymbolPath]) -> None:
         self.write_ind('class %s;\n', o.name)
         if base_class_sym:
-            self.virtual.OnSubclass(base_class_sym, self.current_class_name)
+            self.virtual.OnSubclass(base_class_sym, current_class_name)
 
         # Do default traversal of methods, associating member vars with the
         # ClassDef node
         self.current_member_vars = {}
-        super().oils_visit_class_def(o, base_class_sym)
+        super().oils_visit_class_def(o, base_class_sym, current_class_name)
         self.all_member_vars[o] = self.current_member_vars
 
     def _ValidateDefaultArg(self, arg: Argument) -> None:
-        t = self.types[arg.initializer]
+        t = self._GetType(arg.initializer)
 
         valid = False
         if isinstance(t, NoneType):
@@ -221,10 +218,12 @@ class Pass(visitor.SimpleVisitor):
                 (func_def.name, num_defaults))
             return
 
-    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
         self._ValidateDefaultArgs(o)
 
-        self.virtual.OnMethod(self.current_class_name, o.name)
+        self.virtual.OnMethod(current_class_name, o.name)
 
         self.current_local_vars = []
 
@@ -236,7 +235,7 @@ class Pass(visitor.SimpleVisitor):
         # Are we assuming we never do mylib.MaybeCollect() inside a
         # constructor?  We can check that too.
 
-        if self.current_method_name != '__init__':
+        if current_method_name != '__init__':
             # Add function params as locals, to be rooted
             arg_types = o.type.arg_types
             arg_names = [arg.variable.name for arg in o.arguments]
@@ -246,7 +245,7 @@ class Pass(visitor.SimpleVisitor):
                 self.current_local_vars.append((name, typ))
 
         # Traverse to collect member variables
-        super().oils_visit_func_def(o)
+        super().oils_visit_func_def(o, current_class_name, current_method_name)
         self.all_local_vars[o] = self.current_local_vars
 
         # Is this function is a generator?  Then associate the node with an
@@ -286,13 +285,15 @@ class Pass(visitor.SimpleVisitor):
 
         # what about yield accumulator, like
         # it_g = g(n)
-        self.current_local_vars.append((lval.name, self.types[lval]))
+        self.current_local_vars.append((lval.name, self._GetType(lval)))
 
         super().oils_visit_assign_to_listcomp(lval, left_expr, index_expr, seq,
                                               cond)
 
-    def _MaybeAddMember(self, lval: MemberExpr) -> None:
-        assert not self.at_global_scope, "Members shouldn't be assigned at the top level"
+    def _MaybeAddMember(self, lval: MemberExpr,
+                        current_method_name: Optional[str],
+                        at_global_scope: bool) -> None:
+        assert not at_global_scope, "Members shouldn't be assigned at the top level"
 
         # Collect statements that look like self.foo = 1
         # Only do this in __init__ so that a derived class mutating a field
@@ -301,22 +302,38 @@ class Pass(visitor.SimpleVisitor):
         #
         # HACK for WordParser: also include Reset().  We could change them
         # all up front but I kinda like this.
-        if self.current_method_name not in ('__init__', 'Reset'):
+        if current_method_name not in ('__init__', 'Reset'):
             return
 
         if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
             #log('    lval.name %s', lval.name)
-            lval_type = self.types[lval]
+            lval_type = self._GetType(lval)
             c_type = cppgen_pass.GetCType(lval_type)
             is_managed = cppgen_pass.CTypeIsManaged(c_type)
             self.current_member_vars[lval.name] = (lval_type, c_type,
                                                    is_managed)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
 
         if isinstance(lval, MemberExpr):
-            self._MaybeAddMember(lval)
+            self._MaybeAddMember(lval, current_method_name, at_global_scope)
+
+        # TupleExpr will not be in self.types
+        t = self._GetTypeOptional(lval)  # type: Optional[Type]
+        if isinstance(t, PartialType):
+            self.report_error(
+                o,
+                "Mismatched types: trying to assign expression of type '%s' to "
+                "a PartialType variable '%s' (was likely assigned None before).\n"
+                "Tip: If your type translates to a heap-allocated type (e.g. str "
+                "or class), you can annotate it with '# type: Optional[T]'. "
+                "If your type is allocated on the stack (int), then you can use "
+                "-1 or similar as an in-band null value" %
+                (t.var.type.type.name, t.var.name))
+            return
 
         # Handle:
         #    x = y
@@ -327,7 +344,7 @@ class Pass(visitor.SimpleVisitor):
         # Note: this has duplicates: the 'done' set in visit_block() handles
         # it.  Could make it a Dict.
         if isinstance(lval, NameExpr):
-            rval_type = self.types[rval]
+            rval_type = self._GetType(rval)
 
             # Two pieces of logic adapted from cppgen_pass: is_iterator and is_cast.
             # Can we simplify them?
@@ -347,16 +364,23 @@ class Pass(visitor.SimpleVisitor):
                         to_cast.name.startswith('UP_')):
                     is_downcast_and_shadow = True
 
-            if (not self.at_global_scope and not is_iterator and
+            if (not at_global_scope and not is_iterator and
                     not is_downcast_and_shadow):
-                self.current_local_vars.append((lval.name, self.types[lval]))
+                self.current_local_vars.append((lval.name, self._GetType(lval)))
 
         # Handle local vars, like _write_tuple_unpacking
 
         # This handles:
         #    a, b = func_that_returns_tuple()
         if isinstance(lval, TupleExpr):
-            rval_type = self.types[rval]
+            if isinstance(rval, TupleExpr):
+                self.report_error(
+                    o, "mycpp currently does not handle code like "
+                    "'a, b = x, y'. You can move each assignment to its own line "
+                    "or return (x, y) from a function instead.")
+                return
+
+            rval_type = self._GetType(rval)
             assert isinstance(rval_type, TupleType), rval_type
 
             for i, (lval_item,
@@ -369,9 +393,11 @@ class Pass(visitor.SimpleVisitor):
 
                 # self.a, self.b = foo()
                 if isinstance(lval_item, MemberExpr):
-                    self._MaybeAddMember(lval_item)
+                    self._MaybeAddMember(lval_item, current_method_name,
+                                         at_global_scope)
 
-        super().oils_visit_assignment_stmt(o, lval, rval)
+        super().oils_visit_assignment_stmt(o, lval, rval, current_method_name,
+                                           at_global_scope)
 
     def oils_visit_for_stmt(self, o: 'mypy.nodes.ForStmt',
                             func_name: Optional[str]) -> None:

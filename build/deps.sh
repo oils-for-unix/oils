@@ -8,51 +8,39 @@
 #
 # Examples:
 #   build/deps.sh fetch
-#   build/deps.sh install-wedges  # for both Python and C++
+#   build/deps.sh install-wedges       # contributor wedges, to build both Python and C++
+#   build/deps.sh install-wedges-soil  # more wedges for Soil CI container, on host
+#   build/deps.sh boxed-wedges-2025    # build for copying inside OCI container
 #
-#   build/deps.sh rm-oils-crap  # rm -r -f /wedge ~/wedge to start over
+# More:
+#   build/deps.sh print-wedge-list     # print manifest
 #
-# TODO: Do we need something faster, just python2, re2c, and cmark?
-#
-#   - build/deps.sh fetch-py
-#   - build/deps.sh install-wedges-py
-#
-# TODO: Can we make most of them non-root deps?  This requires rebuilding
-# containers, which requires podman.
-#
-#     rm -r -f ~/wedge  # would be better
+# Note: could be build/deps.sh unboxed-wedges versus boxed-wedges, and then
+# install-wedges as an ALIAS
 
-
-# Check if we're in the right directory
-if [[ ! -d "stdlib/osh" ]]; then
-    echo "Error: This script must be run from the root of the Oils project directory"
-    echo "Please cd to the root directory and try again"
-    exit 1
+# Contributed sanity check, for getting started
+if ! test -d stdlib/osh; then
+  echo 'Run this script from the Oils repo root'
+  exit 1
 fi
 
 : ${LIB_OSH=stdlib/osh}
-if [[ ! -f "$LIB_OSH/bash-strict.sh" ]] || [[ ! -f "$LIB_OSH/task-five.sh" ]]; then
-    echo "Error: Required source files not found in $LIB_OSH/"
-    echo "Expected files:"
-    echo "  - $LIB_OSH/bash-strict.sh"
-    echo "  - $LIB_OSH/task-five.sh"
-    exit 1
-fi
-
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source build/dev-shell.sh  # python3 in PATH, PY3_LIBS_VERSION
+source build/dev-shell.sh  # We generally assume this, but let's be safe
 source deps/from-apt.sh  # PY3_BUILD_DEPS
-#source deps/podman.sh
 source test/tsv-lib.sh  # tsv-concat
 source web/table/html.sh  # table-sort-{begin,end}
 
 # Also in build/dev-shell.sh
-USER_WEDGE_DIR=~/wedge/oils-for-unix.org
-ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
+USER_WEDGE_DIR=~/wedge/oils-for-unix.org/pkg
+ROOT_WEDGE_DIR=/wedge/oils-for-unix.org/pkg
+
+readonly WEDGE_2025_DIR=../oils.DEPS/wedge
+mkdir -p $WEDGE_2025_DIR
 
 readonly DEPS_SOURCE_DIR=_build/deps-source
 
@@ -116,7 +104,14 @@ readonly UFTRACE_URL='https://github.com/namhyung/uftrace/archive/refs/tags/v0.1
 readonly SOUFFLE_VERSION=2.4.1
 readonly SOUFFLE_URL=https://github.com/souffle-lang/souffle/archive/refs/tags/2.4.1.tar.gz
 
+readonly R_LIBS_VERSION='2023-04-18'
+readonly TIME_HELPER_VERSION='2023-02-28'
+readonly PY3_LIBS_VERSION=2023-03-04
+
 readonly WEDGE_LOG_DIR=_build/wedge/logs
+
+readonly BOXED_WEDGE_DIR=_build/boxed/wedge
+readonly BOXED_LOG_DIR=_build/boxed/logs
 
 log() {
   echo "$@" >& 2
@@ -128,7 +123,7 @@ die() {
 }
 
 rm-oils-crap() {
-  ### When you want to start over
+  ### Remove OLD wedges (prior to 2025)
 
   rm -r -f -v ~/wedge
   sudo rm -r -f -v /wedge
@@ -163,6 +158,7 @@ readonly -a WEDGE_DEPS_DEBIAN=(
   #flex bison
 
   "${PY3_BUILD_DEPS[@]}"
+  "${SPEC_TEST_DEPS[@]}"
 )
 
 readonly -a WEDGE_DEPS_ALPINE=(
@@ -277,7 +273,6 @@ readonly -a WEDGE_DEPS_ARCH=(
 
 )
 
-
 install-debian-packages() {
   ### Packages for build/py.sh all, building wedges, etc.
 
@@ -334,54 +329,6 @@ wedge-deps-arch() {
       sudo pacman --noconfirm -S "$pkg"
     fi
   done
-}
-
-#
-# Unused patch, was experiment for Fedora
-#
-
-get-typed-ast-patch() {
-  curl -o deps/typed_ast.patch https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96.patch
-}
-
-# Work around typed_ast bug:
-#   https://github.com/python/typed_ast/issues/169
-#
-# Apply this patch
-# https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96
-#
-# typed_ast is tarred up though
-patch-typed-ast() {
-  local package_dir=_cache/py3-libs
-  local patch=$PWD/deps/typed_ast.patch
-
-  pushd $package_dir
-  cat $patch
-  echo
-
-  local dir=typed_ast-1.4.3
-  local tar=typed_ast-1.4.3.tar.gz
-
-  echo OLD
-  ls -l $tar
-  echo
-
-  rm -r -f -v $dir
-  tar -x -z < $tar
-
-  pushd $dir
-  patch -p1 < $patch
-  popd
-  #find $dir
-
-  # Create a new one
-  tar --create --gzip --file $tar typed_ast-1.4.3
-
-  echo NEW
-  ls -l $tar
-  echo
-
-  popd
 }
 
 #
@@ -501,6 +448,11 @@ fetch() {
 
   copy-source-medo
 
+  # Hack
+  local dest=$DEPS_SOURCE_DIR/time-helper/time-helper-$TIME_HELPER_VERSION
+  mkdir -p $dest
+  cp -v benchmarks/time-helper.c $dest
+
   download-to $DEPS_SOURCE_DIR/re2c "$RE2C_URL"
   download-to $DEPS_SOURCE_DIR/cmark "$CMARK_URL"
   maybe-extract $DEPS_SOURCE_DIR/re2c "$(basename $RE2C_URL)" re2c-$RE2C_VERSION
@@ -573,12 +525,30 @@ mirror-zsh() {
 
 wedge-exists() {
   ### Does an installed wedge already exist?
+  local name=$1
+  local version=$2
+  local wedge_base_dir=${3:-/wedge/oils-for-unix.org}  # e.g. ../oils.DEPS/wedge
+
+  local installed=$wedge_base_dir/$name/$version
+
+  if test -d $installed; then
+    log "$installed already exists"
+    return 0
+  else
+    return 1
+  fi
+}
+
+boxed-wedge-exists() {
+  ### Does an installed wedge already exist?
 
   local name=$1
   local version=$2
-  local wedge_dir=${3:-/wedge/oils-for-unix.org}
 
-  local installed=$wedge_dir/pkg/$name/$version
+  # NOT USED for now
+  local distro=${3:-debian-12}
+
+  local installed=$BOXED_WEDGE_DIR/$name/$version
 
   if test -d $installed; then
     log "$installed already exists"
@@ -589,17 +559,35 @@ wedge-exists() {
 }
 
 #
-# Install
+# Special case of py3-libs
 #
-
-# TODO: py3-libs needs to be a WEDGE, so that that you can run
-# 'wedge build deps/source.medo/py3-libs/' and then get it in
-#
-# _build/wedge/{absolute,relative}   # which one?
-#
+# TODO: it should a WEDGE
 # It needs a BUILD DEPENDENCY on:
 # - the python3 wedge, so you can do python3 -m pip install.
 # - the mypy repo, which has test-requirements.txt
+#
+
+upgrade-typed-ast() {
+  local file=$1
+  sed -i 's/typed_ast.*/typed_ast==1.5.0/' $file
+}
+
+test-typed-ast() {
+  local dir=~/wedge/oils-for-unix.org/pkg/mypy/0.780
+
+  cp -v $dir/mypy-requirements.txt _tmp
+
+  local file=_tmp/mypy-requirements.txt
+  cat $file
+  #echo
+
+  # 1.5.0 fixed this bug
+  # https://github.com/python/typed_ast/issues/169 
+
+  upgrade-typed-ast $file
+  echo
+  cat $file
+}
 
 download-py3-libs() {
   ### Download source/binary packages, AFTER python3 is installed
@@ -610,9 +598,6 @@ download-py3-libs() {
   local mypy_dir=${1:-$DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION}
   local py_package_dir=_cache/py3-libs
   mkdir -p $py_package_dir
-
-  # Avoids a warning, but doesn't fix typed_ast
-  #python3 -m pip download -d $py_package_dir wheel
 
   python3 -m pip download -d $py_package_dir -r $mypy_dir/test-requirements.txt
   python3 -m pip download -d $py_package_dir pexpect pyte
@@ -644,48 +629,15 @@ install-py3-libs-in-venv() {
   time python3 -m pip install --find-links $package_dir pexpect pyte
 }
 
-upgrade-typed-ast() {
-  local file=$1
-  sed -i 's/typed_ast.*/typed_ast==1.5.0/' $file
-}
-
-test-typed-ast() {
-  local dir=~/wedge/oils-for-unix.org/pkg/mypy/0.780
-
-  cp -v $dir/mypy-requirements.txt _tmp
-
-  local file=_tmp/mypy-requirements.txt
-  cat $file
-  #echo
-
-  # 1.5.0 fixed this bug
-  # https://github.com/python/typed_ast/issues/169 
-
-  upgrade-typed-ast $file
-  echo
-  cat $file
-}
-
 install-py3-libs-from-cache() {
-
   # As well as end users
-
   local mypy_dir=${1:-$DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION}
-
-  local py3
-  py3=$(command -v python3)
-  case $py3 in
-    *wedge/oils-for-unix.org/*)
-      ;;
-    *)
-      die "python3 is '$py3', but expected it to be in a wedge"
-      ;;
-  esac
+  local wedge_out_dir=${2:-$USER_WEDGE_DIR}
 
   log "Ensuring pip is installed (interpreter $(command -v python3)"
   python3 -m ensurepip
 
-  local venv_dir=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION
+  local venv_dir=$wedge_out_dir/py3-libs/$PY3_LIBS_VERSION
   log "Creating venv in $venv_dir"
 
   # Note: the bin/python3 in this venv is a symlink to python3 in $PATH, i.e.
@@ -699,46 +651,82 @@ install-py3-libs-from-cache() {
 }
 
 install-py3-libs() {
-  ### Invoked by Dockerfile.cpp-small, etc.
+  ### Invoked by Dockerfile.cpp-small, etc. and by fake-py3-libs-wedge
   local mypy_dir=${1:-}
+  local wedge_out_dir=${2:-}
 
-  download-py3-libs "$mypy_dir"
-  install-py3-libs-from-cache "$mypy_dir"
+  local py3
+  py3=$(command -v python3)
+  case $py3 in
+    *wedge/oils-for-unix.org/*)
+      ;;
+    *oils.DEPS/*)
+      ;;
+    *)
+      die "python3 is '$py3', but expected it to be in a wedge"
+      ;;
+  esac
+
+  log "python3 is $py3"
+
+  download-py3-libs $mypy_dir
+  install-py3-libs-from-cache "$mypy_dir" "$wedge_out_dir"
 }
 
-# zsh notes
-  # Fedora compiler error
-  # zsh ./configure is NOT detecting 'boolcodes', and then it has a broken
-  # fallback in Src/Modules/termcap.c that causes a compile error!  It seems
-  # like ncurses-devel should fix this, but it doesn't
-  #
-  # https://koji.fedoraproject.org/koji/rpminfo?rpmID=36987813
-  #
-  # from /home/build/oil/_build/deps-source/zsh/zsh-5.1.1/Src/Modules/termcap.c:38:
-  # /usr/include/term.h:783:56: note: previous declaration of ‘boolcodes’ with type ‘const char * const[]’
-  # 783 | extern NCURSES_EXPORT_VAR(NCURSES_CONST char * const ) boolcodes[];
-  #
-  # I think the ./configure is out of sync with the actual build?
-
-
-# TODO:
-# - $ROOT_WEDGE_DIR vs. $USER_WEDGE_DIR is duplicating information that's
-# already in each WEDGE file
+#
+# Wedge manifests
+#
 
 py-wedges() {
   ### for build/py.sh all
+  local how=${1:-legacy}
 
-  echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR
-  echo re2c $RE2C_VERSION $ROOT_WEDGE_DIR
-  echo python2 $PY2_VERSION $ROOT_WEDGE_DIR
-  echo pyflakes $PYFLAKES_VERSION $USER_WEDGE_DIR
+  if test $how = 'boxed'; then
+    local where='debian-12'
+  else
+    local where='HOST'
+  fi
+  case $how in
+    boxed|unboxed)
+      echo time-helper $TIME_HELPER_VERSION $WEDGE_2025_DIR $where
+      echo cmark $CMARK_VERSION $WEDGE_2025_DIR $where
+      echo re2c $RE2C_VERSION $WEDGE_2025_DIR $where
+      echo python2 $PY2_VERSION $WEDGE_2025_DIR $where
+      echo pyflakes $PYFLAKES_VERSION $WEDGE_2025_DIR $where
+      ;;
+    legacy)
+      echo time-helper $TIME_HELPER_VERSION $ROOT_WEDGE_DIR $where
+      echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR $where
+      echo re2c $RE2C_VERSION $ROOT_WEDGE_DIR $where
+      echo python2 $PY2_VERSION $ROOT_WEDGE_DIR $where
+      echo pyflakes $PYFLAKES_VERSION $USER_WEDGE_DIR $where
+      ;;
+    *)
+      die "Invalid how $how"
+  esac
 }
 
 cpp-wedges() {
   ### for ninja / mycpp translation
+  local how=${1:-legacy}
 
-  echo python3 $PY3_VERSION $ROOT_WEDGE_DIR
-  echo mypy $MYPY_VERSION $USER_WEDGE_DIR
+  if test $how = 'boxed'; then
+    local where='debian-12'
+  else
+    local where='HOST'
+  fi
+  case $how in
+    boxed|unboxed)
+      echo python3 $PY3_VERSION $WEDGE_2025_DIR $where
+      echo mypy $MYPY_VERSION $WEDGE_2025_DIR $where
+      ;;
+    legacy)
+      echo python3 $PY3_VERSION $ROOT_WEDGE_DIR $where
+      echo mypy $MYPY_VERSION $USER_WEDGE_DIR $where
+      ;;
+    *)
+      die "Invalid how $how"
+  esac
 
   # py3-libs has a built time dep on both python3 and MyPy, so we're doing it
   # separately for now
@@ -747,38 +735,139 @@ cpp-wedges() {
 
 spec-bin-wedges() {
   ### for test/spec-py.sh osh-all
+  local how=${1:-legacy}
 
-  echo dash $DASH_VERSION $USER_WEDGE_DIR
-  echo bash $BASH_VER $USER_WEDGE_DIR
-  echo bash $BASH5_VER $USER_WEDGE_DIR
-  echo mksh $MKSH_VERSION $USER_WEDGE_DIR
-  echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR
-  echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR
-  echo busybox $BUSYBOX_VERSION $USER_WEDGE_DIR
-  echo yash $YASH_VERSION $USER_WEDGE_DIR
+  if test $how = 'boxed'; then
+    local where='debian-12'
+  else
+    local where='HOST'
+  fi
+  case $how in
+    boxed|unboxed)
+      echo dash $DASH_VERSION $WEDGE_2025_DIR $where
+      echo bash $BASH_VER $WEDGE_2025_DIR $where
+      echo bash $BASH5_VER $WEDGE_2025_DIR $where
+      echo mksh $MKSH_VERSION $WEDGE_2025_DIR $where
+      echo zsh $ZSH_OLD_VER $WEDGE_2025_DIR $where
+      echo zsh $ZSH_NEW_VER $WEDGE_2025_DIR $where
+      echo busybox $BUSYBOX_VERSION $WEDGE_2025_DIR $where
+      echo yash $YASH_VERSION $WEDGE_2025_DIR $where
+      ;;
+    legacy)
+      echo dash $DASH_VERSION $USER_WEDGE_DIR $where
+      echo bash $BASH_VER $USER_WEDGE_DIR $where
+      echo bash $BASH5_VER $USER_WEDGE_DIR $where
+      echo mksh $MKSH_VERSION $USER_WEDGE_DIR $where
+      echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR $where
+      echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR $where
+      echo busybox $BUSYBOX_VERSION $USER_WEDGE_DIR $where
+      echo yash $YASH_VERSION $USER_WEDGE_DIR $where
+      ;;
+    *)
+      die "Invalid how $how"
+  esac
 }
 
 zsh-wedges() {
-  echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR
-  echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR
+  local how=${1:-legacy}
+
+  if test $how = 'boxed'; then
+    local where='debian-12'
+  else
+    local where='HOST'
+  fi
+  case $how in
+    boxed|unboxed)
+      echo zsh $ZSH_OLD_VER $WEDGE_2025_DIR $where
+      echo zsh $ZSH_NEW_VER $WEDGE_2025_DIR $where
+      ;;
+    legacy)
+      echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR $where
+      echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR $where
+      ;;
+    *)
+      die "Invalid how $how"
+  esac
 }
 
-contributor-wedges() {
-  py-wedges
-  cpp-wedges
-  spec-bin-wedges
+smoke-wedges() {
+  local how=${1:-legacy}
+
+  if test $how = 'boxed'; then
+    local where='debian-12'
+  else
+    local where='HOST'
+  fi
+  case $how in
+    boxed|unboxed)
+      echo dash $DASH_VERSION $WEDGE_2025_DIR $where
+      ;;
+    legacy)
+      echo dash $DASH_VERSION $USER_WEDGE_DIR $where
+      ;;
+    *)
+      die "Invalid how $how"
+  esac
+}
+
+cmark-wedges() {
+  local how=${1:-legacy}
+
+  if test $how = 'boxed'; then
+    local where='debian-12'
+  else
+    local where='HOST'
+  fi
+  case $how in
+    boxed|unboxed)
+      echo cmark $CMARK_VERSION $WEDGE_2025_DIR $where
+      ;;
+    legacy)
+      echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR $where
+      ;;
+    *)
+      die "Invalid how $how"
+  esac
 }
 
 extra-wedges() {
   # Contributors don't need uftrace, bloaty, and probably R-libs
   # Although R-libs could be useful for benchmarks
 
-  # Test both outside the contianer, as well as inside?
-  echo uftrace $UFTRACE_VERSION $ROOT_WEDGE_DIR
-  echo bloaty $BLOATY_VERSION $ROOT_WEDGE_DIR
+  local how=${1:-legacy}
 
-  #echo souffle $SOUFFLE_VERSION $USER_WEDGE_DIR
+  case $how in
+    boxed)
+      echo R-libs $R_LIBS_VERSION $WEDGE_2025_DIR debian-12
+      echo uftrace $UFTRACE_VERSION $WEDGE_2025_DIR debian-12
+      echo bloaty $BLOATY_VERSION $WEDGE_2025_DIR debian-10  # It works on Debian 10, not 12
+      ;;
+    unboxed)
+      echo R-libs $R_LIBS_VERSION $WEDGE_2025_DIR HOST
+      echo uftrace $UFTRACE_VERSION $WEDGE_2025_DIR HOST
+      echo bloaty $BLOATY_VERSION $WEDGE_2025_DIR HOST
+      ;;
+    legacy)
+      echo R-libs $R_LIBS_VERSION $USER_WEDGE_DIR HOST
+      echo uftrace $UFTRACE_VERSION $ROOT_WEDGE_DIR HOST
+      echo bloaty $BLOATY_VERSION $ROOT_WEDGE_DIR HOST
+      ;;
+    *)
+      die "Invalid how $how"
+  esac
 }
+
+contributor-wedges() {
+  local how=${1:-}
+
+  py-wedges "$how"
+  cpp-wedges "$how"
+  spec-bin-wedges "$how"
+}
+
+#
+# More
+#
 
 timestamp() {
   date '+%H:%M:%S'
@@ -792,9 +881,15 @@ my-time-tsv() {
 }
 
 maybe-install-wedge() {
-  local name=$1
-  local version=$2
-  local wedge_dir=$3  # e.g. $USER_WEDGE_DIR or empty
+  local how=${1:-legacy}
+  local name=$2
+  local version=$3
+  local wedge_base_dir=$4
+  local where=$5
+
+  if test $where != HOST; then
+    die 'Expected $where to be "HOST"'
+  fi
 
   local task_file=$WEDGE_LOG_DIR/$name-$version.task.tsv
   local log_file=$WEDGE_LOG_DIR/$name-$version.log.txt
@@ -810,12 +905,25 @@ maybe-install-wedge() {
     --field version \
     --output $task_file
 
-  if wedge-exists "$name" "$version" "$wedge_dir"; then
+  if wedge-exists "$name" "$version" "$wedge_base_dir"; then
     echo "CACHED  $(timestamp)  $name $version"
     return
   fi
 
-  local -a cmd=( deps/wedge.sh unboxed _build/deps-source/$name/ $version)
+  case $how in
+    unboxed)
+      # TODO: I think all the builds should set the install dir, which is the LOCAL output
+      # - wedge unboxed
+      # - wedge unboxed-2025
+      # - wedge boxed-2025
+      # instead of relying on this flag
+      #
+      # So we have (NAME, VERSION, INSTALL_OUT) as our params.  That makes sense
+      export WEDGE_2025=1
+      ;;
+  esac
+
+  local -a cmd=( deps/wedge.sh unboxed _build/deps-source/$name/ $version $wedge_base_dir)
 
   set +o errexit
   my-time-tsv \
@@ -935,7 +1043,8 @@ NPROC=$(nproc)
 
 install-wedge-list() {
   ### Reads task rows from stdin
-  local parallel=${1:-}
+  local how=${1:-legacy}  # unboxed | legacy
+  local parallel=${2:-}
 
   mkdir -p $WEDGE_LOG_DIR
 
@@ -955,19 +1064,19 @@ install-wedge-list() {
   # Note: --process-slot-var requires GNU xargs!  busybox args doesn't have it.
   #
   # $name $version $wedge_dir
-  xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 maybe-install-wedge
-
-  #xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 dummy-task-wrapper
+  xargs "${flags[@]}" -n 4 --process-slot-var=XARGS_SLOT -- $0 maybe-install-wedge "$how"
 }
 
 write-task-report() {
-  local tasks_tsv=$WEDGE_LOG_DIR/tasks.tsv
+  local log_dir=${1:-$WEDGE_LOG_DIR}
 
-  python3 devtools/tsv_concat.py $WEDGE_LOG_DIR/*.task.tsv > $tasks_tsv
+  local tasks_tsv=$log_dir/tasks.tsv
+
+  python3 devtools/tsv_concat.py $log_dir/*.task.tsv > $tasks_tsv
   log "Wrote $tasks_tsv"
 
   # TODO: version can be right-justified?
-  here-schema-tsv-4col >$WEDGE_LOG_DIR/tasks.schema.tsv <<EOF
+  here-schema-tsv-4col >$log_dir/tasks.schema.tsv <<EOF
 column_name   type      precision strftime
 status        integer   0         -
 elapsed_secs  float     1         -
@@ -982,16 +1091,44 @@ wedge_HREF    string    0         -
 version       string    0         -
 EOF
 
-  index-html $tasks_tsv > $WEDGE_LOG_DIR/index.html
-  log "Wrote $WEDGE_LOG_DIR/index.html"
+  index-html $tasks_tsv > $log_dir/index.html
+  log "Wrote $log_dir/index.html"
 }
 
-install-spec-bin-fast() {
-  spec-bin-wedges | install-wedge-list T
-  write-task-report
+check-for-failure() {
+  local tsv=${1:-$WEDGE_LOG_DIR/tasks.tsv}
+  local allowed_failures=${2:-0}
+
+  awk -F $'\t' -v allowed_failures="$allowed_failures" '
+  NR == 1 { 
+    col_name = $1
+    if (col_name != "status") { 
+      printf("%s: Expected \"status\" as first column\n", FILENAME)
+      exit 2
+    }
+  }
+  NR != 1 {
+    status = $1
+    if (status != 0) {
+      printf("%s row %d: got failure %d\n", FILENAME, NR, status)
+      failures += 1
+    }
+    num_rows += 1
+  }
+  END {
+    if (failures == allowed_failures) {
+      printf("%s: %d tasks succeeded (%d allowed failures)\n", FILENAME, num_rows, allowed_failures)
+    } else {
+      printf("%s: Expected %d failures, but got %d\n", FILENAME, allowed_failures, failures)
+      exit 1
+    }
+  }
+  ' $tsv >& 2
 }
 
 fake-py3-libs-wedge() {
+  local wedge_out_dir=${1:-}
+
   local name=py3-libs
   local version=$PY3_LIBS_VERSION
 
@@ -1014,14 +1151,43 @@ fake-py3-libs-wedge() {
     --append \
     --output $task_file \
     -- \
-    $0 install-py3-libs >$log_file 2>&1 || true
+    $0 install-py3-libs '' "$wedge_out_dir" >$log_file 2>&1 || true
 
   echo "  FAKE  $(timestamp)  $name $version"
 }
 
-install-wedges() {
-  local extra=${1:-}
-  local do_test=${2:-}
+print-wedge-list() {
+  local which_wedges=${1:-contrib}  # contrib | soil | smoke
+  local how=${2:-legacy}            # boxed | unboxed | legacy
+
+  case $which_wedges in
+    contrib)
+      contributor-wedges "$how"
+      ;;
+    soil)
+      contributor-wedges "$how"
+      extra-wedges "$how"
+      ;;
+    extra-only)
+      extra-wedges "$how"
+      ;;
+    smoke)
+      #zsh-wedges "$how"
+      smoke-wedges "$how"
+      ;;
+    cmark)  # for testing mkdir /wedge BUG
+      cmark-wedges "$how"
+      ;;
+    *)
+      die "Invalid which_wedges $which_wedges"
+      ;;
+  esac 
+}
+
+install-wedges-parallel() {
+  local which_wedges=${1:-contrib}  # contrib | soil | smoke
+  local how=${2:-legacy}            # boxed | unboxed | legacy
+  local allowed_failures=${3:-0}    # sourcehut CI jobs allows failures for now
 
   # For contributor setup: we need to use this BEFORE running build/py.sh all
   build/py.sh time-helper
@@ -1029,230 +1195,197 @@ install-wedges() {
   echo " START  $(timestamp)"
 
   # Do all of them in parallel
-  if test -n "$extra"; then
-    { contributor-wedges; extra-wedges; } | install-wedge-list T
-  elif test -n "$do_test"; then
-    { zsh-wedges; } | install-wedge-list T
-  else
-    contributor-wedges | install-wedge-list T
-  fi
+  print-wedge-list "$which_wedges" "$how" | install-wedge-list "$how" T
 
-  fake-py3-libs-wedge
+  # python3 interpreter is needed to download and install python packages
+  mkdir -p ../oils.DEPS/bin  # must create it
+  deps/make-bin.sh python3 ../oils.DEPS
+
+  local wedge_out_dir
+  case $how in
+    unboxed)
+      wedge_out_dir=$WEDGE_2025_DIR
+      ;;
+    legacy)
+      wedge_out_dir=$USER_WEDGE_DIR
+      ;;
+    *)
+      die "Invalid how $how"
+      ;;
+  esac
+  fake-py3-libs-wedge "$wedge_out_dir"
+
   echo "   END  $(timestamp)"
 
-  write-task-report
+  write-task-report $WEDGE_LOG_DIR
+
+  check-for-failure $WEDGE_LOG_DIR/tasks.tsv "$allowed_failures"
+}
+
+install-wedges-OLD() {
+  # the /wedge and ~/wedge stuff we got rid of
+  install-wedges-parallel contrib legacy
+}
+
+install-wedges-contrib-unboxed() {
+  ### Install in ../oils.DEPS (aka unboxed)
+
+  # ../oils.DEPS/wedge
+  install-wedges-parallel contrib unboxed
+
+  # ../oils.DEPS/bin
+  deps/make-bin.sh contrib
+}
+
+install-wedges() {
+  ### What we tell users to run
+
+  # Migrated as of 2025-10
+  install-wedges-contrib-unboxed "$@"
 }
 
 install-wedges-soil() {
-  install-wedges extra
-}
+  ### Github Actions dev-setup-debian job calls this
+  local allowed_failures=${1:-0}
 
-install-wedges-fast() {
-  ### Alias for compatibility
-  install-wedges "$@"
+  # ../oils.DEPS/wedge
+  install-wedges-parallel soil unboxed "$allowed_failures"
+
+  # ../oils.DEPS/bin
+  deps/make-bin.sh contrib
 }
 
 #
-# Unboxed wedge builds
-#
+# Sourcehut dev-setup-{debian,fedora,alpine} jobs call these functions
+# 
 
-uftrace-host() {
-  ### built on demand; run $0 first
-
-  # BUG: doesn't detect python3
-  # WEDGE tells me that it depends on pkg-config
-  # 'apt-get install pkgconf' gets it
-  # TODO: Should use python3 WEDGE instead of SYSTEM python3?
-  deps/wedge.sh unboxed _build/deps-source/uftrace
+install-wedges-debian-fail() {
+  install-wedges-soil 2
 }
 
-bloaty-host() {
-  deps/wedge.sh unboxed _build/deps-source/bloaty
+install-wedges-fedora-fail() {
+  install-wedges-soil 2
 }
 
-R-libs-host() {
-  deps/wedge.sh unboxed _build/deps-source/R-libs
+install-wedges-alpine-fail() {
+  install-wedges-soil 4  # 4 allowed failures for now
 }
 
 #
 # Wedges built inside a container, for copying into a container
 #
 
-boxed-wedges() {
-  #### host _build/wedge/binary -> guest container /wedge or ~/wedge
-
-  #export-podman
-
-  # TODO:
-  #
-  # - Add equivalents of spec-bin
-  # - Use the same manifest as install-wedges
-  #   - so then you can delete the _build/wedge dir to re-run it
-  #   - use xargs -n 1 so it's done serially
-  #
-  # Pass --network none to docker when possible
-
-  # - Do these lazily like we do in install-wedges
-
-  # We can test if the dir _build/wedge/binary/oils-for-unix.org/pkg/FOO exists
-  # if wedge-exists "$name" "$version" "$wedge_dir"; then
-  #  echo "CACHED  $(timestamp)  $name $version"
-  #  return
-  # fi
-
-  if true; then
-    deps/wedge.sh boxed deps/source.medo/python2/ '' debian-12
-  fi
-
-  if false; then
-    deps/wedge.sh boxed deps/source.medo/python3/ '' debian-12
-    deps/wedge.sh boxed deps/source.medo/time-helper '' debian-12
-  fi
-
-  if false; then
-    # soil-benchmarks
-    deps/wedge.sh boxed deps/source.medo/uftrace/ '' debian-12
-
-    deps/wedge.sh boxed deps/source.medo/cmark/ '' debian-12
-    deps/wedge.sh boxed deps/source.medo/re2c/ '' debian-12
-  fi
-
-  if false; then
-    # debian 10 for now
-    deps/wedge.sh boxed deps/source.medo/bloaty/ '' # debian-12
-  fi
-
-  if false; then
-    # Used in {benchmarks,benchmarks2,other-tests}
-    deps/wedge.sh boxed deps/source.medo/R-libs/ '' debian-12
-  fi
+boxed-clean() {
+  # Source dir is _build/deps-source
+  time sudo rm -r -f _build/boxed
 }
 
-boxed-spec-bin() {
-  if false; then
-    deps/wedge.sh boxed deps/source.medo/bash '4.4'
-  fi
+boxed-uftrace-OLD() {
+  ### uftrace /wedge build: until we can move it to ../oils.DEPS/wedge
 
-  if false; then
-    deps/wedge.sh boxed deps/source.medo/bash '5.2.21'
-  fi
-
-  if false; then
-    deps/wedge.sh boxed deps/source.medo/dash
-    deps/wedge.sh boxed deps/source.medo/mksh
-  fi
-
-  if true; then
-    # Note: zsh requires libncursesw5-dev
-    deps/wedge.sh boxed deps/source.medo/zsh $ZSH_OLD_VER
-    deps/wedge.sh boxed deps/source.medo/zsh $ZSH_NEW_VER
-  fi
-
-  if false; then
-    deps/wedge.sh boxed deps/source.medo/busybox
-
-    # Problem with out of tree build, as above.  Skipping for now
-    deps/wedge.sh boxed deps/source.medo/yash
-    echo
-  fi
+  deps/wedge.sh boxed deps/source.medo/uftrace/ '' $ROOT_WEDGE_DIR debian-12
 }
 
-#
-# Report
-#
+maybe-boxed-wedge() {
+  local name=$1
+  local version=$2
+  local wedge_base_dir=$3  # e.g. oils.DEPS or _build/boxed/wedge?
+  local distro=$4  # e.g. debian-12 or empty
 
-commas() {
-  # Wow I didn't know this :a trick
-  #
-  # OK this is a label and a loop, which makes sense.  You can't do it with
-  # pure regex.
-  #
-  # https://shallowsky.com/blog/linux/cmdline/sed-improve-comma-insertion.html
-  # https://shallowsky.com/blog/linux/cmdline/sed-improve-comma-insertion.html
-  sed ':a;s/\b\([0-9]\+\)\([0-9]\{3\}\)\b/\1,\2/;ta'   
-}
+  local task_file=$BOXED_LOG_DIR/$name-$version.task.tsv
+  local log_file=$BOXED_LOG_DIR/$name-$version.log.txt
 
-wedge-sizes() {
-  local tmp=_tmp/wedge-sizes.txt
+  echo "  TASK  $(timestamp)  $name $version > $log_file"
 
-  # -b is --bytes, but use short flag for busybox compat
-  du -s -b /wedge/*/*/* ~/wedge/*/*/* | awk '
-    { print $0  # print the line
-      total_bytes += $1  # accumulate
-    }
-END { print total_bytes " TOTAL" }
-' > $tmp
-  
-  # printf justifies du output
-  cat $tmp | commas | xargs -n 2 printf '%15s  %s\n'
-  echo
+  # python3 because it's OUTSIDE the container
+  # Separate columns that could be joined: number of files, total size
+  my-time-tsv --print-header \
+    --field xargs_slot \
+    --field wedge \
+    --field wedge_HREF \
+    --field version \
+    --output $task_file
 
-  #du -s --si /wedge/*/*/* ~/wedge/*/*/* 
-  #echo
-}
-
-wedge-report() {
-  # 4 levels deep shows the package
-  if command -v tree > /dev/null; then
-    tree -L 4 /wedge ~/wedge
-    echo
-  fi
-
-  wedge-sizes
-
-  local tmp=_tmp/wedge-manifest.txt
-
-  echo 'Biggest files'
-  if ! find /wedge ~/wedge -type f -a -printf '%10s %P\n' > $tmp; then
-    # busybox find doesn't have -printf
-    echo 'find -printf failed'
+  if boxed-wedge-exists "$name" "$version" "$distro"; then
+    echo "CACHED  $(timestamp)  $name $version"
     return
   fi
 
-  set +o errexit  # ignore SIGPIPE
-  sort -n --reverse $tmp | head -n 20 | commas
+  #local -a cmd=( deps/wedge.sh boxed-2025 _build/deps-source/$name/ $version)
+  local -a cmd=(
+    deps/wedge.sh boxed-2025 deps/source.medo/$name/ "$version" "$wedge_base_dir" "$distro"
+  )
+
+  set +o errexit
+  my-time-tsv \
+    --field "$XARGS_SLOT" \
+    --field "$name" \
+    --field "$name-$version.log.txt" \
+    --field "$version" \
+    --append \
+    --output $task_file \
+    -- \
+    "${cmd[@]}" "$@" >$log_file 2>&1
+  local status=$?
   set -o errexit
 
-  echo
+  if test "$status" -eq 0; then
+    echo "    OK  $(timestamp)  $name $version"
+  else
+    echo "  FAIL  $(timestamp)  $name $version"
+  fi
+}
 
-  # Show the most common file extensions
+do-boxed-wedge-list() {
+  ### Reads task rows from stdin
+  local parallel=${1:-}
+
+  mkdir -p $BOXED_LOG_DIR
+
+  local -a flags
+  if test -n "$parallel"; then
+    log ""
+    log "=== Building boxed wedges with $NPROC jobs in parallel"
+    log ""
+    flags=( -P $NPROC )
+  else
+    log ""
+    log "=== Building boxed wedges serially"
+    log ""
+  fi
+
+  # Reads from stdin
+  # Note: --process-slot-var requires GNU xargs!  busybox args doesn't have it.
   #
-  # I feel like we should be able to get rid of .a files?  That's 92 MB, second
-  # most common
-  #
-  # There are also duplicate .a files for Python -- should look at how distros
-  # get rid of those
+  # $name $version $wedge_dir
+  xargs "${flags[@]}" -n 4 --process-slot-var=XARGS_SLOT -- $0 maybe-boxed-wedge
+}
 
-  cat $tmp | python3 -c '
-import os, sys, collections
+_boxed-wedges-2025() {
+  local which_wedges=${1:-contrib}  # contrib | soil | smoke
 
-bytes = collections.Counter()
-files = collections.Counter()
+  # deps/wedge.sh reads this
+  export DOCKER=${2:-docker}
 
-for line in sys.stdin:
-  size, path = line.split(None, 1)
-  path = path.strip()  # remove newline
-  _, ext = os.path.splitext(path)
-  size = int(size)
+  # For contributor setup: we need to use this BEFORE running build/py.sh all
+  #build/py.sh time-helper
 
-  bytes[ext] += size
-  files[ext] += 1
+  echo " START  $(timestamp)"
 
-#print(bytes)
-#print(files)
+  # Do all of them in parallel
+  print-wedge-list "$which_wedges" boxed | do-boxed-wedge-list T
 
-n = 20
+  # Dockerfile.* calls install-py3-libs from within the container, so we don't need this
+  # It depends on MyPy
+  #fake-py3-libs-wedge ../oils.DEPS/wedge
 
-print("Most common file types")
-for ext, count in files.most_common()[:n]:
-  print("%10d  %s" % (count, ext))
+  echo "   END  $(timestamp)"
 
-print()
+  write-task-report $BOXED_LOG_DIR
+}
 
-print("Total bytes by file type")
-for ext, total_bytes in bytes.most_common()[:n]:
-  print("%10d  %s" % (total_bytes, ext))
-' | commas
+boxed-wedges-2025() {
+  time $0 _boxed-wedges-2025 "$@"
 }
 
 libssl-bug() {
@@ -1263,11 +1396,29 @@ libssl-bug() {
   ldd $file
   echo
   ls -l $file
- 
 }
 
 libssl-smoke() {
   deps/wedge.sh smoke-test deps/source.medo/python3/ '' '' debian-12
+}
+
+smoke-unboxed-boxed() {
+  install-wedges smoke legacy
+  echo
+  ls -l ~/wedge/oils-for-unix.org/pkg/dash
+
+  install-wedges smoke unboxed
+  echo
+  ls -l ../oils.DEPS/wedge/dash
+
+  boxed-wedges-2025 smoke
+  echo
+  ls -l _build/boxed/wedge/dash
+
+  # old boxed wedges: they never had xargs automation
+  #boxed-wedges
+
+  # TODO: now invalidate cache, and build again
 }
 
 task-five "$@"

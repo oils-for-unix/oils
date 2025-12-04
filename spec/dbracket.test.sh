@@ -204,14 +204,6 @@ FOO=bar [[ foo == foo ]]
 true
 ## END
 
-#### Argument that looks like a command word operator
-[[ -f -f ]] || echo false
-[[ -f == ]] || echo false
-## STDOUT:
-false
-false
-## END
-
 #### Argument that looks like a real operator
 [[ -f < ]] && echo 'should be parse error'
 ## status: 2

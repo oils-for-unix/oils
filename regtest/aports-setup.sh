@@ -68,8 +68,59 @@ checkout-stable() {
   popd > /dev/null
 }
 
-# 2025-10-22, after $(false) and (( fixes
-readonly TARBALL_ID='10439'
+patch-aports() {
+  local cur_dir=$PWD
+
+  pushd ../../alpinelinux/aports
+
+  for patch_dir in $cur_dir/regtest/patches/*; do
+      local package_name
+      package_name=$(basename $patch_dir)
+
+      local apkbuild=main/$package_name/APKBUILD
+      git restore $apkbuild
+
+      for mod_file in $cur_dir/regtest/patches/$package_name/*; do
+          echo
+          echo "*** Processing $mod_file"
+
+          case $mod_file in
+            *.patch)
+              # A patch to the source code
+
+              # Add our patches alongside Alpine's own patches
+
+              cp -v $mod_file main/$package_name/
+
+              # abuild's default_prepare() applies all patches inside $srcdir,
+              # but they also need to be specified in the 'source=' and
+              # 'sha512sums=' lists in APKBUILD
+              local patch_name=$(basename $mod_file)
+              local shasum=$(sha512sum $mod_file | cut -d ' ' -f1)
+              sed -i "/source='*/ a $patch_name" $apkbuild
+              sed -i "/sha512sums='*/ a $shasum  $patch_name" $apkbuild
+              ;;
+
+            *.apkbuild)
+              # A patch to the APKBUILD file
+              set -x
+              git apply $mod_file
+              set +x
+              ;;
+
+            *.copy)
+              # A file to copy
+              cp -v $mod_file main/$package_name/
+              ;;
+          esac
+      done
+  done
+
+  popd >/dev/null
+}
+
+# 2025-11-16: fresh run
+readonly TARBALL_ID='10856'
 
 download-oils() {
   local tarball_id=${1:-$TARBALL_ID}
@@ -78,8 +129,8 @@ download-oils() {
 
   rm -f -v _tmp/oils-for-unix.tar
 
-  #wget --no-clobber --directory _tmp "$url"
-  wget --directory _tmp "$url"
+  #wget --no-clobber --directory-prefix _tmp "$url"
+  wget --directory-prefix _tmp "$url"
 }
 
 make-chroot() {
@@ -302,13 +353,9 @@ build-oils() {
   enter-rootfs-user sh -c '
   cd oils-for-unix-*
   ./configure
-  _build/oils.sh --skip-rebuild
+  _build/oils.sh  # do not --skip-rebuild
   doas ./install
   '
-}
-
-save-default-config() {
-  regtest/aports-run.sh save-default-config
 }
 
 create-osh-overlay() {
@@ -323,9 +370,12 @@ create-osh-overlay() {
 
   mkdir -v -p $osh_overlay/{merged,work,layer}
 
+  # -o index=off fixes this error: fsconfig() failed: Stale file handle
+  # See also https://oilshell.zulipchat.com/#narrow/channel/522730-distros/topic/setting.20up.20regtest.2Faports-setup.2Esh/with/544318771
   sudo mount \
     -t overlay \
     osh-as-sh \
+    -o index=off \
     -o "lowerdir=$CHROOT_DIR,upperdir=$osh_overlay/layer,workdir=$osh_overlay/work" \
     $osh_overlay/merged
 
@@ -360,23 +410,7 @@ remove-shard-layers() {
   sudo rm -r -f _chroot/shard*
 }
 
-create-package-dirs() {
-  # _chroot/
-  #   package.overlay/
-  #     merged/      # mounted and unmounted each time
-  #     work/
-  #   package-layers/
-  #     baseline/
-  #       gzip/
-  #       xz/
-  #     osh-as-sh/
-  #       gzip/
-  #       xz/
-
-  mkdir -v -p _chroot/package.overlay/{merged,work}
-}
-
-archived-distfiles() {
+make-distfiles-tar() {
   local a_repo=$1  # 'main' or 'community'
 
   local tar=_chroot/distfiles-${a_repo}.tar
@@ -450,6 +484,8 @@ fetch-all() {
   clone-aports
   clone-aci
   checkout-stable
+  patch-aports
+
   download-oils "$tarball_id"
 }
 
@@ -469,11 +505,7 @@ prepare-all() {
 
   oils-in-chroot  
 
-  # TODO: Don't need this for overlayfs
-  save-default-config
-
   create-osh-overlay
-  create-package-dirs
 
   # makes a host file
   apk-manifest

@@ -337,7 +337,7 @@ declare -A assoc=([ale]=bean [corn]=dip)
 ref=assoc
 #ref_AT='assoc[@]'
 
-# UNQUOTED doesn't work with Oil's parser
+# UNQUOTED doesn't work with the OSH parser
 #ref_SUB='assoc[ale]'
 ref_SUB='assoc["ale"]'
 

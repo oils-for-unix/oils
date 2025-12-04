@@ -52,7 +52,7 @@ posix() {
 # - proc call stack (similar: FUNCNAME)
 # - process stack (similar: BASHPID)
 # - interpreter stack (eval, source.  xtrace already respects this)
-#   - and maybe Oil subinterpreters
+#   - and maybe Oils subinterpreters
 
 # User level:
 # - Color
@@ -66,7 +66,7 @@ posix() {
 #
 # - pp cell_ (ASDL), pp proc (QTT)
 # - osh -n (ASDL)
-# - Oil expressions: = keyword (ASDL)
+# - YSH expressions: = keyword (ASDL)
 
 shopt -s expand_aliases
 alias e=echo

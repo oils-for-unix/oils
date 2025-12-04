@@ -217,6 +217,7 @@ TEST test_list_funcs() {
   auto a = StrFromC("a");
   auto aa = StrFromC("aa");
   auto b = StrFromC("b");
+  auto z = StrFromC("z");
 
   ASSERT_EQ(0, int_cmp(0, 0));
   ASSERT_EQ(-1, int_cmp(0, 5));
@@ -226,8 +227,10 @@ TEST test_list_funcs() {
   ASSERT_EQ(-1, str_cmp(kEmptyString, a));
   ASSERT_EQ(-1, str_cmp(a, aa));
   ASSERT_EQ(-1, str_cmp(a, b));
+  ASSERT_EQ(-1, str_cmp(a, z));
 
   ASSERT_EQ(1, str_cmp(b, a));
+  ASSERT_EQ(1, str_cmp(z, a));
   ASSERT_EQ(1, str_cmp(b, kEmptyString));
 
   PASS();

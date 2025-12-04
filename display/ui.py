@@ -128,34 +128,6 @@ def _PrintCodeExcerpt(line, col, length, f):
     f.write(buf.getvalue())
 
 
-def _PrintTokenTooLong(loc_tok, f):
-    # type: (loc.TokenTooLong, mylib.Writer) -> None
-    line = loc_tok.line
-    col = loc_tok.col
-
-    buf = mylib.BufWriter()
-
-    buf.write('  ')
-    # Only print 10 characters, since it's probably very long
-    buf.write(line.content[:col + 10].rstrip())
-    buf.write('\n  ')
-
-    # preserve tabs, like _PrintCodeExcerpt
-    for c in line.content[:col]:
-        buf.write('\t' if c == '\t' else ' ')
-
-    buf.write('^\n')
-
-    source_str = GetLineSourceString(loc_tok.line, quote_filename=True)
-    buf.write(
-        '%s:%d: Token starting at column %d is too long: %d bytes (%s)\n' %
-        (source_str, line.line_num, loc_tok.col, loc_tok.length,
-         Id_str(loc_tok.id)))
-
-    # single write() call
-    f.write(buf.getvalue())
-
-
 def GetFilenameString(line):
     # type: (SourceLine) -> str
     """Get the path of the file that a line appears in.
@@ -310,10 +282,6 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
     - and turn on "stack" tracing?  For 'source' and more?
     """
     f = mylib.Stderr()
-    if blame_loc.tag() == loc_e.TokenTooLong:
-        # test/spec.sh parse-errors shows this
-        _PrintTokenTooLong(cast(loc.TokenTooLong, blame_loc), f)
-        return
 
     blame_tok = location.TokenFor(blame_loc)
     # lexer.DummyToken() gives you a Lit_Chars Token with no line

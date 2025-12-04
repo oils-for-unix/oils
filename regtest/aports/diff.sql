@@ -10,13 +10,14 @@ create table diff_baseline as
     b.pkg,
     cast(b.status as integer) as status1,
     b.elapsed_secs as baseline,
-    cast("baseline/" || b.pkg_HREF as text) as baseline_HREF,
+    cast('baseline/' || b.pkg_HREF as text) as baseline_HREF,
     cast(o.status as integer) as status2,
     o.elapsed_secs as osh_as_sh,
-    cast("osh-as-sh/" || o.pkg_HREF as text) as osh_as_sh_HREF,
-    cast("error" as text) as error_grep,
-    cast(printf("error/%s.txt", b.pkg) as text) as error_grep_HREF,
+    cast('osh-as-sh/' || o.pkg_HREF as text) as osh_as_sh_HREF,
+    cast('error' as text) as error_grep,
+    cast(printf('error/%s.txt', b.pkg) as text) as error_grep_HREF,
     (b.status != o.status) as disagree,
+    -- TODO: deprecate this field?  It's nicer to compute this separately
     (b.status in (124, 143) or o.status in (124, 143)) as timeout
   from
     baseline.packages as b
@@ -28,13 +29,13 @@ create table diff_baseline as
 -- 1 row for baseline, 1 row for osh-as-sh
 create table metrics as
   select
-    cast("baseline" as text) as config,
+    cast('baseline' as text) as config,
     *
   from baseline.metrics;
 
 insert into metrics
 select
-  cast("osh-as-sh" as text) as config,
+  cast('osh-as-sh' as text) as config,
   *
 from osh_as_sh.metrics;
 

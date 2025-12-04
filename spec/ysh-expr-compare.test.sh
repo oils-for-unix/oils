@@ -147,6 +147,8 @@ pp test_ (floatsEqual(42.0, x + 1))
 ## END
 
 #### Comparison converts from Str -> Int or Float
+shopt --set parse_ysh_expr_sub
+
 echo ' i  i' $[1 < 2]
 echo 'si  i' $['1' < 2]
 echo ' i si' $[1 < '2']
@@ -297,7 +299,7 @@ if (int(false) <= int(false) ) {
   echo '<='
 }
 
-# JavaScript and Python both have this, but Oil prefers being explicit
+# JavaScript and Python both have this, but YSH prefers being explicit
 
 if (true < false) {
   echo 'BAD'

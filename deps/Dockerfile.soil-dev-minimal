@@ -8,25 +8,24 @@ RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=
     du --si -s /var/cache/apt /var/lib/apt && \
     deps/from-apt.sh dev-minimal
 
-# use this instead of 'source build/dev-shell.sh' for now
-RUN deps/from-apt.sh layer-python2-symlink
-
 USER uke
 
-# Our own python3
 COPY --chown=uke \
-  _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
-  /wedge/oils-for-unix.org/pkg/python3/3.10.4
+  _build/boxed/wedge/python3/3.10.4 \
+  /home/uke/oils.DEPS/wedge/python3/3.10.4
 
-# Copy _build/deps-source -> /home/uke/wedge for now.
+# Put python3 in PATH before running install-py3-libs
+RUN mkdir -p /home/uke/oils.DEPS/bin && \
+    ln -s --relative /home/uke/oils.DEPS/wedge/python3/3.10.4/bin/python3 /home/uke/oils.DEPS/bin
+
 COPY --chown=uke \
-  _build/deps-source/pyflakes/pyflakes-2.4.0/ \
-  /home/uke/wedge/oils-for-unix.org/pkg/pyflakes/2.4.0/
+  _build/boxed/wedge/pyflakes/2.4.0 \
+  /home/uke/oils.DEPS/wedge/pyflakes/2.4.0
 
 # So we can run python3 -m mypy.  (Not just for mycpp)
 COPY --chown=uke \
   _build/deps-source/mypy/mypy-0.780/ \
-  /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+  /home/uke/oils.DEPS/wedge/mypy/0.780/
 
 # 2025-04: build/deps.sh install-py3-libs depends on this - need tree shaking
 COPY stdlib/osh/bash-strict.sh /home/uke/tmp/stdlib/osh/bash-strict.sh
@@ -42,6 +41,8 @@ COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
 # Hack for now: pass a different MyPy dir
 # Ideally py3-libs would be created a BUILD TIME with wedge-builder, not at
 # RUNTIME with uke!
-RUN build/deps.sh install-py3-libs /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+#RUN build/deps.sh install-py3-libs /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+RUN build/deps.sh install-py3-libs \
+  /home/uke/oils.DEPS/wedge/mypy/0.780/ ../oils.DEPS/wedge
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-dev-minimal'"]

@@ -36,13 +36,12 @@ download-clang() {
   # download into $DEPS_DIR and not _cache because Dockerfile.clang stores the
   # compressed version
 
-  wget --no-clobber --directory _cache $CLANG_URL
+  wget --no-clobber --directory-prefix _cache $CLANG_URL
 }
 
 extract-clang() {
   ### For developers
 
-  # TODO: retire ../oil_DEPS dir in favor of wedge
   mkdir -p $DEPS_DIR
   pushd $DEPS_DIR
   time tar -x --xz < ../oils/_cache/clang+llvm-$LLVM_VERSION*.tar.xz

@@ -593,3 +593,27 @@ x= {myvar}
 ## END
 ## N-I dash STDOUT:
 ## END
+
+#### xtrace not affected by redirects
+set -x
+printf 'aaaa' > /dev/null 2> test_osh
+set +x
+cat test_osh
+## STDERR:
++ printf aaaa
++ set +x
+## END
+## STDOUT:
+## END
+
+## OK osh STDERR:
++ printf aaaa
++ set '+x'
+## END
+
+## OK mksh STDERR:
++ >/dev/null 
++ 2>test_osh 
++ printf aaaa
++ set +x
+## END

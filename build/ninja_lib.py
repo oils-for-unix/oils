@@ -675,7 +675,7 @@ class Deps(object):
 
 
 SHWRAP = {
-    'mycpp': '_bin/shwrap/mycpp_main',
+    'mycpp': '_bin/shwrap/mycpp_main_souffle',
     'mycpp-souffle': '_bin/shwrap/mycpp_main_souffle',
     'mycpp-nosouffle': '_bin/shwrap/mycpp_main_nosouffle',
     'pea': '_bin/shwrap/pea_main',

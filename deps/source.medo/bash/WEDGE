@@ -43,6 +43,6 @@ wedge-smoke-test() {
 
   # Create bash-4.4 and bash-5.2 symlinks for use in spec tests
   pushd $install_dir/bin
-  ln -s -v bash bash-$WEDGE_VERSION
+  ln -s -f -v bash bash-$WEDGE_VERSION
   popd
 }

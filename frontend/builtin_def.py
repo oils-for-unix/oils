@@ -30,7 +30,7 @@ _NORMAL_BUILTINS = [
 
     'source',  # note that . alias is special
 
-    'umask', 'ulimit', 'wait', 'jobs', 'fg', 'bg',
+    'umask', 'ulimit', 'wait', 'jobs', 'fg', 'bg', 'kill',
 
     'shopt',
     'complete', 'compgen', 'compopt', 'compadjust', 'compexport',

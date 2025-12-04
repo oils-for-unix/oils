@@ -82,7 +82,7 @@ inline int str_cmp(BigStr* a, BigStr* b) {
   if (comp == 0) {
     return int_cmp(len_a, len_b);  // tiebreaker
   }
-  return comp;
+  return std::max(std::min(comp, 1), -1);
 }
 
 }  // namespace mylib

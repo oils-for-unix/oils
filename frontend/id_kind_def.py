@@ -257,6 +257,7 @@ def AddKinds(spec):
             'AtLBraceDot',  # @{.myproc arg1} should be builtin_sub
             'Other',
             'EscapedChar',  # \* is escaped
+            'BackslashDoubleQuote',  # \"
             'LBracket',
             'RBracket',  # for assoc array literals, static globs
             'Star',

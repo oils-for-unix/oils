@@ -245,3 +245,20 @@ case $SH in bash) echo '^D' ;; esac
 2	 echo 1
 ^D
 ## END
+
+#### fc ignores too many args
+fc -l 0 1 2 || echo too many args!
+## status: 0
+
+#### fc errors out on too many args with strict_arg_parse
+shopt -s strict_arg_parse || true
+fc -l 0 1 2 || echo too many args!
+## STDOUT:
+too many args!
+## END
+## N-I bash STDOUT:
+## END
+
+#### fc -l when no history is present
+fc -l
+## status: 0

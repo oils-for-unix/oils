@@ -300,6 +300,30 @@ TEST getc_demo() {
   PASS();
 }
 
+TEST stat_test() {
+  struct Case {
+    const char* path;
+    bool exists, isreg;
+  };
+
+  Case cases[] = {
+    /* path                exists  isreg */
+    {",",                  false,  false},
+    {".",                  true,   false},
+    {"/",                  true,   false},
+    {"/usr/bin/sh",        true,   true},
+    {"/nonexistent__ZZZZ", false,  false}
+  };
+
+  for (auto& c : cases) {
+    auto st = mylib::stat(StrFromC(c.path));
+    ASSERT_EQ(c.exists, st != nullptr);
+    ASSERT_EQ(c.isreg, st && st->isreg());
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -318,6 +342,8 @@ int main(int argc, char** argv) {
   RUN_TEST(for_test_coverage);
 
   RUN_TEST(getc_demo);
+
+  RUN_TEST(stat_test);
 
   gHeap.CleanProcessExit();
 

@@ -39,5 +39,5 @@ var cmd_sub = $(
 
 show $cmd_sub
 
-show $['quoted ' ++ 'words ' ++ "dq ${x:-default}"]
+#show $['quoted ' ++ 'words ' ++ "dq ${x:-default}"]
 

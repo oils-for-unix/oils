@@ -22,8 +22,7 @@ readonly BASE_DIR_CACHEGRIND=_tmp/gc-cachegrind
 # See benchmarks/gperftools.sh.  I think the Ubuntu package is very old
 
 download-tcmalloc() {
-  # TODO: move this to ../oil_DEPS ?
-  wget --directory _deps \
+  wget --directory-prefix _deps \
     https://github.com/gperftools/gperftools/releases/download/gperftools-2.10/gperftools-2.10.tar.gz
 
   # Then ./configure; make; sudo make install

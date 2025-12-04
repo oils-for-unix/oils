@@ -46,6 +46,7 @@ a=81 b=81
 ## END
 
 #### Binary operators, with conversions from string
+shopt --set parse_ysh_expr_sub
 
 echo ' i  i' $[1 + 2]
 echo 'si  i' $['1' + 2]
@@ -628,6 +629,8 @@ echo $b
 ## END
 
 #### multiline strings, list, tuple syntax for list, etc.
+shopt --set parse_ysh_expr_sub
+
 var dq = "
 dq
 2

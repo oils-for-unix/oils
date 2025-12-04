@@ -21,6 +21,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source test/tsv-lib.sh  # tsv2html3
 source web/table/html.sh  # table-sort-{begin,end}
 source benchmarks/common.sh  # cmark
+source build/dev-shell.sh  # python2
 
 sqlite-tabs-headers() {
   sqlite3 \
@@ -38,10 +39,6 @@ index-html() {
   local base_url='../../../../web'
   html-head --title "aports Build" \
     "$base_url/base.css"
-
-  # TODO:
-  # - Stats for each config:
-  #   - number of non-zero exit codes, total packages
 
   cmark <<'EOF'
 <body class="width35">
@@ -69,10 +66,48 @@ TODO
 EOF
 }
 
-diff-metrics-html() {
+diff-summary-html() {
   local db=${1:-_tmp/aports-report/2025-08-03/diff_merged.db}
 
   sqlite3 $db < regtest/aports/summary.sql
+
+  echo '
+  <p></p>
+
+  <div class="side-by-side">
+    <section>
+      <h3>Task Summary</h3>
+  '
+  sqlite3 $db < regtest/aports/summary2.sql
+
+  cmark << 'EOF'
+</section>
+
+<section>
+
+### Common Causes of Disagreements
+EOF
+
+  tsv2html3 $base_dir/cause_hist.tsv
+
+  sqlite3 $db << 'EOF'
+select
+  printf(
+    '<p>Unique causes: %d </p>',
+    count(distinct cause)
+  )
+from notable_disagree
+where cause != 'unknown';
+EOF
+
+  cmark <<'EOF'
+Source: [regtest/aports/cause.awk](https://github.com/oils-for-unix/oils/blob/master/regtest/aports/cause.awk)
+EOF
+
+  echo '
+    </section>
+  </div> <!-- side-by-side -->
+  '
 }
 
 table-page-html() {
@@ -122,6 +157,24 @@ merge-diff-html() {
 
   table-sort-begin 'width60'  # <body> <p>
 
+  # Put two parts side-by-side with flexbox
+  echo '
+  <style>
+  .side-by-side {
+    display: flex;
+    gap: 1em;
+
+    padding-left: 1em;
+    padding-right: 1em;
+    background-color: #eee;
+  }
+
+  .side-by-side section {
+    flex: 1;
+  }
+  </style>
+  '
+
   cmark <<EOF
 <p id="home-link">
   <a href="../index.html">Up</a> |
@@ -132,12 +185,19 @@ merge-diff-html() {
 
 EOF
 
-  diff-metrics-html $base_dir/diff_merged.db
+  diff-summary-html $base_dir/diff_merged.db
+
+  # TODO:
+  # - separate fetch-failed causes
+  # - separate OSH timeouts from other timeouts -- in case OSH being slow is a root cause
+  # - show the number of table rows above each section
+  # - make a unified table of all packages and times
+  #   - this might come after removing shards?
 
   cmark << 'EOF'
 [tree](tree.html) &nbsp;&nbsp; [metrics](metrics.html) &nbsp;&nbsp; [disagree-packages.txt](disagree-packages.txt)
 
-## Notable Disagreements
+## Notable OSH Disagreements
 
 <div style="color: #666;">
 
@@ -151,7 +211,15 @@ EOF
   tsv2html3 $base_dir/$name.tsv
 
   cmark <<EOF
+[$name.tsv]($name.tsv)
 
+## All Disagreements with Timeout
+EOF
+
+  local name=timeout_disagree
+  tsv2html3 $base_dir/$name.tsv
+
+  cmark <<EOF
 [$name.tsv]($name.tsv)
 
 ## Baseline-Only Failures
@@ -162,12 +230,13 @@ EOF
   tsv2html3 $base_dir/$name.tsv
 
   cmark <<EOF
+
 [$name.tsv]($name.tsv)
 
-## Other Failures
+## Both Timed Out
 EOF
 
-  name=other_fail
+  name=both_timeout
   table-sort-begin 'width60'
   tsv2html3 $base_dir/$name.tsv
 
@@ -175,20 +244,21 @@ EOF
 
 [$name.tsv]($name.tsv)
 
-## Timeouts
+## Both Failed
 EOF
 
-  name=timeout
+  name=both_fail
   table-sort-begin 'width60'
   tsv2html3 $base_dir/$name.tsv
 
   cmark <<EOF
-
 [$name.tsv]($name.tsv)
+
 EOF
 
-  # Sort these 3 tables
-  table-sort-end-many notable_disagree baseline_only other_fail timeout
+  # Sort these tables
+  table-sort-end-many \
+    notable_disagree timeout_disagree baseline_only both_fail both_timeout
 }
 
 tasks-html()  {
@@ -276,12 +346,26 @@ After this success, we expanded our testing:
   - new causes: [2025-10-03-causes](2025-10-03-causes.wwz/_tmp/aports-report/2025-10-03-causes/diff_merged.html)
 - [2025-10-15-main](2025-10-15-main.wwz/_tmp/aports-report/2025-10-15-main/diff_merged.html) - **38** disagreements
   - [2025-10-16](2025-10-16.wwz/_tmp/aports-report/2025-10-16/diff_merged.html) - down to **35** after `x=1>` and `cd x y` fixes
+  - [2025-10-22](2025-10-22.wwz/_tmp/aports-report/2025-10-22/diff_merged.html) - down to **24** after `((` and `$(false)` fixes
+  - [2025-10-26-cause](2025-10-26-cause.wwz/_tmp/aports-report/2025-10-26-cause/diff_merged.html) - updated causes
+  - [2025-11-01-main-cause](2025-11-01-main-cause.wwz/_tmp/aports-report/2025-11-01-main-cause/diff_merged.html) - updated causes
+  - [2025-11-01-main-again](2025-11-01-main-again.wwz/_tmp/aports-report/2025-11-01-main-again/diff_merged.html) - **18** disagreements
+  - [2025-11-02-main-patch](2025-11-02-main-patch.wwz/_tmp/aports-report/2025-11-02-main-patch/diff_merged.html) - **14** disagreements
+  - [2025-11-09-main-cause](2025-11-09-main-cause.wwz/_tmp/aports-report/2025-11-09-main-cause/diff_merged.html) - updated causes
+- [2025-11-11-main-full](2025-11-11-main-full.wwz/_tmp/aports-report/2025-11-11-main-full/diff_merged.html) - full run with 10 package builds in parallel, 2 cores each
+- [2025-11-16-main-full](2025-11-16-main-full.wwz/_tmp/aports-report/2025-11-16-main-full/diff_merged.html) - **17** disagreements - regression after `$[]` change
+- [2025-11-18](2025-11-18.wwz/_tmp/aports-report/2025-11-18/diff_merged.html) - **12** disagreements - fixed regression
 
 ### community
 
 - [2025-10-08-comm](2025-10-08-comm.wwz/_tmp/aports-report/2025-10-08-comm/diff_merged.html) - **86** disagreements
   - [2025-10-16-comm-disagree](2025-10-16-comm-disagree.wwz/_tmp/aports-report/2025-10-16-comm-disagree/diff_merged.html) - **71** disagreements
-
+  - [2025-10-22-comm](2025-10-22-comm.wwz/_tmp/aports-report/2025-10-22-comm/diff_merged.html) - down to **65** after `((` and `$(false)` fixes
+  - [2025-10-26-comm-cause](2025-10-26-comm-cause.wwz/_tmp/aports-report/2025-10-26-comm-cause/diff_merged.html) - updated causes
+  - [2025-11-01-comm-cause](2025-11-01-comm-cause.wwz/_tmp/aports-report/2025-11-01-comm-cause/diff_merged.html) - updated causes
+  - [2025-11-02-comm-patch](2025-11-02-comm-patch.wwz/_tmp/aports-report/2025-11-02-comm-patch/diff_merged.html) - **64** disagreements, **45** of unknown cause
+  - [2025-11-09-comm-cause](2025-11-09-comm-cause.wwz/_tmp/aports-report/2025-11-09-comm-cause/diff_merged.html) - updated causes, **20** of unknown cause
+  - [2025-11-18-comm-disagree](2025-11-18-comm-disagree.wwz/_tmp/aports-report/2025-11-18-comm-disagree/diff_merged.html) - **60** disagreements
 ';
   } | cmark 
 
@@ -326,12 +410,13 @@ readonly BUILD_HOST=he.oils.pub
 
 sync-results() {
   local host=${1:-$BUILD_HOST}
+  local prefix=${2:-}
   mkdir -p $REPORT_DIR
 
   # Exclude .apk files, because they are large.  We only need the metadata
   my-rsync \
     --exclude '*.apk' \
-    $host:~/git/oils-for-unix/oils/_tmp/aports-build/ \
+    "$host:~/git/oils-for-unix/oils/_tmp/aports-build/$prefix*" \
     $REPORT_DIR/
 }
 
@@ -589,9 +674,12 @@ merge-diffs() {
   db-to-tsv $db metrics
 
   db-to-tsv $db notable_disagree 'order by pkg'
+  db-to-tsv $db timeout_disagree 'order by pkg'
   db-to-tsv $db baseline_only 'order by pkg'
-  db-to-tsv $db other_fail 'order by pkg'
-  db-to-tsv $db timeout 'order by pkg'
+  db-to-tsv $db both_fail 'order by pkg'
+  db-to-tsv $db both_timeout 'order by pkg'
+
+  db-to-tsv $db cause_hist
 
   # For re-running failures
   sqlite3 diff_merged.db >disagree-packages.txt <<EOF
@@ -742,22 +830,24 @@ deploy-published() {
 
 readonly EDIT_DIR=_tmp/aports-edit
 
-sync-wwz() {
-  local wwz=${1:-2025-09-27-disagree.wwz}
+readonly EDITING_APORTS_EPOCH='2025-11-02-main-patch.wwz'
+
+sync-old-wwz() {
+  local wwz=${1:-$EDITING_APORTS_EPOCH}
 
   mkdir -p $EDIT_DIR
+  rm -f -v $EDIT_DIR/$wwz
 
-  rsync --archive --verbose \
-    $WEB_HOST:$WEB_HOST/aports-build/$wwz  \
-    $EDIT_DIR/$wwz
+  wget --directory-prefix $EDIT_DIR \
+    "https://$WEB_HOST/aports-build/$wwz"
 
   ls -l $EDIT_DIR
   #echo "Wrote $wwz"
 }
 
-extract() {
-  local wwz=${1:-2025-09-27-disagree.wwz}
-  local new_epoch=${2:-2025-10-03-causes}
+extract-old-wwz() {
+  local new_epoch=$1
+  local wwz=${2:-$EDITING_APORTS_EPOCH}
 
   # Extract the whole thing into a temp dir
   local tmp_dir=$EDIT_DIR/$new_epoch
@@ -776,6 +866,24 @@ extract() {
   local old_epoch
   old_epoch=$(basename $wwz .wwz)
   mv -v --no-target-directory $tmp_dir/_tmp/aports-report/$old_epoch $dest_dir
+}
+
+rebuild-both() {
+  for a_repo in main comm; do
+    local old=2025-11-02-${a_repo}-patch.wwz
+    sync-old-wwz $old
+    local new=2025-11-09-${a_repo}-cause
+
+    rm -r -f _tmp/aports-report/$new
+
+    extract-old-wwz $new $old
+
+    write-disagree-reports _tmp/aports-report/$new
+
+    make-wwz _tmp/aports-report/$new
+
+    deploy-wwz-op _tmp/aports-report/$new.wwz
+  done
 }
 
 #

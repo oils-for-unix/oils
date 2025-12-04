@@ -400,7 +400,7 @@ class ControlFlowBuiltin(vm._Builtin):
 
         if keyword_id == Id.ControlFlow_Exit:
             # handled differently than other control flow
-            raise util.UserExit(arg_int)
+            raise util.HardExit(arg_int)
         else:
             raise vm.IntControlFlow(keyword_id, keyword_str, keyword_loc,
                                     arg_int)
@@ -1112,7 +1112,7 @@ class CommandEvaluator(object):
         if node.redirects is not None:
             num_redirects = len(node.redirects)
 
-        io_errors = []  # type: List[error.IOError_OSError]
+        io_errors = []  # type: List[int]
         with vm.ctx_Redirect(self.shell_ex, num_redirects, io_errors):
             # NOTE: RunSimpleCommand may never return
             if len(node.more_env):  # I think this guard is necessary?
@@ -1156,7 +1156,7 @@ class CommandEvaluator(object):
             # It would be better to point to the right redirect
             # operator, but we don't track it specifically
             e_die("Fatal error popping redirect: %s" %
-                  pyutil.strerror(io_errors[0]))
+                  posix.strerror(io_errors[0]))
 
         probe('cmd_eval', '_DoSimple_exit', status)
         return status
@@ -1258,6 +1258,9 @@ class CommandEvaluator(object):
             # with Undef value, but the 'array' attribute.
 
             flags = 0  # for tracing
+            # set -a: automatically mark variables for export
+            if self.exec_opts.allexport():
+                flags |= state.SetExport
             self.mem.SetValue(lval, val, which_scopes, flags=flags)
             if initializer is not None:
                 ListInitialize(val, initializer, has_plus, self.exec_opts,
@@ -1718,12 +1721,10 @@ class CommandEvaluator(object):
                     if val_ops.MatchRegex(to_match, eggex_val, self.mem):
                         status = self._ExecuteList(case_arm.action)
                         done = True
-                        break
 
                 elif case(pat_e.Else):
                     status = self._ExecuteList(case_arm.action)
                     done = True
-                    break
 
                 else:
                     raise AssertionError()
@@ -1781,14 +1782,14 @@ class CommandEvaluator(object):
 
         # If we evaluated redir_vals, apply/push them
         if status == 0:
-            io_errors = []  # type: List[error.IOError_OSError]
+            io_errors = []  # type: List[int]
             self.shell_ex.PushRedirects(redir_vals, io_errors)
             if len(io_errors):
                 # core/process.py prints cryptic errors, so we repeat them
                 # here.  e.g. Bad File Descriptor
                 self.errfmt.PrintMessage(
                     'I/O error applying redirect: %s' %
-                    pyutil.strerror(io_errors[0]),
+                    posix.strerror(io_errors[0]),
                     self.mem.GetFallbackLocation())
                 status = 1
 
@@ -1806,14 +1807,14 @@ class CommandEvaluator(object):
         # Translation fix: redirect I/O errors may happen in a C++
         # destructor ~vm::ctx_Redirect, which means they must be signaled
         # by out params, not exceptions.
-        io_errors = []  # type: List[error.IOError_OSError]
+        io_errors = []  # type: List[int]
         with vm.ctx_Redirect(self.shell_ex, len(node.redirects), io_errors):
             status = self._Execute(node.child)
         if len(io_errors):
             # It would be better to point to the right redirect
             # operator, but we don't track it specifically
             e_die("Fatal error popping redirect: %s" %
-                  pyutil.strerror(io_errors[0]))
+                  posix.strerror(io_errors[0]))
 
         return status
 
@@ -2127,7 +2128,7 @@ class CommandEvaluator(object):
     def RunPendingTrapsAndCatch(self):
         # type: () -> None
         """
-        Like the above, but calls ExecuteAndCatch(), which may raise util.UserExit
+        Like the above, but calls ExecuteAndCatch(), which may raise util.HardExit
         """
         trap_nodes = self.trap_state.GetPendingTraps()
         if trap_nodes is not None:
@@ -2140,7 +2141,7 @@ class CommandEvaluator(object):
                             # Note: exit status is lost
                             try:
                                 self.ExecuteAndCatch(trap_node, 0)
-                            except util.UserExit:
+                            except util.HardExit:
                                 # If user calls 'exit', stop running traps, but
                                 # we still run the EXIT trap later.
                                 break
@@ -2350,6 +2351,7 @@ class CommandEvaluator(object):
         is_return = False
         is_fatal = False
         is_errexit = False
+        is_nounset = False
 
         err = None  # type: error.FatalRuntime
         status = -1  # uninitialized
@@ -2388,6 +2390,9 @@ class CommandEvaluator(object):
         except error.ErrExit as e:
             err = e
             is_errexit = True
+        except error.NoUnset as e:
+            err = e
+            is_nounset = True
         except error.FatalRuntime as e:
             err = e
 
@@ -2409,6 +2414,11 @@ class CommandEvaluator(object):
                                              posix.getpid())
             else:
                 self.errfmt.PrettyPrintError(err, prefix='fatal: ')
+
+            # bash docs on `set -u`:
+            # An error message will be written to stderr, and a non-interactive shell will exit.
+            if is_nounset and not self.exec_opts.interactive():
+                raise util.HardExit(status)
 
         assert status >= 0, 'Should have been initialized'
 
@@ -2472,7 +2482,7 @@ class CommandEvaluator(object):
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
                 try:
                     is_return, is_fatal = self.ExecuteAndCatch(node, 0)
-                except util.UserExit as e:  # explicit exit
+                except util.HardExit as e:  # explicit exit
                     mut_status.i = e.status
                     return
                 if is_return:  # explicit 'return' in the trap handler!
@@ -2500,7 +2510,7 @@ class CommandEvaluator(object):
             with state.ctx_Registers(self.mem):  # prevent setting $? etc.
                 # for SetTokenForLine $LINENO
                 with state.ctx_DebugTrap(self.mem):
-                    # Don't catch util.UserExit, etc.
+                    # Don't catch util.HardExit, etc.
                     self._Execute(node)
 
     def _MaybeRunErrTrap(self):

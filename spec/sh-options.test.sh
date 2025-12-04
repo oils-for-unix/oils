@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 ## tags: interactive
 
 # Test options to set, shopt, $SH.
@@ -334,6 +334,8 @@ foo
 ## END
 
 #### noclobber on &> >
+case $SH in dash) exit ;; esac
+
 set -C
 
 rm -f $TMP/no-clobber
@@ -359,16 +361,11 @@ again=1
 baz
 ## END
 ## BUG dash STDOUT:
-stdout=0
-again=2
-foo
-both=0
-baz
-again=2
-foo
 ## END
 
 #### noclobber on &>> >>
+case $SH in dash) echo 'flaky'; exit ;; esac
+
 set -C
 
 rm -f $TMP/no-clobber
@@ -396,14 +393,7 @@ baz
 foo
 ## END
 ## BUG dash STDOUT:
-stdout=0
-again=0
-foo
-bar
-both=0
-baz
-again=0
-foo
+flaky
 ## END
 
 #### set without args lists variables

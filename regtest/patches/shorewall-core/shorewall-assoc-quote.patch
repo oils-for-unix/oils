@@ -1,0 +1,148 @@
+From 39d124cf439a25bf28d58a39e9ff95d5059349be Mon Sep 17 00:00:00 2001
+From: Andrii Sultanov <sultanovandriy@gmail.com>
+Date: Wed, 22 Oct 2025 20:20:52 +0100
+Subject: [PATCH] configure: Quote assoc array keys as strings
+
+This prevents the following error in osh:
+
+    >>> shorewall6: Unpacking /var/cache/distfiles/shorewall6-5.2.8.tar.bz2...
+      vendor=${params[HOST]}
+                      ^~~~
+    ./configure:96: fatal: Assoc array keys must be strings: $x 'x' "$x" etc. (OILS-ERR-101)
+
+For more details, see the following:
+
+https://github.com/oils-for-unix/oils/issues/2438
+
+https://www.oilshell.org/blog/2016/10/20.html
+
+Signed-off-by: Andrii Sultanov <sultanovandriy@gmail.com>
+---
+ Shorewall-core/configure | 50 ++++++++++++++++++++--------------------
+ 1 file changed, 25 insertions(+), 25 deletions(-)
+
+diff --git a/Shorewall-core/configure b/Shorewall-core/configure
+index 741f74475..09b8f2bb7 100755
+--- a/configure
++++ b/configure
+@@ -93,7 +93,7 @@ done
+ 
+ cd $(dirname $0)
+ 
+-vendor=${params[HOST]}
++vendor=${params['HOST']}
+ 
+ if [ -z "$vendor" ]; then
+     if [ -f /etc/os-release ]; then
+@@ -117,48 +117,48 @@ if [ -z "$vendor" ]; then
+ 		;;
+ 	esac
+ 
+-	params[HOST]="$vendor"
++	params['HOST']="$vendor"
+     fi
+ fi
+ 
+ if [ -z "$vendor" ]; then
+     case `uname` in
+ 	Darwin)
+-	    params[HOST]=apple
++	    params['HOST']=apple
+ 	    rcfile=shorewallrc.apple
+ 	    ;;
+ 	cygwin*|CYGWIN*)
+-	    params[HOST]=cygwin
++	    params['HOST']=cygwin
+ 	    rcfile=shorewallrc.cygwin
+ 	    ;;
+ 	*)
+ 	    if [ -f /etc/debian_version ]; then
+-		params[HOST]=debian
++		params['HOST']=debian
+ 		ls -l /sbin/init | fgrep -q systemd &&  rcfile=shorewallrc.debian.systemd || rcfile=shorewallrc.debian.sysvinit
+ 	    elif [ -f /etc/altlinux-release ] ; then
+-		params[HOST]=alt
++		params['HOST']=alt
+ 	    elif [ -f /etc/redhat-release ]; then
+-		params[HOST]=redhat
++		params['HOST']=redhat
+ 		rcfile=shorewallrc.redhat
+ 	    elif [ -f /etc/slackware-version ] ; then
+-		params[HOST]=slackware
++		params['HOST']=slackware
+ 		rcfile=shorewallrc.slackware
+ 	    elif [ -f /etc/SuSE-release ]; then
+-		params[HOST]=suse
++		params['HOST']=suse
+ 		rcfile=shorewallrc.suse
+ 	    elif [ -f /etc/arch-release ] ; then
+-		params[HOST]=archlinux
++		params['HOST']=archlinux
+ 		rcfile=shorewallrc.archlinux
+ 	    elif [ -f /etc/openwrt_release ]; then
+-		params[HOST]=openwrt
++		params['HOST']=openwrt
+ 		rcfile=shorewallrc.openwrt
+ 	    else
+-		params[HOST]=linux
++		params['HOST']=linux
+ 		rcfile=shorewallrc.default
+ 	    fi
+ 	    ;;
+     esac
+-    vendor=${params[HOST]}
++    vendor=${params['HOST']}
+ else
+     if [ $vendor = linux ]; then
+ 	rcfile=shorewallrc.default;
+@@ -172,10 +172,10 @@ else
+ 	echo "ERROR: $vendor is not a recognized host type" >&2
+ 	exit 1
+     elif [ $vendor = default ]; then
+-	params[HOST]=linux
++	params['HOST']=linux
+ 	vendor=linux
+     elif [[ $vendor == debian.* ]]; then
+-	params[HOST]=debian
++	params['HOST']=debian
+ 	vendor=debian
+     fi
+ fi
+@@ -183,7 +183,7 @@ fi
+ if [ $vendor = linux ]; then
+     echo "INFO: Creating a generic Linux installation - " `date`;
+ else
+-    echo "INFO: Creating a ${params[HOST]}-specific installation - " `date`;
++    echo "INFO: Creating a ${params['HOST']}-specific installation - " `date`;
+ fi
+ 
+ echo
+@@ -204,19 +204,19 @@ if [ $# -gt 0 ]; then
+     echo '#'           >> shorewallrc
+ fi
+ 
+-if [ -n "${options[VARLIB]}" ]; then
+-    if [ -z "${options[VARDIR]}" ]; then
+-	options[VARDIR]='${VARLIB}/${PRODUCT}'
++if [ -n "${options['VARLIB']}" ]; then
++    if [ -z "${options['VARDIR']}" ]; then
++	options['VARDIR']='${VARLIB}/${PRODUCT}'
+     fi
+-elif [ -n "${options[VARDIR]}" ]; then
+-    if [ -z "{$options[VARLIB]}" ]; then
+-	options[VARLIB]=${options[VARDIR]}
+-	options[VARDIR]='${VARLIB}/${PRODUCT}'
++elif [ -n "${options['VARDIR']}" ]; then
++    if [ -z "{$options['VARLIB']}" ]; then
++	options['VARLIB']=${options['VARDIR']}
++	options['VARDIR']='${VARLIB}/${PRODUCT}'
+     fi
+ fi
+ 
+-if [ -z "${options[SERVICEDIR]}" ]; then
+-    options[SERVICEDIR]="${options[SYSTEMD]}"
++if [ -z "${options['SERVICEDIR']}" ]; then
++    options['SERVICEDIR']="${options['SYSTEMD']}"
+ fi
+ 
+ for on in \

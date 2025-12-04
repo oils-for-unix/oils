@@ -110,6 +110,10 @@ blog2() {
   test/spec-py.sh run-file blog2 "$@"
 }
 
+bool-parse() {
+  test/spec-py.sh run-file bool-parse "$@"
+}
+
 brace-expansion() {
   test/spec-py.sh run-file brace-expansion "$@"
 }
@@ -348,6 +352,10 @@ interactive() {
 
 introspect() {
   test/spec-py.sh run-file introspect "$@"
+}
+
+known-differences() {
+  test/spec-py.sh run-file known-differences "$@"
 }
 
 let() {

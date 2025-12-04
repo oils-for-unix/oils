@@ -11,9 +11,6 @@ Status](https://github.com/oils-for-unix/oils/actions/workflows/all-builds.yml/b
 - [OSH][] runs your existing shell scripts.
 - [YSH][] is for Python and JavaScript users who avoid shell.
 
-(The project was [slightly renamed][rename] in March 2023, so there are still
-old references to "Oil".  Feel free to send pull requests with corrections!)
-
 [home-page]: https://oils.pub/
 
 [OSH]: https://oils.pub/cross-ref.html#OSH
@@ -27,14 +24,14 @@ old references to "Oil".  Feel free to send pull requests with corrections!)
 [why]: https://www.oilshell.org/blog/2021/01/why-a-new-shell.html
 
 It's written in Python, so the code is short and easy to change.  But we
-automatically translate it to C++ with custom tools, to make it fast and small.
-The deployed executable doesn't depend on Python.
+translate it to C++ with custom tools, to make it fast and small.  The deployed
+executable doesn't depend on Python.
 
 This README is at the root of the [git repo][git-repo].
 
-If you want to **use** Oils, don't clone this repo.  Instead, visit
+**Important**: If you want to **use** Oils, don't clone this repo.  Instead, visit
 <https://oils.pub/release/latest/>.
-[The Oils Repo Is Different From theTarball Releases](https://github.com/oils-for-unix/oils/wiki/The-Oils-Repo-Is-Different-From-the-Tarball-Releases).
+See the wiki: [The Oils Repo Is Different From the Tarball Releases](https://github.com/oils-for-unix/oils/wiki/The-Oils-Repo-Is-Different-From-the-Tarball-Releases).
 
 [git-repo]: https://github.com/oils-for-unix/oils
 
@@ -46,7 +43,7 @@ If you want to **use** Oils, don't clone this repo.  Instead, visit
 * Try making the **dev build** of Oils with the instructions on the
   [Contributing][] page.  This should take 1 to 5 minutes if you have a Linux
   machine.
-* If it doesn't, let us know.  You can post on the `#oil-dev` channel of
+* If it doesn't, let us know.  You can post on the `#oils-dev` channel of
   [oilshell.zulipchat.com][], or file an issue on Github.
 * Feel free to grab an [issue from
   Github](https://github.com/oils-for-unix/oils/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
@@ -56,10 +53,10 @@ If you want to **use** Oils, don't clone this repo.  Instead, visit
 [oilshell.zulipchat.com]: https://oilshell.zulipchat.com/
 [blog]: https://oils.pub/blog/
 
-### Quick Start on Linux
+### Dev Build
 
-After following the instructions on the [Contributing][] page, you'll have a
-Python program that you can quickly run and change!  Try it interactively:
+After following those instructions, you should have a Python program that you
+can quickly run and change!  Try it interactively:
 
     bash$ bin/osh
 
@@ -73,13 +70,10 @@ Python program that you can quickly run and change!  Try it interactively:
 Let us know if any of these things don't work!  [The continuous
 build](https://op.oilshell.org/) tests them at every commit.
 
-### Dev Build vs. Release Build
+---
 
-Again, note that the **developer build** is **very different** from the release
-tarball.  The [Contributing][] page describes this difference in detail.
-
-The release tarballs are linked from the [home page][home-page].  (Developer
-builds don't work on OS X, so use the release tarballs on OS X.)
+Remember that this is the **dev build** in Python, not a released binary.  [The
+Oils Repo Is Different From the Tarball Releases](https://github.com/oils-for-unix/oils/wiki/The-Oils-Repo-Is-Different-From-the-Tarball-Releases).
 
 ### Important: We Accept Small Contributions!
 

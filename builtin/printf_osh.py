@@ -40,13 +40,64 @@ from data_lang import j8_lite
 
 import posix_ as posix
 
-from typing import Dict, List, Optional, TYPE_CHECKING, cast
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from display import ui
     from frontend import parse_lib
 
 _ = log
+
+
+def _ParsePrintfInteger(s):
+    # type: (str) -> Tuple[bool, mops.BigInt]
+    """
+    Returns:
+      (True, value) when the string looks like an integer
+      (False, ...)  when it doesn't, or when there is overflow
+
+    Grammar:
+      Whitespace? ('-' | '+')? (Dec | Oct | Hex)
+
+      Note: trailing space isn't accepted.
+    """
+    # shells ignore space on the left, but not on the right!
+    s = s.lstrip()
+
+    # Handle +/- sign separately since the shell number lexer doesn't
+    # recognize signed numbers as a single token
+    negative = False
+    if s.startswith('-'):
+        negative = True
+        s = s[1:]
+    elif s.startswith('+'):
+        # Positive sign is optional but allowed
+        s = s[1:]
+
+    # Borrow the lexer for $(( )), but handle it a bit differently.
+    id_, pos = match.MatchShNumberToken(s, 0)
+    if pos != len(s):  # no trailing data
+        return (False, mops.BigInt(0))
+
+    big_int = mops.ZERO
+    if id_ == Id.ShNumber_Dec:
+        ok, big_int = mops.FromStr2(s)
+
+    elif id_ == Id.ShNumber_Oct:
+        ok, big_int = mops.FromStr2(s[1:], 8)
+
+    elif id_ == Id.ShNumber_Hex:
+        ok, big_int = mops.FromStr2(s[2:], 16)
+
+    else:  # Id.ShNumber_BaseN or Id.Unknown_Tok
+        # Unlike $(( )), printf doesn't support 64#a
+        return (False, mops.BigInt(0))
+
+    if not ok:
+        return (False, mops.BigInt(0))
+    if negative:
+        big_int = mops.Negate(big_int)
+    return (True, big_int)
 
 
 class _FormatStringParser(object):
@@ -308,15 +359,8 @@ class Printf(vm._Builtin):
         elif part.type.id == Id.Format_Time or typ in 'diouxX':
             # %(...)T and %d share this complex integer conversion logic
 
-            if match.LooksLikeInteger(s):
-                # Note: spaces like ' -42 ' accepted and normalized
-                ok, d = mops.FromStr2(s)
-                if not ok:
-                    self.errfmt.Print_("Integer too big: %s" % s, word_loc)
-                    pr.status = 1
-                    return None
-
-            else:
+            ok, d = _ParsePrintfInteger(s)
+            if not ok:
                 # Check for 'a and "a
                 # These are interpreted as the numeric ASCII value of 'a'
                 num_bytes = len(s)

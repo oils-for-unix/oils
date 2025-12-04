@@ -196,10 +196,10 @@ def GetCType(t: Type) -> str:
         c_type = 'void'
 
     elif isinstance(t, PartialType):
-        # I removed the last instance of this!  It was dead code in comp_ui.py.
-        raise AssertionError()
-        #c_type = 'void'
-        #is_pointer = True
+        # Note: This can happen if you have
+        # signal_to_send = None
+        # signal_to_send = FunctionReturningInt()
+        raise AssertionError('Unexpected PartialType %s' % t)
 
     elif isinstance(t,
                     NoneTyp):  # e.g. a function that doesn't return anything
@@ -567,18 +567,20 @@ class Decl(_Shared):
         # abstract method
         return 'declare'
 
-    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
         # Avoid C++ warnings by prepending [[noreturn]]
         noreturn = _GetNoReturn(o.name)
 
         virtual = ''
-        if self.virtual.IsVirtual(self.current_class_name, o.name):
+        if self.virtual.IsVirtual(current_class_name, o.name):
             virtual = 'virtual '
 
         # declaration inside class { }
         func_name = o.name
 
-        # Why can't we get this Type object with self.types[o]?
+        # Why can't we get this Type object with self._GetType(o)?
         c_ret_type, _, _ = GetCReturnType(o.type.ret_type)
 
         self.write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type, func_name)
@@ -595,22 +597,25 @@ class Decl(_Shared):
         self.write(o.name)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
         # Declare constant strings.  They have to be at the top level.
 
-        # TODO: self.at_global_scope doesn't work for context managers and so forth
+        # TODO: at_global_scope doesn't work for context managers and so forth
         if self.indent == 0:
             # Top level can't have foo.bar = baz
             assert isinstance(lval, NameExpr), lval
             if not util.SkipAssignment(lval.name):
-                c_type = GetCType(self.types[lval])
+                c_type = GetCType(self._GetType(lval))
                 self.write('extern %s %s;\n', c_type, lval.name)
 
         # TODO: we don't traverse here, so _CheckCondition() isn't called
         # e.g. x = 'a' if mylist else 'b'
 
-    def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
-                               base_class_sym: util.SymbolPath) -> None:
+    def oils_visit_constructor(
+            self, o: ClassDef, stmt: FuncDef, base_class_sym: util.SymbolPath,
+            current_class_name: Optional[util.SymbolPath]) -> None:
         self.indent += 1
         self.write_ind('%s(', o.name)
         self._WriteFuncParams(stmt, write_defaults=True)
@@ -635,16 +640,18 @@ class Decl(_Shared):
         self.accept(stmt)
         self.indent -= 1
 
-    def oils_visit_class_members(self, o: ClassDef,
-                                 base_class_sym: util.SymbolPath) -> None:
+    def oils_visit_class_members(
+            self, o: ClassDef, base_class_sym: util.SymbolPath,
+            current_class_name: Optional[util.SymbolPath]) -> None:
         # Write member variables
         self.indent += 1
-        self._MemberDecl(o, base_class_sym)
+        self._MemberDecl(o, base_class_sym, current_class_name)
         self.indent -= 1
 
     def oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
-            base_class_sym: Optional[util.SymbolPath]) -> None:
+            base_class_sym: Optional[util.SymbolPath],
+            current_class_name: Optional[util.SymbolPath]) -> None:
         self.write_ind('class %s', o.name)  # block after this
 
         # e.g. class TextOutput : public ColorOutput
@@ -656,9 +663,9 @@ class Decl(_Shared):
         self.write_ind(' public:\n')
 
         # This visits all the methods, with self.indent += 1, param
-        # base_class_sym, self.current_method_name
+        # base_class_sym, current_method_name
 
-        super().oils_visit_class_def(o, base_class_sym)
+        super().oils_visit_class_def(o, base_class_sym, current_class_name)
 
         self.write_ind('};\n')
         self.write('\n')
@@ -695,7 +702,8 @@ class Decl(_Shared):
         self.write_ind('}\n')
 
     def _MemberDecl(self, o: 'mypy.nodes.ClassDef',
-                    base_class_sym: util.SymbolPath) -> None:
+                    base_class_sym: util.SymbolPath,
+                    current_class_name: Optional[util.SymbolPath]) -> None:
         member_vars = self.all_member_vars[o]
 
         # List of field mask expressions
@@ -756,7 +764,7 @@ class Decl(_Shared):
                 self.write_ind('%s %s{};\n', c_type, name)
 
         # Context managers aren't GC objects
-        if not _IsContextManager(self.current_class_name):
+        if not _IsContextManager(current_class_name):
             self._GcHeaderDecl(o, field_gc, mask_bits)
 
         self.write('\n')
@@ -769,6 +777,8 @@ class Impl(_Shared):
             self,
             types: Dict[Expression, Type],
             global_strings: 'const_pass.GlobalStrings',
+            method_defs: 'const_pass.MethodDefs',
+            class_namespaces: 'const_pass.ClassNamespaces',
             yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
             dunder_exit_special: Dict[ClassDef, bool],
             all_member_vars: Optional[AllMemberVars] = None,
@@ -801,15 +811,20 @@ class Impl(_Shared):
 
         self.unique_id = 0
 
+        self.method_defs = method_defs
+        self.class_namespaces = class_namespaces
+
     def _NamespaceComment(self) -> str:
         # abstract method
         return 'define'
 
-    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
-        if self.current_class_name:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
+        if current_class_name:
             # definition looks like
             # void Class::method(...);
-            func_name = SymbolToString((self.current_class_name[-1], o.name))
+            func_name = SymbolToString((current_class_name[-1], o.name))
             noreturn = ''
         else:
             func_name = o.name
@@ -817,7 +832,7 @@ class Impl(_Shared):
 
         self.write('\n')
 
-        # Why can't we get this Type object with self.types[o]?
+        # Why can't we get this Type object with self._GetType(o)?
         c_ret_type, _, _ = GetCReturnType(o.type.ret_type)
 
         self.write_ind('%s%s %s(', noreturn, c_ret_type, func_name)
@@ -907,7 +922,7 @@ class Impl(_Shared):
 
     def _IsInstantiation(self, o: 'mypy.nodes.CallExpr') -> bool:
         callee_name = o.callee.name
-        callee_type = self.types[o.callee]
+        callee_type = self._GetType(o.callee)
 
         # e.g. int() takes str, float, etc.  It doesn't matter for translation.
         if isinstance(callee_type, Overloaded):
@@ -946,7 +961,7 @@ class Impl(_Shared):
         self.write('%s(%s, %s', macro, o.args[0].value, o.args[1].value)
 
         for arg in o.args[2:]:
-            arg_type = self.types[arg]
+            arg_type = self._GetType(arg)
             self.write(', ')
             if util.IsStr(arg_type):  # TODO: doesn't know it's an Instance
                 self.write('%s->data()' % arg.name)
@@ -974,7 +989,9 @@ class Impl(_Shared):
             self.accept(arg)
         self.write('))')
 
-    def oils_visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
+    def oils_visit_call_expr(
+            self, o: 'mypy.nodes.CallExpr',
+            current_class_name: Optional[util.SymbolPath]) -> None:
         callee_name = o.callee.name
 
         #    return cast(YshArrayLiteral, tok)
@@ -1012,6 +1029,19 @@ class Impl(_Shared):
             self.write('to_float')
         elif callee_name == 'bool':
             self.write('to_bool')
+        elif isinstance(o.callee, NameExpr):
+            # CallExpr means a free function is called here, not a method
+
+            # If there are methods on the current class with the same name,
+            # prefix the free function with the current namespace to ensure
+            # it's not the method (shadowing the free function) that's called
+            if (current_class_name and self.method_defs.ClassHasMethod(
+                    current_class_name, callee_name)):
+                current_namespace = self.class_namespaces.GetClassNamespace(
+                    current_class_name)
+                self.write('%s::%s' % (current_namespace, callee_name))
+            else:
+                self.accept(o.callee)
         else:
             self.accept(o.callee)  # could be f() or obj.method()
 
@@ -1030,7 +1060,7 @@ class Impl(_Shared):
             self.accept(left)
         #log('right_type %s', right_type)
 
-        right_type = self.types[right]
+        right_type = self._GetType(right)
 
         # TODO: Can we restore some type checking?
         if 0:
@@ -1062,8 +1092,8 @@ class Impl(_Shared):
     def oils_visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> None:
         # a + b when a and b are strings.  (Can't use operator overloading
         # because they're pointers.)
-        left_type = self.types[o.left]
-        right_type = self.types[o.right]
+        left_type = self._GetType(o.left)
+        right_type = self._GetType(o.right)
 
         # NOTE: Need GetCType to handle Optional[BigStr*] in ASDL schemas.
         # Could tighten it up later.
@@ -1136,8 +1166,8 @@ class Impl(_Shared):
             self.accept(o.operands[1])
             return
 
-        t0 = self.types[left]
-        t1 = self.types[right]
+        t0 = self._GetType(left)
+        t1 = self._GetType(right)
 
         # 0: not a special case
         # 1: str
@@ -1185,7 +1215,7 @@ class Impl(_Shared):
 
         if operator == 'in':
             if isinstance(right, TupleExpr):
-                left_type = self.types[left]
+                left_type = self._GetType(left)
 
                 equals_func = _EqualsFunc(left_type)
 
@@ -1221,7 +1251,7 @@ class Impl(_Shared):
 
         if operator == 'not in':
             if isinstance(right, TupleExpr):
-                left_type = self.types[left]
+                left_type = self._GetType(left)
                 equals_func = _EqualsFunc(left_type)
 
                 # x not in (1, 2, 3) => (x != 1 && x != 2 && x != 3)
@@ -1272,7 +1302,7 @@ class Impl(_Shared):
         self.write('}')
 
     def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> None:
-        list_type = self.types[o]
+        list_type = self._GetType(o)
         # Note: need a lookup function that understands ListExpr -> Instance
         assert isinstance(list_type, Instance), list_type
 
@@ -1294,7 +1324,7 @@ class Impl(_Shared):
             self.write(')')
 
     def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> None:
-        dict_type = self.types[o]
+        dict_type = self._GetType(o)
         # Note: need a lookup function that understands DictExpr -> Instance
         assert isinstance(dict_type, Instance), dict_type
 
@@ -1322,7 +1352,7 @@ class Impl(_Shared):
         self.write(')')
 
     def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> None:
-        tuple_type = self.types[o]
+        tuple_type = self._GetType(o)
         c_type = GetCType(tuple_type)
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
@@ -1337,7 +1367,7 @@ class Impl(_Shared):
     def visit_index_expr(self, o: 'mypy.nodes.IndexExpr') -> None:
         self.accept(o.base)
 
-        #base_type = self.types[o.base]
+        #base_type = self._GetType(o.base)
         #self.log('*** BASE TYPE %s', base_type)
 
         if isinstance(o.index, SliceExpr):
@@ -1458,11 +1488,11 @@ class Impl(_Shared):
 
         We also have:
 
-            self.d = NewDict() 
+            self.d = NewDict()
         ->
             this->d = Alloc<Dict<int, int>)();
         """
-        lval_type = self.types[lval]
+        lval_type = self._GetType(lval)
         #self.log('lval type %s', lval_type)
 
         # Fix for Dict[str, value]? in ASDL
@@ -1477,7 +1507,7 @@ class Impl(_Shared):
     def _AssignCastImpl(self, lval: Expression, rval: CallExpr) -> None:
         """
         is_downcast_and_shadow idiom:
-        
+
            src = cast(source__SourcedFile, UP_src)
         -> source__SourcedFile* src = static_cast<source__SourcedFile>(UP_src)
         """
@@ -1552,7 +1582,7 @@ class Impl(_Shared):
         """
         Special case for list comprehensions.  Note that the LHS MUST be on the
         LHS, so we can append to it.
-        
+
         y = [i+1 for i in x[1:] if i]
           =>
         y = []
@@ -1570,12 +1600,12 @@ class Impl(_Shared):
                 "Can't use var %r in list comprehension because it would "
                 "be overwritten" % lval.name)
 
-        c_type = GetCType(self.types[lval])
+        c_type = GetCType(self._GetType(lval))
         # Write empty container as initialization.
         assert c_type.endswith('*'), c_type  # Hack
         self.write('Alloc<%s>();\n' % c_type[:-1])
 
-        over_type = self.types[seq]
+        over_type = self._GetType(seq)
         assert isinstance(over_type, Instance), over_type
 
         if over_type.type.fullname == 'builtins.list':
@@ -1638,7 +1668,9 @@ class Impl(_Shared):
         self.write_ind('}\n')
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
 
         # GLOBAL CONSTANTS - Avoid Alloc<T>, since that can't be done until main().
         if self.indent == 0:
@@ -1647,7 +1679,7 @@ class Impl(_Shared):
                 return
             #self.log('    GLOBAL: %s', lval.name)
 
-            lval_type = self.types[lval]
+            lval_type = self._GetType(lval)
 
             # Global
             #   L = [1, 2]  # type: List[int]
@@ -1728,18 +1760,18 @@ class Impl(_Shared):
                 self._AssignCastImpl(lval, rval)
                 return
 
-            rval_type = self.types[rval]
+            rval_type = self._GetType(rval)
             if (isinstance(rval_type, Instance) and
                     rval_type.type.fullname == 'typing.Iterator'):
                 self._AssignToGenerator(o, lval, rval_type)
                 return
 
         if isinstance(lval, NameExpr):
-            lval_type = self.types[lval]
+            lval_type = self._GetType(lval)
             #c_type = GetCType(lval_type, local=self.indent != 0)
             c_type = GetCType(lval_type)
 
-            if self.at_global_scope:
+            if at_global_scope:
                 # globals always get a type -- they're not mutated
                 self.write_ind('%s %s = ', c_type, lval.name)
             else:
@@ -1778,7 +1810,7 @@ class Impl(_Shared):
             # int x = tup1->at0()
             # BigStr* y = tup1->at1()
 
-            rvalue_type = self.types[rval]
+            rvalue_type = self._GetType(rval)
 
             # type alias upgrade for MyPy 0.780
             if isinstance(rvalue_type, TypeAliasType):
@@ -1920,7 +1952,7 @@ class Impl(_Shared):
             index_expr = o.index
             iterated_over = o.expr
 
-        over_type = self.types[iterated_over]
+        over_type = self._GetType(iterated_over)
 
         if isinstance(over_type, TypeAliasType):
             over_type = over_type.alias.target
@@ -2412,8 +2444,9 @@ class Impl(_Shared):
 
             self.write(';\n')
 
-    def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
-                               base_class_sym: util.SymbolPath) -> None:
+    def oils_visit_constructor(
+            self, o: ClassDef, stmt: FuncDef, base_class_sym: util.SymbolPath,
+            current_class_name: Optional[util.SymbolPath]) -> None:
         self.write('\n')
         self.write('%s::%s(', o.name, o.name)
         self._WriteFuncParams(stmt, write_defaults=False)
@@ -2456,7 +2489,7 @@ class Impl(_Shared):
         # Now visit the rest of the statements
         self.indent += 1
 
-        if _IsContextManager(self.current_class_name):
+        if _IsContextManager(current_class_name):
             # For ctx_* classes only, do gHeap.PushRoot() for all the pointer
             # members
             member_vars = self.all_member_vars[o]
@@ -2476,6 +2509,8 @@ class Impl(_Shared):
         self.write('}\n')
 
     def _WritePopRoots(self, member_vars):
+        # type: (Dict[str, MemberVar]) -> None
+
         # gHeap.PopRoot() for all the pointer members
 
         for name in sorted(member_vars):
@@ -2701,7 +2736,7 @@ class Impl(_Shared):
         if o.expr:
             if not (isinstance(o.expr, NameExpr) and o.expr.name == 'None'):
 
-                # Note: the type of the return expression (self.types[o.expr])
+                # Note: the type of the return expression (self._GetType(o.expr))
                 # and the return type of the FUNCTION are different.  Use the
                 # latter.
                 ret_type = self.current_func_node.type.ret_type

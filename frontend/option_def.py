@@ -65,6 +65,7 @@ class _OptionDef(object):
 _OTHER_SET_OPTIONS = [
     # NOTE: set -i and +i is explicitly disallowed.  Only osh -i or +i is valid
     # https://unix.stackexchange.com/questions/339506/can-an-interactive-shell-become-non-interactive-or-vice-versa
+    ('a', 'allexport'),
     ('n', 'noexec'),
     ('x', 'xtrace'),
     ('v', 'verbose'),  # like xtrace, but prints unevaluated commands
@@ -170,6 +171,7 @@ _UPGRADE_PARSE_OPTS = [
     'parse_paren',  # if (x > 0) ...
     'parse_ysh_string',  # r'' u'' b'' and multi-line versions
     'parse_triple_quote',  # for ''' and """
+    'parse_ysh_expr_sub',  # treat $[] as expression sub, not a backwards-compatible synonym for $(( ))
 ]
 
 # Extra stuff that breaks programs.

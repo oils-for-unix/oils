@@ -94,24 +94,30 @@ wiki.
 
 ## Notes on the Algorithm / Architecture
 
-There are four passes over the MyPy AST.
+Though there is still some global state (in `visitor.py`, inherited by all the
+passes), we are trying to make the dependencies explicit (in `translate.py`).
 
-(1) `const_pass.py`: Collect string constants 
+There are five passes over the MyPy AST.
 
-Turn turn the constant in `myfunc("foo")` into top-level `GLOBAL_STR(str1,
-"foo")`.
-  
-(2) Three passes in `cppgen_pass.py`.
-
-(a) Forward Declaration Pass.
+(1) Const (`const_pass.py`) (analyzes and writes constants)
+    - Collect string constants (e.g. turn the constant in `myfunc("foo")` into
+    top-level `GLOBAL_STR(str1, "foo")`).
 
     class Foo;
     class Bar;
 
-This pass also determines which methods should be declared `virtual` in their
-declarations.  The `virtual` keyword is written in the next pass.
+    - Collect classes and their method names
+    - Collect classes and their namespace names
 
-(b) Declaration Pass.
+(2) `conversion_pass.py` (analyzes)
+    - compute virtual functions, locals, class members, yield, etc.
+    - this also computes forward_decls, and we write it in translate.py
+(3) `control_flow_pass.py` (analyzes)
+    - fully qualified function name -> control flow graph
+    - maybe run Souffle
+
+(4) Decl (`cppgen_pass.Decl`) (writes)
+    - emit C++ declarations like:
 
     class Foo {
       void method();
@@ -120,20 +126,7 @@ declarations.  The `virtual` keyword is written in the next pass.
       void method();
     };
 
-More work in this pass:
-
-- Collect member variables and write them at the end of the definition
-- Collect locals for "hoisting".  Written in the next pass.
-
-(c) Definition Pass.
-
-    void Foo:method() {
-      ...
-    }
-
-    void Bar:method() {
-      ...
-    }
+(5) Impl (`cppgen_pass.Impl`) (writes)
 
 Note: I really wish we were not using visitors, but that's inherited from MyPy.
 

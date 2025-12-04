@@ -1,7 +1,7 @@
 """
-lexer_def.py - Lexing for OSH, YSH, and J8 Notation.
+lexer_def.py - Lexer for OSH, YSH, and J8 Notation.
 
-The OSH/YSH lexer has lexer modes, each with a regex -> Id mapping.
+This lexer has lexer MODES, each with a regex -> Id mapping.
 
 After changing this file, run:
 
@@ -26,7 +26,7 @@ If this rule isn't followed, we would read uninitialized memory past the
 sentinel.  Python's regex engine knows where the end of the input string is, so
 it doesn't require need a sentinel like \0.
 
-The frontend/lexer_gen.py generator adds a pattern mapping \0 to Id.Eol_Tok.
+The generator frontend/lexer_gen.py adds a pattern mapping \0 to Id.Eol_Tok.
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
@@ -78,10 +78,7 @@ _BACKSLASH = [
 
 # Only 4 characters are backslash escaped inside "".
 # https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
-_DQ_BACKSLASH = [
-    R(r'\\[$`"\\]', Id.Lit_EscapedChar),
-    C('\\', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
-]
+_DQ_ESCAPED_CHAR = R(r'\\[$`"\\]', Id.Lit_EscapedChar)
 
 VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
@@ -400,8 +397,11 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     R(r'[^\0]', Id.Lit_Other),  # like _UNQUOTED, any other byte is literal
 ] + _BACKSLASH  # These have to come after RegexMeta
 
-LEXER_DEF[lex_mode_e.DQ] = _DQ_BACKSLASH + [
+LEXER_DEF[lex_mode_e.DQ] = [
+    R(r'\\[$`\\]', Id.Lit_EscapedChar),
+    C('\\"', Id.Lit_BackslashDoubleQuote),
     C('\\\n', Id.Ignored_LineCont),
+    C('\\', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
 ] + _LEFT_SUBS + _VARS + [
     R(r'[^$`"\0\\]+', Id.Lit_Chars),  # matches a line at most
     C('$', Id.Lit_Dollar),  # completion of var names relies on this
@@ -443,11 +443,12 @@ LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
 ]
 
 # Kind.{Lit,Ignored,VSub,Left,Right,Eof}
-LEXER_DEF[lex_mode_e.VSub_ArgDQ] = \
-  _DQ_BACKSLASH +  _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
-
+LEXER_DEF[lex_mode_e.VSub_ArgDQ] = [
+    _DQ_ESCAPED_CHAR,
     C(r'\}', Id.Lit_EscapedChar),  # For "${var-\}}"
-
+    C('\\\n', Id.Ignored_LineCont),
+    C('\\', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
+] + _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
     R(r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
 
     # Weird wart: even in double quoted state, double quotes are allowed
@@ -686,7 +687,7 @@ SH_NUMBER_DEF = [
     R('0', Id.ShNumber_Dec),
     R(r'[1-9][0-9]*', Id.ShNumber_Dec),
     R(r'0[0-7]+', Id.ShNumber_Oct),
-    R(r'0x[0-9A-Fa-f]+', Id.ShNumber_Hex),
+    R(r'0[xX][0-9A-Fa-f]+', Id.ShNumber_Hex),
     R(r'[1-9][0-9]*#[0-9a-zA-Z@_]+', Id.ShNumber_BaseN),
     R(r'[^\0]', Id.Unknown_Tok),  # any other char
 ]

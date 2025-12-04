@@ -34,7 +34,7 @@ class BigStr {
   BigStr* at(int i);
 
   int find(BigStr* needle, int start = 0, int end = -1);
-  int rfind(BigStr* needle);
+  int rfind(BigStr* needle, int start = 0, int end = -1);
 
   BigStr* slice(int begin);
   BigStr* slice(int begin, int end);
@@ -96,6 +96,7 @@ class BigStr {
   char data_[1];  // flexible array
 
  private:
+  int internal_find(BigStr* needle, int direction, int start, int end);
   int _strip_left_pos();
   int _strip_right_pos();
 
