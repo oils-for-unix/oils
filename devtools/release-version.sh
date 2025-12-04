@@ -39,7 +39,7 @@ _git-changelog-body() {
   # %x00 generates the byte \x00
   local format='<tr>
     <td><a class="checksum"
-           href="https://github.com/oilshell/oil/commit/%H">%h</a>
+           href="https://github.com/oils-for-unix/oils/commit/%H">%h</a>
     </td>
     <td class="date">%ad</td>
     <td>%x00%an%x01</td>
@@ -87,11 +87,47 @@ EOF
 _git-changelog() {
   _git-changelog-header "$@"
   _git-changelog-body "$@"
-  cat <<EOF
+  echo '
     </table>
   </body>
 </html>
-EOF
+'
+}
+
+git-shortlog-html() {
+  local prev_branch=${1:-release/0.36.0}
+  local cur_branch=${2:-release/0.37.0}
+
+  echo '<pre>'
+
+  # TODO: make your own shortlog in HTML.  git shortlog doesn't support %x00
+  # Use git log and
+  #   %x00 and %x01 for segments that should be HTML-escaped
+  #   %x02 and %x03 for the author KEY, which we'll get sections from
+  # This can go in devtools/git_shortlog.py or devtools/git.py
+
+  local format='
+<a class="checksum"
+   href="https://github.com/oils-for-unix/oils/commit/%H">%h</a>
+<span class="date">%ad</span>
+%x00%an%x01
+%x00%s%x01
+  '
+  local format='
+%an %h %H %s
+  '
+  git log \
+    --pretty="format:$format" \
+    --date=short \
+    $prev_branch..$cur_branch #| escape-segments
+
+  echo '</pre>'
+}
+
+test-git-shortlog-html() {
+  local out=_tmp/shortlog.html
+  git-shortlog-html > $out
+  echo "Wrote $out"
 }
 
 git-changelog-0.1() {

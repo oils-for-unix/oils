@@ -1,6 +1,8 @@
 # https://man.sr.ht/builds.sr.ht/compatibility.md
 
 image: alpine/3.19
+# TODO: fix py3-libs /typed_ast failure due to C23, and upgrade.  bloaty cmake failure can be ignored OK
+#image: alpine/3.23
 
 packages:
   - python3
