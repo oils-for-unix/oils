@@ -370,9 +370,12 @@ create-osh-overlay() {
 
   mkdir -v -p $osh_overlay/{merged,work,layer}
 
+  # -o index=off fixes this error: fsconfig() failed: Stale file handle
+  # See also https://oilshell.zulipchat.com/#narrow/channel/522730-distros/topic/setting.20up.20regtest.2Faports-setup.2Esh/with/544318771
   sudo mount \
     -t overlay \
     osh-as-sh \
+    -o index=off \
     -o "lowerdir=$CHROOT_DIR,upperdir=$osh_overlay/layer,workdir=$osh_overlay/work" \
     $osh_overlay/merged
 
@@ -407,7 +410,7 @@ remove-shard-layers() {
   sudo rm -r -f _chroot/shard*
 }
 
-archived-distfiles() {
+make-distfiles-tar() {
   local a_repo=$1  # 'main' or 'community'
 
   local tar=_chroot/distfiles-${a_repo}.tar
