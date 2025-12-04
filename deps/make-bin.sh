@@ -83,4 +83,12 @@ contrib() {
   # - flame graphs, etc.
 }
 
+extra() {
+  # The release process depends on bloaty
+  local deps_dir=../oils.DEPS
+
+  link-relative $deps_dir/wedge/bloaty/1.1/bloaty $deps_dir/bin/bloaty
+  link-relative $deps_dir/wedge/uftrace/0.13/bin/uftrace $deps_dir/bin/uftrace
+}
+
 "$@"

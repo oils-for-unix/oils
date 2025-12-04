@@ -66,6 +66,9 @@ class Jobs(vm._Builtin):
         attrs, arg_r = flag_util.ParseCmdVal('jobs', cmd_val)
         arg = arg_types.jobs(attrs.attrs)
 
+        # osh doesn't support JOBSPEC arg
+        arg_r.Done()
+
         if arg.l:
             style = process.STYLE_LONG
         elif arg.p:
@@ -753,23 +756,41 @@ class Kill(vm._Builtin):
                 e_usage("got invalid signal name %r" % sig_str, blame_loc)
         return sig_num
 
+    def _TranslateSignal(self, arg, arg_loc):
+        # type: (str, loc_t) -> str
+        """
+        Convert a signal name to a number and vice versa.
+        Can also be passed an exit code, which will be converted
+        to the name of the signal used to terminate the process.
+        """
+        if arg.isdigit():
+            try:
+                sig_num = int(arg)
+            except ValueError:
+                raise error.Usage("got overflowing integer: %s" % arg,
+                                  arg_loc)
+            if sig_num == 0:
+                return "EXIT" # special case, this is not really a signal
+
+            if sig_num > 128:
+                sig_num -= 128 # convert exit codes to signal numbers
+
+            sig_name = signal_def.GetName(sig_num)
+            if sig_name is None:
+                e_usage("can't translate number %r to a name" % arg, arg_loc)
+            return sig_name[3:] # strip the SIG prefix
+        else:
+            sig_num = _SigNameToNumber(arg)
+            if sig_num == signal_def.NO_SIGNAL:
+                e_usage("can't translate name %r to a number" % arg, arg_loc)
+            return str(sig_num)
+    
     def _TranslateSignals(self, arg_r):
-        # type: (args.Reader) -> int
+        # type: (args.Reader) -> None
         while not arg_r.AtEnd():
             arg, arg_loc = arg_r.Peek2()
-            if arg.isdigit():
-                sig_name = signal_def.GetName(int(arg))
-                if sig_name is None:
-                    e_usage("can't translate number %r to a name" % arg, arg_loc)
-                print(sig_name[3:])
-            else:
-                sig_num = _SigNameToNumber(arg)
-                if sig_num == signal_def.NO_SIGNAL:
-                    e_usage("can't translate name %r to a number" % arg, arg_loc)
-                print(str(sig_num))
-
+            print(self._TranslateSignal(arg, arg_loc))
             arg_r.Next()
-        return 0
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -798,7 +819,8 @@ class Kill(vm._Builtin):
                 return 0
 
             # Otherwise translate each arg
-            return self._TranslateSignals(arg_r)
+            self._TranslateSignals(arg_r)
+            return 0
 
         # -n and -s are synonyms.
         # TODO: it would be nice if the flag parser could expose the location
