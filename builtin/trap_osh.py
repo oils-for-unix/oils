@@ -78,6 +78,14 @@ class TrapState(object):
         self.traps[sig_num] = handler
 
         if handler.tag() == command_e.NoOp:
+            # This is the case:
+            #     trap '' SIGINT SIGWINCH
+            # It's handled the same as removing a trap:
+            #     trap - SIGINT SIGWINCH
+            #
+            # That is, the signal_safe calls are the same.  This seems right
+            # because the shell interpreter itself cares about SIGINT and
+            # SIGWINCH too -- not just user traps.
             if sig_num == SIGINT:
                 self.signal_safe.SetSigIntTrapped(False)
             elif sig_num == SIGWINCH:

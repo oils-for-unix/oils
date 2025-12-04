@@ -935,17 +935,24 @@ issues][].
 ### trap
 
 The `trap` builtin lets you run shell code when events happen.  Events are
-signals or interpreter hooks.
+signals or shell interpreter hooks.
+
+These forms print the current `trap` state:
 
     trap -l          # List all events and their number
     trap -p          # Print the current trap state: events and handlers
-    trap CMD EVENT*  # Register handlers
-    trap - EVENT*    # Remove handlers
+
+These forms modify the `trap` state:
+
+    trap CMD EVENT*  # Register handler for the given events
+    trap -   EVENT*  # Remove handler for the given events (SIG_DFL)
+    trap ''  EVENT*  # Do nothing for the given events (SIG_IGN)
 
 Examples:
 
     trap 'echo hi' EXIT INT   # Register
-    trap - EXIT INT           # Remove
+    trap -  EXIT INT          # Remove
+    trap '' EXIT INT          # Ignore
 
 OSH also support legacy syntax, which is not recommended:
 
@@ -954,27 +961,28 @@ OSH also support legacy syntax, which is not recommended:
     trap 0             # remove exit trap
     trap 0 INT         # remove both
 
-<!--
-    trap '' EVENT*   # TODO Ignore events
--->
-
 Tips:
 
 - Prefer passing the name of a shell function to `trap`.
   - See [ysh-trap](#ysh-trap) for even nicer idioms.
-- See [Chapter: Plugins and Hooks > Traps](chap-plugin.html#Traps) for a list of
-traps, like `trap '' EXIT`.
+- See [Chapter: Plugins and Hooks > Traps](chap-plugin.html#Traps) for a list
+  of traps, like `trap '' EXIT`.
 
 ### ysh-trap
 
-The `trap` builtin lets you run shell code when events happen.  
+The `trap` builtin lets you run shell code when events happen.  YSH improves
+the syntax of the trap builtin, and removes legacy.
 
-YSH improves the syntax of the trap builtin, and removes legacy.
+These forms print the current `trap` state:
 
     trap -l          # List all events and their number
     trap -p          # Print the current trap state: events and handlers
-    trap --add EVENT* BLOCK  # Register handlers
-    trap --remove EVENT*     # Remove handlers
+
+These forms modify the `trap` state:
+
+    trap --add    EVENT* BLOCK  # Register handlers
+    trap --remove EVENT*        # Remove handlers (SIG_DFL)
+    trap --ignore EVENT*        # Remove handlers (SIG_IGN)
 
 Examples:
 
@@ -984,6 +992,7 @@ Examples:
     }
 
     trap --remove EXIT INT
+    trap --ignore EXIT INT
 
 Note: the block argument to `trap --add` doesn't capture variables -- it's not
 a closure.  So YSH behaves like OSH, but the syntax doesn't encourage putting
