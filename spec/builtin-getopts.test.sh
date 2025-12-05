@@ -390,6 +390,42 @@ err:?
 err:?
 ## END
 
+#### getopts silent error reporting - invalid option
+# Leading : in optspec enables silent mode: OPTARG=option char, no error msg
+set -- -Z
+getopts ':a:' opt 2>&1
+echo "status=$? opt=$opt OPTARG=$OPTARG"
+## status: 0
+## stdout: status=0 opt=? OPTARG=Z
+## STDERR:
+## END
+
+#### getopts silent error reporting - missing required argument
+# Silent mode returns ':' and sets OPTARG to option char
+set -- -a
+getopts ':a:' opt 2>&1
+echo "status=$? opt=$opt OPTARG=$OPTARG"
+## status: 0
+## stdout: status=0 opt=: OPTARG=a
+## STDERR:
+## END
+
+#### getopts normal mode - invalid option (compare with silent)
+# Normal mode: OPTARG is empty, prints error message
+set -- -Z
+getopts 'a:' opt 2>/dev/null
+echo "status=$? opt=$opt OPTARG=$OPTARG"
+## status: 0
+## stdout: status=0 opt=? OPTARG=
+
+#### getopts normal mode - missing required argument (compare with silent)
+# Normal mode returns '?', OPTARG is empty
+set -- -a
+getopts 'a:' opt 2>/dev/null
+echo "status=$? opt=$opt OPTARG=$OPTARG"
+## status: 0
+## stdout: status=0 opt=? OPTARG=
+
 #### getopts handles '--' #2579
 set -- "-a" "--"
 while getopts "a" name; do
