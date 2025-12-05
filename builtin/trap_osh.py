@@ -4,7 +4,7 @@ from __future__ import print_function
 from signal import SIG_DFL, SIG_IGN, SIGINT, SIGWINCH
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import cmd_value
+from _devbuild.gen.runtime_asdl import cmd_value, trap_action, trap_action_e, trap_action_t
 from _devbuild.gen.syntax_asdl import loc, loc_t, source, command_e, command
 from core import alloc
 from core import dev
@@ -19,7 +19,7 @@ from builtin import process_osh  # for PrintSignals()
 from data_lang import j8_lite
 from mycpp import iolib
 from mycpp import mylib
-from mycpp.mylib import iteritems, print_stderr, log
+from mycpp.mylib import iteritems, print_stderr, log, tagswitch
 
 from typing import Dict, List, Optional, TYPE_CHECKING, cast
 if TYPE_CHECKING:
@@ -47,8 +47,8 @@ class TrapState(object):
     def __init__(self, signal_safe):
         # type: (iolib.SignalSafe) -> None
         self.signal_safe = signal_safe
-        self.hooks = {}  # type: Dict[str, command_t]
-        self.traps = {}  # type: Dict[int, command_t]
+        self.hooks = {}  # type: Dict[str, trap_action_t]
+        self.traps = {}  # type: Dict[int, trap_action_t]
 
     def ClearForSubProgram(self, inherit_errtrace):
         # type: (bool) -> None
@@ -63,21 +63,32 @@ class TrapState(object):
 
         self.traps.clear()
 
+    def _GetCommand(self, action):
+        # type: (Optional[trap_action_t]) -> Optional[command_t]
+        if action is None:
+            return None
+        if action.tag() == trap_action_e.Ignored:
+            return None
+        assert action.tag() == trap_action_e.Command
+        return cast(trap_action.Command, action).c
+
     def GetHook(self, hook_name):
-        # type: (str) -> command_t
+        # type: (str) -> Optional[command_t]
         """ e.g. EXIT hook. """
-        return self.hooks.get(hook_name, None)
+        action = self.hooks.get(hook_name)
+        return self._GetCommand(action)
 
     def GetTrap(self, sig_num):
-        # type: (int) -> command_t
-        return self.traps.get(sig_num, None)
+        # type: (int) -> Optional[command_t]
+        action = self.traps.get(sig_num)
+        return self._GetCommand(action)
 
     def _AddUserTrap(self, sig_num, handler):
-        # type: (int, command_t) -> None
+        # type: (int, trap_action_t) -> None
         """ e.g. SIGUSR1 """
         self.traps[sig_num] = handler
 
-        if handler.tag() == command_e.IgnoredTrap:
+        if handler.tag() == trap_action_e.Ignored:
             # This is the case:
             #     trap '' SIGINT SIGWINCH
             # It's handled the same as removing a trap:
@@ -126,7 +137,7 @@ class TrapState(object):
             iolib.sigaction(sig_num, SIG_DFL)
 
     def AddItem(self, parsed_id, handler):
-        # type: (str, command_t) -> None
+        # type: (str, trap_action_t) -> None
         """Add trap or hook, parsed to EXIT or INT (not 0 or SIGINT)"""
         if parsed_id in _HOOK_NAMES:
             self.hooks[parsed_id] = handler
@@ -168,9 +179,13 @@ class TrapState(object):
 
         run_list = []  # type: List[command_t]
         for sig_num in signals:
-            node = self.traps.get(sig_num, None)
-            if node is not None:
-                run_list.append(node)
+            action = self.traps.get(sig_num, None)
+            if action is None:
+                continue
+            if action.tag() == trap_action_e.Ignored:
+                continue
+            a = cast(trap_action.Command, action)
+            run_list.append(a.c)
 
         # Optimization to avoid allocation in the main loop.
         del signals[:]
@@ -298,12 +313,16 @@ class Trap(vm._Builtin):
         return handler_string
 
     def _PrintTrapEntry(self, handler, name):
-        # type: (command_t, str) -> None
-        if handler.tag() == command_e.IgnoredTrap:
-            print("trap -- '' %s" % name)
-        else:
-            code = self._GetCommandSourceCode(handler)
-            print("trap -- %s %s" % (j8_lite.ShellEncode(code), name))
+        # type: (trap_action_t, str) -> None
+        with tagswitch(handler) as case:
+            if case(trap_action_e.Ignored):
+                print("trap -- '' %s" % name)
+            elif case(trap_action_e.Command):
+                c = cast(trap_action.Command, handler).c
+                code = self._GetCommandSourceCode(c)
+                print("trap -- %s %s" % (j8_lite.ShellEncode(code), name))
+            else:
+                raise AssertionError()
 
     def _PrintState(self):
         # type: () -> None
@@ -313,14 +332,14 @@ class Trap(vm._Builtin):
         # Print in order of signal number
         n = signal_def.MaxSigNumber() + 1
         for sig_num in xrange(n):
-            handler = self.trap_state.GetTrap(sig_num)
-            if handler is None:
+            action = self.trap_state.traps.get(sig_num)
+            if action is None:
                 continue
 
             sig_name = signal_def.GetName(sig_num)
             assert sig_name is not None
 
-            self._PrintTrapEntry(handler, sig_name)
+            self._PrintTrapEntry(action, sig_name)
 
     def _PrintNames(self):
         # type: () -> None
@@ -331,7 +350,7 @@ class Trap(vm._Builtin):
         process_osh.PrintSignals()
 
     def _AddTheRest(self, arg_r, node, allow_legacy=True):
-        # type: (args.Reader, command_t, bool) -> int
+        # type: (args.Reader, trap_action_t, bool) -> int
         """Add a handler for all args"""
         while not arg_r.AtEnd():
             arg_str, arg_loc = arg_r.Peek2()
@@ -373,11 +392,13 @@ class Trap(vm._Builtin):
 
         if arg.add:  # trap --add
             cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
-            return self._AddTheRest(arg_r, cmd_frag, allow_legacy=False)
+            return self._AddTheRest(arg_r,
+                                    trap_action.Command(cmd_frag),
+                                    allow_legacy=False)
 
         if arg.ignore:  # trap --ignore
             return self._AddTheRest(arg_r,
-                                    command.IgnoredTrap,
+                                    trap_action.Ignored,
                                     allow_legacy=False)
 
         if arg.remove:  # trap --remove
@@ -421,7 +442,7 @@ class Trap(vm._Builtin):
 
         # If first arg is empty string '', ignore the specified signals
         if len(first_arg) == 0:
-            return self._AddTheRest(arg_r, command.IgnoredTrap)
+            return self._AddTheRest(arg_r, trap_action.Ignored)
 
         # Legacy behavior for only one arg: 'trap SIGNAL' removes the handler
         if arg_r.AtEnd():
@@ -435,4 +456,4 @@ class Trap(vm._Builtin):
             return 1  # _ParseTrapCode() prints an error for us.
 
         # trap COMMAND SIGNAL+
-        return self._AddTheRest(arg_r, node)
+        return self._AddTheRest(arg_r, trap_action.Command(node))
