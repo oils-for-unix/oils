@@ -389,7 +389,7 @@ var unimpl = [
 
 for val in (unimpl) {
   try { = val === val }
-  if (_status !== 3) {
+  if (_error.code !== 3) {
     exit 1
   }
 }

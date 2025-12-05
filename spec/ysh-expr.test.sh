@@ -311,17 +311,17 @@ echo ---
 try {
   = 'ab' ++ 3
 }
-echo Str Int $_status
+echo Str Int $[_error.code]
 
 try {
   = [1, 2] ++ 3
 }
-echo List Int $_status
+echo List Int $[_error.code]
 
 try {
   = 3 ++ 'ab'
 }
-echo Int Str $_status
+echo Int Str $[_error.code]
 
 ## STDOUT:
 string abcde
@@ -347,28 +347,28 @@ no
 ## END
 
 #### Type Errors
-shopt --set parse_brace
+shopt --set parse_brace parse_ysh_expr_sub
 
 # TODO: It might be nice to get a message
 try {
   var x = {} + []
 }
-echo $_status
+echo $[_error.code]
 
 try {
   setvar x = {} + 3
 }
-echo $_status
+echo $[_error.code]
 
 try {
   = 'foo' ++ 3
 }
-echo $_status
+echo $[_error.code]
 
 try {
   = 'foo' ++ 3
 }
-echo $_status
+echo $[_error.code]
 
 ## STDOUT:
 3

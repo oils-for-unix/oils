@@ -2257,10 +2257,7 @@ class Mem(object):
 
         with str_switch(name) as case:
             # "Registers"
-            if case('_status'):  # deprecated in favor of _error.code
-                return num.ToBig(self.TryStatus())
-
-            elif case('_error'):
+            if case('_error'):
                 return self.TryError()
 
             elif case('_this_dir'):

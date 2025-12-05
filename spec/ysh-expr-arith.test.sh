@@ -97,7 +97,7 @@ echo $i
 
 
 #### Operations That Convert to Integer: // % **
-shopt -s parse_brace
+shopt -s parse_brace parse_ysh_expr_sub
 
 var m = ' 5 ' // 2
 
@@ -110,12 +110,12 @@ write -- $m $n $p
 try {
   var z = 'a' // 3
 }
-echo _status $_status
+echo _status $[_error.code]
 
 try {
   var z = 'z' % 3
 }
-echo _status $_status
+echo _status $[_error.code]
 
 ## STDOUT:
 2
@@ -126,22 +126,22 @@ _status 3
 ## END
 
 #### Division by zero
-shopt -s parse_brace
+shopt -s parse_brace parse_ysh_expr_sub
 
 try {
   = 42 / 0
 }
-echo "status / is $_status"
+echo "status / is $[_error.code]"
 
 try {
   = 42 // 0
 }
-echo "status // is $_status"
+echo "status // is $[_error.code]"
 
 try {
   = 42 % 0
 }
-echo "status % is $_status"
+echo "status % is $[_error.code]"
 
 ## STDOUT:
 status / is 3
