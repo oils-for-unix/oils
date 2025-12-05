@@ -137,7 +137,7 @@ def _ConvertToNumber(val):
     return coerced_e.Neither, mops.MINUS_ONE, -1.0
 
 
-def _ConvertForBinaryOp(left, right):
+def ConvertForBinaryOp(left, right):
     # type: (value_t, value_t) -> Tuple[coerced_t, mops.BigInt, mops.BigInt, float, float]
     """
     Returns one of
@@ -574,7 +574,7 @@ class ExprEvaluator(object):
         Note: may be replaced with arithmetic on tagged integers, e.g. 60 bit
         with overflow detection
         """
-        c, i1, i2, f1, f2 = _ConvertForBinaryOp(left, right)
+        c, i1, i2, f1, f2 = ConvertForBinaryOp(left, right)
 
         op_id = op.id
 
@@ -727,7 +727,7 @@ class ExprEvaluator(object):
 
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Token) -> bool
-        c, i1, i2, f1, f2 = _ConvertForBinaryOp(left, right)
+        c, i1, i2, f1, f2 = ConvertForBinaryOp(left, right)
 
         if c == coerced_e.Int:
             with switch(op.id) as case:

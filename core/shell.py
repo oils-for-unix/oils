@@ -853,14 +853,9 @@ def Main(
         # I think items() isn't as necessary because dicts are ordered?  YSH
         # code shouldn't use the List of Lists representation.
         'M/erase': method_dict.Erase(),
-        # could be d->tally() or d->increment(), but inc() is short
-        #
-        # call d->inc('mycounter')
-        # call d->inc('mycounter', 3)
-        'M/inc': None,
-
-        # call d->accum('mygroup', 'value')
-        'M/accum': None,
+        'M/clear': method_dict.Clear(),
+        'M/add': method_dict.Add(),
+        'M/append': method_dict.Append(),
 
         # DEPRECATED - use free functions
         'get': method_dict.Get(),

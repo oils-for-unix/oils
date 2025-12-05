@@ -58,8 +58,8 @@ error handling, and more.
                                indexOf()        lastIndexOf()   X includes()
                                insert()         remove()
                                reverse()        List/clear()
-                   Dict        erase()        X Dict/clear()    X accum()
-                             X update()
+                   Dict        erase()          Dict/clear()      append()
+                             X update()         add()
                    Place       setValue()
   [Code Types]     Func        
                    BuiltinFunc
