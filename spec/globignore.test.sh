@@ -3,8 +3,6 @@
 ## legacy_tmp_dir: true
 
 #### Don't glob flags on file system with GLOBIGNORE
-# This is a bash-specific extension.
-expr $0 : '.*/osh$' >/dev/null && exit 99  # disabled until cd implemented
 touch _tmp/-n _tmp/zzzzz
 cd _tmp  # this fail in osh
 GLOBIGNORE=-*:zzzzz  # colon-separated pattern list
