@@ -593,7 +593,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         self.splitter = splitter
         self.errfmt = errfmt
 
-        self.globber = glob_.Globber(exec_opts)
+        self.globber = glob_.Globber(exec_opts, mem)
 
     def CheckCircularDeps(self):
         # type: () -> None

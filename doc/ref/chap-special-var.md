@@ -350,7 +350,42 @@ TODO: bash compat
 
 ### GLOBIGNORE
 
-TODO: bash compat
+A colon-separated list of glob patterns that determines which filenames are
+ignored during pathname expansion (globbing).
+
+When `GLOBIGNORE` is set to a non-empty value:
+
+- Glob patterns automatically match dotfiles (files starting with `.`), similar
+  to the `dotglob` shell option
+- Files matching any pattern in `GLOBIGNORE` are excluded from glob results
+- The special files `.` and `..` are **always** filtered out, even if they
+  don't match any pattern
+
+Examples:
+
+    GLOBIGNORE='*.txt'        # Ignore all .txt files
+    echo *                    # Shows all files except *.txt
+
+    GLOBIGNORE='*.o:*.h'      # Ignore .o and .h files (colon-separated)
+    echo hello*
+
+    GLOBIGNORE='dist/*:node_modules/*'  # Ignore directory contents
+    echo */*
+
+    GLOBIGNORE='.:..'        # Match dotfiles, but filter . and ..
+    echo .*                   # Shows .env, .gitignore, etc. (not . or ..)
+
+Pattern syntax supports standard glob metacharacters:
+
+- `*` - matches any string
+- `?` - matches any single character
+- `[...]` - matches character classes, including `[[:alnum:]]`, `[[:space:]]`, etc.
+
+Note: Colons inside bracket expressions like `[[:alnum:]]` are treated as part
+of the pattern, not as separators.
+
+When `GLOBIGNORE` is unset or set to an empty string, glob expansion returns to
+its default behavior.
 
 ## Shell Options
 

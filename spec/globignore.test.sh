@@ -1,10 +1,8 @@
-## oils_failures_allowed: 14
+## oils_failures_allowed: 1
 ## compare_shells: bash
 ## legacy_tmp_dir: true
 
 #### Don't glob flags on file system with GLOBIGNORE
-# This is a bash-specific extension.
-expr $0 : '.*/osh$' >/dev/null && exit 99  # disabled until cd implemented
 touch _tmp/-n _tmp/zzzzz
 cd _tmp  # this fail in osh
 GLOBIGNORE=-*:zzzzz  # colon-separated pattern list
@@ -161,4 +159,15 @@ echo *
 *
 *
 *
+## END
+
+#### . and .. always filtered when GLOBIGNORE is set
+# When GLOBIGNORE is set to any non-null value, . and .. are always filtered
+# even if they don't match the patterns
+shopt -u globskipdots
+touch .hidden
+GLOBIGNORE=*.txt
+echo .*
+## STDOUT:
+.hidden
 ## END
