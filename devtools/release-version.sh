@@ -15,7 +15,7 @@ source test/common.sh  # html-head
 # 
 # sys.stdin.read() | sub( / "\x00" { any* } "\x01" /, html_escape) | write
 escape-segments() {
-  python -c '
+  python2 -c '
 import cgi, re, sys
 
 print re.sub(
@@ -94,39 +94,80 @@ _git-changelog() {
 '
 }
 
+escape-and-shortlog() {
+  python2 -c '
+import cgi, re, sys
+
+by_author = {}
+for line in sys.stdin:  # each record is on a line
+  author, record = line.split("\x02")
+  html = re.sub(
+    r"\x00([^\x01]+)\x01", 
+    lambda match: cgi.escape(match.group(1)),
+    record)
+  if author not in by_author:
+    by_author[author] = []
+  by_author[author].append(html)
+
+authors = by_author.keys()
+authors.sort(key=lambda x: x.lower())  # case insensitive sort
+
+for author in authors:
+  # author takes up whole row
+  print("<tr><td colspan=2 class=author-cell>")
+  print(author)
+  print("</td> <td></td> </tr>")
+  for html in by_author[author]:
+    print("<tr>")
+    print(html.rstrip())
+    print("</tr>")
+'
+}
+
 git-shortlog-html() {
   local prev_branch=${1:-release/0.36.0}
   local cur_branch=${2:-release/0.37.0}
 
-  echo '<pre>'
+  # Format consumed by escape-and-shortlog above.  Git uses %xff for the byte 0x02
+  # - AUTHOR %x02 REST - split by byte 0x02
+  # - anything between %x00 and and %x01 is HTML-escaped
 
-  # TODO: make your own shortlog in HTML.  git shortlog doesn't support %x00
-  # Use git log and
-  #   %x00 and %x01 for segments that should be HTML-escaped
-  #   %x02 and %x03 for the author KEY, which we'll get sections from
-  # This can go in devtools/git_shortlog.py or devtools/git.py
-
-  local format='
-<a class="checksum"
-   href="https://github.com/oils-for-unix/oils/commit/%H">%h</a>
-<span class="date">%ad</span>
-%x00%an%x01
-%x00%s%x01
-  '
-  local format='
-%an %h %H %s
-  '
+  local format='%an%x02 <td><a class="checksum" href="https://github.com/oils-for-unix/oils/commit/%H">%h</a></td> <td>%x00%s%x01</td>'
   git log \
     --pretty="format:$format" \
     --date=short \
-    $prev_branch..$cur_branch #| escape-segments
-
-  echo '</pre>'
+    $prev_branch..$cur_branch | escape-and-shortlog
 }
 
 test-git-shortlog-html() {
   local out=_tmp/shortlog.html
-  git-shortlog-html > $out
+
+  { echo '
+    <style>
+      body {
+        width: 30em;
+        margin: 0 auto;
+      }
+      .checksum {
+        font-family: monospace;
+        margin-left: 2em;  /* indent */
+      }
+      #shortlog {
+        font-size: large;
+      }
+      #shortlog td {
+        vertical-align: top;
+      }
+      .author-cell {
+        padding: 1em;
+      }
+    </style>
+    <table id="shortlog">
+    '
+    git-shortlog-html 
+    echo '</table>'
+  } > $out
+
   echo "Wrote $out"
 }
 
