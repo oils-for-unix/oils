@@ -54,7 +54,7 @@ checkout-stable() {
   # dl-cdn.alpinelinux.org URL
   # https://alpinelinux.org/releases/
 
-  local branch='3.22-stable'
+  local branch='3.23-stable'
   git checkout $branch
   git log -n 1
   popd > /dev/null
@@ -153,7 +153,7 @@ make-chroot() {
 
   # "branch" is one of these: https://dl-cdn.alpinelinux.org/
   # it's not the aports branch
-  local branch='v3.22'
+  local branch='v3.23'
   time sudo $aci -n -d $PWD/$CHROOT_DIR -b $branch
 }
 
