@@ -70,20 +70,13 @@ void putenv(BigStr* name, BigStr* value) {
 
 mylib::File* fdopen(int fd, BigStr* c_mode) {
   // CPython checks if it's a directory first
+
   struct stat buf;
   if (fstat(fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
     throw Alloc<OSError>(EISDIR);
   }
 
-  // CPython does some fcntl() stuff with mode == 'a', which we don't support
-  DCHECK(c_mode->data_[0] != 'a');
-
-  FILE* f = ::fdopen(fd, c_mode->data_);
-  if (f == nullptr) {
-    throw Alloc<OSError>(errno);
-  }
-
-  return Alloc<mylib::CFile>(f);
+  return Alloc<mylib::CFile>(fd);
 }
 
 void execve(BigStr* argv0, List<BigStr*>* argv,
