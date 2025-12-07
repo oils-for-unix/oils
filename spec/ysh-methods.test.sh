@@ -579,20 +579,17 @@ pp test_ (book => get("author", ""))
 
 #### Dict -> add() with ints
 var histogram = {a: 1979}
-call histogram->add('a')
-assert [{"a": 1980} === histogram]
 call histogram->add('a', 3)
-assert [{"a": 1983} === histogram]
-call histogram->add('b')
-assert [{"a": 1983, "b": 1} === histogram]
-call histogram->add('c', 3)
-assert [{"a": 1983, "b": 1, "c": 3} === histogram]
-## status: 0
+assert [{"a": 1982} === histogram]
+call histogram->add('b', 3)
+assert [{"a": 1982, "b": 3} === histogram]
+
+var d = {k: 'foo'}
+call d->add('k', 42)
+## status: 3
 
 #### Dict -> add() with floats
 var histogram = {a: 2.5}
-call histogram->add('a')
-pp test_ (histogram)
 call histogram->add('a', 2)
 pp test_ (histogram)
 call histogram->add('a', 3.5)
@@ -605,15 +602,17 @@ call histogram->add('c', 1)
 pp test_ (histogram)
 call histogram->add('c', 3.0)
 pp test_ (histogram)
-## status: 0
+
+var d = {k: 'foo'}
+call d->add('k', 42.14)
+## status: 3
 ## STDOUT:
-(Dict)   {"a":3.5}
-(Dict)   {"a":5.5}
-(Dict)   {"a":9.0}
-(Dict)   {"a":9.0,"b":3.5}
-(Dict)   {"a":9.0,"b":5.5}
-(Dict)   {"a":9.0,"b":5.5,"c":1}
-(Dict)   {"a":9.0,"b":5.5,"c":4.0}
+(Dict)   {"a":4.5}
+(Dict)   {"a":8.0}
+(Dict)   {"a":8.0,"b":3.5}
+(Dict)   {"a":8.0,"b":5.5}
+(Dict)   {"a":8.0,"b":5.5,"c":1}
+(Dict)   {"a":8.0,"b":5.5,"c":4.0}
 ## END
 
 #### Dict -> append()
@@ -625,9 +624,13 @@ assert [{"a": [1,2,'b']} === mydict]
 call mydict->append('b', 1)
 assert [{"a": [1,2,'b'], "b": [1]} === mydict]
 call mydict->append('c', [1,2])
+
 # list of lists
 assert [{"a": [1,2,'b'], "b": [1], "c": [[1,2]]} === mydict]
-## status: 0
+
+var d = {k: 'foo'}
+call d->append('k', 'bar')
+## status: 3
 
 #### Separation of -> attr and () calling
 const check = "abc" => startsWith

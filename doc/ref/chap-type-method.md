@@ -676,26 +676,11 @@ Adds an increment specified to the value:
     call mydict->add('b', 2.14)
     = mydict # => (Dict)   {a: 3, b: 5.28}
 
-If the increment is not specified, its default value is 1 of the type of
-the value with the provided key:
-
-    call mydict->add('a')
-    = mydict # => (Dict)   {a: 4, b: 5.28}
-
-    call mydict->add('b')
-    = mydict # => (Dict)   {a: 4, b: 6.28}
-
 If there is no value in the dictionary with the provided key, its default
 value is 0 of the type of the increment (int or float):
 
     call mydict->add('c', 2.14)
     = mydict # => (Dict)   {a: 4, b: 6.28, c: 2.14}
-
-If the increment was not provided and the value with the provided key does not
-exist, then the result of the operation is an integer 1:
-
-    call mydict->add('d')
-    = mydict # => (Dict)   {a: 4, b: 6.28, c: 2.14, d: 1}
 
 Similar:
 

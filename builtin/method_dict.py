@@ -93,28 +93,24 @@ class Add(vm._Callable):
 
         dictionary = rd.PosDict()
         key = rd.PosStr()
-        inc_val = rd.OptionalValue()
+        inc_val = rd.PosValue()
         rd.Done()
 
-        # If inc_val is provided, we treat it as the definitive type of the
-        # value to be incremented, if it isn't, we rely on the existing
-        # value in the dictionary (if that doesn't exist, the default is 0)
-        if inc_val is None:
-            right = value.Int(mops.ONE)  # type: value_t
-        else:
-            right = inc_val
-
+        # default value for the dictionary entry is zero
         if key in dictionary:
             left = dictionary[key]
         else:
             left = value.Int(mops.ZERO)
 
-        c, i1, i2, f1, f2 = expr_eval.ConvertForBinaryOp(left, right)
+        c, i1, i2, f1, f2 = expr_eval.ConvertForBinaryOp(left, inc_val)
 
         if c == coerced_e.Int:
             res = value.Int(mops.Add(i1, i2))  # type: value_t
         elif c == coerced_e.Float:
             res = value.Float(f1 + f2)
+        else:
+            raise error.TypeErr(left, 'add() expected the key to point to Int or float, got',
+                                rd.BlamePos())
 
         dictionary[key] = res
 
