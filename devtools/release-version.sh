@@ -152,17 +152,17 @@ test-git-shortlog-html() {
         font-family: monospace;
         margin-left: 2em;  /* indent */
       }
-      #shortlog {
+      .shortlog {
         font-size: large;
       }
-      #shortlog td {
+      .shortlog td {
         vertical-align: top;
       }
       .author-cell {
         padding: 1em;
       }
     </style>
-    <table id="shortlog">
+    <table class="shortlog">
     '
     git-shortlog-html 
     echo '</table>'

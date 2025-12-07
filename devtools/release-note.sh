@@ -125,10 +125,10 @@ published: no
     font-family: monospace;
     /* margin-left: 2em;  /* indent */
   }
-  #shortlog {
+  .shortlog {
     font-size: large;
   }
-  #shortlog td {
+  .shortlog td {
     vertical-align: top;
   }
   .author-cell {
@@ -153,14 +153,16 @@ This is the latest version of Oils, a Unix shell that's our upgrade path from
 To build and run it, follow the instructions in [INSTALL.txt][].  The wiki has
 tips on [How To Test OSH](\$wiki).
 
-If you're new to the project, see [Why Create a New Shell?][why-oil] and posts
-tagged #[FAQ](\$blog-tag).
+If you're new to the project, see [Why Create a New Shell?][why-create] and posts
+tagged #[FAQ][tagged-faq].
 
 [INSTALL.txt]: /release/$OILS_VERSION/doc/INSTALL.html
-[github-bugs]: https://github.com/oils-for-unix/oils/issues
-[why-oil]: ../../2021/01/why-a-new-shell.html
-[release-index]: /release/$OILS_VERSION/
 
+[why-create]: https://www.oilshell.org/blog/2021/01/why-a-new-shell.html
+[tagged-faq]: https://www.oilshell.org/blog/tags.html?tag=FAQ#FAQ
+
+[github-bugs]: https://github.com/oils-for-unix/oils/issues
+[release-index]: /release/$OILS_VERSION/
 [oilshell.zulipchat.com]: http://oilshell.zulipchat.com/
 
 <div id="toc">
@@ -187,7 +189,7 @@ changelog][changelog].
 
 [changelog]: /release/$OILS_VERSION/changelog.html
 
-<table id="shortlog">
+<table class="shortlog">
 EOF
 
   #contrib-commit-table
