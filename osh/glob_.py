@@ -570,20 +570,20 @@ class Globber(object):
                 tmp = [s for s in results if not s.startswith('-')]
                 results = tmp  # idiom to work around mycpp limitation
 
-            skipdots = self.exec_opts.globskipdots()
-
             if globignore_patterns is not None:  # Handle GLOBIGNORE
+                # When GLOBIGNORE is set, bash doesn't respect shopt -u
+                # globskipdots!  The entries . and .. are skipped, even if they
+                # do NOT match GLOB_PERIOD
                 tmp = [
                     s for s in results
-                    if not _StringMatchesAnyPattern(s, globignore_patterns)
+                    if not _StringMatchesAnyPattern(s, globignore_patterns) and
+                    os_path.basename(s) not in ('.', '..')
                 ]
                 results = tmp  # idiom to work around mycpp limitation
 
-                # When GLOBIGNORE is set, bash doesn't respect respect shopt -u
-                # globskipdots!
                 skipdots = True
 
-            if skipdots:
+            elif self.exec_opts.globskipdots():
                 # Remove . and .. entries returned by libc.
                 tmp = [s for s in results if not s in ('.', '..')]
                 results = tmp  # idiom to work around mycpp limitation
