@@ -296,10 +296,11 @@ def _Init(opt_def):
     #
 
     # shopt options that aren't in any groups.
+    opt_def.Add('extglob')  # no-op in OSH
     opt_def.Add('failglob')
-    opt_def.Add('extglob')
     opt_def.Add('nocasematch')
     opt_def.Add('dotglob')
+    opt_def.Add('globskipdots', default=True)
 
     opt_def.Add('extdebug')  # for task files
 

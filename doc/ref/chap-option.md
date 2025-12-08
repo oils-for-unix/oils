@@ -38,11 +38,14 @@ These are from bash:
 
 These options are from POSIX shell:
 
-    noglob -f
+    noglob -f     # don't perform globbing
 
 From bash:
 
-    nullglob   failglob   dotglob
+    nullglob      # if the glob matches nothing, it expands to no args
+    failglob      # if the glob matches nothing, it's a fatal error
+    dotglob       # include files starting with . like .gitignore
+    globskipdots  # by default, omit . and .. (even if pattern starts with .)
 
 From Oils:
 

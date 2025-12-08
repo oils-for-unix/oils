@@ -582,9 +582,8 @@ class Globber(object):
                 ]
 
                 results = tmp  # idiom to work around mycpp limitation
-            else:
+            elif self.exec_opts.globskipdots():
                 # Remove . and .. entries returned by libc.
-                # This is 'shopt -s globskipdots'.  TODO: support it fully?
                 tmp = [s for s in results if not s in ('.', '..')]
                 results = tmp  # idiom to work around mycpp limitation
 
