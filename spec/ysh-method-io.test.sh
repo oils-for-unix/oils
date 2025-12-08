@@ -127,3 +127,45 @@ pp test_ (_error)
 one
 ## END
 
+#### io.glob() respects shell filters
+touch -- .gitignore -foo.txt foo.txt foo.md
+
+#GLOBIGNORE='*.md'
+
+pp test_ (io.glob('*'))
+
+shopt -s dotglob
+shopt --unset no_dash_glob
+pp test_ (io.glob('*'))
+
+# This meandes dotglob, no_dash_glob
+GLOBIGNORE='*.md'
+pp test_ (io.glob('*'))
+
+## STDOUT:
+(List)   ["foo.md","foo.txt"]
+(List)   ["-foo.txt",".gitignore","foo.md","foo.txt"]
+(List)   ["-foo.txt",".gitignore","foo.txt"]
+## END
+
+
+#### io.libcGlob() does not respect shell filters
+touch -- .gitignore -foo.txt foo.txt
+
+pp test_ (io.libcGlob('*'))
+
+# NO effect
+shopt -s dotglob
+shopt --unset no_dash_glob
+pp test_ (io.libcGlob('*'))
+
+GLOBIGNORE='*.md'
+pp test_ (io.libcGlob('*'))
+
+## STDOUT:
+(List)   ["-foo.txt","foo.txt"]
+(List)   ["-foo.txt","foo.txt"]
+(List)   ["-foo.txt","foo.txt"]
+## END
+
+

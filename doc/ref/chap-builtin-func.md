@@ -171,15 +171,6 @@ Or 1 if the first is greater than the second:
 
     = strcmp('z', 'a')   # => (Int) 1
 
-### shSplit()
-
-Split a string into a List of strings, using the shell algorithm that respects
-`$IFS`.
-
-Prefer [split()][split] to `shSplit()`.
-
-[split]: chap-type-method.html#split
-
 ## List
 
 ### join()
@@ -295,20 +286,6 @@ Get the "prototype" of an Obj, which is another Obj, or null:
 
 ## Word
 
-### glob() 
-
-Return a list of of files that much a glob pattern.
-
-    = glob('*.py')  # => (List) ['__init__.py']
-
-<!--
-TODO: the shopt options like GLOBIGNORE should be exposed as params?
--->
-
-See [glob-pat][] for syntax.
-
-[glob-pat]: chap-mini-lang.html#glob-pat
-
 ### maybe()
 
 Turn a string into a list, based on its emptiness.
@@ -323,6 +300,15 @@ It's designed to be used to construct `argv` arrays, along with
     write -- ale @[maybe(s)] corn     # => ale bean corn
 
 [expr-splice]: chap-word-lang.html#expr-splice
+
+### shSplit()
+
+Split a string into a List of strings, using the shell algorithm that respects
+`$IFS`.
+
+Prefer [split()][split] to `shSplit()`.
+
+[split]: chap-type-method.html#split
 
 ## Serialize
 

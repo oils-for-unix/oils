@@ -10,6 +10,7 @@ from core import state
 from core import vm
 from frontend import typed_args
 from mycpp.mylib import log, NewDict
+from osh import glob_
 from osh import prompt
 
 from typing import Dict, List, Optional, cast, TYPE_CHECKING
@@ -233,6 +234,7 @@ class CaptureStdout(vm._Callable):
 
 
 class CaptureAll(vm._Callable):
+
     def __init__(self, mem, shell_ex):
         # type: (state.Mem, vm._Executor) -> None
         self.mem = mem
@@ -248,12 +250,13 @@ class CaptureAll(vm._Callable):
                                      cmd.module_frame, None):
             status, stdout_str, stderr_str = self.shell_ex.Capture3(frag)
 
-        out = NewDict() # type: Dict[str, value_t]
+        out = NewDict()  # type: Dict[str, value_t]
         out['stdout'] = value.Str(stdout_str)
         out['stderr'] = value.Str(stderr_str)
         out['status'] = num.ToBig(status)
 
         return value.Dict(out)
+
 
 class PromptVal(vm._Callable):
     """
@@ -309,10 +312,42 @@ class Strftime(vm._Callable):
 
 class Glob(vm._Callable):
 
-    def __init__(self):
-        # type: () -> None
-        pass
+    def __init__(self, globber, is_method=False):
+        # type: (glob_.Globber, bool) -> None
+        vm._Callable.__init__(self)
+        self.globber = globber
+        self.is_method = is_method
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        return value.Null
+        if self.is_method:
+            unused_io = rd.PosValue()
+
+        s = rd.PosStr()
+        rd.Done()
+
+        out = []  # type: List[str]
+        self.globber.DoShellGlob(s, out)
+
+        l = [value.Str(elem) for elem in out]  # type: List[value_t]
+        return value.List(l)
+
+
+class LibcGlob(vm._Callable):
+
+    def __init__(self, globber):
+        # type: (glob_.Globber) -> None
+        vm._Callable.__init__(self)
+        self.globber = globber
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        unused_io = rd.PosValue()
+        s = rd.PosStr()
+        rd.Done()
+
+        out = []  # type: List[str]
+        out = self.globber.DoLibcGlob(s)
+
+        l = [value.Str(elem) for elem in out]  # type: List[value_t]
+        return value.List(l)
