@@ -406,7 +406,17 @@ class Hash(vm._Builtin):
 
 def _ParseOptSpec(spec_str):
     # type: (str) -> Dict[str, bool]
+
+    # The spec dict maps {flag_char: arg_required?}
+    # And a special __silent var
     spec = {}  # type: Dict[str, bool]
+
+    # If spec starts with :, then we use a "silent" error reporting mode.
+    spec['__silent'] = False
+    if spec_str.startswith(':'):
+        spec['__silent'] = True
+        spec_str = spec_str[1:]
+
     i = 0
     n = len(spec_str)
     while True:
@@ -476,15 +486,8 @@ class GetOptsState(object):
         else:
             return None
 
+
 class GetOpts(vm._Builtin):
-    """
-    Vars used:
-      OPTERR: disable printing of error messages
-    Vars set:
-      The variable named by the second arg
-      OPTIND - initialized to 1 at startup
-      OPTARG - argument
-    """
 
     def __init__(self, mem, errfmt):
         # type: (Mem, ui.ErrorFormatter) -> None
@@ -526,6 +529,18 @@ class GetOpts(vm._Builtin):
             argv,  # type: List[str]
     ):
         # type: (...) -> Tuple[int, str]
+        """Returns (int status, character to put in NAME var)
+
+        Vars:
+
+        Returned and set:
+          The NAME var given by the user - the flag itself, ? or :
+        Set here:
+          OPTARG - the argument to the flag, if any
+          OPTIND - initialized to 1 at startup
+        Used:
+          OPTERR: disable printing of error messages
+        """
         my_state = self.my_state
 
         current = my_state.GetCurrentArg(argv)
@@ -567,10 +582,12 @@ class GetOpts(vm._Builtin):
                     self._Fail('getopts: flag -%s requires an argument' %
                                flag_char,
                                flag_char=flag_char)
-                    # In silent mode, return ':' instead of '?'
-                    if self._silent:
-                        return 0, ':'
-                    return 0, '?'
+
+                    # quirk of silent mode
+                    error_char = ':' if self._silent else '?'
+
+                    return 0, error_char
+
             my_state.IncOptInd()
             self._SetOptArg(optarg)
         else:
@@ -593,12 +610,6 @@ class GetOpts(vm._Builtin):
         except error.Runtime:
             opterr = 1
 
-        # TODO: could make 'silent' part of the spec
-        silent = False
-        if spec_str.startswith(':'):
-            silent = True
-            spec_str = spec_str[1:]
-
         spec = self.spec_cache.get(spec_str)
         if spec is None:
             spec = _ParseOptSpec(spec_str)
@@ -607,15 +618,15 @@ class GetOpts(vm._Builtin):
         user_argv = self.mem.GetArgv() if arg_r.AtEnd() else arg_r.Rest()
 
         # Set members for _Fail() before each _OneIteration()
-        self._silent = silent
+        self._silent = spec['__silent']
         self._opterr = opterr
         status, flag_char = self._OneIteration(spec, user_argv)
 
         if match.IsValidVarName(var_name):
             state.BuiltinSetString(self.mem, var_name, flag_char)
         else:
-            # NOTE: The builtin has PARTIALLY set state.  This happens in all shells
-            # except mksh.
+            # Note: upon failure, getopts may leave PARTIALLY set state.  This
+            # happens in all shells except mksh.
             raise error.Usage('got invalid variable name %r' % var_name,
                               var_loc)
         return status
