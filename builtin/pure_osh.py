@@ -481,20 +481,6 @@ class GetOptsState(object):
         """Set the OPTARG variable"""
         state.BuiltinSetString(self.mem, 'OPTARG', optarg)
 
-    def Fail(self, silent, opterr, error_msg, flag_char=''):
-        # type: (bool, int, str, str) -> None
-        """Handle getopts failures."""
-        if silent:  # leading : in SPEC enables silent mode
-            self.SetOptArg(flag_char)
-        else:
-            self.SetOptArg('')
-
-            # Print error message unless OPTERR 0
-            if opterr == 0:
-                return
-            if len(error_msg):
-                self.errfmt.Print_(error_msg)
-
 
 class GetOpts(vm._Builtin):
     """
@@ -511,15 +497,34 @@ class GetOpts(vm._Builtin):
         self.mem = mem
         self.errfmt = errfmt
 
+        # Cache parsing of flag spec
+        self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
+
         # TODO: state could just be in this object
         self.my_state = GetOptsState(mem, errfmt)
-        self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
+
+        # These variables are used by _Fail(), and set before each
+        # _OneIteration() call
+        self._silent = False
+        self._opterr = 0
+
+    def _Fail(self, error_msg, flag_char=''):
+        # type: (str, str) -> None
+        """Handle user flag parsing failures."""
+        if self._silent:  # leading : in SPEC enables silent mode
+            self.my_state.SetOptArg(flag_char)
+        else:
+            self.my_state.SetOptArg('')
+
+            # Print error message unless OPTERR 0
+            if self._opterr == 0:
+                return
+            if len(error_msg):
+                self.errfmt.Print_(error_msg)
 
     def _OneIteration(
             self,
             spec,  # type: Dict[str, bool]
-            silent,  # type: bool
-            opterr,  # type: int
             argv,  # type: List[str]
     ):
         # type: (...) -> Tuple[int, str]
@@ -529,11 +534,11 @@ class GetOpts(vm._Builtin):
         #log('current %s', current)
 
         if current is None:  # out of range, etc.
-            my_state.Fail(silent, opterr, '')
+            self._Fail('')
             return 1, '?'
 
         if not current.startswith('-') or current == '-':
-            my_state.Fail(silent, opterr, '')
+            self._Fail('')
             return 1, '?'
 
         if current == '--':  # special case, stop processing remaining args
@@ -551,10 +556,8 @@ class GetOpts(vm._Builtin):
             more_chars = False
 
         if flag_char not in spec:  # Invalid flag
-            my_state.Fail(silent,
-                          opterr,
-                          'getopts: invalid flag -%s' % flag_char,
-                          flag_char=flag_char)
+            self._Fail('getopts: invalid flag -%s' % flag_char,
+                       flag_char=flag_char)
             return 0, '?'
 
         if spec[flag_char]:  # does it need an argument?
@@ -563,19 +566,17 @@ class GetOpts(vm._Builtin):
             else:
                 optarg = my_state.GetArg(argv)
                 if optarg is None:
-                    my_state.Fail(silent,
-                                  opterr,
-                                  'getopts: flag -%s requires an argument' %
-                                  flag_char,
-                                  flag_char=flag_char)
+                    self._Fail('getopts: flag -%s requires an argument' %
+                               flag_char,
+                               flag_char=flag_char)
                     # In silent mode, return ':' instead of '?'
-                    if silent:
+                    if self._silent:
                         return 0, ':'
                     return 0, '?'
             my_state.IncIndex()
             my_state.SetOptArg(optarg)
         else:
-            my_state.SetOptArg('')
+            my_state.SetOptArg('')  # no argument
 
         return 0, flag_char
 
@@ -606,7 +607,11 @@ class GetOpts(vm._Builtin):
             self.spec_cache[spec_str] = spec
 
         user_argv = self.mem.GetArgv() if arg_r.AtEnd() else arg_r.Rest()
-        status, flag_char = self._OneIteration(spec, silent, opterr, user_argv)
+
+        # Set members for _Fail() before each _OneIteration()
+        self._silent = silent
+        self._opterr = opterr
+        status, flag_char = self._OneIteration(spec, user_argv)
 
         if match.IsValidVarName(var_name):
             state.BuiltinSetString(self.mem, var_name, flag_char)
