@@ -659,9 +659,9 @@ If the key doesn't have a binding, append() creates an empty list first:
     = mydict
     # => (Dict)   {a: [1, 2, 'b'], b: [1], c: [[1,2]]}
 
-### add()
+### inc()
 
-Adds an increment specified to the value:
+Add a number to the value associated with a key:
 
     var mydict = {
       a: 1,
@@ -670,23 +670,19 @@ Adds an increment specified to the value:
 
     = mydict # => (Dict)   {a: 1, b: 3.14}
 
-    call mydict->add('a', 2)
+    call mydict->inc('a', 2)
     = mydict # => (Dict)   {a: 3, b: 3.14}
 
-    call mydict->add('b', 2.14)
-    = mydict # => (Dict)   {a: 3, b: 5.28}
+    call mydict->inc('b', -2)
+    = mydict # => (Dict)   {a: 3, b: 1.14}
 
-If there is no value in the dictionary with the provided key, its default
-value is 0 of the type of the increment (int or float):
+If the key doesn't exist, then its default value is zero:
 
-    call mydict->add('c', 2.14)
-    = mydict # => (Dict)   {a: 4, b: 6.28, c: 2.14}
+    call mydict->inc('c', 1.5)
+    = mydict # => (Dict)   {a: 3, b: 1.14, c: 1.5}
 
-Similar:
-
-```raw
-setvar mydict['k'] += 3  # TODO: default value of 0
-```
+In other words, it's like `setvar mydict.k += 3`, but you don't have to
+initialize each value to zero.
 
 ### Dict/clear()
 

@@ -854,7 +854,7 @@ def Main(
         # code shouldn't use the List of Lists representation.
         'M/erase': method_dict.Erase(),
         'M/clear': method_dict.Clear(),
-        'M/add': method_dict.Add(),
+        'M/inc': method_dict.Inc(),
         'M/append': method_dict.Append(),
 
         # DEPRECATED - use free functions

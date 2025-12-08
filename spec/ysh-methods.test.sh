@@ -577,34 +577,41 @@ pp test_ (book => get("author", ""))
 (Str)   ""
 ## END
 
-#### Dict -> add() with ints
+#### Dict -> inc() with ints
 var histogram = {a: 1979}
-call histogram->add('a', 3)
+
+call histogram->inc('a', 3)
 assert [{"a": 1982} === histogram]
-call histogram->add('b', 3)
+
+call histogram->inc('b', 3)
 assert [{"a": 1982, "b": 3} === histogram]
+## STDOUT:
+## END
 
+#### Dict -> inc() with invalid value
 var d = {k: 'foo'}
-call d->add('k', 42)
+call d->inc('k', 42)
 ## status: 3
+## STDOUT:
+## END
 
-#### Dict -> add() with floats
+#### Dict -> inc() with floats
 var histogram = {a: 2.5}
-call histogram->add('a', 2)
+call histogram->inc('a', 2)
 pp test_ (histogram)
-call histogram->add('a', 3.5)
+call histogram->inc('a', 3.5)
 pp test_ (histogram)
-call histogram->add('b', 3.5)
+call histogram->inc('b', 3.5)
 pp test_ (histogram)
-call histogram->add('b', 2)
+call histogram->inc('b', 2)
 pp test_ (histogram)
-call histogram->add('c', 1)
+call histogram->inc('c', 1)
 pp test_ (histogram)
-call histogram->add('c', 3.0)
+call histogram->inc('c', 3.0)
 pp test_ (histogram)
 
 var d = {k: 'foo'}
-call d->add('k', 42.14)
+call d->inc('k', 42.14)
 ## status: 3
 ## STDOUT:
 (Dict)   {"a":4.5}
@@ -627,7 +634,10 @@ call mydict->append('c', [1,2])
 
 # list of lists
 assert [{"a": [1,2,'b'], "b": [1], "c": [[1,2]]} === mydict]
+## STDOUT:
+## END
 
+#### Dict -> append() with invalid value
 var d = {k: 'foo'}
 call d->append('k', 'bar')
 ## status: 3

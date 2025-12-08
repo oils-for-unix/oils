@@ -82,7 +82,7 @@ class Clear(vm._Callable):
         return value.Null
 
 
-class Add(vm._Callable):
+class Inc(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -109,7 +109,7 @@ class Add(vm._Callable):
         elif c == coerced_e.Float:
             res = value.Float(f1 + f2)
         else:
-            raise error.TypeErr(left, 'add() expected the key to point to Int or float, got',
+            raise error.TypeErr(left, 'inc() expected Int/Float value in dict',
                                 rd.BlamePos())
 
         dictionary[key] = res
@@ -137,7 +137,7 @@ class Append(vm._Callable):
                 lst = cast(value.List, UP_obj)
                 lst.items.append(append_val)
             else:
-                raise error.TypeErr(UP_obj, 'append() expected the key to point to List',
+                raise error.TypeErr(UP_obj, 'append() expected List value in dict',
                                     rd.BlamePos())
         else:
             dictionary[key] = value.List([append_val])
