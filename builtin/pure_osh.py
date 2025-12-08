@@ -436,6 +436,8 @@ class GetOptsState(object):
         self.errfmt = errfmt
         self._optind = -1
         self.flag_pos = 1  # position within the arg, public var
+        self.silent = False  # type: bool
+        self.opterr = 1      # type: int
 
     def _OptInd(self):
         # type: () -> int
@@ -482,28 +484,45 @@ class GetOptsState(object):
         """Set OPTARG."""
         state.BuiltinSetString(self.mem, 'OPTARG', optarg)
 
-    def Fail(self):
-        # type: () -> None
-        """On failure, reset OPTARG."""
-        state.BuiltinSetString(self.mem, 'OPTARG', '')
+    def Fail(self, flag_char, error_msg=''):
+        # type: (str, str) -> None
+        """Handle getopts failures.
+
+        Silent mode (leading : in optspec) sets OPTARG to flag_char.
+        OPTERR=0 disables error messages but doesn't change OPTARG.
+        """
+        if self.silent and len(flag_char):
+            self.SetArg(flag_char)
+        else:
+            state.BuiltinSetString(self.mem, 'OPTARG', '')
+            if self.opterr != 0 and len(error_msg):
+                self.errfmt.Print_(error_msg)
 
 
 def _GetOpts(
-        spec,  # type: Dict[str, bool]
-        argv,  # type: List[str]
-        my_state,  # type: GetOptsState
-        errfmt,  # type: ui.ErrorFormatter
+    spec_str,  # type: str
+    argv,  # type: List[str]
+    my_state,  # type: GetOptsState
+    errfmt,  # type: ui.ErrorFormatter
+    opterr,  # type: int
 ):
     # type: (...) -> Tuple[int, str]
+    my_state.silent = spec_str.startswith(':')
+    if my_state.silent:
+        spec_str = spec_str[1:]
+    spec = _ParseOptSpec(spec_str)
+
+    my_state.opterr = opterr
+
     current = my_state.GetArg(argv)
     #log('current %s', current)
 
     if current is None:  # out of range, etc.
-        my_state.Fail()
+        my_state.Fail('')
         return 1, '?'
 
     if not current.startswith('-') or current == '-':
-        my_state.Fail()
+        my_state.Fail('')
         return 1, '?'
 
     if current == "--": # special case, stop processing remaining args
@@ -521,6 +540,7 @@ def _GetOpts(
         more_chars = False
 
     if flag_char not in spec:  # Invalid flag
+        my_state.Fail(flag_char, 'getopts: illegal option -- ' + flag_char)
         return 0, '?'
 
     if spec[flag_char]:  # does it need an argument?
@@ -529,14 +549,14 @@ def _GetOpts(
         else:
             optarg = my_state.GetArg(argv)
             if optarg is None:
-                my_state.Fail()
-                # TODO: Add location info
-                errfmt.Print_('getopts: option %r requires an argument.' %
-                              current)
-                tmp = [j8_lite.MaybeShellEncode(a) for a in argv]
-                print_stderr('(getopts argv: %s)' % ' '.join(tmp))
-
-                # Hm doesn't cause status 1?
+                # POSIX says the error format is unspecified, but this is what bash
+                # and mksh do.
+                my_state.Fail(flag_char,
+                              'getopts: option requires an argument -- %s' %
+                              flag_char)
+                # In silent mode, return ':' instead of '?'
+                if my_state.silent:
+                    return 0, ':'
                 return 0, '?'
         my_state.IncIndex()
         my_state.SetArg(optarg)
@@ -577,15 +597,16 @@ class GetOpts(vm._Builtin):
         var_name, var_loc = arg_r.ReadRequired2(
             'requires the name of a variable to set')
 
-        spec = self.spec_cache.get(spec_str)
-        if spec is None:
-            spec = _ParseOptSpec(spec_str)
-            self.spec_cache[spec_str] = spec
+        # OPTERR defaults to 1
+        try:
+            opterr = state.GetInteger(self.mem, 'OPTERR')
+        except error.Runtime:
+            opterr = 1
 
         user_argv = self.mem.GetArgv() if arg_r.AtEnd() else arg_r.Rest()
         #log('user_argv %s', user_argv)
-        status, flag_char = _GetOpts(spec, user_argv, self.my_state,
-                                     self.errfmt)
+        status, flag_char = _GetOpts(spec_str, user_argv, self.my_state,
+                                      self.errfmt, opterr)
 
         if match.IsValidVarName(var_name):
             state.BuiltinSetString(self.mem, var_name, flag_char)
