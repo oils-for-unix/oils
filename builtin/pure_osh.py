@@ -484,18 +484,18 @@ class GetOptsState(object):
         """Set OPTARG."""
         state.BuiltinSetString(self.mem, 'OPTARG', optarg)
 
-    def Fail(self, flag_char='', error_msg=''):
+    def Fail(self, flag_char, error_msg=''):
         # type: (str, str) -> None
         """Handle getopts failures.
 
         Silent mode (leading : in optspec) sets OPTARG to flag_char.
         OPTERR=0 disables error messages but doesn't change OPTARG.
         """
-        if self.silent and flag_char:
+        if self.silent and len(flag_char):
             self.SetArg(flag_char)
         else:
             state.BuiltinSetString(self.mem, 'OPTARG', '')
-            if self.opterr != 0 and error_msg:
+            if self.opterr != 0 and len(error_msg):
                 self.errfmt.Print_(error_msg)
 
 
@@ -518,11 +518,11 @@ def _GetOpts(
     #log('current %s', current)
 
     if current is None:  # out of range, etc.
-        my_state.Fail()
+        my_state.Fail('')
         return 1, '?'
 
     if not current.startswith('-') or current == '-':
-        my_state.Fail()
+        my_state.Fail('')
         return 1, '?'
 
     if current == "--": # special case, stop processing remaining args
