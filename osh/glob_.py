@@ -563,37 +563,38 @@ class Globber(object):
             raise
         #log('glob %r -> %r', arg, g)
 
-        if len(results):  # Something matched
+        if len(results) == 0:
+            return 0  # nothing matched
 
-            if globignore_patterns is not None:  # Handle GLOBIGNORE
-                # When GLOBIGNORE is set, bash doesn't respect shopt -u
-                # globskipdots!  The entries . and .. are skipped, even if they
-                # do NOT match GLOBIGNORE
-                tmp = [
-                    s for s in results
-                    if not _StringMatchesAnyPattern(s, globignore_patterns) and
-                    os_path.basename(s) not in ('.', '..')
-                ]
-                results = tmp  # idiom to work around mycpp limitation
+        # Something matched
 
-                skipdots = True
+        if globignore_patterns is not None:  # Handle GLOBIGNORE
+            # When GLOBIGNORE is set, bash doesn't respect shopt -u
+            # globskipdots!  The entries . and .. are skipped, even if they
+            # do NOT match GLOBIGNORE
+            tmp = [
+                s for s in results
+                if not _StringMatchesAnyPattern(s, globignore_patterns) and
+                os_path.basename(s) not in ('.', '..')
+            ]
+            results = tmp  # idiom to work around mycpp limitation
 
-            else:  # Do filtering that's NOT GLOBIGNORE
-                # no_dash_glob: Omit files starting with -
-                # (part of shopt --set ysh:upgrade)
-                if self.exec_opts.no_dash_glob():
-                    tmp = [s for s in results if not s.startswith('-')]
-                    results = tmp
+            skipdots = True
 
-                # globskipdots: Remove . and .. entries returned by libc.
-                if self.exec_opts.globskipdots():
-                    tmp = [s for s in results if not s in ('.', '..')]
-                    results = tmp
+        else:  # Do filtering that's NOT GLOBIGNORE
+            # no_dash_glob: Omit files starting with -
+            # (part of shopt --set ysh:upgrade)
+            if self.exec_opts.no_dash_glob():
+                tmp = [s for s in results if not s.startswith('-')]
+                results = tmp
 
-            out.extend(results)
-            return len(results)
+            # globskipdots: Remove . and .. entries returned by libc.
+            if self.exec_opts.globskipdots():
+                tmp = [s for s in results if not s in ('.', '..')]
+                results = tmp
 
-        return 0
+        out.extend(results)
+        return len(results)
 
     def Expand(self, arg, out, blame_loc):
         # type: (str, List[str], loc_t) -> int
@@ -628,6 +629,10 @@ class Globber(object):
 
     def ExpandExtended(self, glob_pat, fnmatch_pat, out):
         # type: (str, str, List[str]) -> int
+        """
+        Returns:
+          The number of items appended, or -1 when glob expansion did not happen
+        """
         if self.exec_opts.noglob():
             # Return the fnmatch_pat.  Note: this means we turn ,() into @(), and
             # there is extra \ escaping compared with bash and mksh.  OK for now
@@ -648,7 +653,7 @@ class Globber(object):
 
         if self.exec_opts.nullglob():
             return 0
-        else:
-            # See comment above
-            out.append(GlobUnescape(fnmatch_pat))
-            return 1
+
+        # Expand to fnmatch_pat, as above
+        out.append(GlobUnescape(fnmatch_pat))
+        return 1

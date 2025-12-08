@@ -210,3 +210,16 @@ _tmp foo.txt
 ## END
 ## N-I bash STDOUT:
 ## END
+
+#### Extended glob expansion combined with GLOBIGNORE
+shopt -s extglob
+
+touch foo.cc foo.h bar.cc bar.h 
+echo @(*.cc|*.h)
+GLOBIGNORE=foo.*
+echo @(*.cc|*.h)
+
+## STDOUT:
+bar.cc bar.h foo.cc foo.h
+bar.cc bar.h
+## END
