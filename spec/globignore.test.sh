@@ -174,3 +174,39 @@ echo .*
 .hidden
 .hidden
 ## END
+
+#### When GLOBIGNORE is set, glob may become empty (nullglob too)
+touch -- foo.txt -foo.txt
+
+echo *t
+
+GLOBIGNORE=*.txt
+echo *t
+
+shopt -s nullglob
+echo nullglob *t
+
+## STDOUT:
+-foo.txt foo.txt
+*t
+nullglob
+## END
+
+#### When GLOBIGNORE is set, no_dash_glob isn't respected
+case $SH in bash) exit ;; esac
+
+touch -- foo.txt -foo.txt
+
+shopt -s no_dash_glob  # YSH option
+
+echo *  # expansion does NOT include -foo.txt
+
+GLOBIGNORE=f*.txt
+echo *  # expansion includes -foo.txt, because it doesn't match GLOBIGNORE
+
+## STDOUT:
+_tmp foo.txt
+-foo.txt _tmp
+## END
+## N-I bash STDOUT:
+## END

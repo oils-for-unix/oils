@@ -564,16 +564,11 @@ class Globber(object):
         #log('glob %r -> %r', arg, g)
 
         if len(results):  # Something matched
-            # Omit files starting with -
-            # no_dash_glob is part of shopt --set ysh:upgrade
-            if self.exec_opts.no_dash_glob():
-                tmp = [s for s in results if not s.startswith('-')]
-                results = tmp  # idiom to work around mycpp limitation
 
             if globignore_patterns is not None:  # Handle GLOBIGNORE
                 # When GLOBIGNORE is set, bash doesn't respect shopt -u
                 # globskipdots!  The entries . and .. are skipped, even if they
-                # do NOT match GLOB_PERIOD
+                # do NOT match GLOBIGNORE
                 tmp = [
                     s for s in results
                     if not _StringMatchesAnyPattern(s, globignore_patterns) and
@@ -583,10 +578,17 @@ class Globber(object):
 
                 skipdots = True
 
-            elif self.exec_opts.globskipdots():
-                # Remove . and .. entries returned by libc.
-                tmp = [s for s in results if not s in ('.', '..')]
-                results = tmp  # idiom to work around mycpp limitation
+            else:  # Do filtering that's NOT GLOBIGNORE
+                # no_dash_glob: Omit files starting with -
+                # (part of shopt --set ysh:upgrade)
+                if self.exec_opts.no_dash_glob():
+                    tmp = [s for s in results if not s.startswith('-')]
+                    results = tmp
+
+                # globskipdots: Remove . and .. entries returned by libc.
+                if self.exec_opts.globskipdots():
+                    tmp = [s for s in results if not s in ('.', '..')]
+                    results = tmp
 
             out.extend(results)
             return len(results)
