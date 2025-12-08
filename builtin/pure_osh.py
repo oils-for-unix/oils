@@ -438,9 +438,6 @@ class GetOptsState(object):
         self._optind = -1
         self.flag_pos = 1  # position within the arg, public var
 
-        # disable error messages with OPTERR=0 ?
-        self.opterr = 1  # type: int
-
     def _OptInd(self):
         # type: () -> int
         """Returns OPTIND that's >= 1, or -1 if it's invalid."""
@@ -484,86 +481,19 @@ class GetOptsState(object):
         """Set the OPTARG variable"""
         state.BuiltinSetString(self.mem, 'OPTARG', optarg)
 
-    def Fail(self, silent, error_msg, flag_char=''):
-        # type: (bool, str, str) -> None
-        """Handle getopts failures.
-
-        Silent mode (leading : in optspec) sets OPTARG to flag_char.
-        OPTERR=0 disables error messages but doesn't change OPTARG.
-        """
-        if silent and len(flag_char):
+    def Fail(self, silent, opterr, error_msg, flag_char=''):
+        # type: (bool, int, str, str) -> None
+        """Handle getopts failures."""
+        if silent:  # leading : in SPEC enables silent mode
             self.SetOptArg(flag_char)
         else:
             self.SetOptArg('')
-            # OPTERR
-            if self.opterr != 0 and len(error_msg):
+
+            # Print error message unless OPTERR 0
+            if opterr == 0:
+                return
+            if len(error_msg):
                 self.errfmt.Print_(error_msg)
-
-
-def _GetOpts(
-        spec,  # type: Dict[str, bool]
-        silent,  # type: bool
-        argv,  # type: List[str]
-        my_state,  # type: GetOptsState
-        errfmt,  # type: ui.ErrorFormatter
-        opterr,  # type: int
-):
-    # type: (...) -> Tuple[int, str]
-    """
-    Runs one iteration of getopts
-    """
-    my_state.opterr = opterr
-
-    current = my_state.GetArg(argv)
-    #log('current %s', current)
-
-    if current is None:  # out of range, etc.
-        my_state.Fail(silent, '')
-        return 1, '?'
-
-    if not current.startswith('-') or current == '-':
-        my_state.Fail(silent, '')
-        return 1, '?'
-
-    if current == "--":  # special case, stop processing remaining args
-        my_state.IncIndex()
-        return 1, '?'
-
-    flag_char = current[my_state.flag_pos]
-
-    if my_state.flag_pos < len(current) - 1:
-        my_state.flag_pos += 1  # don't move past this arg yet
-        more_chars = True
-    else:
-        my_state.IncIndex()
-        my_state.flag_pos = 1
-        more_chars = False
-
-    if flag_char not in spec:  # Invalid flag
-        msg = 'getopts: illegal option -- ' + flag_char
-        my_state.Fail(silent, msg, flag_char=flag_char)
-        return 0, '?'
-
-    if spec[flag_char]:  # does it need an argument?
-        if more_chars:
-            optarg = current[my_state.flag_pos:]
-        else:
-            optarg = my_state.GetArg(argv)
-            if optarg is None:
-                # POSIX says the error format is unspecified, but this is what bash
-                # and mksh do.
-                msg = 'getopts: option requires an argument -- %s' % flag_char
-                my_state.Fail(silent, msg, flag_char=flag_char)
-                # In silent mode, return ':' instead of '?'
-                if silent:
-                    return 0, ':'
-                return 0, '?'
-        my_state.IncIndex()
-        my_state.SetOptArg(optarg)
-    else:
-        my_state.SetOptArg('')
-
-    return 0, flag_char
 
 
 class GetOpts(vm._Builtin):
@@ -585,6 +515,70 @@ class GetOpts(vm._Builtin):
         self.my_state = GetOptsState(mem, errfmt)
         self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
 
+    def _OneIteration(
+            self,
+            spec,  # type: Dict[str, bool]
+            silent,  # type: bool
+            opterr,  # type: int
+            argv,  # type: List[str]
+    ):
+        # type: (...) -> Tuple[int, str]
+        my_state = self.my_state
+
+        current = my_state.GetArg(argv)
+        #log('current %s', current)
+
+        if current is None:  # out of range, etc.
+            my_state.Fail(silent, opterr, '')
+            return 1, '?'
+
+        if not current.startswith('-') or current == '-':
+            my_state.Fail(silent, opterr, '')
+            return 1, '?'
+
+        if current == '--':  # special case, stop processing remaining args
+            my_state.IncIndex()
+            return 1, '?'
+
+        flag_char = current[my_state.flag_pos]
+
+        if my_state.flag_pos < len(current) - 1:
+            my_state.flag_pos += 1  # don't move past this arg yet
+            more_chars = True
+        else:
+            my_state.IncIndex()
+            my_state.flag_pos = 1
+            more_chars = False
+
+        if flag_char not in spec:  # Invalid flag
+            my_state.Fail(silent,
+                          opterr,
+                          'getopts: invalid flag -%s' % flag_char,
+                          flag_char=flag_char)
+            return 0, '?'
+
+        if spec[flag_char]:  # does it need an argument?
+            if more_chars:
+                optarg = current[my_state.flag_pos:]
+            else:
+                optarg = my_state.GetArg(argv)
+                if optarg is None:
+                    my_state.Fail(silent,
+                                  opterr,
+                                  'getopts: flag -%s requires an argument' %
+                                  flag_char,
+                                  flag_char=flag_char)
+                    # In silent mode, return ':' instead of '?'
+                    if silent:
+                        return 0, ':'
+                    return 0, '?'
+            my_state.IncIndex()
+            my_state.SetOptArg(optarg)
+        else:
+            my_state.SetOptArg('')
+
+        return 0, flag_char
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
@@ -600,7 +594,7 @@ class GetOpts(vm._Builtin):
         except error.Runtime:
             opterr = 1
 
-    # TODO: could make 'silent' part of the spec
+        # TODO: could make 'silent' part of the spec
         silent = False
         if spec_str.startswith(':'):
             silent = True
@@ -612,8 +606,7 @@ class GetOpts(vm._Builtin):
             self.spec_cache[spec_str] = spec
 
         user_argv = self.mem.GetArgv() if arg_r.AtEnd() else arg_r.Rest()
-        status, flag_char = _GetOpts(spec, silent, user_argv, self.my_state,
-                                     self.errfmt, opterr)
+        status, flag_char = self._OneIteration(spec, silent, opterr, user_argv)
 
         if match.IsValidVarName(var_name):
             state.BuiltinSetString(self.mem, var_name, flag_char)
