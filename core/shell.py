@@ -463,7 +463,7 @@ def Main(
 
     splitter = split.SplitContext(mem)
     # TODO: This is instantiation is duplicated in osh/word_eval.py
-    globber = glob_.Globber(exec_opts)
+    globber = glob_.Globber(exec_opts, mem)
 
     # This could just be OILS_TRACE_DUMPS='crash:argv0'
     crash_dump_dir = environ.get('OILS_CRASH_DUMP_DIR', '')
