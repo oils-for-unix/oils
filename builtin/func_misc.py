@@ -553,7 +553,7 @@ class Glob(vm._Callable):
         rd.Done()
 
         out = []  # type: List[str]
-        self.globber._Glob(s, out)
+        self.globber.DoGlob(s, out)
 
         l = [value.Str(elem) for elem in out]  # type: List[value_t]
         return value.List(l)

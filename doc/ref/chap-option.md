@@ -57,7 +57,7 @@ Does glob expansion return files that start with a period?
     # By default, we don't return say .gitignore    
     $ echo *  # foo
 
-    $ shopt -u dotglob  # unset this option
+    $ shopt -s dotglob  # set this option
     $ echo *  # => .gitignore foo
 
 This option is on by default in OSH and YSH.

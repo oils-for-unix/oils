@@ -527,17 +527,35 @@ class Globber(object):
 
         return patterns
 
-    def _Glob(self, arg, out):
+    def DoGlob(self, arg, out):
         # type: (str, List[str]) -> int
+        """
+        Respects:
+        - GLOBIGNORE
+        - dotglob
+        - no_dash_glob
+
+        But NOT
+        - noglob - done at the wordl evel
+        - nullglob - ditto
+
+        TODO:
+        - ysh globbing should not respect globals like GLOBIGNORE?
+          - only no_dash_glob by default?
+        - split into pure io.glob() and legacyGlob() function?
+          - this respects GLOBIGNORE
+        """
         globignore_patterns = self._GetGlobIgnorePatterns()
 
+        flags = 0
+        # shopt -u dotglob (default): echo * does not return say .gitignore
+        # If GLOBIGNORE is set, then dotglob is NOT respected - we return ..
+        if self.exec_opts.dotglob() or globignore_patterns is not None:
+            # If HAVE_GLOB_PERIOD is false, then ./configure stubs out
+            # GLOB_PERIOD as 0, a no-op
+            flags |= GLOB_PERIOD
+
         try:
-            flags = 0
-            # GLOBIGNORE enables dotglob when set to a non-null value
-            if self.exec_opts.dotglob() or globignore_patterns is not None:
-                # If HAVE_GLOB_PERIOD is false, then ./configure stubs out
-                # GLOB_PERIOD as 0, a no-op
-                flags |= GLOB_PERIOD
             results = libc.glob(arg, flags)
         except RuntimeError as e:
             # These errors should be rare: I/O error, out of memory, or unknown
@@ -549,38 +567,29 @@ class Globber(object):
             raise
         #log('glob %r -> %r', arg, g)
 
-        n = len(results)
-        if n:  # Something matched
+        if len(results):  # Something matched
             # Omit files starting with -
             # no_dash_glob is part of shopt --set ysh:upgrade
             if self.exec_opts.no_dash_glob():
                 tmp = [s for s in results if not s.startswith('-')]
                 results = tmp  # idiom to work around mycpp limitation
-                n = len(results)
 
             if globignore_patterns is not None:
-                filtered = []  # type: List[str]
-                for s in results:
-                    if not _StringMatchesAnyPattern(s, globignore_patterns):
-                        filtered.append(s)
-                results = filtered
-                n = len(results)
+                # Handle GLOBIGNORE
+                tmp = [
+                    s for s in results
+                    if not _StringMatchesAnyPattern(s, globignore_patterns)
+                ]
+
+                results = tmp  # idiom to work around mycpp limitation
             else:
-                # XXX: libc's glob function can return '.' and '..', which
-                # are typically not of interest. Filtering in this manner
-                # is similar (but not identical) to the default bash
-                # setting of 'setopt -s globskipdots'. Supporting that
-                # option fully would require more than simply wrapping
-                # this in an if statement.
-                dotfile_filtered = []  # type: List[str]
-                for s in results:
-                    if s not in ('.', '..'):
-                        dotfile_filtered.append(s)
-                results = dotfile_filtered
-                n = len(results)
+                # Remove . and .. entries returned by libc.
+                # This is 'shopt -s globskipdots'.  TODO: support it fully?
+                tmp = [s for s in results if not s in ('.', '..')]
+                results = tmp  # idiom to work around mycpp limitation
 
             out.extend(results)
-            return n
+            return len(results)
 
         return 0
 
@@ -600,7 +609,7 @@ class Globber(object):
             # The caller should use the original string
             return -1
 
-        n = self._Glob(arg, out)
+        n = self.DoGlob(arg, out)
         if n:
             return n
 
@@ -624,7 +633,7 @@ class Globber(object):
             return 1
 
         tmp = []  # type: List[str]
-        self._Glob(glob_pat, tmp)
+        self.DoGlob(glob_pat, tmp)
         filtered = [s for s in tmp if libc.fnmatch(fnmatch_pat, s)]
         n = len(filtered)
 
