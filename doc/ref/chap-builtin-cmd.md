@@ -1425,19 +1425,33 @@ See [ysh-test](#ysh-test) for log flags like `--file` and `--true`.
 
 ### getopts
 
-    getopts SPEC VAR ARG*
+    getopts SPEC VARNAME ARG*
 
 A single iteration of flag parsing.  The SPEC is a sequence of flag characters,
-with a trailing `:` to indicate that the flag takes an argument:
+with an optional `:` to which means that the flag takes an argument:
 
-    ab    # accept  -a and -b
+    ab    # accept -a and -b
     xy:z  # accept -x, -y arg, and -z
+
+A leading : enables silent error reporting:
+
+    :ab   # accept -a and -b in silent mode
 
 The input is `"$@"` by default, unless ARGs are passed.
 
-On each iteration, the flag character is stored in VAR.  If the flag has an
-argument, it's stored in `$OPTARG`.  When an error occurs, VAR is set to `?`
-and `$OPTARG` is unset.
+    getopts 'ab'   myvar         # input is from "$@"
+    getopts 'xy:z' myvar -x foo  # input is --x foo
+
+On each iteration, variables are set
+
+- The flag character is stored in `VARNAME`.
+- If the flag has an argument, it's stored in `$OPTARG`.
+
+There are two methods of error reporting
+
+- Normally, VARNAME is set to `?` and `$OPTARG` is unset.
+- In silent mode, VARNAME is set to :
+  - TODO
 
 Returns 0 if a flag is parsed, or 1 on end of input or another error.
 
@@ -1452,6 +1466,7 @@ Example:
     done
 
 Notes:
+
 - `$OPTIND` is initialized to 1 every time a shell starts, and is used to
   maintain state between invocations of `getopts`.
 - The characters `:` and `?` can't be flags.

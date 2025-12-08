@@ -11,7 +11,9 @@ echo "status=$? opt=$opt OPTARG=$OPTARG"
 set -- -Z
 getopts 'a:' opt
 echo "status=$? opt=$opt OPTARG=$OPTARG"
-## stdout: status=0 opt=? OPTARG=
+## STDOUT:
+status=0 opt=? OPTARG=
+## END
 
 #### getopts three invocations
 set -- -h -c foo
@@ -36,6 +38,23 @@ echo status=$? opt=$opt OPTARG=$OPTARG
 ## STDOUT:
 status=0 opt=c OPTARG=foo
 status=0 opt=h OPTARG=
+## END
+
+#### OPTARG is empty (not unset) after parsing a flag doesn't take an arg
+
+set -u
+getopts 'ab' name '-a'
+echo name=$name
+echo OPTARG=$OPTARG
+
+## STDOUT:
+name=a
+OPTARG=
+## END
+
+## BUG bash/mksh status: 1
+## BUG bash/mksh STDOUT:
+name=a
 ## END
 
 #### Basic getopts invocation

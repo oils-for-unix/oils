@@ -425,9 +425,10 @@ def _ParseOptSpec(spec_str):
 
 
 class GetOptsState(object):
-    """State persisted across invocations.
+    """State persisted across invocations of getopt
 
-    This would be simpler in GetOpts.
+    OPTIND
+    flag_pos
     """
 
     def __init__(self, mem, errfmt):
@@ -436,8 +437,9 @@ class GetOptsState(object):
         self.errfmt = errfmt
         self._optind = -1
         self.flag_pos = 1  # position within the arg, public var
-        self.silent = False  # type: bool
-        self.opterr = 1      # type: int
+
+        # disable error messages with OPTERR=0 ?
+        self.opterr = 1  # type: int
 
     def _OptInd(self):
         # type: () -> int
@@ -456,9 +458,7 @@ class GetOptsState(object):
 
         Returns None if it's out of range.
         """
-
         #log('_optind %d flag_pos %d', self._optind, self.flag_pos)
-
         optind = self._OptInd()
         if optind == -1:
             return None
@@ -479,53 +479,53 @@ class GetOptsState(object):
         state.BuiltinSetString(self.mem, 'OPTIND', str(self._optind + 1))
         self.flag_pos = 1
 
-    def SetArg(self, optarg):
+    def SetOptArg(self, optarg):
         # type: (str) -> None
-        """Set OPTARG."""
+        """Set the OPTARG variable"""
         state.BuiltinSetString(self.mem, 'OPTARG', optarg)
 
-    def Fail(self, flag_char, error_msg=''):
-        # type: (str, str) -> None
+    def Fail(self, silent, error_msg, flag_char=''):
+        # type: (bool, str, str) -> None
         """Handle getopts failures.
 
         Silent mode (leading : in optspec) sets OPTARG to flag_char.
         OPTERR=0 disables error messages but doesn't change OPTARG.
         """
-        if self.silent and len(flag_char):
-            self.SetArg(flag_char)
+        if silent and len(flag_char):
+            self.SetOptArg(flag_char)
         else:
-            state.BuiltinSetString(self.mem, 'OPTARG', '')
+            self.SetOptArg('')
+            # OPTERR
             if self.opterr != 0 and len(error_msg):
                 self.errfmt.Print_(error_msg)
 
 
 def _GetOpts(
-    spec_str,  # type: str
-    argv,  # type: List[str]
-    my_state,  # type: GetOptsState
-    errfmt,  # type: ui.ErrorFormatter
-    opterr,  # type: int
+        spec,  # type: Dict[str, bool]
+        silent,  # type: bool
+        argv,  # type: List[str]
+        my_state,  # type: GetOptsState
+        errfmt,  # type: ui.ErrorFormatter
+        opterr,  # type: int
 ):
     # type: (...) -> Tuple[int, str]
-    my_state.silent = spec_str.startswith(':')
-    if my_state.silent:
-        spec_str = spec_str[1:]
-    spec = _ParseOptSpec(spec_str)
-
+    """
+    Runs one iteration of getopts
+    """
     my_state.opterr = opterr
 
     current = my_state.GetArg(argv)
     #log('current %s', current)
 
     if current is None:  # out of range, etc.
-        my_state.Fail('')
+        my_state.Fail(silent, '')
         return 1, '?'
 
     if not current.startswith('-') or current == '-':
-        my_state.Fail('')
+        my_state.Fail(silent, '')
         return 1, '?'
 
-    if current == "--": # special case, stop processing remaining args
+    if current == "--":  # special case, stop processing remaining args
         my_state.IncIndex()
         return 1, '?'
 
@@ -540,7 +540,8 @@ def _GetOpts(
         more_chars = False
 
     if flag_char not in spec:  # Invalid flag
-        my_state.Fail(flag_char, 'getopts: illegal option -- ' + flag_char)
+        msg = 'getopts: illegal option -- ' + flag_char
+        my_state.Fail(silent, msg, flag_char=flag_char)
         return 0, '?'
 
     if spec[flag_char]:  # does it need an argument?
@@ -551,17 +552,16 @@ def _GetOpts(
             if optarg is None:
                 # POSIX says the error format is unspecified, but this is what bash
                 # and mksh do.
-                my_state.Fail(flag_char,
-                              'getopts: option requires an argument -- %s' %
-                              flag_char)
+                msg = 'getopts: option requires an argument -- %s' % flag_char
+                my_state.Fail(silent, msg, flag_char=flag_char)
                 # In silent mode, return ':' instead of '?'
-                if my_state.silent:
+                if silent:
                     return 0, ':'
                 return 0, '?'
         my_state.IncIndex()
-        my_state.SetArg(optarg)
+        my_state.SetOptArg(optarg)
     else:
-        my_state.SetArg('')
+        my_state.SetOptArg('')
 
     return 0, flag_char
 
@@ -590,23 +590,30 @@ class GetOpts(vm._Builtin):
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()
 
-        # NOTE: If first char is a colon, error reporting is different.  Alpine
-        # might not use that?
         spec_str = arg_r.ReadRequired('requires an argspec')
-
         var_name, var_loc = arg_r.ReadRequired2(
             'requires the name of a variable to set')
 
-        # OPTERR defaults to 1
+        # If OPTERR is 0, then errors are suppressed.  It defaults to 1
         try:
             opterr = state.GetInteger(self.mem, 'OPTERR')
         except error.Runtime:
             opterr = 1
 
+    # TODO: could make 'silent' part of the spec
+        silent = False
+        if spec_str.startswith(':'):
+            silent = True
+            spec_str = spec_str[1:]
+
+        spec = self.spec_cache.get(spec_str)
+        if spec is None:
+            spec = _ParseOptSpec(spec_str)
+            self.spec_cache[spec_str] = spec
+
         user_argv = self.mem.GetArgv() if arg_r.AtEnd() else arg_r.Rest()
-        #log('user_argv %s', user_argv)
-        status, flag_char = _GetOpts(spec_str, user_argv, self.my_state,
-                                      self.errfmt, opterr)
+        status, flag_char = _GetOpts(spec, silent, user_argv, self.my_state,
+                                     self.errfmt, opterr)
 
         if match.IsValidVarName(var_name):
             state.BuiltinSetString(self.mem, var_name, flag_char)
