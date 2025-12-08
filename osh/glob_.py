@@ -456,10 +456,6 @@ def _StringMatchesAnyPattern(s, patterns):
     Returns True if s matches any pattern, or if s is . or ..
     (which are always filtered when GLOBIGNORE is set).
     """
-    basename = os_path.basename(s)
-    if basename in ('.', '..'):
-        return True
-
     flags = 0
     for pattern in patterns:
         if libc.fnmatch(pattern, s, flags):
@@ -574,15 +570,20 @@ class Globber(object):
                 tmp = [s for s in results if not s.startswith('-')]
                 results = tmp  # idiom to work around mycpp limitation
 
-            if globignore_patterns is not None:
-                # Handle GLOBIGNORE
+            skipdots = self.exec_opts.globskipdots()
+
+            if globignore_patterns is not None:  # Handle GLOBIGNORE
                 tmp = [
                     s for s in results
                     if not _StringMatchesAnyPattern(s, globignore_patterns)
                 ]
-
                 results = tmp  # idiom to work around mycpp limitation
-            elif self.exec_opts.globskipdots():
+
+                # When GLOBIGNORE is set, bash doesn't respect respect shopt -u
+                # globskipdots!
+                skipdots = True
+
+            if skipdots:
                 # Remove . and .. entries returned by libc.
                 tmp = [s for s in results if not s in ('.', '..')]
                 results = tmp  # idiom to work around mycpp limitation
