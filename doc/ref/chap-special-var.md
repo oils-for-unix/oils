@@ -375,17 +375,16 @@ Examples:
     GLOBIGNORE='.:..'        # Match dotfiles, but filter . and ..
     echo .*                   # Shows .env, .gitignore, etc. (not . or ..)
 
-Pattern syntax supports standard glob metacharacters:
-
-- `*` - matches any string
-- `?` - matches any single character
-- `[...]` - matches character classes, including `[[:alnum:]]`, `[[:space:]]`, etc.
-
-Note: Colons inside bracket expressions like `[[:alnum:]]` are treated as part
-of the pattern, not as separators.
+The patterns use standard glob syntax (see [glob-pat][]). Note that colons
+inside bracket expressions like `[[:alnum:]]` are treated as part of the
+pattern, not as separators.
 
 When `GLOBIGNORE` is unset or set to an empty string, glob expansion returns to
 its default behavior.
+
+This is a bash-compatible feature.
+
+[glob-pat]: chap-mini-lang.html#glob-pat
 
 ## Shell Options
 

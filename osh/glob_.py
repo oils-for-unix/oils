@@ -449,6 +449,25 @@ def GlobToERE(pat):
 # - See 2 calls in osh/word_eval.py
 
 
+def _StringMatchesAnyPattern(s, patterns):
+    # type: (str, List[str]) -> bool
+    """Check if string matches any pattern in the list.
+
+    Returns True if s matches any pattern, or if s is . or ..
+    (which are always filtered when GLOBIGNORE is set).
+    """
+    basename = os_path.basename(s)
+    if basename in ('.', '..'):
+        return True
+
+    flags = 0
+    for pattern in patterns:
+        if libc.fnmatch(pattern, s, flags):
+            return True
+
+    return False
+
+
 class Globber(object):
 
     def __init__(self, exec_opts, mem):
@@ -508,24 +527,6 @@ class Globber(object):
 
         return patterns
 
-    def _MatchesGlobIgnore(self, filename, patterns):
-        # type: (str, List[str]) -> bool
-        """Check if filename matches any GLOBIGNORE pattern.
-
-        Filenames . and .. are always ignored when GLOBIGNORE is set.
-        """
-        basename = os_path.basename(filename)
-        if basename in ('.', '..'):
-            return True
-
-        flags = 0
-
-        for pattern in patterns:
-            if libc.fnmatch(pattern, filename, flags):
-                return True
-
-        return False
-
     def _Glob(self, arg, out):
         # type: (str, List[str]) -> int
         globignore_patterns = self._GetGlobIgnorePatterns()
@@ -560,7 +561,7 @@ class Globber(object):
             if globignore_patterns is not None:
                 filtered = []  # type: List[str]
                 for s in results:
-                    if not self._MatchesGlobIgnore(s, globignore_patterns):
+                    if not _StringMatchesAnyPattern(s, globignore_patterns):
                         filtered.append(s)
                 results = filtered
                 n = len(results)
