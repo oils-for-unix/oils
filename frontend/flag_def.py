@@ -236,6 +236,11 @@ _ULIMIT_RESOURCES = [
 for u_flag in _ULIMIT_RESOURCES:
     ULIMIT_SPEC.ShortFlag(u_flag)
 
+UMASK_SPEC = FlagSpec('umask')
+
+UMASK_SPEC.ShortFlag('-p')
+UMASK_SPEC.ShortFlag('-S')
+
 #
 # FlagSpecAndMore
 #
