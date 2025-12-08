@@ -438,6 +438,14 @@ class GetOptsState(object):
         self._optind = -1
         self.flag_pos = 1  # position within the arg, public var
 
+    def IncOptInd(self):
+        # type: () -> None
+        """Increment OPTIND."""
+        # Note: bash-completion uses a *local* OPTIND !  Not global.
+        assert self._optind != -1
+        state.BuiltinSetString(self.mem, 'OPTIND', str(self._optind + 1))
+        self.flag_pos = 1
+
     def _OptInd(self):
         # type: () -> int
         """Returns OPTIND that's >= 1, or -1 if it's invalid."""
@@ -449,7 +457,7 @@ class GetOptsState(object):
             result = -1
         return result
 
-    def GetArg(self, argv):
+    def GetCurrentArg(self, argv):
         # type: (List[str]) -> Optional[str]
         """Get the value of argv at OPTIND.
 
@@ -467,20 +475,6 @@ class GetOptsState(object):
             return argv[i]
         else:
             return None
-
-    def IncIndex(self):
-        # type: () -> None
-        """Increment OPTIND."""
-        # Note: bash-completion uses a *local* OPTIND !  Not global.
-        assert self._optind != -1
-        state.BuiltinSetString(self.mem, 'OPTIND', str(self._optind + 1))
-        self.flag_pos = 1
-
-    def SetOptArg(self, optarg):
-        # type: (str) -> None
-        """Set the OPTARG variable"""
-        state.BuiltinSetString(self.mem, 'OPTARG', optarg)
-
 
 class GetOpts(vm._Builtin):
     """
@@ -508,13 +502,17 @@ class GetOpts(vm._Builtin):
         self._silent = False
         self._opterr = 0
 
+    def _SetOptArg(self, optarg):
+        # type: (str) -> None
+        state.BuiltinSetString(self.mem, 'OPTARG', optarg)
+
     def _Fail(self, error_msg, flag_char=''):
         # type: (str, str) -> None
         """Handle user flag parsing failures."""
         if self._silent:  # leading : in SPEC enables silent mode
-            self.my_state.SetOptArg(flag_char)
+            self._SetOptArg(flag_char)
         else:
-            self.my_state.SetOptArg('')
+            self._SetOptArg('')
 
             # Print error message unless OPTERR 0
             if self._opterr == 0:
@@ -530,7 +528,7 @@ class GetOpts(vm._Builtin):
         # type: (...) -> Tuple[int, str]
         my_state = self.my_state
 
-        current = my_state.GetArg(argv)
+        current = my_state.GetCurrentArg(argv)
         #log('current %s', current)
 
         if current is None:  # out of range, etc.
@@ -542,7 +540,7 @@ class GetOpts(vm._Builtin):
             return 1, '?'
 
         if current == '--':  # special case, stop processing remaining args
-            my_state.IncIndex()
+            my_state.IncOptInd()
             return 1, '?'
 
         flag_char = current[my_state.flag_pos]
@@ -551,7 +549,7 @@ class GetOpts(vm._Builtin):
             my_state.flag_pos += 1  # don't move past this arg yet
             more_chars = True
         else:
-            my_state.IncIndex()
+            my_state.IncOptInd()
             my_state.flag_pos = 1
             more_chars = False
 
@@ -564,7 +562,7 @@ class GetOpts(vm._Builtin):
             if more_chars:
                 optarg = current[my_state.flag_pos:]
             else:
-                optarg = my_state.GetArg(argv)
+                optarg = my_state.GetCurrentArg(argv)
                 if optarg is None:
                     self._Fail('getopts: flag -%s requires an argument' %
                                flag_char,
@@ -573,10 +571,10 @@ class GetOpts(vm._Builtin):
                     if self._silent:
                         return 0, ':'
                     return 0, '?'
-            my_state.IncIndex()
-            my_state.SetOptArg(optarg)
+            my_state.IncOptInd()
+            self._SetOptArg(optarg)
         else:
-            my_state.SetOptArg('')  # no argument
+            self._SetOptArg('')  # no argument
 
         return 0, flag_char
 
