@@ -552,6 +552,19 @@ pp test_ (book)
 (Dict)   {"title":"The Histories"}
 ## END
 
+#### Dict -> clear()
+var book = {title: "The Histories", author: "Herodotus"}
+call book->clear()
+pp test_ (book)
+# confirm method is idempotent
+call book->clear()
+pp test_ (book)
+## status: 0
+## STDOUT:
+(Dict)   {}
+(Dict)   {}
+## END
+
 #### Dict -> get()
 var book = {title: "Hitchhiker's Guide", published: 1979}
 pp test_ (book => get("title", ""))
@@ -563,6 +576,61 @@ pp test_ (book => get("author", ""))
 (Int)   1979
 (Str)   ""
 ## END
+
+#### Dict -> add() with ints
+var histogram = {a: 1979}
+call histogram->add('a', 3)
+assert [{"a": 1982} === histogram]
+call histogram->add('b', 3)
+assert [{"a": 1982, "b": 3} === histogram]
+
+var d = {k: 'foo'}
+call d->add('k', 42)
+## status: 3
+
+#### Dict -> add() with floats
+var histogram = {a: 2.5}
+call histogram->add('a', 2)
+pp test_ (histogram)
+call histogram->add('a', 3.5)
+pp test_ (histogram)
+call histogram->add('b', 3.5)
+pp test_ (histogram)
+call histogram->add('b', 2)
+pp test_ (histogram)
+call histogram->add('c', 1)
+pp test_ (histogram)
+call histogram->add('c', 3.0)
+pp test_ (histogram)
+
+var d = {k: 'foo'}
+call d->add('k', 42.14)
+## status: 3
+## STDOUT:
+(Dict)   {"a":4.5}
+(Dict)   {"a":8.0}
+(Dict)   {"a":8.0,"b":3.5}
+(Dict)   {"a":8.0,"b":5.5}
+(Dict)   {"a":8.0,"b":5.5,"c":1}
+(Dict)   {"a":8.0,"b":5.5,"c":4.0}
+## END
+
+#### Dict -> append()
+var mydict = {a: [1]}
+call mydict->append('a', 2)
+assert [{"a": [1,2]} === mydict]
+call mydict->append('a', 'b')
+assert [{"a": [1,2,'b']} === mydict]
+call mydict->append('b', 1)
+assert [{"a": [1,2,'b'], "b": [1]} === mydict]
+call mydict->append('c', [1,2])
+
+# list of lists
+assert [{"a": [1,2,'b'], "b": [1], "c": [[1,2]]} === mydict]
+
+var d = {k: 'foo'}
+call d->append('k', 'bar')
+## status: 3
 
 #### Separation of -> attr and () calling
 const check = "abc" => startsWith

@@ -633,13 +633,54 @@ Ensures that the given key does not exist in the dictionary.
     = book
     # => (Dict)   {title: 'The Histories'}
 
-### accum()
+### append()
 
-TODO:
+Appends the given value to the list pointed to by the key:
 
-```raw
-call mydict->accum('key', 'string to append')
-```
+    var mydict = {a: [1]}
+    = mydict
+    # => (Dict)   {a: [1]}
+
+    call mydict->append('a', 2)
+    = mydict
+    # => (Dict)   {a: [1, 2]}
+
+    call mydict->append('a', 'b')
+    = mydict
+    # => (Dict)   {a: [1, 2, 'b']}
+
+If the key doesn't have a binding, append() creates an empty list first:
+
+    call mydict->append('b', 1)
+    = mydict
+    # => (Dict)   {a: [1, 2, 'b'], b: [1]}
+
+    call mydict->append('c', [1,2])
+    = mydict
+    # => (Dict)   {a: [1, 2, 'b'], b: [1], c: [[1,2]]}
+
+### add()
+
+Adds an increment specified to the value:
+
+    var mydict = {
+      a: 1,
+      b: 3.14,
+    }
+
+    = mydict # => (Dict)   {a: 1, b: 3.14}
+
+    call mydict->add('a', 2)
+    = mydict # => (Dict)   {a: 3, b: 3.14}
+
+    call mydict->add('b', 2.14)
+    = mydict # => (Dict)   {a: 3, b: 5.28}
+
+If there is no value in the dictionary with the provided key, its default
+value is 0 of the type of the increment (int or float):
+
+    call mydict->add('c', 2.14)
+    = mydict # => (Dict)   {a: 4, b: 6.28, c: 2.14}
 
 Similar:
 
@@ -649,13 +690,12 @@ setvar mydict['k'] += 3  # TODO: default value of 0
 
 ### Dict/clear()
 
-TODO:
-
 Remove all entries from the Dict:
 
-```raw
-call mydict->clear()
-```
+    var d = {key: 'val'}
+    = len(d)  # => 1
+    call d->clear()
+    = len(d)  # => 0
 
 ### Place
 
