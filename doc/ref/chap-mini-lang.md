@@ -149,16 +149,19 @@ Glob patterns look like:
 
 This syntax is used in:
 
-- "Array of words" contexts
+- "Array of words" contexts ([osh-glob][], [ysh-glob][])
   - [simple-command][] - like `echo *.py`
   - bash arrays `a=( *.py )`
   - YSH arrays `var a = :| *.py |`
   - for loops `for x in *.py; do ...`
 - [case][] patterns
-- [dbracket][] - `[[ x == *.py ]]`
+- [dbracket][] matching - `[[ x == *.py ]]`
 - Word operations
   - [op-strip][] - `${x#*.py}`
   - [op-patsub][] - `${x//*.py/replace}` - 
+
+[osh-glob]: chap-word-lang.html#osh-glob
+[ysh-glob]: chap-word-lang.html#ysh-glob
 
 [simple-command]: chap-cmd-lang.html#simple-command
 [case]: chap-cmd-lang.html#case

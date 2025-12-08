@@ -46,9 +46,21 @@ From bash:
 
 From Oils:
 
-    dashglob
+    no_dash_glob
 
 Some details:
+
+### dotglob
+
+Does glob expansion return files that start with a period?
+
+    # By default, we don't return say .gitignore    
+    $ echo *  # foo
+
+    $ shopt -u dotglob  # unset this option
+    $ echo *  # => .gitignore foo
+
+This option is on by default in OSH and YSH.
 
 ### nullglob
 
@@ -65,7 +77,10 @@ Without this option, the glob string itself is returned:
 
 (This option is from GNU bash.)
 
-### dashglob
+YSH doesn't use this option, but its [Simple Word
+Evaluation](../simple-word-eval.html) algorithm behaves similarly.
+
+### no_dash_glob
 
 Do globs return results that start with `-`?  It's on by default in `bin/osh`,
 but off when YSH is enabled.
@@ -78,9 +93,11 @@ called `-rf`.
     $ echo *
     -rf myfile
 
-    $ shopt -u dashglob
+    $ shopt -s no_dash_glob
     $ echo *
     myfile
+
+This option is off in OSH, and on in YSH.
 
 ## Other Option
 
