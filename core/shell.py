@@ -553,10 +553,11 @@ def Main(
     io_methods['M/evalInFrame'] = value.BuiltinFunc(
         method_io.EvalInFrame(mem, cmd_ev))
 
-    # TODO:
     io_methods['time'] = value.BuiltinFunc(method_io.Time())
     io_methods['strftime'] = value.BuiltinFunc(method_io.Strftime())
-    io_methods['glob'] = value.BuiltinFunc(method_io.Glob())
+    io_methods['glob'] = value.BuiltinFunc(
+        method_io.Glob(globber, is_method=True))
+    io_methods['libcGlob'] = value.BuiltinFunc(method_io.LibcGlob(globber))
 
     io_props = {'stdin': value.Stdin}  # type: Dict[str, value_t]
     io_obj = Obj(Obj(None, io_methods), io_props)
@@ -830,7 +831,6 @@ def Main(
         # of the string to search in - [start:end]
         'find': method_str.Find(method_str.START),
         'findLast': method_str.Find(method_str.END),
-
         'contains': method_str.Contains(),
 
         # replace substring, OR an eggex
@@ -992,7 +992,8 @@ def Main(
     # List
     _AddBuiltinFunc(mem, 'join', func_misc.Join())
     _AddBuiltinFunc(mem, 'maybe', func_misc.Maybe())
-    _AddBuiltinFunc(mem, 'glob', func_misc.Glob(globber))
+    # TODO: deprecate in favor of io.glob()
+    _AddBuiltinFunc(mem, 'glob', method_io.Glob(globber))
 
     # Serialize
     _AddBuiltinFunc(mem, 'toJson8', func_misc.ToJson8(True))

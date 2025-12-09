@@ -1164,8 +1164,36 @@ database), and then C strftime().
 
 ### glob()
 
-TODO: The free function glob() actually does I/O.  Although maybe it doesn't
-fail?
+Return a list of of files that match a glob pattern:
+
+    = io.glob('*.py')  # => (List) ['__init__.py']
+
+It respects these shell filters:
+
+- [GLOBIGNORE][]
+- [Globbing options][]
+  - `dotglob globskipdots` (from bash)
+  - `no_dash_glob` (from Oils)
+
+[GLOBIGNORE]: chap-special-var.html#GLOBIGNORE
+[Globbing options]: chap-option.html#Globbing
+
+See [glob-pat][] for the pattern syntax.
+
+[glob-pat]: chap-mini-lang.html#glob-pat
+
+
+### libcGlob()
+
+Return a list of of files that match a glob pattern.
+
+    = io.libcGlob('*.py')  # => (List) ['__init__.py']
+
+Unlike `io.glob()`, it doesn't respect shell filters.
+
+Upon error, additional info may be available in the `_error` dict.
+
+See [glob-pat][] for the pattern syntax.
 
 ### vm
 

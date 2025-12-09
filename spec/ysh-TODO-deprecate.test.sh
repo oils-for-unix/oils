@@ -1,5 +1,6 @@
-# TODO-deprecate: Code we want to get rid of!
+## oils_failures_allowed: 1
 
+# ysh-TODO-deprecate: Code we want to get rid of!
 
 #### oil:upgrade as alias for ysh:upgrade
 
@@ -163,4 +164,12 @@ pp test_ ('~' ~ / [\y7e] /)
 ## STDOUT:
 (Bool)   true
 (Bool)   true
+## END
+
+#### glob() function should be retired in favor of io.glob()
+
+touch -- foo
+pp test_ (glob('*'))
+
+## STDOUT:
 ## END

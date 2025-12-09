@@ -523,23 +523,44 @@ class Globber(object):
 
         return patterns
 
-    def DoGlob(self, arg, out):
+    def DoLibcGlob(self, arg):
+        # type: (str) -> List[str]
+        """
+        For the io.libcGlob() function
+        """
+        # TODO: signal errors better?
+        try:
+            results = libc.glob(arg, 0)
+        except RuntimeError as e:
+            # Glob errors should be rare: I/O error, out of memory, or unknown
+            # There are no syntax errors.
+
+            # note: MyPy doesn't know RuntimeError has e.message (and e.args)
+            msg = e.message  # type: str
+            print_stderr("Error expanding glob %r: %s" % (arg, msg))
+            raise
+        return results
+
+    def DoShellGlob(self, arg, out):
         # type: (str, List[str]) -> int
         """
-        Respects:
+        Respects these filters:
         - GLOBIGNORE
-        - dotglob
+        - dotglob turns into C GLOB_PERIOD
         - no_dash_glob
+        - globskipdots
 
-        But NOT
-        - noglob - done at the wordl evel
+        But NOT these; they are done at a higher level
+        - noglob 
+        - failglob
         - nullglob - ditto
 
         TODO:
         - ysh globbing should not respect globals like GLOBIGNORE?
           - only no_dash_glob by default?
-        - split into pure io.glob() and legacyGlob() function?
-          - this respects GLOBIGNORE
+        - split into two functions:
+          - compatible io.glob()
+          - controlled io.libcGlob()
         """
         globignore_patterns = self._GetGlobIgnorePatterns()
 
@@ -554,9 +575,9 @@ class Globber(object):
         try:
             results = libc.glob(arg, flags)
         except RuntimeError as e:
-            # These errors should be rare: I/O error, out of memory, or unknown
-            # There are no syntax errors.  (But see comment about globerr() in
-            # native/libc.c.)
+            # Glob errors should be rare: I/O error, out of memory, or unknown
+            # There are no syntax errors.
+
             # note: MyPy doesn't know RuntimeError has e.message (and e.args)
             msg = e.message  # type: str
             print_stderr("Error expanding glob %r: %s" % (arg, msg))
@@ -590,7 +611,7 @@ class Globber(object):
 
             # globskipdots: Remove . and .. entries returned by libc.
             if self.exec_opts.globskipdots():
-                tmp = [s for s in results if not s in ('.', '..')]
+                tmp = [s for s in results if s not in ('.', '..')]
                 results = tmp
 
         out.extend(results)
@@ -612,7 +633,7 @@ class Globber(object):
             # The caller should use the original string
             return -1
 
-        n = self.DoGlob(arg, out)
+        n = self.DoShellGlob(arg, out)
         if n:
             return n
 
@@ -640,7 +661,7 @@ class Globber(object):
             return 1
 
         tmp = []  # type: List[str]
-        self.DoGlob(glob_pat, tmp)
+        self.DoShellGlob(glob_pat, tmp)
         filtered = [s for s in tmp if libc.fnmatch(fnmatch_pat, s)]
         n = len(filtered)
 

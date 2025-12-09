@@ -21,7 +21,6 @@ from ysh import val_ops
 
 from typing import TYPE_CHECKING, Dict, List, Optional, cast
 if TYPE_CHECKING:
-    from osh import glob_
     from osh import split
 
 _ = log
@@ -538,25 +537,6 @@ class FloatsEqual(vm._Callable):
         rd.Done()
 
         return value.Bool(left == right)
-
-
-class Glob(vm._Callable):
-
-    def __init__(self, globber):
-        # type: (glob_.Globber) -> None
-        vm._Callable.__init__(self)
-        self.globber = globber
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        s = rd.PosStr()
-        rd.Done()
-
-        out = []  # type: List[str]
-        self.globber.DoGlob(s, out)
-
-        l = [value.Str(elem) for elem in out]  # type: List[value_t]
-        return value.List(l)
 
 
 # status code 4 is special, for encode/decode errors.
