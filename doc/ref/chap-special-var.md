@@ -152,6 +152,8 @@ The integer `_error.code` is always present:
     }
     echo "status is $[_error.code]"
 
+See [ysh-exit-codes][] for info on the `_error.code` field.
+
 Some errors also have a `message` field, like JSON/J8 encoding/decoding errors,
 and user errors from the [error][] builtin.
 
@@ -160,6 +162,7 @@ and user errors from the [error][] builtin.
     }
     echo "failed: $[_error.message]"  # => failed: Can't serialize ...
 
+[ysh-exit-codes]: chap-front-end.html#ysh-exit-codes
 [error]: chap-builtin-cmd.html#error
 
 

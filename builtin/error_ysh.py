@@ -178,11 +178,10 @@ class Error(vm._Builtin):
                               cmd_val.arg_locs[0])
 
         rd = typed_args.ReaderForProc(cmd_val)
-        # Status 10 is distinct from what the Oils interpreter itself uses.  We
-        # use status 3 for expressions and 4 for encode/decode, and 10 "leaves
-        # room" for others.
+        # Status 10 is distinct from what the Oils interpreter itself uses.
         # The user is of course free to choose status 1.
-        status = mops.BigTruncate(rd.NamedInt('code', 10))
+        status = mops.BigTruncate(
+            rd.NamedInt('code', error.BUILTIN_DEFAULT_STATUS))
 
         # attach rest of named args to _error Dict
         properties = rd.RestNamed()

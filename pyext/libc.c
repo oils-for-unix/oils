@@ -121,7 +121,7 @@ func_glob(PyObject *self, PyObject *args) {
   case 0:  // no error
     break;
   case GLOB_ABORTED:
-    err_str = "read error";
+    err_str = "GLOB_ABORTED";
     break;
   case GLOB_NOMATCH:
     // No error, because not matching isn't necessarily a problem.
@@ -129,10 +129,10 @@ func_glob(PyObject *self, PyObject *args) {
     //err_str = "nothing matched";
     break;
   case GLOB_NOSPACE:
-    err_str = "no dynamic memory";
+    err_str = "GLOB_NOSPACE";
     break;
   default:
-    err_str = "unknown problem";
+    err_str = "<unknown>";
     break;
   }
   if (err_str) {

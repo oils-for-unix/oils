@@ -523,12 +523,9 @@ class Globber(object):
 
         return patterns
 
-    def DoLibcGlob(self, arg):
-        # type: (str) -> List[str]
-        """
-        For the io.libcGlob() function
-        """
-        # TODO: signal errors better?
+    def DoLibcGlob(self, arg, out):
+        # type: (str, List[str]) -> None
+        """For the io.libcGlob() API"""
         try:
             results = libc.glob(arg, 0)
         except RuntimeError as e:
@@ -539,11 +536,11 @@ class Globber(object):
             msg = e.message  # type: str
             print_stderr("Error expanding glob %r: %s" % (arg, msg))
             raise
-        return results
 
     def DoShellGlob(self, arg, out):
         # type: (str, List[str]) -> int
-        """
+        """For word evaluation and the io.glob() API
+
         Respects these filters:
         - GLOBIGNORE
         - dotglob turns into C GLOB_PERIOD

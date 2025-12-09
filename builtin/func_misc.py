@@ -539,10 +539,6 @@ class FloatsEqual(vm._Callable):
         return value.Bool(left == right)
 
 
-# status code 4 is special, for encode/decode errors.
-_CODEC_STATUS = 4
-
-
 class ToJson8(vm._Callable):
 
     def __init__(self, is_j8):
@@ -570,7 +566,7 @@ class ToJson8(vm._Callable):
             else:
                 j8.PrintJsonMessage(val, buf, indent, type_errors)
         except error.Encode as e:
-            raise error.Structured(_CODEC_STATUS, e.Message(),
+            raise error.Structured(error.CODEC_STATUS, e.Message(),
                                    rd.LeftParenToken())
 
         return value.Str(buf.getvalue())
@@ -600,7 +596,7 @@ class FromJson8(vm._Callable):
                 'start_pos': num.ToBig(e.start_pos),
                 'end_pos': num.ToBig(e.end_pos),
             }  # type: Dict[str, value_t]
-            raise error.Structured(_CODEC_STATUS, e.Message(),
+            raise error.Structured(error.CODEC_STATUS, e.Message(),
                                    rd.LeftParenToken(), props)
 
         return val

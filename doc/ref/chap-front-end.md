@@ -164,7 +164,7 @@ for editing input.
 
 A useful option is `set -o vi`, which tells GNU readline to accept vi keys.
 
-<h3 id="exit-codes" class="osh-ysh-topic">exit-codes</h3>
+### exit-codes
 
 The meaning of exit codes is a convention, and generally follows one of two
 paradigms.
@@ -179,10 +179,9 @@ paradigms.
   anything, rather than doing something, then it fails.
   - Example: A language parse error, like `echo $(`.
   - Example: Builtin usage error, like `read -z`.
-- `3` for runtime **expression errors**.  The expression language is new to
-  Oils, so its errors have a new exit code.
-  - Example: divide by zero `42 / 0` 
-  - Example: index out of range `a[1000]`
+- YSH uses exit codes 3 and greater for certain failures.  See
+  [ysh-exit-codes](#ysh-exit-codes).
+
 
 POSIX exit codes:
 
@@ -213,6 +212,21 @@ Hint: The `boolstatus` builtin ensures that false and error aren't confused:
     }
 
 See [YSH Fixes Shell's Error Handling](../error-handling.html) for more detail.
+
+### ysh-exit-codes
+
+- `3` for expression errors
+  - e.g. for [List][] index out of bounds, or divide by zero
+- `4` for encoding and decoding errors
+  - e.g. used by the [json][] builtin.
+- `10` is the default error code for the [error][] builtin
+
+Related: the [`_error`][error-dict] dict.
+
+[List]: chap-type-method.html#List
+[json]: chap-builtin-cmd.html#json
+[error]: chap-builtin-cmd.html#error
+[error-dict]: chap-special-var.html#_error
 
 ## Lexing
 

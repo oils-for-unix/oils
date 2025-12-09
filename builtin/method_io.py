@@ -347,7 +347,7 @@ class LibcGlob(vm._Callable):
         rd.Done()
 
         out = []  # type: List[str]
-        out = self.globber.DoLibcGlob(s)
+        self.globber.DoLibcGlob(s, out)
 
         l = [value.Str(elem) for elem in out]  # type: List[value_t]
         return value.List(l)

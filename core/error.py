@@ -12,6 +12,13 @@ from typing import Dict, Union, NoReturn, TYPE_CHECKING
 if TYPE_CHECKING:
     IOError_OSError = Union[IOError, OSError]
 
+EXPR_STATUS = 3
+
+# status code 4 is special, for encode/decode errors.
+CODEC_STATUS = 4
+
+BUILTIN_DEFAULT_STATUS = 10  # for the error builtin
+
 
 def _ValType(val):
     # type: (value_t) -> str
@@ -192,7 +199,7 @@ class Expr(FatalRuntime):
         #
         # Caught: try sets _status register to 3
         # Uncaught: shell exits with status 3
-        FatalRuntime.__init__(self, 3, msg, location)
+        FatalRuntime.__init__(self, EXPR_STATUS, msg, location)
 
 
 class Structured(FatalRuntime):

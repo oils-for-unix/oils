@@ -69,7 +69,7 @@ List<BigStr*>* glob(BigStr* pat, int flags) {
   case 0:  // no error
     break;
   case GLOB_ABORTED:
-    err_str = "read error";
+    err_str = "GLOB_ABORTED";
     break;
   case GLOB_NOMATCH:
     // No error, because not matching isn't necessarily a problem.
@@ -77,10 +77,10 @@ List<BigStr*>* glob(BigStr* pat, int flags) {
     // err_str = "nothing matched";
     break;
   case GLOB_NOSPACE:
-    err_str = "no dynamic memory";
+    err_str = "GLOB_NOSPACE";
     break;
   default:
-    err_str = "unknown problem";
+    err_str = "<unknown>";
     break;
   }
   if (err_str) {
