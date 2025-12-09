@@ -17,6 +17,9 @@ EXPR_STATUS = 3
 # status code 4 is special, for encode/decode errors.
 CODEC_STATUS = 4
 
+# rare errors like GLOB_NOSPACE
+GLOB_STATUS = 5
+
 BUILTIN_DEFAULT_STATUS = 10  # for the error builtin
 
 

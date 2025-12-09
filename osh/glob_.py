@@ -5,12 +5,12 @@ import libc
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (CompoundWord, Token, word_part_e,
                                        glob_part, glob_part_e, glob_part_t,
-                                       loc_t)
+                                       loc, loc_t)
 from _devbuild.gen.value_asdl import value
 from core import pyos, pyutil, error
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import log, print_stderr
+from mycpp.mylib import log
 from pylib import os_path
 
 from libc import GLOB_PERIOD
@@ -523,23 +523,23 @@ class Globber(object):
 
         return patterns
 
-    def DoLibcGlob(self, arg, out):
-        # type: (str, List[str]) -> None
+    def DoLibcGlob(self, arg, out, blame_loc):
+        # type: (str, List[str], loc_t) -> None
         """For the io.libcGlob() API"""
         try:
             results = libc.glob(arg, 0)
         except RuntimeError as e:
-            # Glob errors should be rare: I/O error, out of memory, or unknown
-            # There are no syntax errors.
+            # Rare glob errors, like GLOB_NOSPACE
+            # Note: dash has a fatal sh_error() on GLOB_NOSPACE
 
             # note: MyPy doesn't know RuntimeError has e.message (and e.args)
             msg = e.message  # type: str
-            print_stderr("Error expanding glob %r: %s" % (arg, msg))
-            raise
+            raise error.Structured(error.CODEC_STATUS, msg, blame_loc)
+
         out.extend(results)
 
-    def DoShellGlob(self, arg, out):
-        # type: (str, List[str]) -> int
+    def DoShellGlob(self, arg, out, blame_loc=loc.Missing):
+        # type: (str, List[str], loc_t) -> int
         """For word evaluation and the io.glob() API
 
         Respects these filters:
@@ -573,13 +573,12 @@ class Globber(object):
         try:
             results = libc.glob(arg, flags)
         except RuntimeError as e:
-            # Glob errors should be rare: I/O error, out of memory, or unknown
-            # There are no syntax errors.
+            # Rare glob errors, like GLOB_NOSPACE
+            # Note: dash has a fatal sh_error() on GLOB_NOSPACE
 
             # note: MyPy doesn't know RuntimeError has e.message (and e.args)
             msg = e.message  # type: str
-            print_stderr("Error expanding glob %r: %s" % (arg, msg))
-            raise
+            raise error.Structured(error.CODEC_STATUS, msg, blame_loc)
         #log('glob %r -> %r', arg, g)
 
         if len(results) == 0:

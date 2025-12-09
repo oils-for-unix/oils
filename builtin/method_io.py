@@ -327,7 +327,7 @@ class Glob(vm._Callable):
         rd.Done()
 
         out = []  # type: List[str]
-        self.globber.DoShellGlob(s, out)
+        self.globber.DoShellGlob(s, out, blame_loc=rd.LeftParenToken())
 
         l = [value.Str(elem) for elem in out]  # type: List[value_t]
         return value.List(l)
@@ -347,7 +347,7 @@ class LibcGlob(vm._Callable):
         rd.Done()
 
         out = []  # type: List[str]
-        self.globber.DoLibcGlob(s, out)
+        self.globber.DoLibcGlob(s, out, rd.LeftParenToken())
 
         l = [value.Str(elem) for elem in out]  # type: List[value_t]
         return value.List(l)

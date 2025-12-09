@@ -1174,14 +1174,17 @@ It respects these shell filters:
 - [Globbing options][]
   - `dotglob globskipdots` (from bash)
   - `no_dash_glob` (from Oils)
+  - (It doesn't respect options like `noglob` or `failglob`)
 
 [GLOBIGNORE]: chap-special-var.html#GLOBIGNORE
 [Globbing options]: chap-option.html#Globbing
 
+If the underlying libc `glob()` function returns an error, this function will
+raise an error.
+
 See [glob-pat][] for the pattern syntax.
 
 [glob-pat]: chap-mini-lang.html#glob-pat
-
 
 ### libcGlob()
 
@@ -1189,9 +1192,10 @@ Return a list of of files that match a glob pattern.
 
     = io.libcGlob('*.py')  # => (List) ['__init__.py']
 
-Unlike `io.glob()`, it doesn't respect shell filters.
+Unlike `io.glob()`, it does **not** respect shell filters.
 
-Upon error, additional info may be available in the `_error` dict.
+If the underlying libc `glob()` function returns an error, this function will
+raise an error.
 
 See [glob-pat][] for the pattern syntax.
 
