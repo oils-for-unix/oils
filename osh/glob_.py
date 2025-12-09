@@ -536,6 +536,7 @@ class Globber(object):
             msg = e.message  # type: str
             print_stderr("Error expanding glob %r: %s" % (arg, msg))
             raise
+        out.extend(results)
 
     def DoShellGlob(self, arg, out):
         # type: (str, List[str]) -> int
