@@ -15,7 +15,9 @@ source build/dev-shell.sh  # PYTHONPATH
 source devtools/release-version.sh  # for escape-segments
 
 readonly OILS_VERSION=$(head -n 1 oils-version.txt)
-readonly PREV_VERSION='0.34.0'
+readonly PREV_VERSION='0.36.0'
+
+if false; then  # replaced
 
 # adapted from release-version.sh
 _git-changelog-body() {
@@ -55,12 +57,10 @@ contrib-commit-table() {
 
     #xargs -n 1 -- git log -n 1
 }
+fi
 
 fetch-issues() {
-  # Oils 0.24.0 - pending-release-2
-  # Oils 0.29.0 - pending-release-3
-
-  local label=${1:-pending-release-3}
+  local label=${1:-pending-release}
   local url="https://api.github.com/repos/oils-for-unix/oils/issues?labels=$label"
   curl "$url" > _tmp/issues.json
 }
@@ -112,12 +112,32 @@ print-template() {
 title: Oils $OILS_VERSION - Foo Foo
 date: $(date +%Y/%m/%d)
 css_file: blog-bundle-v7.css
-body_css_class: width35
+body_css_class: width40
 default_highlighter: oils-sh
 tags: oils-release
 comments_url: TODO
 published: no
 ---
+
+<style>
+  /* shortlog style adapted from devtools/release-version.sh */
+  .checksum {
+    font-family: monospace;
+    /* margin-left: 2em;  /* indent */
+  }
+  .shortlog {
+    font-size: large;
+  }
+  .shortlog td {
+    vertical-align: top;
+  }
+  .author-cell {
+    padding-top: 1em;
+    padding-bottom: 1em;
+    font-weight: bold;
+    color: darkgreen;
+  }
+</style>
 
 This is the latest version of Oils, a Unix shell that's our upgrade path from
 [bash][]:
@@ -133,14 +153,16 @@ This is the latest version of Oils, a Unix shell that's our upgrade path from
 To build and run it, follow the instructions in [INSTALL.txt][].  The wiki has
 tips on [How To Test OSH](\$wiki).
 
-If you're new to the project, see [Why Create a New Shell?][why-oil] and posts
-tagged #[FAQ](\$blog-tag).
+If you're new to the project, see [Why Create a New Shell?][why-create] and posts
+tagged #[FAQ][tagged-faq].
 
 [INSTALL.txt]: /release/$OILS_VERSION/doc/INSTALL.html
-[github-bugs]: https://github.com/oils-for-unix/oils/issues
-[why-oil]: ../../2021/01/why-a-new-shell.html
-[release-index]: /release/$OILS_VERSION/
 
+[why-create]: https://www.oilshell.org/blog/2021/01/why-a-new-shell.html
+[tagged-faq]: https://www.oilshell.org/blog/tags.html?tag=FAQ#FAQ
+
+[github-bugs]: https://github.com/oils-for-unix/oils/issues
+[release-index]: /release/$OILS_VERSION/
 [oilshell.zulipchat.com]: http://oilshell.zulipchat.com/
 
 <div id="toc">
@@ -167,10 +189,11 @@ changelog][changelog].
 
 [changelog]: /release/$OILS_VERSION/changelog.html
 
-<table>
+<table class="shortlog">
 EOF
 
-  contrib-commit-table
+  #contrib-commit-table
+  devtools/release-version.sh git-shortlog-html release/$PREV_VERSION release/$OILS_VERSION
 
   cat <<EOF
 </table>
@@ -195,87 +218,102 @@ interface](\$issue:663)
 
 ## Appendix: Metrics for the $OILS_VERSION Release
 
-These metrics help me keep track of the project.  Let's compare this release
-with the previous one, version [$metric_prev](/release/$metric_prev).
+Let's review release metrics, which help me keep track of the project.  The last review was in May, in [Metrics for the 0.29.0 Release](../05/metrics.html).
 
-[spec-test]: \$xref:spec-test
+### Docs
+
+We continue to improve the [Oils Reference](/release/0.35.0/doc/ref/).  In addition to adding new topics, I polished existing topics.
+
+- [Doc Metrics for 0.29.0](//oils.pub/release/0.29.0/doc/metrics.txt) - **428** topics with first pass, **455** marked implemented, **496** unique
+- [Doc Metrics for 0.35.0](//oils.pub/release/0.35.0/doc/metrics.txt) - **442** topics with first pass, **466** marked implemented, **510** unique
+
+[NLnet]: https://nlnet.nl
 
 ### Spec Tests
 
-The Python reference implementation foo foo
+[OSH][] made good progress, with **91** new passing spec tests.
 
-- [OSH spec tests for $metric_prev](https://oils.pub/release/$metric_prev/test/spec.wwz/osh-py/index.html): **2023** tests, 
-**1789** passing, **91** failing
-- [OSH spec tests for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/test/spec.wwz/osh-py/index.html): **2042** tests, **1814** passing, **89** failing
 
-And the C++ translation foo foo
 
-- [C++ spec tests for $metric_prev](https://oils.pub/release/$metric_prev/test/spec.wwz/osh-cpp/compare.html) - **1684** of **1792** passing
-- [C++ spec tests for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/test/spec.wwz/osh-cpp/compare.html) - **1801** of **1817** passing
+- [OSH spec tests for 0.29.0](//oils.pub/release/0.29.0/test/spec.wwz/osh-py/index.html): **2517** tests, **2248** passing, **134** failing
+- [OSH spec tests for 0.35.0](//oils.pub/release/0.35.0/test/spec.wwz/osh-py/index.html): **2608** tests, **2328** passing, **156** failing
 
-YSH got a lot of new behavior:
+But it also feels like there are too many failing tests.  
 
-- [YSH spec tests for $metric_prev](https://oils.pub/release/$metric_prev/test/spec.wwz/ysh-py/index.html): **561** tests, **514** passing, **47** failing
-- [YSH spec tests for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/test/spec.wwz/ysh-py/index.html): **630** tests, **571** passing, **59** failing
+Let's look at the C++ translation:
 
-And the C++ tarball is catching up rapidly:
+[CPython]: \$xref:cpython
 
-- [YSH C++ spec tests for $metric_prev](https://oils.pub/release/$metric_prev/test/spec.wwz/ysh-cpp/compare.html): **357** of **514** passing, delta **157**
-- [YSH C++ spec tests for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/test/spec.wwz/ysh-cpp/compare.html): **492** of **569** passing, delta **77**
+- [C++ spec tests for 0.29.0](//oils.pub/release/0.29.0/test/spec.wwz/osh-cpp/compare.html) - **2240** of **2248** passing - delta **8**
+- [C++ spec tests for 0.35.0](//oils.pub/release/0.35.0/test/spec.wwz/osh-cpp/compare.html) - **2322** of **2328** passing - delta **6**
 
+---
+
+[YSH][] has **40** more tests passing:
+
+- [YSH spec tests for 0.29.0](//oils.pub/release/0.29.0/test/spec.wwz/ysh-py/index.html): **1090** tests, **1022** passing, **68** failing
+- [YSH spec tests for 0.35.0](//oils.pub/release/0.35.0/test/spec.wwz/ysh-py/index.html): **1133** tests, **1062** passing, **71** failing
+
+They all pass in the C++ translation:
+
+- [YSH C++ spec tests for 0.29.0](//oils.pub/release/0.29.0/test/spec.wwz/ysh-cpp/compare.html): **1020** of **1022** passing, delta **2**
+- [YSH C++ spec tests for 0.35.0](//oils.pub/release/0.35.0/test/spec.wwz/ysh-cpp/compare.html): **1060** of **1062** passing, delta **2**
+
+(The delta is again due to a \`Dict\` ordering issue in [Hay](\$xref:hay), which is harmless right now)
+
+[YSH]: \$xref
 
 ### Benchmarks
 
-Bar Bar
+No significant changes in parser speed:
 
-- [Parser Performance for $metric_prev](https://oils.pub/release/$metric_prev/benchmarks.wwz/osh-parser/): **21.8**
+- [Parser Performance for 0.29.0](//oils.pub/release/0.29.0/benchmarks.wwz/osh-parser/): **12.9** thousand irefs per line
+- [Parser Performance for 0.35.0](//oils.pub/release/0.35.0/benchmarks.wwz/osh-parser/): **12.3**
   thousand irefs per line
-- [Parser Performance for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/benchmarks.wwz/osh-parser/): **26.0**
-  thousand irefs per line
 
-G G
+Or memory usage:
 
-- [benchmarks/gc for $metric_prev](https://oils.pub/release/$metric_prev/benchmarks.wwz/gc/): \`parse.configure-coreutils\`
-  **1.83 M** objects comprising **62.1 MB**, max RSS **68.9 MB**
-- [benchmarks/gc for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/benchmarks.wwz/gc/): \`parse.configure-coreutils\` **1.83 M** objects comprising **65.0 MB**, max RSS **69.3 MB**
+- [benchmarks/gc for 0.29.0](//oils.pub/release/0.29.0/benchmarks.wwz/gc/): \`parse.configure-coreutils\` **1.65 M** objects comprising **41.0 MB**, max RSS **46.6 MB**
+- [benchmarks/gc for 0.35.0](//oils.pub/release/0.35.0/benchmarks.wwz/gc/): \`parse.configure-coreutils\` **1.65 M** objects comprising **44.6 MB**, max RSS **50.8 MB**
 
-G G
+#### Runtime
 
-- [benchmarks/gc-cachegrind for $metric_prev](https://oils.pub/release/$metric_prev/benchmarks.wwz/gc-cachegrind/) - \`fib\` takes **61.6** million irefs, mut+alloc+free+gc
-- [benchmarks/gc-cachegrind for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/benchmarks.wwz/gc-cachegrind/) - \`fib\` takes **65.4** million irefs, mut+alloc+free+gc
+A compute-bound workload is the same speed:
 
+- [benchmarks/gc-cachegrind for 0.29.0](//oils.pub/release/0.29.0/benchmarks.wwz/gc-cachegrind/) - \`fib\` takes **25.4** million irefs, mut+alloc+free+gc
+- [benchmarks/gc-cachegrind for 0.35.0](//oils.pub/release/0.35.0/benchmarks.wwz/gc-cachegrind/) - \`fib\` takes **25.4** million irefs, mut+alloc+free+gc
 
+This is the **infamous** autotools \`configure\` workload, which unfortunately has **noisy** measurements:
 
-Foo Foo
+- [Runtime Performance for 0.29.0](//oils.pub/release/0.29.0/benchmarks.wwz/osh-runtime/) on 2 machines
+  - **0.96x** and **1.05x** the speed of bash on \`configure.cpython\`
+  - **1.04x** and **1.10x** the speed of bash on \`configure.util-linux\`
+- [Runtime Performance for 0.35.0](//oils.pub/release/0.35.0/benchmarks.wwz/osh-runtime/) on 2 machines
+  - **0.95x** and **0.87x** the speed of bash on \`configure.cpython\`
+  - **1.04x** and **1.00x** the speed of bash on \`configure.util-linux\`
 
-- [Runtime Performance for $metric_prev](https://oils.pub/release/$metric_prev/benchmarks.wwz/osh-runtime/): **68.7** and **56.9** seconds running CPython's \`configure\`
-- [Runtime Performance for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/benchmarks.wwz/osh-runtime/):
-  **35.2** and **22.5** seconds running CPython's \`configure\`
-- [bash](\$xref): **26.8** and **16.2** seconds running CPython's \`configure\`
+#### Code Size
 
+Even though many new tests pass, our code is still short:
 
-### Code Size
+- [cloc for 0.29.0](//oils.pub/release/0.29.0/pub/metrics.wwz/line-counts/cloc-report.txt)
+  - **25,185** significant lines in [OSH][], **6,380** in [YSH](\$xref), **1,691** in data languages
+  - **6,112** lines of hand-written C++
+- [cloc for 0.35.0](//oils.pub/release/0.35.0/pub/metrics.wwz/line-counts/cloc-report.txt)
+  - **25,594** significant lines in [OSH][], **6,617** in [YSH](\$xref), **1,690** in data languages
+  - **6,401** lines of hand-written C++
 
-The executable spec foo foo 
+The generated C++ is proportional:
 
-Significant lines:
+- [oils-cpp for 0.29.0](//oils.pub/release/0.29.0/pub/metrics.wwz/line-counts/oils-cpp.txt) - **128,449** physical lines
+- [oils-cpp for 0.35.0](//oils.pub/release/0.35.0/pub/metrics.wwz/line-counts/oils-cpp.txt) - 193,303 - 62,484 = **130,819** physical lines (accounting another source file)
 
-- [cloc for $metric_prev](https://oils.pub/release/$metric_prev/pub/metrics.wwz/line-counts/cloc-report.txt):
-  **19,581** lines of Python and C, **355** lines of ASDL
-- [cloc for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/pub/metrics.wwz/line-counts/cloc-report.txt):
-  **19,491** lines of Python and C, **363** lines of ASDL
-  
-Code in the \`oils-for-unix\` C++ tarball, much of which is generated:
+And compiled binary size is proportional:
 
-- [oil-cpp for $metric_prev](https://oils.pub/release/$metric_prev/pub/metrics.wwz/line-counts/oil-cpp.txt) - **86,985** lines
-- [oil-cpp for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/pub/metrics.wwz/line-counts/oil-cpp.txt) - **90,682** lines
-
-Compiled binary size:
-
-- [ovm-build for $metric_prev](https://oils.pub/release/$metric_prev/benchmarks.wwz/ovm-build/):
-  **1.18 MB** of native code (under GCC)
-- [ovm-build for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/benchmarks.wwz/ovm-build/):
-  **1.23 MB** of native code (under GCC)
+- [ovm-build for 0.29.0](//oils.pub/release/0.29.0/benchmarks.wwz/ovm-build/):
+  **2.40 MB** of native code (hoover, under GCC, on Debian 12)
+- [ovm-build for 0.35.0](//oils.pub/release/0.35.0/benchmarks.wwz/ovm-build/):
+  **2.42 MB** of native code (hoover, under GCC, on Debian 12)
 
 &nbsp;
 

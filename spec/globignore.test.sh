@@ -1,10 +1,8 @@
-## oils_failures_allowed: 14
+## oils_failures_allowed: 0
 ## compare_shells: bash
 ## legacy_tmp_dir: true
 
 #### Don't glob flags on file system with GLOBIGNORE
-# This is a bash-specific extension.
-expr $0 : '.*/osh$' >/dev/null && exit 99  # disabled until cd implemented
 touch _tmp/-n _tmp/zzzzz
 cd _tmp  # this fail in osh
 GLOBIGNORE=-*:zzzzz  # colon-separated pattern list
@@ -161,4 +159,67 @@ echo *
 *
 *
 *
+## END
+
+#### . and .. always filtered when GLOBIGNORE is set
+# When GLOBIGNORE is set to any non-null value, . and .. are always filtered
+touch .hidden
+GLOBIGNORE=*.txt
+
+echo .*
+shopt -u globskipdots
+echo .*
+
+## STDOUT:
+.hidden
+.hidden
+## END
+
+#### When GLOBIGNORE is set, glob may become empty (nullglob too)
+touch -- foo.txt -foo.txt
+
+echo *t
+
+GLOBIGNORE=*.txt
+echo *t
+
+shopt -s nullglob
+echo nullglob *t
+
+## STDOUT:
+-foo.txt foo.txt
+*t
+nullglob
+## END
+
+#### When GLOBIGNORE is set, no_dash_glob isn't respected
+case $SH in bash) exit ;; esac
+
+touch -- foo.txt -foo.txt
+
+shopt -s no_dash_glob  # YSH option
+
+echo *  # expansion does NOT include -foo.txt
+
+GLOBIGNORE=f*.txt
+echo *  # expansion includes -foo.txt, because it doesn't match GLOBIGNORE
+
+## STDOUT:
+_tmp foo.txt
+-foo.txt _tmp
+## END
+## N-I bash STDOUT:
+## END
+
+#### Extended glob expansion combined with GLOBIGNORE
+shopt -s extglob
+
+touch foo.cc foo.h bar.cc bar.h 
+echo @(*.cc|*.h)
+GLOBIGNORE=foo.*
+echo @(*.cc|*.h)
+
+## STDOUT:
+bar.cc bar.h foo.cc foo.h
+bar.cc bar.h
 ## END

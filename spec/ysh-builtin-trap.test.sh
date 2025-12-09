@@ -44,3 +44,32 @@ register
 ## STDOUT:
 x = global
 ## END
+
+#### trap --ignore INT USR1
+
+trap --ignore INT USR1
+trap -p
+
+## STDOUT:
+trap -- '' SIGINT
+trap -- '' SIGUSR1
+## END
+
+#### trap --ignore removes hooks (like trap -)
+
+trap --ignore EXIT
+echo done
+
+## STDOUT:
+done
+## END
+
+#### trap --ignore with uncatchable STOP signal
+
+# YSH is stricter and returns an error, which triggers errexit
+trap --ignore STOP
+echo done
+
+## status: 2
+## STDOUT:
+## END

@@ -229,7 +229,7 @@ class _Executor(object):
             if self.exec_opts.strict_argv():
                 e_die("Command evaluated to an empty argv array", arg0_loc)
             else:
-                return 0  # do nothing
+                return self.mem.LastStatus()  # keep the previous status code
 
         return self._RunSimpleCommand(argv[0], arg0_loc, cmd_val, cmd_st,
                                       run_flags)
@@ -361,11 +361,11 @@ class _Executor(object):
         return ''
 
     def PushRedirects(self, redirects, err_out):
-        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        # type: (List[RedirValue], List[int]) -> None
         pass
 
     def PopRedirects(self, num_redirects, err_out):
-        # type: (int, List[error.IOError_OSError]) -> None
+        # type: (int, List[int]) -> None
         pass
 
     def PushProcessSub(self):
@@ -485,7 +485,7 @@ class ctx_Redirect(object):
     """
 
     def __init__(self, shell_ex, num_redirects, err_out):
-        # type: (_Executor, int, List[error.IOError_OSError]) -> None
+        # type: (_Executor, int, List[int]) -> None
         self.shell_ex = shell_ex
         self.num_redirects = num_redirects
         self.err_out = err_out

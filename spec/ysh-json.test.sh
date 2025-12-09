@@ -639,6 +639,7 @@ json8 b'\yed\yb4\ya6'
 ## END
 
 #### toJson() toJson8()
+shopt --set parse_ysh_expr_sub
 
 var obj = [42, 1.5, null, true, "hi", b'\yf0']
 
@@ -702,13 +703,13 @@ call obj->append(obj)
 try {
   echo $[toJson(obj)]
 }
-echo status=$_status
+echo status=$[_error.code]
 echo "encode error $[_error.message]" | sed 's/0x[a-f0-9]\+/(object id)/'
 
 try {  # use different style
   echo $[toJson8( /d+/ )]
 }
-echo status=$_status
+echo status=$[_error.code]
 echo "encode error $[_error.message]"
 
 # This makes the interpreter fail with a message
@@ -730,13 +731,13 @@ var message ='[42,1.5,null,true,"hi"'
 try {
   var obj = fromJson(message)
 }
-echo status=$_status
+echo status=$[_error.code]
 echo "decode error $[_error.message]" | egrep -o '.*Expected.*RBracket'
 
 try {
   var obj = fromJson8(message)
 }
-echo status=$_status
+echo status=$[_error.code]
 echo "decode error $[_error.message]" | egrep -o '.*Expected.*RBracket'
 
 try {
@@ -766,7 +767,7 @@ var message=$'"\x01"'
 try {
   var obj = fromJson(message)
 }
-echo status=$_status
+echo status=$[_error.code]
 echo "$[_error.message]" | egrep -o 'ASCII control chars'
 
 ## STDOUT:
@@ -932,6 +933,7 @@ null
 ## END
 
 #### NaN is encoded as null, like JavaScript
+shopt --set parse_ysh_expr_sub
 
 pp test_ (NAN)
 
@@ -1251,6 +1253,7 @@ json write (assoc)
 ## END
 
 #### type_errors=false
+shopt --set parse_ysh_expr_sub
 
 var o = Obj.new({}, null)
 

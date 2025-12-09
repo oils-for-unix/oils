@@ -409,3 +409,21 @@ echo ok
 ok
 ## END
 
+#### Here doc and backslash double quote
+cat <<EOF
+a \"quote\"
+EOF
+
+## STDOUT:
+a \"quote\"
+## END
+
+#### Here doc escapes
+# these are the chars from _DQ_ESCAPED_CHAR
+cat <<EOF
+\\ \" \$ \`
+EOF
+
+## STDOUT:
+\ \" $ `
+## END

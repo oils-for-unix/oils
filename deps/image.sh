@@ -3,7 +3,7 @@
 # Manage container images for Soil
 #
 # Usage:
-#   deps/images.sh <function name>
+#   deps/image.sh <function name>
 #
 # Dirs maybe to clear:
 #
@@ -20,8 +20,7 @@
 # (3) Build wedges
 #
 #     build/deps.sh fetch
-#     build/deps.sh boxed-wedges
-#     build/deps.sh boxed-spec-bin
+#     build/deps.sh boxed-wedges-2025
 #
 # (4) Rebuild an image
 #
@@ -33,9 +32,8 @@
 #
 # (6) Push Everything you Built
 #
-#     $0 push wedge-bootstrap-debian-12  # pushes both $LATEST_TAG and latest
-#     $0 push soil-debian-12             # ditto
-#     $0 push soil-test-image            # ditto
+#     # pushes both $LATEST_TAG and latest
+#     $0 push-many wedge-bootstrap-debian-12 soil-debian-12 soil-test-image
 #
 # More
 # ----
@@ -52,11 +50,26 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source deps/podman.sh
+source deps/podman.sh  # do we need this?
 
-DOCKER=${DOCKER:-docker}
+DOCKER=${DOCKER:-podman}
 
-readonly LATEST_TAG='v-2025-09-23'  # add libreadline-dev to wedge-bootstrap-debian-12
+declare -a docker_prefix
+case $DOCKER in 
+  docker)
+    # Do we still need -E to preserve CONTAINERS_REGISTRIES_CONF?
+    docker_prefix=( sudo -E DOCKER_BUILDKIT=1 $DOCKER )
+    ;;
+  podman)
+    # this can be rootless!  Unlike deps/wedge.sh
+    docker_prefix=( podman )
+    ;;
+  *)
+    die "Invalid docker $DOCKER"
+    ;;
+esac
+
+readonly LATEST_TAG='v-2025-11-02'  # podman
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'
@@ -64,23 +77,54 @@ clean-all() {
   sudo rm -r -f $dirs
 }
 
-list-images() {
-  for name in deps/Dockerfile.*; do
-    local image_id=${name//'deps/Dockerfile.'/}
-    if test "$image_id" = 'test-image'; then
-      continue
-    fi
-    echo $image_id
-  done
+list() {
+  local which=${1:-all}  # all | soil | prep
+
+  local accept=''
+  local reject=''
+  case $which in
+    all)
+      reject='^$'
+      ;;
+    soil)  # 13 soil images
+      reject='^(wedge-bootstrap-.*|soil-debian-.*)'
+      ;;
+    prep)
+      # images to prepare
+      # 2025-10: *-debian-10 is Debian Buster from 2019, which was retired in
+      # 2024.  You can't do sudo apt-get update
+      # https://wiki.debian.org/DebianReleases
+      accept='^(wedge-bootstrap-debian-12|soil-debian-12)'
+      ;;
+  esac
+
+  if test -n "$accept"; then
+    for name in deps/Dockerfile.*; do
+      local image_id=${name//'deps/Dockerfile.'/}
+      if [[ "$image_id" =~ $accept ]]; then
+        echo $image_id
+      fi
+    done
+  else
+    for name in deps/Dockerfile.*; do
+      local image_id=${name//'deps/Dockerfile.'/}
+      if [[ "$image_id" =~ $reject ]]; then
+        continue
+      fi
+      echo $image_id
+    done
+  fi
 }
 
 list-tagged() {
-  sudo $DOCKER images 'oilshell/*' #:v-*'
+  "${docker_prefix[@]}" \
+    images 'oilshell/*' #:v-*'
 }
 
 _latest-one() {
   local name=$1
-  $DOCKER images "oilshell/$name" | head -n 3
+  "${docker_prefix[@]}" \
+    images "oilshell/$name" | head -n 3
 }
 
 _list-latest() {
@@ -122,7 +166,8 @@ tag-latest() {
   local tag_built_with=${2:-$LATEST_TAG}
 
   set -x  # 'docker tag' is annoyingly silent
-  sudo $DOCKER tag oilshell/$name:{$tag_built_with,latest}
+  "${docker_prefix[@]}" \
+    tag oilshell/$name:{$tag_built_with,latest}
 }
 
 build() {
@@ -150,23 +195,13 @@ build() {
 
   # can't preserve the entire env: https://github.com/containers/buildah/issues/3887
   #sudo --preserve-env=CONTAINERS_REGISTRIES_CONF --preserve-env=REGISTRY_AUTH_FILE \
-  sudo -E DOCKER_BUILDKIT=1 \
-    $DOCKER build "${flags[@]}" \
+  "${docker_prefix[@]}" \
+    build "${flags[@]}" \
     --tag "oilshell/$name:$LATEST_TAG" \
     --file deps/Dockerfile.$name .
 
   # Avoid hassle by also tagging it
   tag-latest $name
-}
-
-build-many() {
-  echo 'TODO: use_cache should be automatic - all but 2 images use it'
-}
-
-build-all() {
-  # Should rebuild all these
-  # Except I also want to change the Dockerfile to use Debian 12
-  list-images | egrep -v 'test-image|ovm-tarball|benchmarks|wedge-bootstrap|debian-12'
 }
 
 push() {
@@ -181,11 +216,13 @@ push() {
   set -x
 
   # -E for export-podman vars
-  sudo -E $DOCKER push $image
+  "${docker_prefix[@]}" \
+    push $image
   #sudo -E $DOCKER --log-level=debug push $image
 
   # Also push the 'latest' tag, to avoid getting out of sync
-  sudo -E $DOCKER push oilshell/$name:latest
+  "${docker_prefix[@]}" \
+    push oilshell/$name:latest
 }
 
 push-many() {
@@ -194,7 +231,7 @@ push-many() {
   done
 }
 
-smoke-test-script() {
+smoke-script-1() {
   echo '
 for file in /etc/debian_version /etc/lsb-release; do
   if test -f $file; then
@@ -266,8 +303,122 @@ fi
 '
 }
 
-smoke() {
-  sudo $0 _smoke "$@"
+smoke-script-2() {
+  echo '
+  cd ~/oil
+  . build/dev-shell.sh
+
+  test/ltrace.sh soil-run
+  exit
+
+  # Bug with python2
+  #devtools/types.sh soil-run
+  #test/lossless.sh soil-run
+  #exit
+
+  #test/spec-version.sh osh-version-text
+
+  echo PATH=$PATH
+
+  #which mksh
+  #mksh -c "echo hi from mksh"
+
+  #test/spec.sh smoke
+  test/spec.sh zsh-assoc
+
+  which python2
+  python2 -V
+  echo
+
+  which python3
+  python3 -V
+  echo
+
+  exit
+
+  # Bug with python2
+  test/lossless.sh soil-run
+
+  python3 -m mypy core/util.py
+  echo
+
+  # test pyflakes
+  test/lint.sh py2-lint core/util.py
+  echo
+
+  #pea/TEST.sh parse-all
+  #pea/TEST.sh run-tests
+
+  re2c --version
+  echo
+
+  # cmark.py
+  doctools/cmark.sh demo-ours
+
+  bloaty --help
+  echo
+
+  exit
+
+  # hm this shows Python
+  uftrace --version
+
+  which uftrace
+  uftrace=$(which uftrace)
+
+  ls -l ~/oils.DEPS/wedge/uftrace/0.13/bin/uftrace
+  uftrace=~/oils.DEPS/wedge/uftrace/0.13/bin/uftrace
+
+  devtools/R-test.sh soil-run
+
+  exit
+
+  cc -pg -o hello deps/source.medo/uftrace/hello.c
+
+  # libmcount-fast is in the uftrace lib/ dir
+  ldd $(which uftrace)
+  echo
+
+  set -x
+  #head /tmp/cache-bust.txt
+
+  $uftrace record hello
+  #uftrace replay hello
+  echo
+
+  #find /usr -name "libm*.so"
+  '
+}
+
+asan-smoke-script() {
+  echo '
+  cd ~/oil
+  pwd
+  whoami 
+
+  # this failed with ASAN
+  yaks/TEST.sh soil-run
+  exit
+
+  build/py.sh all
+  ./NINJA-config.sh
+  bin=_bin/cxx-asan/mycpp/examples/varargs.mycpp
+  ninja $bin
+  $bin
+
+  exit
+
+  # ls -l
+  #mkdir -p _devbuild/bin
+  out=_devbuild/bin/th.asan 
+
+  build/py.sh time-helper $out -fsanitize=address
+  export ASAN_OPTIONS=detect_leaks=1
+  ldd $out
+  ls -l $out
+  $out 
+  exit
+  '
 }
 
 _smoke() {
@@ -275,20 +426,39 @@ _smoke() {
   local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
   local docker=${3:-$DOCKER}
-  local prefix=${4:-}
+  local script_func=${4:-}  # if empty, then start a debug shell
 
-  #sudo docker run oilshell/$name
-  #sudo docker run oilshell/$name python2 -c 'print("python2")'
+  local repo_root=$PWD
 
-  # Need to point at registries.conf ?
-  #export-podman
+  local -a flags argv
+  if test -n "$script_func"; then
+    flags=()
+    argv=( bash -c "$("$script_func")" )
+  else
+    flags=( -i -t )
+    argv=( bash )
+  fi
 
-  $docker run ${prefix}oilshell/$name:$tag bash -c "$(smoke-test-script)"
+  # Stupid podman!
+  case $docker in
+    podman)
+      export-podman
+      # this fixes mount permissions!
+      flags+=( --userns=keep-id )
+      ;;
+  esac
 
-  # Python 2.7 build/prepare.sh requires this
-  #sudo docker run oilshell/$name python -V
+  $docker run "${flags[@]}" \
+    --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
+    oilshell/$name:$tag "${argv[@]}"
+}
 
-  #sudo docker run oilshell/$name python3 -c 'import pexpect; print(pexpect)'
+smoke() {
+  sudo $0 _smoke "$@"
+}
+
+smoke-podman-asan() {
+  _smoke soil-cpp-small latest podman asan-smoke-script
 }
 
 smoke-podman() {
@@ -331,7 +501,7 @@ mount-test() {
     argv=( "${@:2}" )  # index 2 not 1, weird shell behavior
   fi
 
-  # mount Oil directory as /app
+  # mount 'oil' directory as /app.  TODO: Oils
   sudo $DOCKER run \
     --mount "type=bind,source=$PWD,target=/home/uke/oil" \
     oilshell/$name "${argv[@]}"

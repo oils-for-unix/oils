@@ -12,7 +12,7 @@
 # - _chroot/alpine-oils-spec
 #   Test how the spec tests run (gawk and zip deps)
 # - _chroot/alpine-distro-build
-#   Test if Oil can run Alpine's own package manager and scripts (not done yet)
+#   Test if OSH can run Alpine's own package manager and scripts (not done yet)
 #
 # Examples:
 #
@@ -78,7 +78,7 @@ readonly CHROOT_OILS_SPEC=_chroot/alpine-oils-spec
 readonly CHROOT_DISTRO_BUILD=_chroot/alpine-distro-build
 
 download() {
-  wget --no-clobber --directory _tmp $ROOTFS_URL
+  wget --no-clobber --directory-prefix _tmp $ROOTFS_URL
 }
 
 _extract() {

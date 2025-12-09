@@ -19,7 +19,6 @@ source test/tsv-lib.sh  # tsv-row
 
 readonly BASE_DIR=_tmp/osh-runtime
 
-# TODO: Move to ../oil_DEPS
 readonly TAR_DIR=$PWD/_deps/osh-runtime  # Make it absolute
 
 #
@@ -41,7 +40,7 @@ EOF
 download() {
   mkdir -p $TAR_DIR
   tarballs | xargs -n 1 -I {} --verbose -- \
-    wget --no-clobber --directory $TAR_DIR 'https://www.oilshell.org/blob/testdata/{}'
+    wget --no-clobber --directory-prefix $TAR_DIR 'https://www.oilshell.org/blob/testdata/{}'
 }
 
 extract() {

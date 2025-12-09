@@ -99,8 +99,7 @@ debug-symbols() {
   #libpython2.7-dbg 
 }
 
-# TODO: Link these two tools in ../oil_DEPS/bin or something
-# Make them work on CI
+# TODO: Make these tools work in CI, by turning them into wedges?
 
 # NOTE: I used this before with python-flamegraph too.
 flamegraph() {
@@ -296,7 +295,7 @@ stat-osh-parse() {
 # 5%   PyObject_Malloc.
 
 # More benchmarks:
-# OPy running under OVM, compiling itself, compiling Oil, compiling OPy ports,
+# OPy running under OVM, compiling itself, compiling Oils, compiling OPy ports,
 # etc.
 
 # Parsing abuild, the optimized version.

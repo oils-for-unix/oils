@@ -93,7 +93,7 @@ jobs:
 
       - name: dev-minimal
         run: |
-          soil/github-actions.sh run-job dev-minimal
+          soil/github-actions.sh run-job dev-minimal podman
 
       - name: publish-html
         run: |
@@ -115,7 +115,7 @@ jobs:
 
       - name: interactive
         run: |
-          soil/github-actions.sh run-job interactive
+          soil/github-actions.sh run-job interactive podman
 
       - name: publish-html
         run: |
@@ -148,7 +148,7 @@ jobs:
 
       - name: other-tests
         run: |
-          soil/github-actions.sh run-job other-tests
+          soil/github-actions.sh run-job other-tests podman
 
       - name: publish-html
         run: |
@@ -164,7 +164,7 @@ jobs:
 
       - name: ovm-tarball
         run: |
-          soil/github-actions.sh run-job ovm-tarball
+          soil/github-actions.sh run-job ovm-tarball podman
 
       - name: publish-html
         run: |
@@ -181,7 +181,7 @@ jobs:
 
       - name: app-tests
         run: |
-          soil/github-actions.sh run-job app-tests
+          soil/github-actions.sh run-job app-tests podman
 
       - name: publish-html
         run: |
@@ -197,7 +197,7 @@ jobs:
 
       - name: cpp-coverage
         run: |
-          soil/github-actions.sh run-job cpp-coverage
+          soil/github-actions.sh run-job cpp-coverage podman
 
       - name: publish-html
         run: |
@@ -213,7 +213,7 @@ jobs:
 
       - name: benchmarks
         run: |
-          soil/github-actions.sh run-job benchmarks
+          soil/github-actions.sh run-job benchmarks podman
 
       - name: publish-html
         run: |
@@ -230,7 +230,7 @@ jobs:
 
       - name: bloaty
         run: |
-          soil/github-actions.sh run-job bloaty
+          soil/github-actions.sh run-job bloaty podman
 
       - name: publish-html
         run: |
@@ -247,7 +247,7 @@ jobs:
 
       - name: benchmarks2
         run: |
-          soil/github-actions.sh run-job benchmarks2
+          soil/github-actions.sh run-job benchmarks2 podman
 
       - name: publish-html
         run: |
@@ -266,14 +266,14 @@ jobs:
 
       - name: benchmarks3
         run: |
-          soil/github-actions.sh run-job benchmarks3
+          soil/github-actions.sh run-job benchmarks3 podman
 
       - name: publish-html
         run: |
           soil/github-actions.sh publish-and-exit benchmarks3 T
 
   cpp-small:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -288,7 +288,7 @@ jobs:
 
       - name: cpp-small
         run: |
-          soil/github-actions.sh run-job cpp-small
+          soil/github-actions.sh run-job cpp-small podman
 
       - name: publish-html
         run: |
@@ -310,7 +310,7 @@ jobs:
 
       - name: cpp-tarball
         run: |
-          soil/github-actions.sh run-job cpp-tarball
+          soil/github-actions.sh run-job cpp-tarball podman
 
       # can't be done inside container
       - name: publish-cpp-tarball
@@ -340,7 +340,7 @@ jobs:
 
       - name: cpp-spec
         run: |
-          soil/github-actions.sh run-job cpp-spec
+          soil/github-actions.sh run-job cpp-spec podman
 
       - name: publish-html
         run: |
@@ -357,7 +357,7 @@ jobs:
 
       - name: wild
         run: |
-          soil/github-actions.sh run-job wild
+          soil/github-actions.sh run-job wild podman
 
       - name: publish-html
         run: |

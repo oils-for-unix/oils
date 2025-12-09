@@ -9,7 +9,7 @@ x=hi y=default
 ## END
 
 
-#### Set $HOME using 'var' (i.e. Oil string var in word evaluator)
+#### Set $HOME using 'var' (i.e. YSH string var in word evaluator)
 var HOME = "foo"
 echo $HOME
 echo ~
@@ -18,7 +18,7 @@ foo
 foo
 ## END
 
-#### Use shell var in Oil expression
+#### Use shell var in YSH expression
 x='abc'
 var length = len(x)  # length in BYTES, unlike ${#x}
 echo $length
@@ -34,6 +34,8 @@ x[20]=B
 # shell style: length is 5
 echo shell=${#x[@]}
 
+shopt --set parse_ysh_expr_sub
+
 # Length could be 20, but we may change the representation to Dict[int, str]
 echo ysh=$[len(x)]
 
@@ -44,6 +46,9 @@ shell=5
 
 #### $[len(x)] inside strings
 var s = "abc"
+
+shopt --set parse_ysh_expr_sub
+
 echo -$[len(s)]-
 
 # This already has a meaning ...
@@ -82,6 +87,7 @@ echo $x $[max(1+2, 3+4,)]
 #### nested expr contexts
 var s = "123"
 
+shopt --set parse_ysh_expr_sub
 # lex_mode_e.ShCommand -> Expr -> ShCommand -> Expr
 var x = $(echo $'len\n' $[len(s)])
 echo $x
@@ -231,6 +237,9 @@ no
 var mydict = { a:1,
   b: 2,
 }
+
+shopt --set parse_ysh_expr_sub
+
 echo mydict=$[len(mydict)]
 ## STDOUT:
 mydict=2
@@ -242,6 +251,9 @@ var array = %(
   two
   three
 )
+
+shopt --set parse_ysh_expr_sub
+
 echo array=$[len(array)]
 
 var comsub = $(
@@ -281,7 +293,7 @@ andy
 ## END
 
 #### a ++ b for string/list concatenation
-shopt -s parse_brace
+shopt -s parse_brace parse_ysh_expr_sub
 
 var i = 'abc'
 var j = 'de'
@@ -299,17 +311,17 @@ echo ---
 try {
   = 'ab' ++ 3
 }
-echo Str Int $_status
+echo Str Int $[_error.code]
 
 try {
   = [1, 2] ++ 3
 }
-echo List Int $_status
+echo List Int $[_error.code]
 
 try {
   = 3 ++ 'ab'
 }
-echo Int Str $_status
+echo Int Str $[_error.code]
 
 ## STDOUT:
 string abcde
@@ -335,28 +347,28 @@ no
 ## END
 
 #### Type Errors
-shopt --set parse_brace
+shopt --set parse_brace parse_ysh_expr_sub
 
 # TODO: It might be nice to get a message
 try {
   var x = {} + []
 }
-echo $_status
+echo $[_error.code]
 
 try {
   setvar x = {} + 3
 }
-echo $_status
+echo $[_error.code]
 
 try {
   = 'foo' ++ 3
 }
-echo $_status
+echo $[_error.code]
 
 try {
   = 'foo' ++ 3
 }
-echo $_status
+echo $[_error.code]
 
 ## STDOUT:
 3
@@ -382,6 +394,8 @@ echo $x
 
 #### expression literals
 var e = ^[1 + 2]
+
+shopt --set parse_ysh_expr_sub
 
 echo type=$[type(e)]
 echo $[io->evalExpr(e)]
@@ -422,6 +436,8 @@ call io->evalExpr(e)
 ## END
 
 #### expression literals, lazy evaluation
+shopt --set parse_ysh_expr_sub
+
 var x = 0
 var e = ^[x]
 
@@ -432,6 +448,8 @@ result=1
 ## END
 
 #### expression literals, sugar for strings
+shopt --set parse_ysh_expr_sub
+
 var x = 0
 var e = ^"x is $x"
 

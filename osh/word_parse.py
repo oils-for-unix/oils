@@ -31,7 +31,7 @@ lex_mode_e.Arith
 lex_mode_e.VSub_ArgUnquoted
   Like ShCommand, everything is allowed (even process substitutions), but we
   stop at }, and space is SIGNIFICANT.
-  
+
   Example: ${a:-  b   }
 
   ${X:-$v}   ${X:-${v}}  ${X:-$(echo hi)}  ${X:-`echo hi`}  ${X:-$((1+2))}
@@ -724,7 +724,9 @@ class WordParser(WordEmitter):
                   left_token)
 
         # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'
-        no_backslashes = is_ysh_expr and left_token.id == Id.Left_SingleQuote
+        # enforce for triple-quoted strings: ''' \u ''' requires r''' \u '''
+        no_backslashes = is_ysh_expr and left_token.id in (
+            Id.Left_SingleQuote, Id.Left_TSingleQuote)
 
         expected_end_tokens = 3 if left_token.id in (
             Id.Left_TSingleQuote, Id.Left_RTSingleQuote, Id.Left_UTSingleQuote,
@@ -744,7 +746,7 @@ class WordParser(WordEmitter):
                 # r'one\two' or c'one\\two'
                 if no_backslashes and lexer.TokenContains(tok, '\\'):
                     p_die(
-                        r"Strings with backslashes should look like r'\n' or u'\n' or b'\n'",
+                        "Ambiguous backslash: add explicit r'' or u'' prefix (OILS-ERR-20)",
                         tok)
 
                 if is_ysh_expr:
@@ -826,10 +828,20 @@ class WordParser(WordEmitter):
             return self._ReadBracedVarSub(self.cur_token, d_quoted=True)
 
         if self.token_type == Id.Left_DollarDParen:
+            # TODO: Uncomment this after another regtest/aports run
+            # if (self.LookAheadDParens(shift_back=1)):
             return self._ReadArithSub()
+            # else:
+            # Mutate token - we treat this '$((' as '$( ('
+            # self.cur_token.id = Id.Left_DollarParen
+            # return self._ReadCommandSub(Id.Left_DollarParen, d_quoted=True)
 
         if self.token_type == Id.Left_DollarBracket:
-            return self._ReadExprSub(lex_mode_e.DQ)
+
+            if self.parse_opts.parse_ysh_expr_sub():
+                return self._ReadExprSub(lex_mode_e.DQ)
+            else:
+                return self._ReadArithSub(end_id=Id.Arith_RBracket)
 
         if self.token_type == Id.Left_DollarBraceZsh:
             return self._ReadZshVarSub(self.cur_token)
@@ -953,10 +965,19 @@ class WordParser(WordEmitter):
             return self._ReadBracedVarSub(self.cur_token, d_quoted=False)
 
         if self.token_type == Id.Left_DollarDParen:
+            # TODO: Uncomment this after another regtest/aports run
+            # if (self.LookAheadDParens(shift_back=1)):
             return self._ReadArithSub()
+            # else:
+            # Mutate token - we treat this '$((' as '$( ('
+            # self.cur_token.id = Id.Left_DollarParen
+            # return self._ReadCommandSub(Id.Left_DollarParen, d_quoted=True)
 
         if self.token_type == Id.Left_DollarBracket:
-            return self._ReadExprSub(lex_mode_e.ShCommand)
+            if self.parse_opts.parse_ysh_expr_sub():
+                return self._ReadExprSub(lex_mode_e.ShCommand)
+            else:
+                return self._ReadArithSub(end_id=Id.Arith_RBracket)
 
         if self.token_type == Id.Left_DollarBraceZsh:
             return self._ReadZshVarSub(self.cur_token)
@@ -1068,13 +1089,23 @@ class WordParser(WordEmitter):
         while num_end_tokens < expected_end_tokens:
             self._SetNext(lex_mode_e.DQ)
             self._GetToken()
+            tok = self.cur_token
 
             if self.token_kind == Kind.Lit:
                 if self.token_type == Id.Lit_EscapedChar:
-                    tok = self.cur_token
                     ch = lexer.TokenSliceLeft(tok, 1)
                     part = word_part.EscapedLiteral(tok,
                                                     ch)  # type: word_part_t
+
+                elif self.token_type == Id.Lit_BackslashDoubleQuote:
+                    if left_token:
+                        ch = lexer.TokenSliceLeft(tok, 1)
+                        part = word_part.EscapedLiteral(tok, ch)
+                    else:
+                        # in here docs \" should not be escaped, staying as literal characters
+                        tok.id = Id.Lit_Chars
+                        part = tok
+
                 else:
                     if self.token_type == Id.Lit_BadBackslash:
                         # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
@@ -1085,25 +1116,24 @@ class WordParser(WordEmitter):
                                 self.parse_opts.no_parse_backslash()):
                             p_die(
                                 "Invalid char escape in double quoted string (OILS-ERR-12)",
-                                self.cur_token)
+                                tok)
                     elif self.token_type == Id.Lit_Dollar:
                         if is_ysh_expr or self.parse_opts.no_parse_dollar():
-                            p_die("Literal $ should be quoted like \$",
-                                  self.cur_token)
+                            p_die("Literal $ should be quoted like \$", tok)
 
-                    part = self.cur_token
+                    part = tok
+
                 out_parts.append(part)
 
             elif self.token_kind == Kind.Left:
                 if self.token_type == Id.Left_Backtick and is_ysh_expr:
                     p_die("Backtick should be $(cmd) or \\` (OILS-ERR-18)",
-                          self.cur_token)
+                          tok)
 
                 part = self._ReadDoubleQuotedLeftParts()
                 out_parts.append(part)
 
             elif self.token_kind == Kind.VSub:
-                tok = self.cur_token
                 part = SimpleVarSub(tok)
                 out_parts.append(part)
                 # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
@@ -1115,7 +1145,7 @@ class WordParser(WordEmitter):
                     num_end_tokens += 1
 
                 # In a here doc, the right quote is literal!
-                out_parts.append(self.cur_token)
+                out_parts.append(tok)
 
             elif self.token_kind == Kind.Eof:
                 if left_token:
@@ -1126,7 +1156,7 @@ class WordParser(WordEmitter):
                     break
 
             else:
-                raise AssertionError(self.cur_token)
+                raise AssertionError(tok)
 
             if self.token_kind != Kind.Right:
                 num_end_tokens = 0  # """ must be CONSECUTIVE
@@ -1296,7 +1326,7 @@ class WordParser(WordEmitter):
 
         Note that assignments must end with \n  ;  }  or EOF.  Unlike shell
         assignments, we disallow:
-        
+
         var x = 42 | wc -l
         var x = 42 && echo hi
         """
@@ -1530,17 +1560,20 @@ class WordParser(WordEmitter):
                 loc.Word(self.a_parser.cur_word))
         return anode
 
-    def _ReadArithSub(self):
-        # type: () -> word_part.ArithSub
+    def _ReadArithSub(self, end_id=Id.Arith_RParen):
+        # type: (Id_t) -> word_part.ArithSub
         """Read an arith substitution, which contains an arith expression, e.g.
 
         $((a + 1)).
         """
+        assert end_id in (Id.Arith_RParen, Id.Arith_RBracket)
+
         left_tok = self.cur_token
 
         # The second one needs to be disambiguated in stuff like stuff like:
         # $(echo $(( 1+2 )) )
-        self.lexer.PushHint(Id.Op_RParen, Id.Right_DollarDParen)
+        if end_id == Id.Arith_RParen:
+            self.lexer.PushHint(Id.Op_RParen, Id.Right_DollarDParen)
 
         # NOTE: To disambiguate $(( as arith sub vs. command sub and subshell, we
         # could save the lexer/reader state here, and retry if the arithmetic parse
@@ -1554,14 +1587,17 @@ class WordParser(WordEmitter):
 
         self._NextNonSpace()
         if self.token_type != Id.Arith_RParen:
-            anode = self._ReadArithExpr(Id.Arith_RParen)
+            anode = self._ReadArithExpr(end_id)
 
         self._SetNext(lex_mode_e.ShCommand)
 
-        # Ensure we get closing )
-        self._GetToken()
-        if self.token_type != Id.Right_DollarDParen:
-            p_die('Expected second ) to end arith sub', self.cur_token)
+        if end_id == Id.Arith_RParen:
+            # Ensure we get closing ) if we are looking for double ))
+            # (In backwards compat mode, ] can also be the closing bracket, and
+            # it would already be the current token, no need to skip further
+            self._GetToken()
+            if self.token_type != Id.Right_DollarDParen:
+                p_die('Expected second ) to end arith sub', self.cur_token)
 
         right_tok = self.cur_token
         return word_part.ArithSub(left_tok, anode, right_tok)
@@ -2248,6 +2284,16 @@ class WordParser(WordEmitter):
             id_ = self.cur_token.id
         return id_
 
+    def LookAheadDParens(self, shift_back=0):
+        # type: (int) -> bool
+        """Special lookahead for (( )), to make sure it's an arithmetic
+        expression (i.e. that the closing parens are a single token, not
+        separated by anything).
+        """
+        assert self.token_type in (Id.Op_DLeftParen, Id.Left_DollarDParen)
+
+        return self.lexer.LookAheadDParens(shift_back)
+
     def LookAheadFuncParens(self):
         # type: () -> bool
         """Special lookahead for f( ) { echo hi; } to check for ( )"""
@@ -2296,7 +2342,7 @@ class WordParser(WordEmitter):
     def ReadHereDocBody(self, parts):
         # type: (List[word_part_t]) -> None
         """
-        A here doc is like a double quoted context, except " isn't special.
+        A here doc is like a double quoted context, except " and \" aren't special.
         """
         self._ReadLikeDQ(None, False, parts)
         # Returns nothing

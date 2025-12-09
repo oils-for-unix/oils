@@ -1,0 +1,12 @@
+diff --git a/main/xz/APKBUILD b/main/xz/APKBUILD
+index 7ffe05e7024..f69634541a7 100644
+--- a/main/xz/APKBUILD
++++ b/main/xz/APKBUILD
+@@ -22,6 +22,7 @@ source="https://github.com/tukaani-project/xz/archive/refs/tags/v$pkgver/xz-$pkg
+ 
+ prepare() {
+ 	default_prepare
++	doas patch /usr/bin/autopoint -i ../../extglob.copy
+ 	autoreconf -fi
+ }
+ 

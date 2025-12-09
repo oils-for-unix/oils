@@ -15,7 +15,7 @@ GLOBAL_STR(kEmptyString, "");
 static const std::regex gStrFmtRegex("([^%]*)(?:%(-?[0-9]*)(.))?");
 static const int kMaxFmtWidth = 256;  // arbitrary...
 
-int BigStr::find(BigStr* needle, int start, int end) {
+int BigStr::internal_find(BigStr* needle, int direction, int start, int end) {
   if (end == -1) {
     end = len(this);
   }
@@ -25,11 +25,37 @@ int BigStr::find(BigStr* needle, int start, int end) {
     return -1;  // needle is too long to be found (Python behavior)
   }
 
+  if (start > len(this)) {
+    return -1;
+  }
+  // Handle negative indices
+  if (start < 0) {
+    start = len(this) + start;
+  }
+  end = std::min(end, len(this));
+  if (end < 0) {
+    end = len(this) + end;
+  }
+
+  int last_start;
+  int cutoff_start = start;
+  int delta = direction;
+  std::function<bool(int, int)> comparator;
+  if (direction == 1) {
+    last_start = end - needle_len + 1;
+    comparator = std::less<int>{};
+  } else {
+    last_start = start;
+    cutoff_start = end - needle_len;
+    std::swap(start, end);
+    comparator = std::greater_equal<int>{};
+  }
+
   if (needle_len == 1) {
     char c = needle->data_[0];
     // For 'aaa'.find('a', 0, 1)
     // end = 1, needle_len = 1, last_start = 1 which means we go through once
-    for (int i = start; i < end; ++i) {
+    for (int i = cutoff_start; comparator(i, end); i += delta) {
       if (data_[i] == c) {
         return i;
       }
@@ -41,9 +67,8 @@ int BigStr::find(BigStr* needle, int start, int end) {
     // For 'aaa'.find('aa', 0, 2)
     // end = 2, needle_len = 2, last_start = 1 which means we go through once
 
-    int last_start = end - needle_len + 1;
     // could use a smarter substring search algorithm
-    for (int i = start; i < last_start; ++i) {
+    for (int i = cutoff_start; comparator(i, last_start); i += delta) {
       if (memcmp(data_ + i, needle->data_, needle_len) == 0) {
         return i;
       }
@@ -52,16 +77,12 @@ int BigStr::find(BigStr* needle, int start, int end) {
   return -1;
 }
 
-int BigStr::rfind(BigStr* needle) {
-  int length = len(this);
-  DCHECK(len(needle) == 1);  // Oils usage
-  char c = needle->data_[0];
-  for (int i = length - 1; i >= 0; --i) {
-    if (data_[i] == c) {
-      return i;
-    }
-  }
-  return -1;
+int BigStr::find(BigStr* needle, int start, int end) {
+  return internal_find(needle, 1, start, end);
+}
+
+int BigStr::rfind(BigStr* needle, int start, int end) {
+  return internal_find(needle, -1, start, end);
 }
 
 bool BigStr::isdigit() {
@@ -407,7 +428,6 @@ BigStr* BigStr::rstrip(BigStr* chars) {
 
   // multiple chars, for word splitting
   if (num_chars > 1) {
-    const char* char_data = data_;
     int j = len(this);
     do {
       j--;

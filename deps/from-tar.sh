@@ -64,8 +64,15 @@ build-python() {
 
 layer-cpython() {
   ### For bootstrapping OVM build
+  #set -x
 
-  # Make sure we have 'layer-python-symlink' before build
+  # We need 'python' in $PATH to build Python, not just 'python2'
+  # TODO: Move this whole thing to a wedge
+  ln -s --relative --verbose ../oils.DEPS/wedge/python2/2.7.18/bin/python ../oils.DEPS/bin/
+
+  # like build/dev-shell.sh
+  PATH="$REPO_ROOT/../oils.DEPS/bin:$PATH"
+
   which python
 
   # TODO: can we do this with a wedge?
@@ -78,7 +85,7 @@ download-wild() {
   ### Done outside the container
 
   mkdir -p $REPO_ROOT/_cache
-  wget --directory $REPO_ROOT/_cache --no-clobber \
+  wget --directory-prefix $REPO_ROOT/_cache --no-clobber \
     https://www.oilshell.org/blob/wild/wild-source.tar.gz
 }
 

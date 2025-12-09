@@ -413,11 +413,11 @@ class PureExecutor(vm._Executor):
             loc.WordPart(cs_part))
 
     def PushRedirects(self, redirects, err_out):
-        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        # type: (List[RedirValue], List[int]) -> None
         pass
 
     def PopRedirects(self, num_redirects, err_out):
-        # type: (int, List[error.IOError_OSError]) -> None
+        # type: (int, List[int]) -> None
         pass
 
     def PushProcessSub(self):
@@ -582,7 +582,14 @@ class ShellExecutor(vm._Executor):
                 not self.exec_opts.interactive()):
             builtin_id = _RewriteExternToBuiltin(cmd_val.argv)
             if builtin_id != consts.NO_INDEX:
-                return self.RunBuiltin(builtin_id, cmd_val)
+                if builtin_id == builtin_i.cat:
+                    thunk = process.BuiltinThunk(self, builtin_id, cmd_val)
+                    p = process.Process(thunk, self.job_control, self.job_list,
+                                        self.tracer)
+                    status = p.RunProcess(self.waiter, trace.Fork)
+                    return status
+                else:
+                    return self.RunBuiltin(builtin_id, cmd_val)
 
         return self.RunExternal(arg0, arg0_loc, cmd_val, cmd_st, run_flags)
 
@@ -881,14 +888,15 @@ class ShellExecutor(vm._Executor):
                 raise error.ErrExit(status, msg, loc.WordPart(cs_part))
 
         else:
-            # Set a flag so we check errexit at the same time as bash.  Example:
+            # POSIX 2.9.1.3: "If there is no command name but the command
+            # contains a command substitution, the command shall complete with
+            # the exit status of the command substitution whose exit status was
+            # the last to be obtained"
             #
+            # This affects
             # a=$(false)
-            # echo foo  # no matter what comes here, the flag is reset
-            #
-            # Set ONLY until this command node has finished executing.
+            # $(false) $(exit 42)
 
-            # HACK: move this
             self.cmd_ev.check_command_sub_status = True
             self.mem.SetLastStatus(status)
 
@@ -1009,13 +1017,13 @@ class ShellExecutor(vm._Executor):
             raise AssertionError()
 
     def PushRedirects(self, redirects, err_out):
-        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        # type: (List[RedirValue], List[int]) -> None
         if len(redirects) == 0:  # Optimized to avoid allocs
             return
         self.fd_state.Push(redirects, err_out)
 
     def PopRedirects(self, num_redirects, err_out):
-        # type: (int, List[error.IOError_OSError]) -> None
+        # type: (int, List[int]) -> None
         if num_redirects == 0:  # Optimized to avoid allocs
             return
         self.fd_state.Pop(err_out)

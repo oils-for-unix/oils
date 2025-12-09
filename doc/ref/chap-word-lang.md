@@ -25,31 +25,48 @@ strings, or arrays of strings.
 
 ### osh-glob
 
-Glob expansion in OSH respects `LC_COLLATE` (like bash and zsh):
+Expand a [glob pattern][glob-pat] into arguments.
+
+    echo *_test.py  # => foo_test.py bar_test.py
+
+Expansion respects these global settings:
+
+- [Globbing options][globbing-options] like `dotglob nullglob no_dash_glob`
+- [GLOBIGNORE][]
+- The `libc` `LC_COLLATE` var (like bash and zsh)
+  - Related: [osh-locale][]
+
+Example of collation:
 
     $ touch foo-bar foo_bar
     $ echo foo*   # foo_bar MAY come first
 
-Related: [osh-locale][]
-
+[glob-pat]: chap-mini-lang.html#glob-pat
+[GLOBIGNORE]: chap-special-var.html#GLOBIGNORE
+[globbing-options]: chap-option.html#Globbing
 [osh-locale]: chap-special-var.html#osh-locale
 
 ### ysh-glob
 
-Glob expansion in YSH is always done with the default libc collation:
+Expand a [glob pattern][glob-pat] into arguments.
+
+    echo *_test.py  # => foo_test.py bar_test.py
+
+In YSH, glob expansion is always done with the default `libc` collation:
 
     ysh$ touch foo-bar foo_bar
     ysh$ echo foo*   # foo-bar always comes first
 
-Related: [ysh-locale][]
+Related: [ysh-locale][], the [glob()][glob] function
 
 [ysh-locale]: chap-special-var.html#ysh-locale
+[glob]: chap-builtin-func.html#glob
 
 <h2 id="expression">Expressions to Words</h2>
 
 ### expr-sub
 
-Try to turn an expression into a string.  Examples:
+Turn an expression into a string.  Examples:
 
     $ echo $[3 * 2]
     6
@@ -74,11 +91,18 @@ You can explicitly use `toJson8` or `toJson()`:
 
 ### expr-splice
 
-Splicing puts the elements of a `List` into a string array context:
+Splicing turns each element of a `List` into a string, and puts those strings
+into an array:
 
-    $ var foods = ['ale', 'bean', 'corn']
+    $ var foods = ['ale', 'bean', 42]
     $ echo pizza @[foods[1:]] worm
-    pizza bean corn worm
+    pizza bean 42 worm
+
+It also works in arays:
+
+    $ var myarray = :| prefix @[foods]] |
+    $ echo @myarray
+    prefix ale bean 42
 
 This syntax is enabled by `shopt --set` [parse_at][], which is part of YSH.
 

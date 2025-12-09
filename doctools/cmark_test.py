@@ -224,7 +224,9 @@ def InitCMark():
 
     cmark1 = os.environ.get('_NIX_SHELL_LIBCMARK')
     cmark2 = os.path.join(this_dir, '../../oil_DEPS/libcmark.so')
-    cmark3 = os.path.join(cmark.CMARK_WEDGE_DIR,
+    cmark3 = os.path.join(cmark.NEW_CMARK_WEDGE_DIR,
+                          'lib/libcmark.so')  # a symlink
+    cmark4 = os.path.join(cmark.OLD_CMARK_WEDGE_DIR,
                           'lib/libcmark.so')  # a symlink
 
     if cmark1 is not None and os.path.exists(cmark1):
@@ -233,6 +235,8 @@ def InitCMark():
         libname = cmark2
     elif os.path.exists(cmark3):
         libname = cmark3
+    elif os.path.exists(cmark4):
+        libname = cmark4
     else:
         raise AssertionError("Couldn't find libcmark.so")
 

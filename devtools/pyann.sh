@@ -27,7 +27,7 @@ MYPY_EXT_URL='https://files.pythonhosted.org/packages/63/60/0582ce2eaced55f65a44
 SIX_URL='https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz'
 
 download-tarballs() {
-  wget --no-clobber --directory _tmp \
+  wget --no-clobber --directory-prefix _tmp \
     $PYANN_URL $MYPY_EXT_URL $SIX_URL
 }
 

@@ -44,8 +44,8 @@ error handling, and more.
   [Numbers]        Int
                    Float
                    Range
-  [String]         Str       X find()         X findLast()
-                             X contains()       replace()
+  [String]         Str         find()           findLast()
+                               contains()       replace()
                                trim()           trimStart()       trimEnd()
                                startsWith()     endsWith()
                                upper()          lower()
@@ -58,8 +58,8 @@ error handling, and more.
                                indexOf()        lastIndexOf()   X includes()
                                insert()         remove()
                                reverse()        List/clear()
-                   Dict        erase()        X Dict/clear()    X accum()
-                             X update()
+                   Dict        erase()          Dict/clear()      append()
+                             X update()         inc()
                    Place       setValue()
   [Code Types]     Func        
                    BuiltinFunc
@@ -88,7 +88,7 @@ error handling, and more.
                   str()             list()             dict()
                 X runes()         X encodeRunes()
                 X bytes()         X encodeBytes()
-  [Str]         X strcmp()          shSplit()
+  [Str]           strcmp()          shSplit()
   [List]          join()       
   [Dict]          keys()            values()           get()       
   [Float]         floatsEqual()   X isinf()          X isnan()
@@ -295,8 +295,8 @@ X [External Lang] BEGIN   END   when (awk)
                   block-expr    ^(echo $PWD)
                   expr-literal  ^[1 + 2*3]
                   str-template  ^"$a and $b" for Str.replace()
-                X expr-sub      $[myobj]
-                X expr-splice   @[myobj]
+                  expr-sub      $[myobj]
+                  expr-splice   @[myobj]
   [Operators]     op-precedence Like Python
                   concat        s1 ++ s2,  L1 ++ L2
                   ysh-equals    ===   !==   ~==   is, is not
@@ -304,6 +304,7 @@ X [External Lang] BEGIN   END   when (awk)
                   ysh-compare   <  <=  >  >=  (numbers only)
                   ysh-logical   not  and  or
                   ysh-arith     +  -  *  /  //  %   ** 
+                  ysh-unary     +  -
                   ysh-bitwise   ~  &  |  ^  <<  >>
                   ysh-ternary   '+' if x >= 0 else '-'
                   ysh-index     s[0]  mylist[3]  mydict['key']

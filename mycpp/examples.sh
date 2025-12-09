@@ -33,7 +33,7 @@ asdl-gen() {
   PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/asdl_main.py "$@"
 }
 
-# Type check, with some relaxations for Oil
+# Type check, with some relaxations for Oils
 typecheck-oil() {
   local name=$1
   local flags='--no-strict-optional'

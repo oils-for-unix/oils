@@ -34,7 +34,7 @@ install-shells-with-apt() {
 }
 
 bash-upstream() {
-  wget --directory _tmp --no-clobber \
+  wget --directory-prefix _tmp --no-clobber \
     'https://ftp.gnu.org/gnu/bash/bash-5.2.21.tar.gz'
 }
 

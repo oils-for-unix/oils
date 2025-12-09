@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 5
+## oils_failures_allowed: 3
 
 # This file relates to:
 #
@@ -54,30 +54,6 @@ two
 two
 ## END
 
-#### Exit code when command sub evaluates to empty str, e.g. `false` (#2435)
-
-# OSH exits with 0 while others exit with 1
-`true`; echo $?
-`false`; echo $?
-$(true); echo $?
-$(false); echo $?
-
-# OSH and others agree on these
-eval true; echo $?
-eval false; echo $?
-`echo true`; echo $?
-`echo false`; echo $?
-## STDOUT:
-0
-1
-0
-1
-0
-1
-0
-1
-## END
-
 #### Changing PATH will invalidate PATH cache
 
 mkdir -p _tmp/bin
@@ -128,32 +104,14 @@ hey
 status=0
 ## END
 
-#### test builtin - Unexpected trailing word '--' (#2409)
+#### builtin cat crashes a subshell (#2530)
 
-# Minimal repro of sqsh build error
-set -- -o; test $# -ne 0 -a "$1" != "--"
-echo status=$?
+((/usr/bin/cat </dev/zero; echo $? >&7) | true) 7>&1
 
-# Now hardcode $1
-test $# -ne 0 -a "-o" != "--"
-echo status=$?
-
-# Remove quotes around -o
-test $# -ne 0 -a -o != "--"
-echo status=$?
-
-# How about a different flag?
-set -- -z; test $# -ne 0 -a "$1" != "--"
-echo status=$?
-
-# A non-flag?
-set -- z; test $# -ne 0 -a "$1" != "--"
-echo status=$?
+((cat </dev/zero; echo $? >&7) | true) 7>&1
 
 ## STDOUT:
-status=0
-status=0
-status=0
-status=0
-status=0
+141
+141
 ## END
+

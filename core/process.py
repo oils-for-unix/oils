@@ -72,6 +72,7 @@ if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from builtin import trap_osh
     from core import optview
+    from core import vm
     from core.util import _DebugFile
     from osh.cmd_eval import CommandEvaluator
 
@@ -384,25 +385,22 @@ class FdState(object):
         # type: (Process) -> None
         self.cur_frame.need_wait.append(proc)
 
-    def _ApplyRedirect(self, r):
-        # type: (RedirValue) -> None
+    def _ApplyRedirect(self, r, err_out):
+        # type: (RedirValue, List[int]) -> None
         arg = r.arg
         UP_arg = arg
         with tagswitch(arg) as case:
 
             if case(redirect_arg_e.Path):
                 arg = cast(redirect_arg.Path, UP_arg)
-                # noclobber flag is OR'd with other flags when allowed
-                noclobber_mode = O_EXCL if self.exec_opts.noclobber() else 0
+
                 if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
-                    # NOTE: This is different than >| because it respects noclobber, but
-                    # that option is almost never used.  See test/wild.sh.
-                    mode = O_CREAT | O_WRONLY | O_TRUNC | noclobber_mode
+                    mode = O_CREAT | O_WRONLY | O_TRUNC
                 elif r.op_id == Id.Redir_Clobber:  # >|
                     mode = O_CREAT | O_WRONLY | O_TRUNC
                 elif r.op_id in (Id.Redir_DGreat,
                                  Id.Redir_AndDGreat):  # >>   &>>
-                    mode = O_CREAT | O_WRONLY | O_APPEND | noclobber_mode
+                    mode = O_CREAT | O_WRONLY | O_APPEND
                 elif r.op_id == Id.Redir_Less:  # <
                     mode = O_RDONLY
                 elif r.op_id == Id.Redir_LessGreat:  # <>
@@ -410,11 +408,38 @@ class FdState(object):
                 else:
                     raise NotImplementedError(r.op_id)
 
+                # noclobber: don't overwrite existing files (except for special
+                # files like /dev/null)
+                noclobber = self.exec_opts.noclobber()
+
+                # Only > and &> actually follow noclobber. See
+                # spec/redirect.test.sh
+                op_respects_noclobber = r.op_id in (Id.Redir_Great, Id.Redir_AndGreat)
+
+                if noclobber and op_respects_noclobber:
+                    stat = mylib.stat(arg.filename)
+                    if not stat:
+                        # File doesn't currently exist, open with O_EXCL (open
+                        # will fail is EEXIST if arg.filename exists when we
+                        # call open(2)). This guards against a race where the
+                        # file may be created *after* we check it with stat.
+                        mode |= O_EXCL
+
+                    elif stat.isreg():
+                        # This is a regular file, opening it would clobber,
+                        # so raise an error.
+                        err_out.append(EEXIST)
+                        return
+
+                    # Otherwise, the file exists and is a special file like
+                    # /dev/null, we can open(2) it without O_EXCL. (Note,
+                    # there is a race here. See demo/noclobber-race.sh)
+
                 # NOTE: 0666 is affected by umask, all shells use it.
                 try:
                     open_fd = posix.open(arg.filename, mode, 0o666)
                 except (IOError, OSError) as e:
-                    if e.errno == EEXIST and self.exec_opts.noclobber():
+                    if e.errno == EEXIST and noclobber:
                         extra = ' (noclobber)'
                     else:
                         extra = ''
@@ -422,7 +447,7 @@ class FdState(object):
                         "Can't open %r: %s%s" %
                         (arg.filename, pyutil.strerror(e), extra),
                         blame_loc=r.op_loc)
-                    raise  # redirect failed
+                    raise
 
                 new_fd = self._PushDup(open_fd, r.loc)
                 if new_fd != NO_FD:
@@ -512,7 +537,7 @@ class FdState(object):
                     posix.close(write_fd)
 
     def Push(self, redirects, err_out):
-        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        # type: (List[RedirValue], List[int]) -> None
         """Apply a group of redirects and remember to undo them."""
 
         #log('> fd_state.Push %s', redirects)
@@ -524,9 +549,14 @@ class FdState(object):
             #log('apply %s', r)
             with ui.ctx_Location(self.errfmt, r.op_loc):
                 try:
-                    self._ApplyRedirect(r)
+                    # _ApplyRedirect reports errors in 2 ways:
+                    #  1. Raising an IOError or OSError from posix.* calls
+                    #  2. Returning errors in err_out from checks like noclobber
+                    self._ApplyRedirect(r, err_out)
                 except (IOError, OSError) as e:
-                    err_out.append(e)
+                    err_out.append(e.errno)
+
+                if len(err_out):
                     # This can fail too
                     self.Pop(err_out)
                     return  # for bad descriptor, etc.
@@ -548,7 +578,7 @@ class FdState(object):
         return True
 
     def Pop(self, err_out):
-        # type: (List[error.IOError_OSError]) -> None
+        # type: (List[int]) -> None
         frame = self.stack.pop()
         #log('< Pop %s', frame)
         for rf in reversed(frame.saved):
@@ -557,7 +587,7 @@ class FdState(object):
                 try:
                     posix.close(rf.orig_fd)
                 except (IOError, OSError) as e:
-                    err_out.append(e)
+                    err_out.append(e.errno)
                     log('Error closing descriptor %d: %s', rf.orig_fd,
                         pyutil.strerror(e))
                     return
@@ -565,7 +595,7 @@ class FdState(object):
                 try:
                     posix.dup2(rf.saved_fd, rf.orig_fd)
                 except (IOError, OSError) as e:
-                    err_out.append(e)
+                    err_out.append(e.errno)
                     log('dup2(%d, %d) error: %s', rf.saved_fd, rf.orig_fd,
                         pyutil.strerror(e))
                     #log('fd state:')
@@ -836,6 +866,27 @@ class ExternalThunk(Thunk):
         self.ext_prog.Exec(self.argv0_path, self.cmd_val, self.environ)
 
 
+class BuiltinThunk(Thunk):
+    """Builtin thunk - for running builtins in a forked subprocess"""
+
+    def __init__(self, shell_ex, builtin_id, cmd_val):
+        # type: (vm._Executor, int, cmd_value.Argv) -> None
+        self.shell_ex = shell_ex
+        self.builtin_id = builtin_id
+        self.cmd_val = cmd_val
+
+    def UserString(self):
+        # type: () -> str
+        tmp = [j8_lite.MaybeShellEncode(a) for a in self.cmd_val.argv]
+        return '[builtin] %s' % ' '.join(tmp)
+
+    def Run(self):
+        # type: () -> None
+        """No exec - we need to exit ourselves"""
+        status = self.shell_ex.RunBuiltin(self.builtin_id, self.cmd_val)
+        posix._exit(status)
+
+
 class SubProgramThunk(Thunk):
     """A subprogram that can be executed in another process."""
 
@@ -888,7 +939,7 @@ class SubProgramThunk(Thunk):
             status = self.cmd_ev.LastStatus()
             # NOTE: We ignore the is_fatal return value.  The user should set -o
             # errexit so failures in subprocesses cause failures in the parent.
-        except util.UserExit as e:
+        except util.HardExit as e:
             status = e.status
 
         # Handle errors in a subshell.  These two cases are repeated from main()
@@ -1290,7 +1341,7 @@ class Process(Job):
 class ctx_Pipe(object):
 
     def __init__(self, fd_state, fd, err_out):
-        # type: (FdState, int, List[error.IOError_OSError]) -> None
+        # type: (FdState, int, List[int]) -> None
         fd_state.PushStdinFromPipe(fd)
         self.fd_state = fd_state
         self.err_out = err_out
@@ -1524,13 +1575,13 @@ class Pipeline(Job):
         # a pipeline.
         cmd_flags |= cmd_eval.NoErrTrap
 
-        io_errors = []  # type: List[error.IOError_OSError]
+        io_errors = []  # type: List[int]
         with ctx_Pipe(fd_state, r, io_errors):
             cmd_ev.ExecuteAndCatch(last_node, cmd_flags)
 
         if len(io_errors):
             e_die('Error setting up last part of pipeline: %s' %
-                  pyutil.strerror(io_errors[0]))
+                  posix.strerror(io_errors[0]))
 
         # We won't read anymore.  If we don't do this, then 'cat' in 'cat
         # /dev/urandom | sleep 1' will never get SIGPIPE.

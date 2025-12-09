@@ -377,7 +377,7 @@ level2=
 
 #### unset of local reveals variable in higher scope
 
-# Oil has a RARE behavior here (matching yash and mksh), but at least it's
+# OSH has a RARE behavior here (matching yash and mksh), but at least it's
 # consistent.
 
 x=global
@@ -498,7 +498,7 @@ unset -v 'a[1]'
 echo array $?
 
 #shopt -s strict_arith || true
-# In Oil, the string 'key' is converted to an integer, which is 0, unless
+# In OSH, the string 'key' is converted to an integer, which is 0, unless
 # strict_arith is on, when it fails.
 unset -v 'a["key"]'
 echo array $?

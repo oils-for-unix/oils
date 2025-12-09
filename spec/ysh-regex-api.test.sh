@@ -21,14 +21,14 @@ if (s ~ '[[:digit:]]+') {
 try {
   var x = _group(0)
 }
-if (_status === 3) {
+if (_error.code === 3) {
   echo 'got expected status 3'
 }
 
 try {
   var y = _group(1)
 }
-if (_status === 3) {
+if (_error.code === 3) {
   echo 'got expected status 3'
 }
 
@@ -308,6 +308,8 @@ start=-1 end=-1
 
 #### Str->search() method returns value.Match object
 
+shopt --set parse_ysh_expr_sub
+
 var s = '= Hi5- Bye6-'
 
 var m = s.search(/ <capture [a-z]+ > <capture d+> '-' ; i /)
@@ -367,6 +369,7 @@ pat=([[:digit:]]+)-
 
 
 #### search() and leftMatch() accept ERE string
+shopt --set parse_ysh_expr_sub
 
 var s = '= hi5- bye6-'
 
@@ -904,6 +907,8 @@ for count in (-2..<4) {
 ## END
 
 #### Str.replace(Str, Str), empty new/old strings
+shopt --set parse_ysh_expr_sub
+
 var mystr = 'abca'
 write $[mystr.replace('abc', '')]            # Empty substitution
 write $[mystr.replace('', 'new')]            # Empty substring
@@ -932,7 +937,7 @@ func not_str(inp) {
 
 # should fail to stringify $1
 try { call mystr.replace(/ <capture d+ : not_str> /, ^"$1") }
-write status=$_status
+write status=$[_error.code]
 ## STDOUT:
 124
 123

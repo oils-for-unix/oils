@@ -297,14 +297,13 @@ tmp=$out.tmp  # avoid creating partial files
 
 # copied from build/dev-shell.sh
 
-USER_WEDGE_DIR=~/wedge/oils-for-unix.org
-
 MYPY_VERSION=0.780
-MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
+MYPY_WEDGE=../oils.DEPS/wedge/mypy/$MYPY_VERSION
 
 PY3_LIBS_VERSION=2023-03-04
 site_packages=lib/python3.10/site-packages
-PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION/$site_packages
+
+PY3_LIBS_WEDGE=../oils.DEPS/wedge/py3-libs/$PY3_LIBS_VERSION/$site_packages
 
 PYTHONPATH="$REPO_ROOT:$MYPY_WEDGE:$PY3_LIBS_WEDGE" MYPYPATH="$MYPYPATH" \
   python3 pea/pea_main.py mycpp "$@" > $tmp

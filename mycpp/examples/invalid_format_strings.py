@@ -4,17 +4,19 @@ invalid_format_strings.py
 """
 from __future__ import print_function
 
+from mycpp.mylib import log
+
 
 def run_tests():
     # type: () -> None
 
     x = 33
 
-    print('x = %z' % x)
+    print('x = %x' % x)
 
-    # TODO: this doesn't fail at translate time
+    # caught by MyPy
+    # print('x = %z' % x)
 
-    # With StrFormat(), it will make it to C++ runtime, past C++ compile time
-    #print('x = %x' % x)
+    print('x = %c' % x)
 
-    # Similarly for '%-2d' I believe
+    log('x = %c', x)

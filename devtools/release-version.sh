@@ -15,7 +15,7 @@ source test/common.sh  # html-head
 # 
 # sys.stdin.read() | sub( / "\x00" { any* } "\x01" /, html_escape) | write
 escape-segments() {
-  python -c '
+  python2 -c '
 import cgi, re, sys
 
 print re.sub(
@@ -39,7 +39,7 @@ _git-changelog-body() {
   # %x00 generates the byte \x00
   local format='<tr>
     <td><a class="checksum"
-           href="https://github.com/oilshell/oil/commit/%H">%h</a>
+           href="https://github.com/oils-for-unix/oils/commit/%H">%h</a>
     </td>
     <td class="date">%ad</td>
     <td>%x00%an%x01</td>
@@ -87,11 +87,88 @@ EOF
 _git-changelog() {
   _git-changelog-header "$@"
   _git-changelog-body "$@"
-  cat <<EOF
+  echo '
     </table>
   </body>
 </html>
-EOF
+'
+}
+
+escape-and-shortlog() {
+  python2 -c '
+import cgi, re, sys
+
+by_author = {}
+for line in sys.stdin:  # each record is on a line
+  author, record = line.split("\x02")
+  html = re.sub(
+    r"\x00([^\x01]+)\x01", 
+    lambda match: cgi.escape(match.group(1)),
+    record)
+  if author not in by_author:
+    by_author[author] = []
+  by_author[author].append(html)
+
+authors = by_author.keys()
+authors.sort(key=lambda x: x.lower())  # case insensitive sort
+
+for author in authors:
+  # author takes up whole row
+  print("<tr><td colspan=2 class=author-cell>")
+  print(author)
+  print("</td> <td></td> </tr>")
+  for html in by_author[author]:
+    print("<tr>")
+    print(html.rstrip())
+    print("</tr>")
+'
+}
+
+git-shortlog-html() {
+  local prev_branch=${1:-release/0.36.0}
+  local cur_branch=${2:-release/0.37.0}
+
+  # Format consumed by escape-and-shortlog above.  Git uses %xff for the byte 0x02
+  # - AUTHOR %x02 REST - split by byte 0x02
+  # - anything between %x00 and and %x01 is HTML-escaped
+
+  local format='%an%x02 <td><a class="checksum" href="https://github.com/oils-for-unix/oils/commit/%H">%h</a></td> <td>%x00%s%x01</td>'
+  git log \
+    --pretty="format:$format" \
+    --date=short \
+    $prev_branch..$cur_branch | escape-and-shortlog
+}
+
+test-git-shortlog-html() {
+  local out=_tmp/shortlog.html
+
+  { echo '
+    <style>
+      body {
+        width: 30em;
+        margin: 0 auto;
+      }
+      .checksum {
+        font-family: monospace;
+        margin-left: 2em;  /* indent */
+      }
+      .shortlog {
+        font-size: large;
+      }
+      .shortlog td {
+        vertical-align: top;
+      }
+      .author-cell {
+        padding: 1em;
+      }
+    </style>
+    <table class="shortlog">
+    '
+    git-shortlog-html 
+    echo '</table>'
+  } > $out
+
+  echo "Wrote $out"
 }
 
 git-changelog-0.1() {
@@ -686,6 +763,11 @@ git-changelog-0.36.0() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.37.0() {
+  _git-changelog origin/release/0.36.0 release/0.37.0 \
+    > _release/VERSION/changelog.html
+}
+
 # For announcement.html
 html-redirect() {
   local url=$1
@@ -1155,6 +1237,10 @@ announcement-0.35.0() {
 }
 
 announcement-0.36.0() {
+  write-no-announcement
+}
+
+announcement-0.37.0() {
   write-no-announcement
 }
 

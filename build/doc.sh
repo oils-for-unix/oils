@@ -50,7 +50,7 @@ readonly MANDOC_DIR='_deps/mdocml-1.14.1'
 
 download-mandoc() {
   mkdir -p _deps
-  wget --no-clobber --directory _deps \
+  wget --no-clobber --directory-prefix _deps \
     https://mandoc.bsd.lv/snapshots/mdocml-1.14.1.tar.gz
 }
 
@@ -692,6 +692,7 @@ run-code-in-doc() {
 run-code-all() {
   run-code-in-doc 'ysh-io'
   run-code-in-doc 'ref/chap-type-method'
+  run-code-in-doc 'ref/chap-builtin-func'
 
   # TODO: add more docs here
 }

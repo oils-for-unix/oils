@@ -1,8 +1,7 @@
 ## compare_shells: bash mksh
 ## oils_failures_allowed: 2
 
-# Arrays decay upon assignment (without splicing) and equality.  This will not
-# be true in Oil -- arrays will be first class.
+# Arrays decay upon assignment (without splicing) and equality.
 
 #### Assignment Causes Array Decay
 set -- x y z

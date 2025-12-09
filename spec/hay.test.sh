@@ -63,7 +63,7 @@ foo
 ## END
 
 #### hay names at top level
-shopt --set parse_brace parse_at
+shopt --set parse_brace parse_at parse_ysh_expr_sub
 shopt --unset errexit
 
 hay define Package
@@ -233,7 +233,7 @@ EOF
 
 
 #### _hay() register
-shopt --set parse_paren parse_brace parse_equals parse_proc
+shopt --set parse_paren parse_brace parse_equals parse_proc parse_ysh_expr_sub
 
 hay define user
 
@@ -263,7 +263,7 @@ write -- $[len(_hay()['children'])]
 
 
 #### haynode builtin can define nodes
-shopt --set parse_paren parse_brace parse_equals parse_proc
+shopt --set parse_paren parse_brace parse_equals parse_proc parse_ysh_expr_sub
 
 # It prints JSON by default?  What about the code blocks?
 # Or should there be a --json flag?
@@ -310,7 +310,7 @@ level 0 children
 
 
 #### haynode: usage errors (name or block required)
-shopt --set parse_brace parse_equals parse_proc
+shopt --set parse_brace parse_equals parse_proc parse_ysh_expr_sub
 
 # should we make it name or block required?
 # license { ... } might be useful?
@@ -320,7 +320,7 @@ try {
     haynode package
   }
 }
-echo "haynode attr $_status"
+echo "haynode attr $[_error.code]"
 var result = _hay()
 echo "LEN $[len(result['children'])]"
 
@@ -330,7 +330,7 @@ try {
     haynode TASK build
   }
 }
-echo "haynode code $_status"
+echo "haynode code $[_error.code]"
 echo "LEN $[len(result['children'])]"
 
 echo ---
@@ -341,7 +341,7 @@ try {
     package
   }
 }
-echo "define attr $_status"
+echo "define attr $[_error.code]"
 echo "LEN $[len(result['children'])]"
 
 try {
@@ -349,7 +349,7 @@ try {
     TASK build
   }
 }
-echo "define code $_status"
+echo "define code $[_error.code]"
 echo "LEN $[len(result['children'])]"
 
 ## STDOUT:
@@ -366,7 +366,7 @@ LEN 0
 
 #### haynode: shell nodes require block args; attribute nodes don't
 
-shopt --set parse_brace parse_equals parse_proc
+shopt --set parse_brace parse_equals parse_proc parse_ysh_expr_sub
 
 hay define package TASK
 
@@ -375,7 +375,7 @@ try {
     package glibc > /dev/null
   }
 }
-echo "status $_status"
+echo "status $[_error.code]"
 
 
 try {
@@ -383,7 +383,7 @@ try {
     TASK build
   }
 }
-echo "status $_status"
+echo "status $[_error.code]"
 
 ## STDOUT:
 status 0
@@ -610,7 +610,7 @@ OK
 
 
 #### Code Blocks: parseHay() then shvar _DIALECT= { evalHay() }
-shopt --set parse_brace parse_proc
+shopt --set parse_brace parse_proc parse_ysh_expr_sub
 
 hay define TASK
 
@@ -643,22 +643,22 @@ publish-html
 ## END
 
 #### evalHay() usage
-shopt -s parse_brace
+shopt -s parse_brace parse_ysh_expr_sub
 
 try {
   var d = evalHay()
 }
-echo status $_status
+echo status $[_error.code]
 
 try {
   var d = evalHay(3)
 }
-echo status $_status
+echo status $[_error.code]
 
 try {
   var d = evalHay(^(echo hi), 5)
 }
-echo status $_status
+echo status $[_error.code]
 
 ## STDOUT:
 status 3
@@ -667,7 +667,7 @@ status 3
 ## END
 
 #### Attribute / Data Blocks (package-manager)
-shopt --set parse_proc
+shopt --set parse_proc parse_ysh_expr_sub
 
 const path = "$REPO_ROOT/spec/testdata/config/package-manager.oil"
 

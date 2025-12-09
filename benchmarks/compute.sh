@@ -60,7 +60,6 @@ REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
 readonly REPO_ROOT
 
 source benchmarks/common.sh  # filter-provenance
-source build/dev-shell.sh  # python2
 source test/tsv-lib.sh  # tsv2html
 
 readonly BASE_DIR=_tmp/compute
@@ -489,11 +488,8 @@ soil-run() {
   local job_id
   job_id=$(benchmarks/id.sh print-job-id)
 
-  # Only measure what's in the Docker image
-  # - The Soil 'benchmarks' job uses the 'cpp' Docker image, which doesn't have
-  #   layer-cpython, ../oil_DEPS/cpython-full
-  # - It also doesn't have mksh or zsh
-
+  # Only measure what's in the soil-benchmarks OCI image -- it doesn't have
+  # mksh or zsh
   benchmarks/id.sh shell-provenance-2 \
     $single_machine $job_id _tmp \
     bash dash python2 awk "${oils_bin[@]}"

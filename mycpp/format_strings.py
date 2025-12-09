@@ -55,7 +55,7 @@ PAT = re.compile(
     '''
 ([^%]*)
 (?:
-  %([0-9]*)(.)   # optional number, and then character code
+  %-?([0-9]*)(.)   # optional number, and then character code
 )?
 ''', re.VERBOSE)
 
@@ -74,9 +74,13 @@ def Parse(fmt: str) -> List[_Part]:
         if char_code:
             if char_code == '%':
                 part: _Part = LiteralPart('%')
-            else:
+            elif char_code in 'rsdo':
                 part = SubstPart(width, char_code, arg_num)
                 arg_num += 1
+            else:
+                raise RuntimeError(
+                    "mycpp expects a format specifier in [rsdo%%], got '%s' instead"
+                    % char_code)
             parts.append(part)
 
         #print('end =', m.end(0))

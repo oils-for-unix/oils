@@ -191,6 +191,11 @@ module runtime
   HayNode = (Dict[str, HayNode] children)
 
   comp_action = Other | FileSystem | BashFunc
+
+  # For the 'trap' builtin
+  trap_action =
+    Ignored  # SIG_IGN
+  | Command(command c)
 }
 
 # vim: sw=2

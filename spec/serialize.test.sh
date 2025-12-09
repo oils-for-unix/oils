@@ -99,7 +99,7 @@ unicode=$'\xce\xbc'  # does the same thing
 
 printf '%q\n' "$unicode"
 
-# Oil issue: we have quotes.  Isn't that OK?
+# OSH issue: we have quotes.  Isn't that OK?
 ## STDOUT:
 μ
 ## END

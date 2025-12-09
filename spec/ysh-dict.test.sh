@@ -24,6 +24,8 @@ true
 ## END
 
 #### dict with 'bare word' keys
+shopt --set parse_ysh_expr_sub
+
 var d0 = {}
 echo len=$[len(d0)]
 var d1 = {name: "hello"}
@@ -37,6 +39,8 @@ len=2
 ## END
 
 #### dict with expression keys
+shopt --set parse_ysh_expr_sub
+
 var d1 = {['name']: "hello"}
 echo len=$[len(d1)]
 var v = d1['name']
@@ -57,6 +61,8 @@ bar
 
 
 #### dict literal with implicit value
+shopt --set parse_ysh_expr_sub
+
 var name = 'foo'
 var d1 = {name}
 echo len=$[len(d1)]

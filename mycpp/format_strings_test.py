@@ -38,6 +38,10 @@ class FormatStringsTest(unittest.TestCase):
         self.assertEqual(3, len(parts))
         print(parts)
 
+        self.assertRaises(RuntimeError, format_strings.Parse, '%s %c')
+
+        self.assertRaises(RuntimeError, format_strings.Parse, '%x %y')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -51,6 +51,21 @@ class MylibTest(unittest.TestCase):
         else:
             self.fail('Expected assertion')
 
+    def testStat(self):
+        cases = [
+            # path                 exists  isreg
+            (",",                  False,  False),
+            (".",                  True,   False),
+            ("/",                  True,   False),
+            ("/usr/bin/sh",        True,   True),
+            ("/nonexistent__ZZZZ", False,  False)
+        ]
+
+        for path, exists, isreg in cases:
+            st = mylib.stat(path);
+            self.assertEqual(exists, st is not None);
+            self.assertEqual(isreg, st.isreg() if st is not None else False);
+
 
 if __name__ == '__main__':
     unittest.main()

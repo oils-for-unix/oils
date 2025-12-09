@@ -561,3 +561,48 @@ ok07
 trap-exit
 failure
 ## END
+
+#### trap '' sets handler to empty string (SIG_IGN)
+
+# Note: this doesn't actually test that it's SIG_IGN
+
+trap '' USR1
+trap
+
+## STDOUT:
+trap -- '' SIGUSR1
+## END
+## OK dash/ash STDOUT:
+trap -- '' USR1
+## END
+## OK mksh STDOUT:
+trap --  USR1
+## END
+
+#### trap '' with multiple signals
+
+trap '' USR1 USR2
+trap
+
+## STDOUT:
+trap -- '' SIGUSR1
+trap -- '' SIGUSR2
+## END
+## OK dash/ash STDOUT:
+trap -- '' USR1
+trap -- '' USR2
+## END
+## OK mksh STDOUT:
+trap --  USR1
+trap --  USR2
+## END
+
+#### trap with command.NoOp - check internal invariant
+
+$SH -c 'trap "> zz" EXIT'
+wc -l zz  # should exist
+
+## STDOUT:
+0 zz
+## END
+
