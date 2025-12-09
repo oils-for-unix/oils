@@ -1,4 +1,4 @@
-## oils_failures_allowed: 8
+## oils_failures_allowed: 3
 ## compare_shells: dash bash mksh
 
 # Job control constructs:
@@ -54,7 +54,7 @@ wait -n
 #### wait with jobspec syntax %nonexistent
 wait %nonexistent
 ## status: 127
-## N-I dash status: 2
+## OK dash status: 2
 
 #### wait with invalid PID
 wait 12345678
@@ -154,6 +154,8 @@ status=1
 ## END
 
 #### Start background pipeline, wait %job_spec
+case $SH in mksh) exit ;; esac  # flakiness?
+
 echo hi | { exit 99; } &
 echo status=$?
 wait %1
@@ -162,9 +164,7 @@ echo status=$?
 status=0
 status=99
 ## END
-## N-I mksh STDOUT:
-status=0
-status=127
+## BUG mksh STDOUT:
 ## END
 
 #### Wait for job and PIPESTATUS
@@ -415,4 +415,7 @@ status=129
 Hangup
 ## END
 ## STDERR:
+## END
+
+## N-I dash/mksh STDOUT:
 ## END
