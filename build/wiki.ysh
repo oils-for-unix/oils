@@ -1,0 +1,129 @@
+#!/usr/bin/env ysh
+#
+# Usage:
+#   build/wiki.ysh render
+#   build/wiki.ysh commit-push
+#
+# Action: render
+#
+# This will clone the oils-for-unix/oils wiki, and render all of the markdown
+# files using doc tools. The docs are saved to _tmp/wiki/out.
+#
+# Action: commit-push
+#
+# This will get the latest oils-for-unix/oils-for-unix.github.io, copy the wiki
+# build into the clone and then commit + push it.
+#
+# This is used for the dev guide.
+
+const WIKI_OUT_DIR = '_tmp/wiki/out'
+const WIKI_DIR = '_tmp/wiki/git'
+const PAGES_DIR = '_tmp/wiki/oils-for-unix.github.io'
+
+const DATE = $(date --rfc-email)
+
+proc pull-latest(dir, repo) {
+  ## Pull the latest commit from $repo to $dir. Will clone if necessary
+
+  if test -d $dir {
+    echo "$repo already cloned to $dir, pulling latest"
+
+    cd $dir {
+      git pull
+    }
+
+    return
+  }
+
+  echo "Cloning $repo to $dir"
+  mkdir -p $dir
+  git clone $repo $dir
+}
+
+
+func slugify(s) {
+  return (s.replace(" ", "-").replace(",", " "))
+}
+
+proc pre-render-wikilinks() {
+  ## GitHub wikis have a unique [[link syntax]] which references topic within
+  ## the wiki.
+  ##
+  ## This function converts that syntax to the traditional
+  ## [link syntax](./link-syntax.html) which will render correctly once fed to
+  ## doctools.
+  for line in (io.stdin) {
+    var mdlink = line.replace(/ '[[' <capture ![']']* as link> ']]' /,
+                              ^"[$link]($[slugify(link)].html)")
+    write -- $[mdlink]
+  }
+}
+
+proc render-one(path) {
+  mkdir -p $WIKI_OUT_DIR
+
+  var name = path.replace(/ %start dot* '/' <capture dot* as name> '.md' /, ^"$[slugify(name)]")
+  var title = name.replace('-', ' ')
+  var dest = "$WIKI_OUT_DIR/$name.html"
+
+  fopen >$dest {
+    echo """
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>$title</title>
+          <link rel="stylesheet" type="text/css" href="../web/base.css" />
+        </head>
+        <body class="width40">
+    """
+
+    pre-render-wikilinks <$path | cmark
+
+    echo """
+      <div id="build-timestamp">
+        <i>Generated on $DATE</i>
+      </div>
+
+      </body>
+    </html>
+    """
+  }
+}
+
+
+proc render() {
+  pull-latest $WIKI_DIR https://github.com/oils-for-unix/oils.wiki.git
+  find $WIKI_DIR -name '*.md' -print0 | xargs -I {} -0 -- $0 render-one {}
+}
+
+
+proc commit-push() {
+  var USER = get(ENV, 'OILS_PAGES_GITHUB_USER')
+  var PAT = get(ENV, 'OILS_PAGES_GITHUB_TOKEN')
+  pull-latest $PAGES_DIR "https://$USER:$PAT@github.com/oils-for-unix/oils-for-unix.github.io.git"
+
+  # Stash and pending changes (there should be none)
+  cd $PAGES_DIR {
+    git add .
+    git stash
+  }
+
+  # Update the wiki
+  rm -rf $PAGES_DIR/wiki
+  cp -r $WIKI_OUT_DIR $PAGES_DIR/wiki
+
+  cd $PAGES_DIR {
+    git add wiki
+
+    if git diff --quiet --staged {
+      echo 'No changes, will not commit'
+    } else {
+      git commit -m "Bump wiki $DATE"
+      git push
+    }
+  }
+}
+
+
+runproc @ARGV
