@@ -37,4 +37,6 @@ jobs:
 
       - name: Commit and Push
         run: |
+          git config --global user.email "bot@oils.pub"
+          git config --global user.name "Oils Wiki Bot"
           build/wiki.ysh commit-push
