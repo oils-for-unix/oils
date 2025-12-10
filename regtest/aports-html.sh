@@ -796,21 +796,22 @@ make-wwz() {
 }
 
 readonly WEB_HOST=op.oils.pub
+readonly WEB_HOST_USER=oils
 
 deploy-wwz-op() {
   local wwz=${1:-$REPORT_DIR/2025-08-03.wwz}
 
   local dest_dir=$WEB_HOST/aports-build
-
+  local server=$WEB_HOST_USER@$WEB_HOST
   update-published  # slightly redundant
 
-  ssh $WEB_HOST mkdir -p $dest_dir
+  ssh $server mkdir -p $dest_dir
 
-  scp $wwz $REPORT_DIR/published.html \
-    $WEB_HOST:$dest_dir/
+  scp $wwz $server:$dest_dir/
 
-  echo "Visit https://$dest_dir/published.html"
-  echo "      https://$dest_dir/$(basename $wwz)/"
+  # TODO: document in wiki to also run deploy-published()
+  # echo "Visit https://$dest_dir/published.html"
+  echo "Visit https://$dest_dir/$(basename $wwz)/"
 }
 
 deploy-published() {

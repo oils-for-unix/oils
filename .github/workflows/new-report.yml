@@ -1,0 +1,15 @@
+name: Generate new report
+
+on:
+  push:  # Add this temporarily
+    branches:
+      - update-causes-script
+
+jobs:
+  trigger:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Trigger new report generation
+        run: |
+          curl "http://he.oils.pub:8080?token=super-secret&kind=main"
+
