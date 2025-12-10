@@ -18,11 +18,9 @@
 # This will get the latest oils-for-unix/oils-for-unix.github.io, copy the wiki
 # build into the clone and then commit + push it.
 #
-# This requires 2 environment variables to be set (usually in GitHub Actions
-# secrets):
-#   1. OILS_PAGES_GITHUB_USER    # GitHub username for the token/PAT holder
-#   2. OILS_PAGES_GITHUB_TOKEN   # A PAT with content: write permissions to
-#                                # the oils-for-unix.github.io repo.
+# This requires an environment variable to be set (usually in GitHub Actions
+# secrets): `OILS_PAGES_GITHUB_TOKEN`. This is a PAT with `content: write`
+# permissions to the oils-for-unix.github.io repo.
 
 const WIKI_OUT_DIR = '_tmp/wiki/out'
 const WIKI_DIR = '_tmp/wiki/git'
@@ -105,9 +103,8 @@ proc render() {
 proc commit-push() {
   ## Commit and push the most recent build to oils-for-unix.github.io
 
-  var USER = ENV.OILS_PAGES_GITHUB_USER
   var PAT = ENV.OILS_PAGES_GITHUB_TOKEN
-  pull-latest $PAGES_DIR "https://$USER:$PAT@github.com/PossiblyAShrub/oils-for-unix.github.io.git"
+  pull-latest $PAGES_DIR "https://x-access-token:$PAT@github.com/PossiblyAShrub/oils-for-unix.github.io.git"
 
   # Stash and pending changes (there should be none)
   cd $PAGES_DIR {

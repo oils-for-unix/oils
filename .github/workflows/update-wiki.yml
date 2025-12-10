@@ -8,7 +8,6 @@ jobs:
   build-deploy:
     runs-on: ubuntu-22.04
     env:
-      OILS_PAGES_GITHUB_USER: ${{ secrets.OILS_PAGES_GITHUB_USER }}
       OILS_PAGES_GITHUB_TOKEN: ${{ secrets.OILS_PAGES_GITHUB_TOKEN }}
     steps:
       - name: Check out repository code
