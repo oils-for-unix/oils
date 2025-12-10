@@ -1,0 +1,40 @@
+name: update-wiki
+
+# Triggered whenever the wiki is updated
+on: gollum
+
+jobs:
+  # Build the wiki and commit+push it to oils-for-unix.github.io
+  build-deploy:
+    runs-on: ubuntu-22.04
+    env:
+      OILS_PAGES_GITHUB_TOKEN: ${{ secrets.OILS_PAGES_GITHUB_TOKEN }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Install CommonMark
+        run: |
+          sudo apt install cmark
+
+      - name: Install YSH
+        run: |
+          expected="f4d41d20a0523dbcfbd4ba231f82edf25b08d4965d65bc71fcb56666d6743000"
+          wget -qO- "https://oils.pub/download/oils-for-unix-0.37.0.tar.gz" \
+            | tee oils-for-unix-0.37.0.tar.gz \
+            | sha256sum --check <(echo "$expected  -")
+
+          tar -x --gz < oils-for-unix-0.37.0.tar.gz
+          cd oils-for-unix-0.37.0
+
+          ./configure
+          _build/oils.sh
+          sudo ./install
+
+      - name: Render Wiki Markdown
+        run: |
+          build/wiki.ysh render
+
+      - name: Commit and Push
+        run: |
+          build/wiki.ysh commit-push
