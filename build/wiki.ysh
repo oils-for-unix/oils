@@ -1,26 +1,32 @@
 #!/usr/bin/env ysh
 #
-# Usage:
+# Script to build and deploy the wiki to pages.oils.pub
+# (oils-for-unix.github.io). This is used for the dev guide.
+#
+# # Usage:
+#
 #   build/wiki.ysh render
 #   build/wiki.ysh commit-push
 #
-# Action: render
+# # Action: render
 #
 # This will clone the oils-for-unix/oils wiki, and render all of the markdown
 # files using doc tools. The docs are saved to _tmp/wiki/out.
 #
-# Action: commit-push
+# # Action: commit-push
 #
 # This will get the latest oils-for-unix/oils-for-unix.github.io, copy the wiki
 # build into the clone and then commit + push it.
 #
-# This is used for the dev guide.
+# This requires 2 environment variables to be set (usually in GitHub Actions
+# secrets):
+#   1. OILS_PAGES_GITHUB_USER    # GitHub username for the token/PAT holder
+#   2. OILS_PAGES_GITHUB_TOKEN   # A PAT with content: write permissions to
+#                                # the oils-for-unix.github.io repo.
 
 const WIKI_OUT_DIR = '_tmp/wiki/out'
 const WIKI_DIR = '_tmp/wiki/git'
 const PAGES_DIR = '_tmp/wiki/oils-for-unix.github.io'
-
-const DATE = $(date --rfc-email)
 
 proc pull-latest(dir, repo) {
   ## Pull the latest commit from $repo to $dir. Will clone if necessary
@@ -81,10 +87,6 @@ proc render-one(path) {
     pre-render-wikilinks <$path | cmark
 
     echo """
-      <div id="build-timestamp">
-        <i>Generated on $DATE</i>
-      </div>
-
       </body>
     </html>
     """
@@ -93,15 +95,19 @@ proc render-one(path) {
 
 
 proc render() {
+  ## Pull the latest version of the wiki and render it
+
   pull-latest $WIKI_DIR https://github.com/oils-for-unix/oils.wiki.git
   find $WIKI_DIR -name '*.md' -print0 | xargs -I {} -0 -- $0 render-one {}
 }
 
 
 proc commit-push() {
-  var USER = get(ENV, 'OILS_PAGES_GITHUB_USER')
-  var PAT = get(ENV, 'OILS_PAGES_GITHUB_TOKEN')
-  pull-latest $PAGES_DIR "https://$USER:$PAT@github.com/oils-for-unix/oils-for-unix.github.io.git"
+  ## Commit and push the most recent build to oils-for-unix.github.io
+
+  var USER = ENV.OILS_PAGES_GITHUB_USER
+  var PAT = ENV.OILS_PAGES_GITHUB_TOKEN
+  pull-latest $PAGES_DIR "https://$USER:$PAT@github.com/PossiblyAShrub/oils-for-unix.github.io.git"
 
   # Stash and pending changes (there should be none)
   cd $PAGES_DIR {
@@ -119,7 +125,8 @@ proc commit-push() {
     if git diff --quiet --staged {
       echo 'No changes, will not commit'
     } else {
-      git commit -m "Bump wiki $DATE"
+      var date = $(date --rfc-email)
+      git commit -m "Bump wiki $date"
       git push
     }
   }
