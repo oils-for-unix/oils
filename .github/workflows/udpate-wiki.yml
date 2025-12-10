@@ -1,7 +1,7 @@
 name: update-wiki
-on:
-  # Triggered whenever the wiki is updated
-  - gollum
+
+# Triggered whenever the wiki is updated
+on: gollum
 
 jobs:
   # Build the wiki and commit+push it to oils-for-unix.github.io
