@@ -6,6 +6,7 @@ HAVE_FNM_EXTMATCH: int
 
 # libc values
 FNM_CASEFOLD: int
+FNM_PATHNAME: int
 GLOB_PERIOD: int
 REG_ICASE: int
 REG_NEWLINE: int

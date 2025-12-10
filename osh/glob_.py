@@ -13,7 +13,7 @@ from mycpp import mylib
 from mycpp.mylib import log
 from pylib import os_path
 
-from libc import GLOB_PERIOD
+from libc import GLOB_PERIOD, FNM_PATHNAME
 from _devbuild.gen.value_asdl import value_e
 from _devbuild.gen.runtime_asdl import scope_e
 
@@ -456,9 +456,8 @@ def _StringMatchesAnyPattern(s, patterns):
     Returns True if s matches any pattern, or if s is . or ..
     (which are always filtered when GLOBIGNORE is set).
     """
-    flags = 0
     for pattern in patterns:
-        if libc.fnmatch(pattern, s, flags):
+        if libc.fnmatch(pattern, s, FNM_PATHNAME):
             return True
 
     return False
@@ -478,8 +477,7 @@ class Globber(object):
         # globstar          ** for directories
         # globasciiranges   ascii or unicode char classes (unicode by default)
         # nocaseglob
-        # extglob          the @() !() syntax -- libc helps us with fnmatch(), but
-        #                  not glob().
+        # GLOBSORT global variable
 
     def _GetGlobIgnorePatterns(self):
         # type: () -> Optional[List[str]]

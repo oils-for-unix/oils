@@ -375,7 +375,7 @@ Examples:
     GLOBIGNORE='dist/*:node_modules/*'  # Ignore directory contents
     echo */*
 
-    GLOBIGNORE='.:..'        # Match dotfiles, but filter . and ..
+    GLOBIGNORE='.:..'         # Match dotfiles, but filter . and ..
     echo .*                   # Shows .env, .gitignore, etc. (not . or ..)
 
 The patterns use standard glob syntax (see [glob-pat][]). Note that colons
