@@ -642,6 +642,16 @@ var d = {k: 'foo'}
 call d->append('k', 'bar')
 ## status: 3
 
+#### Dict -> update()
+var d = {a: 2, b: 3}
+var alias = d
+var other = {a: 42}
+call d->update(other)
+assert [{a: 42, b: 3} === d]
+assert [{a: 42, b: 3} === alias]
+## STDOUT:
+## END
+
 #### Separation of -> attr and () calling
 const check = "abc" => startsWith
 pp test_ (check("a"))
