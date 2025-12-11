@@ -145,6 +145,24 @@ class Append(vm._Callable):
         return value.Null
 
 
+class Update(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        dict_to_update = rd.PosDict()
+        other_dict = rd.PosDict()
+        rd.Done()
+
+        dict_to_update.update(other_dict)
+
+        return value.Null
+
+
 class Get(vm._Callable):
 
     def __init__(self):
