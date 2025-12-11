@@ -299,7 +299,7 @@ X [External Lang] BEGIN   END   when (awk)
                   expr-sub      $[myobj]
                   expr-splice   @[myobj]
   [Operators]     op-precedence Like Python
-                  concat        s1 ++ s2,  L1 ++ L2
+                  concat        s1 ++ s2,  L1 ++ L2,  dict1 ++ dict2
                   ysh-equals    ===   !==   ~==   is, is not
                   ysh-in        in, not in
                   ysh-compare   <  <=  >  >=  (numbers only)
