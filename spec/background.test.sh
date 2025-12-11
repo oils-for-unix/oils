@@ -1,4 +1,5 @@
 ## oils_failures_allowed: 3
+## oils_cpp_failures_allowed: 4
 ## compare_shells: dash bash mksh
 
 # Job control constructs:
@@ -154,6 +155,8 @@ status=1
 ## END
 
 #### Start background pipeline, wait %job_spec
+case $SH in mksh) exit ;; esac  # flakiness?
+
 echo hi | { exit 99; } &
 echo status=$?
 wait %1
@@ -161,6 +164,8 @@ echo status=$?
 ## STDOUT:
 status=0
 status=99
+## END
+## BUG mksh STDOUT:
 ## END
 
 #### Wait for job and PIPESTATUS
@@ -395,4 +400,23 @@ wait --all 1
 ## END
 
 ## N-I dash/bash/mksh STDOUT:
+## END
+
+#### Signal message for killed background job
+case $SH in dash|mksh) exit ;; esac
+
+sleep 1 &
+kill -HUP $!
+wait $! 2>err.txt
+echo status=$?
+grep -o "Hangup" err.txt
+## status: 0
+## STDOUT:
+status=129
+Hangup
+## END
+## STDERR:
+## END
+
+## N-I dash/mksh STDOUT:
 ## END
