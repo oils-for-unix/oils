@@ -652,6 +652,16 @@ assert [{a: 42, b: 3} === alias]
 ## STDOUT:
 ## END
 
+#### concat operator (++) on dicts
+var d = {a: 2, b: 3}
+var other = {a: 42}
+assert [{a: 42, b: 3} === d ++ other]
+# old dict is untouched - shallow copy was done
+assert [{a: 2, b: 3} === d]
+## STDOUT:
+## END
+
+
 #### Separation of -> attr and () calling
 const check = "abc" => startsWith
 pp test_ (check("a"))
