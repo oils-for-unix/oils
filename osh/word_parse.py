@@ -1102,8 +1102,8 @@ class WordParser(WordEmitter):
                         ch = lexer.TokenSliceLeft(tok, 1)
                         part = word_part.EscapedLiteral(tok, ch)
                     else:
-                        # in here docs \" should not be escaped, staying as literal characters
-                        tok.id = Id.Lit_Chars
+                        # In here docs, \" is not an escape sequence.  Both
+                        # chars remain literal (Id.Lit_*).
                         part = tok
 
                 else:
