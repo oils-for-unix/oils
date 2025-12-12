@@ -4,12 +4,24 @@ on:
   push:  # Add this temporarily
     branches:
       - update-causes-script
-
+  workflow_dispatch:
+    inputs:
+      kind:
+        type: choice
+        description: What kind of report
+        options: 
+        - main
+        - community
+      base_report:
+        required: true
+         
 jobs:
   trigger:
     runs-on: ubuntu-22.04
     steps:
       - name: Trigger new report generation
         run: |
-          curl "http://he.oils.pub:8080?token=super-secret&kind=main"
+          curl -LJo ysh  "http://op.oils.pub/blob/ysh"
+          chmod +x ysh
+          ./ysh -c 'echo hi'
 
