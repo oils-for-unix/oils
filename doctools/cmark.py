@@ -22,6 +22,7 @@ import os
 import pprint
 import subprocess
 import sys
+from distutils.spawn import find_executable
 
 from doctools import html_lib
 from doctools import doc_html  # templates
@@ -58,7 +59,9 @@ def cmark_bin(md):
     elif os.path.exists(b2):
         cmark_path = b2
     else:
-        raise AssertionError('bin/cmark not found')
+        cmark_path = find_executable('python2')
+        if not cmark_path:
+            raise AssertionError('cmark not found')
 
     # Need to render raw HTML
     p = subprocess.Popen([cmark_path, '--unsafe'],

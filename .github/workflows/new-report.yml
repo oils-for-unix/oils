@@ -1,9 +1,9 @@
 name: Generate new report
 
 on:
-  push:  # Add this temporarily
-    branches:
-      - update-causes-script
+  # push:  # Add this temporarily
+  #   branches:
+  #     - update-causes-script
   workflow_dispatch:
     inputs:
       kind:
@@ -19,9 +19,33 @@ jobs:
   trigger:
     runs-on: ubuntu-22.04
     steps:
-      - name: Trigger new report generation
+      - name: Set up dir structure
         run: |
-          curl -LJo ysh  "http://op.oils.pub/blob/ysh"
-          chmod +x ysh
-          ./ysh -c 'echo hi'
+          mkdir oils-for-unix
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          path: oils-for-unix/oils
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.SSH_KEY_OP_OILS_PUB }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan op.oils.pub >> ~/.ssh/known_hosts
+      - name: Install ysh & generate new report
+        run: |
+          set -x
+          mkdir -p bin
+          curl -LJo bin/ysh  "http://op.oils.pub/blob/ysh"
+          chmod +x bin/*
+          export PATH="$PATH:$(pwd)/bin"
+          cd oils-for-unix
+          curl -LJo wedges.tar.gz  "http://op.oils.pub/blob/dev_wedges.tar.gz"
+          tar xf wedges.tar.gz
+          cd oils
+          curl -LJo devbuild.tar.gz  "http://op.oils.pub/blob/devbuild.tar.gz"
+          tar xf devbuild.tar.gz
+          . build/dev-shell.sh
+          regtest/aports-update-causes.sh update-latest ${{ inputs.base_report }} ${{ inputs.kind }}
 
