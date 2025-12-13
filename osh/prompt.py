@@ -185,12 +185,15 @@ class Evaluator(object):
             r = time_.strftime(fmt, time_.localtime(now))
 
         elif ch == 'w':
-            # HOME doesn't have to exist
-            home = state.MaybeString(self.mem, 'HOME')
+            # $HOME in OSH or ENV.HOME in YSH
+            home_str = None  # type: Optional[str]
+            home_val = self.mem.env_config.GetVal('HOME')
+            if home_val.tag() == value_e.Str:
+                home_str = cast(value.Str, home_val).s
 
             # Shorten /home/andy/mydir -> ~/mydir
             # Note: could also call sh_init.GetWorkingDir()?
-            r = ui.PrettyDir(self.mem.pwd, home)
+            r = ui.PrettyDir(self.mem.pwd, home_str)
 
         elif ch == 'W':
             # Note: could also call sh_init.GetWorkingDir()?
