@@ -684,6 +684,24 @@ If the key doesn't exist, then its default value is zero:
 In other words, it's like `setvar mydict.k += 3`, but you don't have to
 initialize each value to zero.
 
+### Dict/update()
+
+Modifies the dictionary in place, merging the right operand into the left operand.
+If a key appears in both dictionaries, right-hand operand wins:
+
+    var d = {a: 2, b: 3}
+    var other = {a: 42}
+    call d->update(other)
+    = d # => (Dict)   {a: 42, b:3}
+
+See also the concat (++) operator, which returns a new dictionary instead of
+mutating the left operand:
+
+    var d = {a: 2, b: 3}
+    var other = {a: 42}
+    = d ++ other # => (Dict)   {a: 42, b:3}
+    = d # => (Dict)   {a: 2, b:3}
+
 ### Dict/clear()
 
 Remove all entries from the Dict:

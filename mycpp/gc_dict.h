@@ -121,6 +121,8 @@ class Dict {
   void update(List<Tuple2<K, V>*>* pairs);
   void update(Dict<K, V>* other);
 
+  Dict<K, V>* copy();
+
   List<K>* keys() const;
 
   List<V>* values() const;
@@ -466,6 +468,16 @@ void Dict<K, V>::update(Dict<K, V>* other) {
   for (DictIter<K, V> it(other); !it.Done(); it.Next()) {
     set(it.Key(), it.Value());
   }
+}
+
+template <class K, class V>
+Dict<K, V>* Dict<K, V>::copy() {
+  auto ret = Alloc<Dict<K, V>>();
+  ret->reserve(len_);
+  for (DictIter<K, V> it(this); !it.Done(); it.Next()) {
+    ret->set(it.Key(), it.Value());
+  }
+  return ret;
 }
 
 #endif  // MYCPP_GC_DICT_H

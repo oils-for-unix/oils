@@ -189,8 +189,10 @@ class OrderedDict(dict):
 
     def copy(self):
         'od.copy() -> a shallow copy of od'
-        # PATCH: not used in Oil
-        raise AssertionError()
+        res = {}
+        for k, v in self.iteritems():
+            res[k] = v
+        return res
 
     @classmethod
     def fromkeys(cls, iterable, value=None):
