@@ -52,6 +52,7 @@ from posix_ import (
     WEXITSTATUS,
     WSTOPSIG,
     WTERMSIG,
+    WCOREDUMP,
     WNOHANG,
     O_APPEND,
     O_CREAT,
@@ -2078,9 +2079,7 @@ NO_ARG = -20
 def GetSignalMessage(sig_num):
     # type: (int) -> Optional[str]
     """Get signal message from libc."""
-    if mylib.PYTHON:
-        return libc.strsignal(sig_num)
-    return None
+    return libc.strsignal(sig_num)
 
 
 class Waiter(object):
@@ -2208,14 +2207,10 @@ class Waiter(object):
             else:
                 msg = GetSignalMessage(term_sig)
                 if msg is not None:
-                    if mylib.PYTHON:
-                        # WCOREDUMP is only available on some systems
-                        try:
-                            from os import WCOREDUMP  # type: ignore
-                            if WCOREDUMP(status):
-                                msg = msg + ' (core dumped)'
-                        except (ImportError, AttributeError):
-                            pass
+                    # WCOREDUMP checks if process dumped core
+                    # On systems without WCOREDUMP, this will be False
+                    if WCOREDUMP(status):
+                        msg = msg + ' (core dumped)'
                     print_stderr(msg)
 
             if proc:

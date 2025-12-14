@@ -8,6 +8,12 @@
 #include <sys/resource.h>  // RLIM_INFINITY in builtin/process_osh.py
 #include <sys/wait.h>      // e.g. WIFSIGNALED() called directly
 
+// WCOREDUMP is not defined on all systems (e.g., AIX, SunOS)
+// Provide a fallback similar to bash's posixwait.h
+#ifndef WCOREDUMP
+#  define WCOREDUMP(status) ((status) & 0200)
+#endif
+
 #include "_gen/core/optview.h"
 #include "_gen/core/runtime.asdl.h"
 #include "_gen/core/value.asdl.h"
