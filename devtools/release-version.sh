@@ -136,6 +136,7 @@ git-shortlog-html() {
   git log \
     --pretty="format:$format" \
     --date=short \
+    --reverse \
     $prev_branch..$cur_branch | escape-and-shortlog
 }
 
