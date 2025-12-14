@@ -367,10 +367,10 @@ and `List` objects:
 
 and `Dict` objects:
 
-    ysh$ var d = {a: 2, b: 3}
-    ysh$ var other = {a: 42}
-    = d ++ other # => (Dict)   {a: 42, b:3}
-    = d # => (Dict)   {a: 2, b:3}
+    var d = {a: 2, b: 3}
+    var other = {a: 42}
+    = d ++ other  # => (Dict)   {a: 42, b:3}
+    = d           # => (Dict)   {a: 2, b:3}
 
 String interpolation can be nicer than `++`:
 
