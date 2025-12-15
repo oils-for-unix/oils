@@ -86,7 +86,7 @@ download-wild() {
 
   mkdir -p $REPO_ROOT/_cache
   wget --directory-prefix $REPO_ROOT/_cache --no-clobber \
-    https://www.oilshell.org/blob/wild/wild-source.tar.gz
+    https://op.oils.pub/blob/wild/wild-source.tar.gz
 }
 
 extract-wild() {

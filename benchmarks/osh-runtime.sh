@@ -27,7 +27,7 @@ readonly TAR_DIR=$PWD/_deps/osh-runtime  # Make it absolute
 
 readonly PY27_DIR=$PWD/Python-2.7.13
 
-# NOTE: Same list in oilshell.org/blob/run.sh.
+# NOTE: Same list in op.oils.pub/blob/run.sh.
 tarballs() {
   cat <<EOF
 tcc-0.9.26.tar.bz2
@@ -40,7 +40,7 @@ EOF
 download() {
   mkdir -p $TAR_DIR
   tarballs | xargs -n 1 -I {} --verbose -- \
-    wget --no-clobber --directory-prefix $TAR_DIR 'https://www.oilshell.org/blob/testdata/{}'
+    wget --no-clobber --directory-prefix $TAR_DIR 'https://op.oils.pub/blob/testdata/{}'
 }
 
 extract() {
