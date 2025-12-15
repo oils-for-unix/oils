@@ -687,10 +687,18 @@ class ExprEvaluator(object):
             c.extend(right.items)
             return value.List(c)
 
+        elif left.tag() == value_e.Dict and right.tag() == value_e.Dict:
+            left = cast(value.Dict, UP_left)
+            right = cast(value.Dict, UP_right)
+
+            res = left.d.copy()
+            res.update(right.d)
+            return value.Dict(res)
+
         else:
             raise error.TypeErrVerbose(
-                'Expected Str ++ Str or List ++ List, got %s ++ %s' %
-                (ui.ValType(left), ui.ValType(right)), op)
+                'Expected Str ++ Str, List ++ List, or Dict ++ Dict, got %s ++ %s'
+                % (ui.ValType(left), ui.ValType(right)), op)
 
     def _EvalBinary(self, node):
         # type: (expr.Binary) -> value_t

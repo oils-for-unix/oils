@@ -856,6 +856,7 @@ def Main(
         'M/clear': method_dict.Clear(),
         'M/inc': method_dict.Inc(),
         'M/append': method_dict.Append(),
+        'M/update': method_dict.Update(),
 
         # DEPRECATED - use free functions
         'get': method_dict.Get(),
