@@ -34,7 +34,7 @@ readonly PY_CONF=$REPO_ROOT/Python-2.7.13/configure
 
 download() {
   wget --no-clobber --directory-prefix $BASE_DIR \
-    'https://www.op.oils.pub/blob/testdata/util-linux-2.40.tar.xz'
+    'https://op.oils.pub/blob/testdata/util-linux-2.40.tar.xz'
   cd $BASE_DIR
   tar --verbose -x --xz < util-linux-*.xz
 }

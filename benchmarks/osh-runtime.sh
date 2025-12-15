@@ -40,7 +40,7 @@ EOF
 download() {
   mkdir -p $TAR_DIR
   tarballs | xargs -n 1 -I {} --verbose -- \
-    wget --no-clobber --directory-prefix $TAR_DIR 'https://www.op.oils.pub/blob/testdata/{}'
+    wget --no-clobber --directory-prefix $TAR_DIR 'https://op.oils.pub/blob/testdata/{}'
 }
 
 extract() {
