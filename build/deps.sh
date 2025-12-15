@@ -503,24 +503,24 @@ mirror-pyflakes() {
   ### Workaround for network error during release
   scp \
     $DEPS_SOURCE_DIR/pyflakes/"$(basename $PYFLAKES_URL)" \
-    oilshell.org:oilshell.org/blob/
+    op.oils.pub:op.oils.pub/blob/
 }
 
 mirror-python() {
   ### Can't reach python.org from some machines
   scp \
     $DEPS_SOURCE_DIR/python2/"$(basename $PY2_URL)" \
-    oilshell.org:oilshell.org/blob/
+    op.oils.pub:op.oils.pub/blob/
 
   scp \
     $DEPS_SOURCE_DIR/python3/"$(basename $PY3_URL)" \
-    oilshell.org:oilshell.org/blob/
+    op.oils.pub:op.oils.pub/blob/
 }
 
 mirror-zsh() {
   scp \
     _tmp/zsh-5.9.tar.xz \
-    oilshell.org:oilshell.org/blob/
+    op.oils.pub:op.oils.pub/blob/
 }
 
 wedge-exists() {

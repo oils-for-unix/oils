@@ -14,7 +14,7 @@ readonly BASE_DIR=_tmp/blob
 
 download() {
   mkdir -p $BASE_DIR
-  time rsync --archive --verbose chubot@travis-ci.oilshell.org:oilshell.org/blob/ $BASE_DIR/
+  time rsync --archive --verbose chubot@travis-ci.op.oils.pub:op.oils.pub/blob/ $BASE_DIR/
 }
 
 upload-op() {
