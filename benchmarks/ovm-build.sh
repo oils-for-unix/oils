@@ -13,7 +13,7 @@
 
 # Directories used:
 #
-# oilshell.org/blob/
+# op.oils.pub/blob/
 #  ovm-build/
 #
 # ~/git/oilshell/
@@ -53,7 +53,7 @@ readonly -a TAR_SUBDIRS=(
   bash-4.4 
 )
 
-# NOTE: Same list in oilshell.org/blob/run.sh.
+# NOTE: Same list in op.oils.pub/blob/run.sh.
 tarballs() {
   cat <<EOF
 bash-4.4.tar.gz
@@ -64,7 +64,7 @@ EOF
 download() {
   mkdir -p $TAR_DIR
   tarballs | xargs -n 1 -I {} --verbose -- \
-    wget --no-clobber --directory-prefix $TAR_DIR 'https://www.oilshell.org/blob/ovm-build/{}'
+    wget --no-clobber --directory-prefix $TAR_DIR 'https://www.op.oils.pub/blob/ovm-build/{}'
 }
 
 # Done MANUALLY.

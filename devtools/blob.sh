@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Manage the old oilshell.org/blob/ dir
+# Manage the old op.oils.pub/blob/ dir
 # Created after Dreamhost disabled oilshell.org
 #
 # Usage:
