@@ -59,29 +59,29 @@ readonly PY3_VERSION=3.10.4
 readonly PY3_URL="$PY_FTP_MIRROR/python/$PY3_VERSION/Python-$PY3_VERSION.tar.xz"
 
 readonly BASH_VER=4.4  # don't clobber BASH_VERSION
-readonly BASH_URL="https://www.oilshell.org/blob/spec-bin/bash-$BASH_VER.tar.gz"
+readonly BASH_URL="https://www.op.oils.pub/blob/spec-bin/bash-$BASH_VER.tar.gz"
 
 # Another version of bash to test
 readonly BASH5_VER=5.2.21
-readonly BASH5_URL="https://www.oilshell.org/blob/spec-bin/bash-$BASH5_VER.tar.gz"
+readonly BASH5_URL="https://www.op.oils.pub/blob/spec-bin/bash-$BASH5_VER.tar.gz"
 
 readonly DASH_VERSION=0.5.10.2
-readonly DASH_URL="https://www.oilshell.org/blob/spec-bin/dash-$DASH_VERSION.tar.gz"
+readonly DASH_URL="https://www.op.oils.pub/blob/spec-bin/dash-$DASH_VERSION.tar.gz"
 
 readonly ZSH_OLD_VER=5.1.1
-readonly ZSH_OLD_URL="https://www.oilshell.org/blob/spec-bin/zsh-$ZSH_OLD_VER.tar.xz"
+readonly ZSH_OLD_URL="https://www.op.oils.pub/blob/spec-bin/zsh-$ZSH_OLD_VER.tar.xz"
 
 readonly ZSH_NEW_VER=5.9
-readonly ZSH_NEW_URL="https://www.oilshell.org/blob/spec-bin/zsh-$ZSH_NEW_VER.tar.xz"
+readonly ZSH_NEW_URL="https://www.op.oils.pub/blob/spec-bin/zsh-$ZSH_NEW_VER.tar.xz"
 
 readonly MKSH_VERSION=R52c
-readonly MKSH_URL="https://www.oilshell.org/blob/spec-bin/mksh-$MKSH_VERSION.tgz"
+readonly MKSH_URL="https://www.op.oils.pub/blob/spec-bin/mksh-$MKSH_VERSION.tgz"
 
 readonly BUSYBOX_VERSION='1.35.0'
-readonly BUSYBOX_URL="https://www.oilshell.org/blob/spec-bin/busybox-$BUSYBOX_VERSION.tar.bz2"
+readonly BUSYBOX_URL="https://www.op.oils.pub/blob/spec-bin/busybox-$BUSYBOX_VERSION.tar.bz2"
 
 readonly YASH_VERSION=2.49
-readonly YASH_URL="https://www.oilshell.org/blob/spec-bin/yash-$YASH_VERSION.tar.xz"
+readonly YASH_URL="https://www.op.oils.pub/blob/spec-bin/yash-$YASH_VERSION.tar.xz"
 
 readonly MYPY_GIT_URL=https://github.com/python/mypy
 readonly MYPY_VERSION=0.780
@@ -93,7 +93,7 @@ readonly PY3_LIBS=~/wedge/oils-for-unix.org/pkg/py3-libs/$MYPY_VERSION
 readonly PYFLAKES_VERSION=2.4.0
 #readonly PYFLAKES_URL='https://files.pythonhosted.org/packages/15/60/c577e54518086e98470e9088278247f4af1d39cb43bcbd731e2c307acd6a/pyflakes-2.4.0.tar.gz'
 # 2023-07: Mirrored to avoid network problem on broome during release
-readonly PYFLAKES_URL='https://www.oilshell.org/blob/pyflakes-2.4.0.tar.gz'
+readonly PYFLAKES_URL='https://www.op.oils.pub/blob/pyflakes-2.4.0.tar.gz'
 
 readonly BLOATY_VERSION=1.1
 readonly BLOATY_URL='https://github.com/google/bloaty/releases/download/v1.1/bloaty-1.1.tar.bz2'
@@ -503,24 +503,24 @@ mirror-pyflakes() {
   ### Workaround for network error during release
   scp \
     $DEPS_SOURCE_DIR/pyflakes/"$(basename $PYFLAKES_URL)" \
-    oilshell.org:oilshell.org/blob/
+    op.oils.pub:op.oils.pub/blob/
 }
 
 mirror-python() {
   ### Can't reach python.org from some machines
   scp \
     $DEPS_SOURCE_DIR/python2/"$(basename $PY2_URL)" \
-    oilshell.org:oilshell.org/blob/
+    op.oils.pub:op.oils.pub/blob/
 
   scp \
     $DEPS_SOURCE_DIR/python3/"$(basename $PY3_URL)" \
-    oilshell.org:oilshell.org/blob/
+    op.oils.pub:op.oils.pub/blob/
 }
 
 mirror-zsh() {
   scp \
     _tmp/zsh-5.9.tar.xz \
-    oilshell.org:oilshell.org/blob/
+    op.oils.pub:op.oils.pub/blob/
 }
 
 wedge-exists() {
