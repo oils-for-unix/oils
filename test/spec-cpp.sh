@@ -193,15 +193,24 @@ summary-tsv-row() {
   local spec_subdir=$1
   shift
 
+  local status cpp_failures_allowed cpp_failures
+
   if test $# -eq 1; then
     local spec_name=$1
     local -a tsv_files=( _tmp/spec/$spec_subdir/$spec_name.result.tsv )
+    status=$( awk '{printf $1}' "_tmp/spec/$spec_subdir/$spec_name.task.txt" )
+    cpp_failures_allowed=$( awk '{printf $6}' "_tmp/spec/$spec_subdir/$spec_name.stats.txt" )
+    cpp_failures=$( awk '{printf $7}' "_tmp/spec/$spec_subdir/$spec_name.stats.txt" )
   else
     local spec_name='TOTAL'
     local -a tsv_files=( "$@" )
+    cpp_failures_allowed="-"
+    cpp_failures="-"
+    status=0
   fi
 
-  awk -v spec_name=$spec_name '
+  awk -v spec_name=$spec_name -v status=$status \
+      -v cpp_failures_allowed=$cpp_failures_allowed -v cpp_failures=$cpp_failures '
 # skip the first row
 FNR != 1 {
   case_num = $1
@@ -228,12 +237,18 @@ END {
     row_css_class = "cpp-good"  # green
   }
 
-  row = sprintf("%s %s %s %d %d %d",
+  if (status != 0) {
+    row_css_class = "cpp-failed"  # red
+  }
+
+  row = sprintf("%s %s %s %d %d %d %d %d",
          row_css_class,
          spec_name, href,
          num_py,
          num_cpp,
-         num_py - num_cpp)
+         num_py - num_cpp,
+         cpp_failures,
+         cpp_failures_allowed)
 
   # Turn tabs into spaces - awk mutates the row!
   gsub(/ /, "\t", row)
@@ -265,7 +280,7 @@ summary-tsv() {
   # Can't go at the top level because files might not exist!
   #echo "ROW_CSS_CLASS,name,name_HREF,${sh_label}_py,${sh_label}_cpp,delta"
   tsv-row \
-    'ROW_CSS_CLASS' 'name' 'name_HREF' ${sh_label}_py ${sh_label}_cpp 'delta'
+    'ROW_CSS_CLASS' 'name' 'name_HREF' ${sh_label}_py ${sh_label}_cpp 'delta' 'cpp_num_failed' 'cpp_failures_allowed'
 
   # total row rows goes at the TOP, so it's in <thead> and not sorted.
   summary-tsv-row $spec_subdir _tmp/spec/$spec_subdir/*.result.tsv
@@ -342,6 +357,8 @@ name            string
 name_HREF       string
 ${sh_label}_py  integer
 ${sh_label}_cpp integer
+cpp_num_failed integer
+cpp_failures_allowed integer
 delta           integer
 EOF
 

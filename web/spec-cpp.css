@@ -7,6 +7,11 @@ h1 {
   background-color: #e0ffe0;
 }
 
+/* same as .failed in spec-tests.css */
+.cpp-failed {
+  background-color: #ffe0e0;
+}
+
 /* same as .osh-allow-fail in spec-tests.css */
 .py-good {
   background-color: #ffffe0;
