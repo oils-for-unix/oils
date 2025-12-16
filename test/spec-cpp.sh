@@ -103,11 +103,17 @@ ysh-all() {
 
   local spec_subdir=ysh-cpp 
 
+  local status
+  set +o errexit
   # $suite $compare_mode
   test/spec-runner.sh all-parallel \
     ysh compare-cpp $spec_subdir "$@"
+  status=$?
+  set -o errexit
 
   write-compare-html $spec_subdir
+
+  return $status
 }
 
 console-row() {
