@@ -14,6 +14,7 @@ except ImportError:
 
 import math
 import sys
+from random import randint, seed
 from stat import S_ISREG
 
 from pylib import collections_
@@ -529,3 +530,13 @@ class StatResult:
     def isreg(self):
         # type: () -> bool
         return S_ISREG(self.stat_result.st_mode)
+
+
+def rand(max_value):
+    # type: (int) -> int
+    return randint(0, max_value)
+
+
+def srand(seed_value):
+    # type: (int) -> int
+    return seed(seed_value)
