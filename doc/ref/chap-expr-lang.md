@@ -23,35 +23,34 @@ Expressions]($xref:eggex).
 
 ### assign
 
-The `=` operator is used with assignment keywords:
+The `=` operator is used with declaration and assignment keywords:
 
     var x = 42
     setvar x = 43
 
-    const y = 'k'
+    const name = 'bob'
 
-    setglobal z = 'g'
+    setglobal a = [3, 4, 5]
 
 ### aug-assign
 
 The augmented assignment operators are:
 
-    +=   -=   *=   /=   **=   //=   %=
-    &=   |=   ^=   <<=   >>=
+```raw
++=   -=   *=   /=   **=   //=   %=
+&=   |=   ^=   <<=   >>=
+```
 
-They are used with `setvar` and `setglobal`.  For example:
+They are used with `setvar` and `setglobal`.  For example, these two statements
+are the same:
 
     setvar x += 2
-
-is the same as:
-
     setvar x = x + 2
 
-Likewise, these are the same:
+Likewise, these two are also the same:
 
-    setglobal a[i] -= 1
-
-    setglobal a[i] = a[i] - 1
+    setglobal a[2] -= 5
+    setglobal a[2] = a[2] - 5
 
 ## Literals
 
@@ -59,8 +58,10 @@ Likewise, these are the same:
 
 YSH uses JavaScript-like spellings for these three "atoms":
 
-    null           # type Null
-    true   false   # type Bool
+```raw
+null           # type Null
+true   false   # type Bool
+```
 
 Note: to signify "no value", you may sometimes use an empty string `''`,
 instead of `null`.
@@ -125,7 +126,7 @@ C-style strings borrowed from J8 Notation.
 
 Double quoted strings respect `$` interpolation:
 
-    var dq = "hello $world and $(hostname)"
+    var dq = "hello $name and $(hostname)"
 
 You can add a `$` before the left quote to be explicit: `$"x is $x"` rather
 than `"x is $x"`.
@@ -173,7 +174,7 @@ Triple-quoted string literals have leading whitespace stripped on each line.
 They come in the same variants:
 
     var dq = """
-        hello $world and $(hostname)
+        hello $name and $(hostname)
         no leading whitespace
         """
 
@@ -214,10 +215,10 @@ And a shell-like syntax:
 
 The shell-like syntax accepts the same syntax as a simple command:
 
-    ls $mystr @ARGV *.py {foo,bar}@example.com
+    echo $name @ARGV *.py {foo,bar}@example.com
 
-    # Rather than executing ls, evaluate words into a List
-    var cmd = :| ls $mystr @ARGV *.py {foo,bar}@example.com |
+    # Rather than executing echo, evaluate words into a List
+    var cmd = :| echo $name @ARGV *.py {foo,bar}@example.com |
 
 - Related: [List][] type
 
@@ -231,18 +232,17 @@ Dicts look like JavaScript.
       key1: 'value',  # key can be unquoted if it looks like a var name
       'key2': 42,     # or quote it
 
-      ['key2' ++ suffix]: 43,   # bracketed expression
+      ['key2' ++ name]: 43,   # bracketed expression
     }
 
 Omitting a value means that the corresponding key takes the value of a var of
 the same name:
 
-    ysh$ var x = 42
-    ysh$ var y = 43
+    var x = 42
+    var y = 43
 
-    ysh$ var d = {x, y}  # values omitted
-    ysh$ = d
-    (Dict)  {x: 42, y: 43}
+    var d = {x, y}  # values omitted
+    = d  # => (Dict)  {x: 42, y: 43}
 
 - Related: [Dict][] type
 
@@ -256,19 +256,19 @@ constructs half-open ranges.
     for i in (0 ..< 3) {
       echo $i
     }
-    => 0
-    => 1
-    => 2
+    # => 0
+    # => 1
+    # => 2
 
 The `..=` operator constructs closed ranges:
 
     for i in (0 ..= 3) {
       echo $i
     }
-    => 0
-    => 1
-    => 2
-    => 3
+    # => 0
+    # => 1
+    # => 2
+    # => 3
 
 - Related: [Range][] type
 
@@ -316,9 +316,8 @@ Related topics:
 
 Turn an expression into a string.
 
-    $ var x = $[3 * 2]
-    $ = x
-    (Str)   '6'
+    var x = $[3 * 2]
+    = x  # => (Str)   '6'
 
 This is the same as [Word Language > expr-sub](chap-word-lang.html#expr-sub).
 
@@ -326,10 +325,9 @@ This is the same as [Word Language > expr-sub](chap-word-lang.html#expr-sub).
 
 Turns each element of a List into a string.
 
-    $ var mylist = [42, 43]
-    $ var x = @[mylist]
-    $ = x
-    (List)  ['42', '43']
+    var mylist = [42, 43]
+    var x = @[mylist]
+    = x  # => (List)  ['42', '43']
 
 This is the same as [Word Language > expr-splice](chap-word-lang.html#expr-splice).
 
@@ -351,19 +349,17 @@ New operators:
 
 The concatenation operator works on `Str` objects:
 
-    ysh$ var s = 'hello'
-    ysh$ var t = s ++ ' world'
+    var s = 'hello'
+    var t = s ++ ' world'
 
-    ysh$ = t
-    (Str)   "hello world"
+    = t  # => (Str)   "hello world"
 
 and `List` objects:
 
-    ysh$ var L = ['one', 'two']
-    ysh$ var M = L ++ ['three', '4']
+    var L = ['one', 'two']
+    var M = L ++ ['three', '4']
 
-    ysh$ = M
-    (List)   ["one", "two", "three", "4"]
+    = M  # => (List)   ["one", "two", "three", "4"]
 
 and `Dict` objects:
 
@@ -384,12 +380,16 @@ Likewise, splicing lists can be nicer:
 
 YSH has strict equality:
 
-    a === b       # Python-like, without type conversion
-    a !== b       # negated
+```raw
+a === b       # Python-like, without type conversion
+a !== b       # negated
+```
 
 And type converting equality:
 
-    '3' ~== 3     # True, type conversion
+```raw
+'3' ~== 3     # True, type conversion
+```
 
 The `~==` operator expects a string as the left operand.
 
@@ -408,19 +408,16 @@ compare them.
 
 Compare objects for identity with `is`:
 
-    ysh$ var d = {}    
-    ysh$ var e = d
+    var d = {}    
+    var e = d
 
-    ysh$ = d is d
-    (Bool)   true
+    = d is d                    # => (Bool)   true
 
-    ysh$ = d is {other: 'dict'}
-    (Bool)   false
+    = d is {other: 'dict'}      # => (Bool)   false
 
-To negate `is`, use `is not` (like Python:
+To negate `is`, use `is not` (like Python):
 
-    ysh$ d is not {other: 'dict'}
-    (Bool)   true
+    = d is not {other: 'dict'}  # => (Bool)   true
 
 ### ysh-in
 
@@ -441,14 +438,15 @@ TODO: Use `includes() / contains()` methods instead.
 
 The comparison operators apply to integers or floats:
 
-    4 < 4   # => false
-    4 <= 4  # => true
+    = 4 < 4   # => false
+    = 4 <= 4  # => true
 
-    5.0 > 5.0   # => false
-    5.0 >= 5.0  # => true
+    = 5.0 > 5.0   # => false
+    = 5.0 >= 5.0  # => true
 
 Example in context:
 
+    var x = -42
     if (x < 0) {
       echo 'x is negative'
     }
@@ -457,8 +455,10 @@ Example in context:
 
 The logical operators take boolean operands, and are spelled like Python:
 
-    not
-    and  or
+```raw
+not
+and  or
+```
 
 Note that they are distinct from `!  &&  ||`, which are part of the [command
 language](chap-cmd-lang.html).
@@ -494,11 +494,15 @@ number, provided those strings are formatted as numbers.
     = 10 + '1'  # => (Int) 11
 
 Operators like `+ - * /` will coerce strings to _either_ an `Int` or `Float`.
+
+    = '1.14' + '2'  # => (Float) 3.14
+
 However, operators like `// ** %` and bit shifts will coerce strings _only_ to
 an `Int`.
 
-    = '1.14' + '2'  # => (Float) 3.14
-    = '1.14' % '2'  # Type Error: Left operand is a Str
+```raw
+= '1.14' % '2'  # Type Error: Left operand is a Str
+```
 
 ### ysh-unary
 
@@ -515,40 +519,39 @@ digits to either an `Int` or `Float`.
 
 Bitwise operators are like Python and C:
 
-    ~        # unary complement
+```raw
+~        # unary complement
 
-    &  |  ^  # binary and, or, xor
+&  |  ^  # binary and, or, xor
 
-    >>  <<   # bit shift
+>>  <<   # bit shift
+```
 
 ### ysh-ternary
 
 The ternary operator is borrowed from Python:
 
-    display = 'yes' if len(s) else 'empty'
+    var display = 'yes' if len(s) else 'empty'
 
 ### ysh-index
 
 `Str` objects can be indexed by byte:
 
-    ysh$ var s = 'cat'
-    ysh$ = mystr[1]
-    (Str)   'a'  
+    var mystr = 'cat'
+    = mystr[1]   # => (Str)   'a'  
 
-    ysh$ = mystr[-1]  # index from the end
-    (Str)   't'
+    # index from the end
+    = mystr[-1]  # => (Str)   't'
 
 `List` objects:
 
-    ysh$ var mylist = [1, 2, 3]
-    ysh$ = mylist[2]
-    (Int)  3
+    var mylist = [1, 2, 3]
+    = mylist[2]  # => (Int)  3
 
 `Dict` objects are indexed by string key:
 
-    ysh$ var mydict = {'key': 42}
-    ysh$ = mydict['key']
-    (Int)  42
+    var mydict = {'key': 42}
+    = mydict['key']  # => (Int)  42
 
 ### ysh-attr
 
@@ -600,39 +603,51 @@ Negative indices are relative to the end.
 
 String example:
 
-    $ var s = 'spam eggs'
-    $ pp (s[1:-1])
-    (Str)   "pam egg"
+    var s = 'spam eggs'
+    = s[1:-1]          # => (Str)   "pam egg"
 
-    $ echo "x $[s[2:]]"
-    x am eggs
+    echo "x $[s[2:]]"  # => x am eggs
 
 List example:
 
-    $ var foods = ['ale', 'bean', 'corn']
-    $ pp (foods[-2:])
-    (List)   ["bean","corn"]
+    var foods = ['ale', 'bean', 'corn']
+    = foods[-2:]       # => (List)   ["bean","corn"]
     
-    $ write -- @[foods[:2]]
-    ale
-    bean
+    write -- @[foods[:2]]
+    # => ale
+    # => bean
 
 ### ysh-func-call
 
-A function call expression looks like Python:
+Function calls are expressions:
 
-    ysh$ = f('s', 't', named=42)
+```raw
+= f(x)
+echo $[f(x)]  # expression sub
+```
 
-A semicolon `;` can be used after positional args and before named args, but
-isn't always required:
+Let's use this definition for examples:
 
-    ysh$ = f('s', 't'; named=42)
+    func myFunc(...args; ...kwargs) {
+      return (args ++ keys(kwargs))
+    }
+
+A semicolon `;` can be used after positional args and before named args:
+
+    = myFunc('s', 't'; named=42)
+
+It isn't always required, because this works too:
+
+    = myFunc('s', 't', named=42)
 
 In these cases, the `;` is necessary:
 
-    ysh$ = f(...args; ...kwargs)
+    var args = [3, 4]
+    var kwargs = {name: 42}
 
-    ysh$ = f(42, 43; ...kwargs)
+    = myFunc(...args; ...kwargs)
+
+    = myFunc(42, 43; ...kwargs)
 
 ### thin-arrow
 
@@ -734,7 +749,9 @@ For example, globs don't have `%start %end` or `^ $`.  They are always
 
 An eggex literal looks like this:
 
-    / expression ; flags ; translation preference /
+```raw
+/ expression ; flags ; translation preference /
+```
 
 The flags and translation preference are both optional.
 
@@ -761,19 +778,22 @@ There are two kinds of eggex primitives.
 
 "Zero-width assertions" match a position rather than a character:
 
-    %start           # translates to ^
-    %end             # translates to $
+```raw
+%start           # translates to ^
+%end             # translates to $
+```
 
 Literal characters appear within **single** quotes:
 
-    'oh *really*'    # translates to regex-escaped string
+```raw
+'oh *really*'    # translates to regex-escaped string
+```
 
 Double-quoted strings are **not** eggex primitives.  Instead, you can use
 splicing of strings:
 
     var dq = "hi $name"    
     var eggex = / @dq /
-
 
 ### class-literal
 
@@ -784,32 +804,44 @@ enclosed in brackets:
 
 A class literal can have individual code points:
 
-    [ a e i o u '?' '*' '+' ]
+```raw
+[ a e i o u '?' '*' '+' ]
+```
 
 It can also have ranges of code points, denoted with a hyphen:
 
-    [ a-f A-F 0-9 ]
+```raw
+[ a-f A-F 0-9 ]
+```
 
 To reduce the number of quotes, you can write a set of characters as a string:
 
-    [ 'xyz' ]  # any of 3 chars, NOT a sequence of 3 chars
+```raw
+[ 'xyz' ]  # any of 3 chars, NOT a sequence of 3 chars
+```
 
 You can also use backslash escapes:
 
-    [ \\ \' \" \0 ]
-    [ \y7F \u{3bc} ]     # a byte and a code point
+```raw
+[ \\ \' \" \0 ]
+[ \y7F \u{3bc} ]     # a byte and a code point
 
-    [ \y01 - \y7F ]      # range of bytes
-    [ \u{1} - \u{7F} ]   # range of code points
+[ \y01 - \y7F ]      # range of bytes
+[ \u{1} - \u{7F} ]   # range of code points
+```
 
 The `@` operator lets you refer to string variables:
 
-    var str_var = 'xyz'
-    [ @str_var ]
+```raw
+var str_var = 'xyz'
+[ @str_var ]
+```
 
 Negation always uses `!`
 
-    ![ a-f A-F 'xyz' @str_var ]
+```raw
+![ a-f A-F 'xyz' @str_var ]
+```
 
 ### re-chars
 
@@ -838,56 +870,74 @@ Reminders:
 
 Perl-like shortcuts for sets of characters:
 
-    [ dot ]    # => .
-    [ digit ]  # => [[:digit:]]
-    [ space ]  # => [[:space:]]
-    [ word ]   # => [[:alpha:]][[:digit:]]_
+```raw
+[ dot ]    # => .
+[ digit ]  # => [[:digit:]]
+[ space ]  # => [[:space:]]
+[ word ]   # => [[:alpha:]][[:digit:]]_
+```
 
 Abbreviations:
 
-    [ d s w ]  # Same as [ digit space word ]
+```raw
+[ d s w ]  # Same as [ digit space word ]
+```
 
 Valid POSIX classes:
 
-    alnum   cntrl   lower   space
-    alpha   digit   print   upper
-    blank   graph   punct   xdigit
+```raw
+alnum   cntrl   lower   space
+alpha   digit   print   upper
+blank   graph   punct   xdigit
+```
 
 Negated:
 
-    !digit   !space   !word
-    !d   !s   !w
-    !alnum  # etc.
+```raw
+!digit   !space   !word
+!d   !s   !w
+!alnum  # etc.
+```
 
 ### re-repeat
 
 Eggex repetition looks like POSIX syntax:
 
-    / 'a'? /      # zero or one
-    / 'a'* /      # zero or more
-    / 'a'+ /      # one or more
+```raw
+/ 'a'? /      # zero or one
+/ 'a'* /      # zero or more
+/ 'a'+ /      # one or more
+```
 
 Counted repetitions:
 
-    / 'a'{3} /    # exactly 3 repetitions
-    / 'a'{2,4} /  # between 2 to 4 repetitions
+```raw
+/ 'a'{3} /    # exactly 3 repetitions
+/ 'a'{2,4} /  # between 2 to 4 repetitions
+```
 
 ### re-compound
 
 Sequence expressions with a space:
 
-    / word digit digit /   # Matches 3 characters in sequence
-                           # Examples: a42, b51
+```raw
+/ word digit digit /   # Matches 3 characters in sequence
+                       # Examples: a42, b51
+```
 
 (Compare `/ [ word digit ] /`, which is a set matching 1 character.)
 
 Alternation with `|`:
 
-    / word | digit /       # Matches 'a' OR '9', for example
+```raw
+/ word | digit /       # Matches 'a' OR '9', for example
+```
 
 Grouping with parentheses:
 
-    / (word digit) | \\ /  # Matches a9 or \
+```raw
+/ (word digit) | \\ /  # Matches a9 or \
+```
 
 ### re-capture
 
@@ -901,14 +951,18 @@ Here's an eggex with a **positional** capture:
 
 Captures can be **named**:
 
-    <capture d+ as month>       # access with _group('month')
-                                # or Match.group('month')
+```raw
+<capture d+ as month>       # access with _group('month')
+                            # or Match.group('month')
+```
 
 Captures can also have a type **conversion func**:
 
-    <capture d+ : int>          # _group(1) returns Int
+```raw
+<capture d+ : int>          # _group(1) returns Int
 
-    <capture d+ as month: int>  # _group('month') returns Int
+<capture d+ as month: int>  # _group('month') returns Int
+```
 
 Related docs and help topics:
 

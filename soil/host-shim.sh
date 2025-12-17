@@ -397,7 +397,7 @@ local-test-uke() {
   local job_name=${1:-dummy}
   local job2=${2:-}
   local debug_shell=${3:-}  # add 'bash' to change it to a debug shell
-  local docker=${4:-docker}
+  local docker=${4:-podman}
 
   local branch=$(git rev-parse --abbrev-ref HEAD)
 
