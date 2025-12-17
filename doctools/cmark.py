@@ -60,6 +60,7 @@ def cmark_bin(md):
         cmark_path = b2
     else:
         cmark_path = find_executable('python2')
+        print(cmark_path)
         if not cmark_path:
             raise AssertionError('cmark not found')
 
