@@ -164,7 +164,7 @@ dispatch-one() {
       --format html \
       --stats-file $base_dir/${spec_name}.stats.txt \
       --stats-template \
-      '%(num_cases)d %(oils_num_passed)d %(oils_num_failed)d %(oils_failures_allowed)d %(oils_ALT_delta)d' \
+      '%(num_cases)d %(oils_num_passed)d %(oils_num_failed)d %(oils_failures_allowed)d %(oils_ALT_delta)d %(oils_cpp_failures_allowed)d %(oils_cpp_num_failed)d' \
       "$@" \
     > $base_dir/${spec_name}.html
 }
