@@ -307,6 +307,20 @@ class Build(visitor.TypedVisitor):
                 with branch_ctx.AddBranch():
                     self.accept(default_block)
 
+    def oils_visit_switch(self, expr: 'mypy.nodes.CallExpr',
+                          o: 'mypy.nodes.WithStmt',
+                          switch_type: str) -> None:
+        """Build control flow graph for switch statements."""
+        cfg = self.current_cfg()
+        was_inside_loop = self.inside_loop
+        self.inside_switch = True
+        self.inside_loop = False
+        self._handle_switch(expr, o, cfg)
+        self.inside_switch = False
+        # Restore if we were inside a loop
+        if was_inside_loop:
+            self.inside_loop = True
+
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> None:
         cfg = self.current_cfg()
 
@@ -318,29 +332,14 @@ class Build(visitor.TypedVisitor):
 
         # Note: we have 'with alloc.ctx_SourceCode'
         #assert isinstance(expr.callee, NameExpr), expr.callee
-        callee_name = expr.callee.name
+        if isinstance(expr.callee, NameExpr):
+            callee_name = expr.callee.name
+            if callee_name in ('switch', 'str_switch', 'tagswitch'):
+                self.oils_visit_switch(expr, o, callee_name)
+                return
 
-        was_inside_loop = self.inside_loop
-        if callee_name == 'switch':
-            self.inside_switch = True
-            self.inside_loop = False
-            self._handle_switch(expr, o, cfg)
-        elif callee_name == 'str_switch':
-            self.inside_switch = True
-            self.inside_loop = False
-            self._handle_switch(expr, o, cfg)
-        elif callee_name == 'tagswitch':
-            self.inside_switch = True
-            self.inside_loop = False
-            self._handle_switch(expr, o, cfg)
-        else:
-            with pass_state.CfgBlockContext(cfg, self.current_statement_id):
-                self.accept(o.body)
-
-        self.inside_switch = False
-        # Restore if we were inside a loop
-        if was_inside_loop:
-            self.inside_loop = True
+        with pass_state.CfgBlockContext(cfg, self.current_statement_id):
+            self.accept(o.body)
 
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
                             current_class_name: Optional[util.SymbolPath],
