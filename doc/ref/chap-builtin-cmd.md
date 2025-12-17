@@ -657,9 +657,10 @@ Private builtins are not enabled by default:
                # If the file is -, read from stdin (not the file called -)
     cat        # equivalent to cat -
 
-- Related: [rewrite_extern][]
+- Related: [rewrite_extern][], [ysh_rewrite_extern][]
 
 [rewrite_extern]: chap-option.html#rewrite_extern
+[ysh_rewrite_extern]: chap-option.html#ysh_rewrite_extern
 
 ### rm
 

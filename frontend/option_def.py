@@ -138,6 +138,9 @@ _UPGRADE_RUNTIME_OPTS = [
 
     # Can create closures from loop variables, like JS / C# / Go
     ('for_loop_frames', False),
+
+    # Run builtin cat in the main process
+    ('ysh_rewrite_extern', False),
 ]
 
 _YSH_RUNTIME_OPTS = [

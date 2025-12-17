@@ -176,7 +176,7 @@ This option can be useful for "getting past" errors while testing.
 
 ### rewrite_extern
 
-This options enables a transparent rewriting of external commands to
+This option enables a transparent rewriting of external commands to
 **builtins**.
 
 Currently, these commands **may** be rewritten, depending on their `argv`:
@@ -185,7 +185,7 @@ Currently, these commands **may** be rewritten, depending on their `argv`:
 - [rm][]
 
 These optimizations are *sound* - they should not affect the behavior of
-programs on POSIX system.
+programs on a POSIX system.
 
 ---
 
@@ -195,6 +195,17 @@ rewritten, regardless of the value of `rewrite_extern`.
 
 [cat]: chap-builtin-cmd.html#cat
 [rm]: chap-builtin-cmd.html#rm
+
+### ysh_rewrite_extern
+
+This option transparently avoids compatibility workarounds when rewriting
+external commands to **builtins**, providing a performance improvement.
+It might affect the behavior of programs on a POSIX system.
+
+Currently, this only affects [cat][], which otherwise runs in a separate
+process (so that its errors do not crash the main process).
+
+[cat]: chap-builtin-cmd.html#cat
 
 ## Groups
 
@@ -265,6 +276,7 @@ Details on each option:
       for_loop_frames            YSH can create closures from loop vars
       verbose_errexit            Whether to print detailed errors
       verbose_warn               Print various warnings to stderr
+      ysh_rewrite_extern         Avoids compatibility workarounds for builtins
 
 <h3 id="ysh:all">ysh:all</h3>
 

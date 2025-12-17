@@ -582,7 +582,8 @@ class ShellExecutor(vm._Executor):
                 not self.exec_opts.interactive()):
             builtin_id = _RewriteExternToBuiltin(cmd_val.argv)
             if builtin_id != consts.NO_INDEX:
-                if builtin_id == builtin_i.cat:
+                # Run cat in a separate process (#2530) in OSH for compatibility
+                if builtin_id == builtin_i.cat and not self.exec_opts.ysh_rewrite_extern():
                     thunk = process.BuiltinThunk(self, builtin_id, cmd_val)
                     p = process.Process(thunk, self.job_control, self.job_list,
                                         self.tracer)

@@ -198,6 +198,7 @@ shopt -s simple_word_eval
 shopt -s verbose_errexit
 shopt -s verbose_warn
 shopt -s xtrace_rich
+shopt -s ysh_rewrite_extern
 ## END
 
 #### osh -O ysh:upgrade 
@@ -757,4 +758,14 @@ echo ${#assoc[@]}
 
 ## STDOUT:
 2
+## END
+
+#### ysh_rewrite_extern makes the process exit with SIGPIPE
+shopt --set ysh_rewrite_extern
+
+((/usr/bin/cat </dev/zero; echo $? >&7) | true) 7>&1
+((cat </dev/zero; echo $? >&7) | true) 7>&1
+
+## STDOUT:
+141
 ## END
