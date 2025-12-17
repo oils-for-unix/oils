@@ -283,7 +283,7 @@ Idiomatic:
 (As always, `set` can be used when you care about compatibility with other
 shells.)
 
-### Use `:` When Mentioning Variable Names
+### Use `&` When Mentioning Variable Names
 
 YSH accepts this optional "pseudo-sigil" to make code more explicit.
 
@@ -297,6 +297,53 @@ Yes:
     read -0 (&myvar) < file.bin
     echo $record
 
+### Use Multi-line Strings instead of Here Docs
+
+YSH has Multi-line Strings with `'''` and `"""`. Combined with `<<<` they can replace Here Docs completely, while being easier to remember:
+
+No:
+
+    cat <<EOF
+    hello world
+    EOF
+
+Yes:
+
+    cat <<< """
+    hello world
+    """
+
+No:
+
+    cat <<'EOF'
+    prize is $4.99
+    EOF
+
+Yes:
+
+    cat <<< '''
+    prize is $4.99
+    '''
+
+Indents are removed based on the indentation of the end quotes. In comparison to `<<-EOF` this also works with space indentation, not just tabs.
+
+No:
+
+    # Indent must be a tab
+    cat <<-EOF
+    	hello world
+    	EOF
+    # -> 'hello world'
+
+Yes:
+
+    # indent can be tab or space
+    # but must be consistent (not one line tab, next line spaces)
+    cat <<< """
+        hello world
+        """ # -> 'hello world'
+
+It's also possible to have a comment after the end quote, which is not possible after the `EOF`.
 
 ### Consider Using `--long-flags`
 
@@ -903,7 +950,6 @@ Yes:
 
     # Possible, but a local var might be more readable
     echo flag=$['1' if x else '0']
-
 
 ## Use [Egg Expressions](eggex.html) instead of Regexes
 
