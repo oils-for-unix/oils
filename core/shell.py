@@ -69,7 +69,6 @@ from builtin import method_type
 
 from osh import cmd_eval
 from osh import glob_
-from osh import history
 from osh import prompt
 from osh import sh_expr_eval
 from osh import split
@@ -1037,9 +1036,6 @@ def Main(
     # Is the shell interactive?
     #
 
-    # History evaluation is a no-op if readline is None.
-    hist_ev = history.Evaluator(readline, hist_ctx, debug_f)
-
     if flag.c is not None:
         src = source.CFlag  # type: source_t
         line_reader = reader.StringLineReader(flag.c,
@@ -1049,8 +1045,8 @@ def Main(
 
     elif flag.i:  # force interactive
         src = source.Stdin(' -i')
-        line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev,
-                                                   readline, prompt_state)
+        line_reader = reader.InteractiveLineReader(arena, prompt_ev, readline,
+                                                   prompt_state)
         mutable_opts.set_interactive()
 
     else:
@@ -1065,7 +1061,7 @@ def Main(
                 if len(flag.tool) == 0 and stdin_.isatty():
                     src = source.Interactive
                     line_reader = reader.InteractiveLineReader(
-                        arena, prompt_ev, hist_ev, readline, prompt_state)
+                        arena, prompt_ev, readline, prompt_state)
                     mutable_opts.set_interactive()
                 else:
                     src = source.Stdin('')

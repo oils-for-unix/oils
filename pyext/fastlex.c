@@ -148,30 +148,6 @@ fastlex_MatchPS1Token(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
-fastlex_MatchHistoryToken(PyObject *self, PyObject *args) {
-  unsigned char* line;
-  int line_len;
-
-  int start_pos;
-  if (!PyArg_ParseTuple(args, "s#i", &line, &line_len, &start_pos)) {
-    return NULL;
-  }
-
-  // Bounds checking.
-  if (start_pos > line_len) {
-    PyErr_Format(PyExc_ValueError,
-                 "Invalid MatchHistoryToken call (start_pos = %d, line_len = %d)",
-                 start_pos, line_len);
-    return NULL;
-  }
-
-  int id;
-  int end_pos;
-  MatchHistoryToken(line, line_len, start_pos, &id, &end_pos);
-  return Py_BuildValue("(ii)", id, end_pos);
-}
-
-static PyObject *
 fastlex_MatchBraceRangeToken(PyObject *self, PyObject *args) {
   unsigned char* line;
   int line_len;
@@ -392,8 +368,6 @@ static PyMethodDef methods[] = {
   {"MatchGlobToken", fastlex_MatchGlobToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
   {"MatchPS1Token", fastlex_MatchPS1Token, METH_VARARGS,
-   "(line, start_pos) -> (id, end_pos)."},
-  {"MatchHistoryToken", fastlex_MatchHistoryToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
   {"MatchBraceRangeToken", fastlex_MatchBraceRangeToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},

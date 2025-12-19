@@ -68,11 +68,6 @@ SimpleLexer* PrintfBLexer(BigStr* s) {
   return Alloc<SimpleLexer>(&MatchPrintfBToken, s);
 }
 
-List<Tuple2<Id_t, BigStr*>*>* HistoryTokens(BigStr* s) {
-  SimpleLexer lexer(&MatchHistoryToken, s);
-  return lexer.Tokens();
-}
-
 List<Tuple2<Id_t, BigStr*>*>* Ps1Tokens(BigStr* s) {
   SimpleLexer lexer(&MatchPS1Token, s);
   return lexer.Tokens();
