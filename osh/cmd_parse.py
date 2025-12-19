@@ -579,8 +579,9 @@ class CommandParser(object):
                  w_parser,
                  lexer,
                  line_reader,
+                 interactive,
                  eof_id=Id.Eof_Real):
-        # type: (ParseContext, optview.Parse, WordParser, Lexer, _Reader, Id_t) -> None
+        # type: (ParseContext, optview.Parse, WordParser, Lexer, _Reader, bool, Id_t) -> None
         self.parse_ctx = parse_ctx
         self.aliases = parse_ctx.aliases  # aliases to expand at parse time
 
@@ -589,6 +590,7 @@ class CommandParser(object):
         self.lexer = lexer  # for pushing hints, lookahead to (
         self.line_reader = line_reader  # for here docs
         self.eof_id = eof_id
+        self.interactive = interactive
 
         self.arena = line_reader.arena  # for adding here doc and alias spans
         self.aliases_in_flight = []  # type: AliasesInFlight
@@ -1124,7 +1126,7 @@ class CommandParser(object):
         # TODO: arena.PushSource()?
 
         line_reader = reader.StringLineReader(code_str, arena)
-        cp = self.parse_ctx.MakeOshParser(line_reader)
+        cp = self.parse_ctx.MakeOshParser(line_reader, self.interactive)
         cp.Init_AliasesInFlight(aliases_in_flight)
 
         # break circular dep

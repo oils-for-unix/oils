@@ -159,7 +159,7 @@ def SourceStartupFile(
 
     arena = parse_ctx.arena
     rc_line_reader = reader.FileLineReader(f, arena)
-    rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
+    rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader, False)
 
     with alloc.ctx_SourceCode(arena, source.MainFile(rc_path)):
         # Note: bash keep going after parse error in startup file.  Should we
@@ -1153,7 +1153,9 @@ def Main(
 
     # Note: headless mode above doesn't use c_parser
     assert line_reader is not None
-    c_parser = parse_ctx.MakeOshParser(line_reader)
+    interactive_parsing = (mutable_opts.get_interactive() or
+                           exec_opts.interactive())
+    c_parser = parse_ctx.MakeOshParser(line_reader, interactive_parsing)
 
     if exec_opts.interactive():
         sh_init.InitInteractive(mem, sh_files, lang)
