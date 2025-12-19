@@ -41,9 +41,23 @@ report() {
   echo "PID $pid"
 
   if test -n "$do_trap"; then
-    # trap '' sets SIG_IGN
-    trap '' USR2
-    #echo '    Ignoring USR2'
+    case "$do_trap" in
+      # Demo for blog post: trap ' ' is different than trap '' !
+      SPACE)
+        trap ' ' USR2
+        ;;
+      # trap '# comment' is also different than trap ''
+      COMMENT)
+        trap '# comment' USR2
+        ;;
+      *)
+        # trap '' sets SIG_IGN
+        trap '' USR2
+        #echo '    Ignoring USR2'
+        ;;
+    esac
+
+    # Print trap state
     trap 
     echo
   fi
