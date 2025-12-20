@@ -434,7 +434,6 @@ def main(argv):
         TranslateSimpleLexer('MatchPrintfBToken', lexer_def.PRINTF_B_DEF)
         TranslateSimpleLexer('MatchGlobToken', lexer_def.GLOB_DEF)
         TranslateSimpleLexer('MatchPS1Token', lexer_def.PS1_DEF)
-        TranslateSimpleLexer('MatchHistoryToken', lexer_def.HISTORY_DEF)
         TranslateSimpleLexer('MatchBraceRangeToken', lexer_def.BRACE_RANGE_DEF)
         TranslateSimpleLexer('MatchJ8Token', lexer_def.J8_DEF)
         TranslateSimpleLexer('MatchJ8LinesToken', lexer_def.J8_LINES_DEF)
