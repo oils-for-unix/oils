@@ -68,6 +68,10 @@ live-image-tag() {
       # wedges 2025
       echo 'v-2025-10-28'
       ;;
+    aports-report)
+      # wedges 2025
+      echo 'v-2025-10-28'
+      ;;
     other-tests)
       # wedges 2025
       echo 'v-2025-10-28'
@@ -295,6 +299,9 @@ run-job-uke() {
       # Reuse for now
       image_id='benchmarks'
       ;;
+    aports-report)
+      image_id="ovm-tarball"
+      ;;
   esac
 
   local -a flags=()
@@ -307,7 +314,7 @@ run-job-uke() {
   esac
 
   case $job_name in
-    cpp-small|cpp-spec|cpp-tarball|ovm-tarball)
+    cpp-small|cpp-spec|cpp-tarball|ovm-tarball|aports-report)
       # podman requires an additional flag for ASAN, so it can use ptrace()
       # Otherwise we get:
       # ==1194==LeakSanitizer has encountered a fatal error.
@@ -318,6 +325,14 @@ run-job-uke() {
         flags+=( "${PTRACE_FLAGS[@]}" )
       fi
   esac
+
+  if [ $job_name == aports-report ]; then
+    flags+=( -e "REGTEST_CAUSES_BASE_REPORT=$REGTEST_CAUSES_BASE_REPORT" )
+    flags+=( -e "REGTEST_CAUSES_KIND=$REGTEST_CAUSES_KIND" )
+    flags+=( -v "$HOME/.ssh:/home/uke/.ssh" )
+  fi
+
+  echo "Flags: $flags"
 
   local image="docker.io/oilshell/soil-$image_id"
 

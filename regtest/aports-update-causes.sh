@@ -105,7 +105,7 @@ proc deploy-new-report(new_epoch) {
   regtest/aports-html.sh deploy-wwz-op "_tmp/aports-report/$new_epoch.wwz"
 }
 
-proc update-latest(original_epoch, kind) {
+proc update-latest() {
   ### Create a new report based on the most recent published report
   ### Create the new report using a newer `causes.awk` file
   ### Does the following steps:
@@ -120,6 +120,10 @@ proc update-latest(original_epoch, kind) {
   ### Assumes community runs are partial runs, and main runs are full.
   ###    If this is not true the script breaks
   stdout_to_stderr
+  set -x
+
+  var original_epoch = ENV.REGTEST_CAUSES_BASE_REPORT
+  var kind = ENV.REGTEST_CAUSES_KIND
   
   var use_main = useMainReports(kind)
   if (use_main === false and useCommunityReports(kind) === false) {

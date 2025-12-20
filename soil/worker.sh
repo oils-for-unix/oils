@@ -401,6 +401,21 @@ EOF
 #   release, which creates metrics.
 }
 
+aports-report-tasks() {
+  ### Print tasks for the 'aports-report' job
+
+  # (task_name, script, action, result_html)
+  cat <<EOF
+os-info           soil/diagnose.sh os-info                  -
+dump-env          soil/diagnose.sh dump-env                 -
+py-all            build/py.sh all                           -
+dev-shell         . build/dev-shell.sh                      -
+install-unzip     soil/apt_install.sh unzip                 -
+generate-report   regtest/aports-update-causes.sh update-latest    -
+EOF
+}
+
+
 app-tests-tasks() {
 
   cat <<EOF
@@ -537,7 +552,7 @@ run-tasks() {
       "${argv[@]}" > $log_path 2>&1 < $stdin_tty
     else
       # Temporary fix: build/doc.sh soil-run reads from stdin!
-      "${argv[@]}" > $log_path 2>&1 < /dev/null
+      "${argv[@]}" # > $log_path 2>&1 < /dev/null
     fi
     status=$?
     set -o errexit
@@ -699,6 +714,8 @@ JOB-benchmarks3() { job-main 'benchmarks3'; }
 JOB-wild() { job-main 'wild'; }
 
 JOB-maybe-merge() { job-main 'maybe-merge'; }
+
+JOB-aports-report() { job-main 'aports-report'; }
 
 list-jobs() {
   ### invoked by maybe-merge
