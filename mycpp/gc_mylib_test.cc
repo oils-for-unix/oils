@@ -1,5 +1,6 @@
 #include "mycpp/gc_mylib.h"
 
+#include <fcntl.h>
 #include <unistd.h>
 
 #include "mycpp/gc_alloc.h"  // gHeap
@@ -219,14 +220,14 @@ TEST files_test() {
   mylib::LineReader* stdin_ = mylib::Stdin();
   log("stdin isatty() = %d", stdin_->isatty());
 
-  FILE* f = fopen("README.md", "r");
+  int fd = open("README.md", O_RDONLY);
 
   mylib::CFile* r = nullptr;
   BigStr* filename = nullptr;
   BigStr* filename2 = nullptr;
   StackRoots _roots({&r, &filename, &filename2});
 
-  r = Alloc<mylib::CFile>(f);
+  r = Alloc<mylib::CFile>(fd);
   filename = StrFromC("README.md");
   filename2 = StrFromC("README.md ");
   // auto r = mylib::Stdin();
@@ -254,7 +255,7 @@ TEST files_test() {
   auto f3 = mylib::open(filename2->strip());
   ASSERT(f3 != nullptr);
 
-  auto w = Alloc<mylib::CFile>(stdout);
+  auto w = Alloc<mylib::CFile>(STDOUT_FILENO);
   w->write(StrFromC("stdout"));
   w->flush();
 
