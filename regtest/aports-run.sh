@@ -290,14 +290,17 @@ build-package-overlayfs() {
     $merged
 
   # mount over the overlay, onto the merged
+  # https://man7.org/linux/man-pages/man5/procfs.5.html
   sudo mount \
     -t proc \
     "_chroot_proc_${xargs_slot}" $merged/proc
 
+  # https://man7.org/linux/man-pages/man5/sysfs.5.html
   sudo mount \
     -t sysfs \
     "_chroot_sysfs_${xargs_slot}" $merged/sys
 
+  # https://lwn.net/Articles/330985/
   sudo mount \
     -t devtmpfs \
     "_chroot_devtmpfs_${xargs_slot}" $merged/dev
