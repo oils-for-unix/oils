@@ -109,7 +109,7 @@ YSH doesn't overload operators as much because it often does automatic
 
 - Arithmetic `+ - * /` and comparison `< > <= =>`.  They also convert strings
   to integers or floats.  Examples:
-  - `'22' < '3'` is true because `22 < 3` is true.
+  - `'22' < '3'` is false because `22 < 3` is false.
   - `'3.1' <= '3.14'` is true because `3.1 <= 3.14` is true.
 
 - Integer arithmetic: `//` integer division, `%` modulus, `**` exponentiation.
