@@ -1,0 +1,47 @@
+FROM ghcr.io/oils-for-unix/soil-debian-12
+
+# Copy again to prevent unsound caching
+COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
+
+# layer-locales also has to install packages
+RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt-debian-12,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    deps/from-apt.sh layer-debian-12 && \ 
+    deps/from-apt.sh ovm-tarball && \ 
+    deps/from-apt.sh apt-install unzip && \
+    deps/from-apt.sh apt-install sqlite3 && \
+    deps/from-apt.sh apt-install tree  && \
+    deps/from-apt.sh apt-install zip && \
+    deps/from-apt.sh apt-install ssh
+
+# layer-debian-12, for apt-get update, replaceable probably
+# ovm-tarball, for compilers needed for build/py.sh all
+
+USER uke
+
+# Copy pre-built wedges
+
+COPY --chown=uke \
+  _build/boxed/wedge/cmark/0.29.0 \
+  /home/uke/oils.DEPS/wedge/cmark/0.29.0
+
+# Make symlinks
+# COPY deps/make-bin.sh /home/uke/tmp/deps/make-bin.sh
+# RUN mkdir -p /home/uke/oils.DEPS/bin && \
+#     deps/make-bin.sh re2c /home/uke/oils.DEPS && \
+#     deps/make-bin.sh shells /home/uke/oils.DEPS
+
+# Should we use the Python 2.7.18 wedge instead of our own dir?  Probably not,
+# because it's
+
+# Copy into current directory
+COPY --chown=uke \
+  Python-2.7.13/ \
+  /home/uke/tmp/Python-2.7.13/
+
+COPY build/common.sh /home/uke/tmp/build/common.sh
+COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
+
+# For bootstrapping the OVM build
+CMD ["sh", "-c", "echo 'hello from oils-for-unix/aports-report'"]
