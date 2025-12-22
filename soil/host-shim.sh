@@ -23,8 +23,8 @@ live-image-tag() {
   local image_id=$1
 
   # podman build migration!
-  echo 'v-2025-11-02'
-  return
+  # echo 'v-2025-11-02'
+  # return
 
   case $image_id in
     app-tests)
