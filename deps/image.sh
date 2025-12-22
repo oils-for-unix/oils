@@ -38,7 +38,8 @@
 # More
 # ----
 #
-# Images: https://hub.docker.com/u/oilshell
+# Images:    https://github.com/orgs/oils-for-unix/packages
+# formerly:  https://hub.docker.com/u/oilshell
 #
 #    $0 list-tagged      # Show versions of images
 #
@@ -69,7 +70,7 @@ case $DOCKER in
     ;;
 esac
 
-readonly LATEST_TAG='v-2025-11-02'  # podman
+readonly LATEST_TAG='v-2025-12-21'  # docker.io -> ghcr.io migraiton
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'
@@ -127,14 +128,47 @@ _latest-one() {
     images "oilshell/$name" | head -n 3
 }
 
-_list-latest() {
-  # Should rebuild all these
-  # Except I also want to change the Dockerfile to use Debian 12
-  list-images | xargs -n 1 -- $0 _latest-one
+#
+# 2025-12: Migration to ghcr.io
+#
+
+migrate-one() {
+  local name=${1:-soil-wild}
+
+  # Good instructions from Claude!
+
+  # Pull from Docker Hub
+  podman pull docker.io/oilshell/$name:latest
+
+  # Tag for GitHub Container Registry with new name
+  podman tag docker.io/oilshell/$name:latest ghcr.io/oils-for-unix/$name:latest
+
+  # Push to GitHub Container Registry
+  podman push ghcr.io/oils-for-unix/$name:latest
 }
 
-list-latest() {
-  sudo $0 _list-latest
+migrate-all() {
+  list | xargs --verbose -n 1 -- $0 migrate-one
+}
+
+m-tag-one() {
+  ### Add $LATEST_TAG
+  local image=${1:-soil-wild}
+  podman tag ghcr.io/oils-for-unix/$image:latest ghcr.io/oils-for-unix/$image:$LATEST_TAG
+}
+
+m-tag-all() {
+  list | xargs --verbose -n 1 -- $0 m-tag-one
+}
+
+m-push-one() {
+  ### Push $LATEST_TAG
+  local name=${1:-soil-wild}
+  podman push ghcr.io/oils-for-unix/$name:$LATEST_TAG
+}
+
+m-push-all() {
+  list | xargs --verbose -n 1 -- $0 m-push-one
 }
 
 # BUGS in Docker.
