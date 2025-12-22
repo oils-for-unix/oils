@@ -331,7 +331,7 @@ run-job-uke() {
 
   echo "Flags: $flags"
 
-  local image="docker.io/oilshell/soil-$image_id"
+  local image="ghcr.io/oils-for-unix/soil-$image_id"
 
   local tag=$(live-image-tag $image_id)
 

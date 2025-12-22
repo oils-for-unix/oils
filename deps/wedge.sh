@@ -532,8 +532,7 @@ boxed-2025() {
   local wedge_out_base_dir=${3:-}
   local distro=${4:-$DEFAULT_DISTRO}
 
-  local bootstrap_image=oilshell/wedge-bootstrap-$distro
-
+  local bootstrap_image=ghcr.io/oils-for-unix/wedge-bootstrap-$distro
   echo "*** boxed-2025 $wedge $version_requested out=$wedge_out_base_dir distro=$distro"
   echo
 
