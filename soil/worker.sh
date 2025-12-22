@@ -409,8 +409,6 @@ aports-report-tasks() {
 os-info           soil/diagnose.sh os-info                  -
 dump-env          soil/diagnose.sh dump-env                 -
 py-all            build/py.sh all                           -
-dev-shell         . build/dev-shell.sh                      -
-install-unzip     soil/apt_install.sh unzip                 -
 generate-report   regtest/aports-update-causes.sh update-latest    -
 EOF
 }

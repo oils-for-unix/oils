@@ -70,7 +70,7 @@ live-image-tag() {
       ;;
     aports-report)
       # wedges 2025
-      echo 'v-2025-10-28'
+      echo 'v-2025-12-22'
       ;;
     other-tests)
       # wedges 2025
@@ -298,9 +298,6 @@ run-job-uke() {
     interactive)
       # Reuse for now
       image_id='benchmarks'
-      ;;
-    aports-report)
-      image_id="ovm-tarball"
       ;;
   esac
 
