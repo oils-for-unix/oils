@@ -325,7 +325,7 @@ run-job-uke() {
       fi
   esac
 
-  local image="oils-for-unix/soil-$image_id"
+  local image="ghcr.io/oils-for-unix/soil-$image_id"
 
   local tag=$(live-image-tag $image_id)
 
