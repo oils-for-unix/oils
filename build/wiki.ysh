@@ -93,63 +93,26 @@ proc render-one(path) {
           <title>$title</title>
 
           <link rel="stylesheet" type="text/css" href="../web/base.css" />
-
-          <style>
-            #search > div {
-              margin-top: 8px;
-              width: 100%;
-            }
-
-            #search input[type=text], #search button {
-              padding: 4px 8px;
-
-              background-color: #EEE;
-              color: #444;
-            }
-
-            /* We cannot control the search UI, so manually calculate widths for sizing */
-            #search input {
-              padding-right: 4px !important; /* Pagefind likes to add a large padding here, disable it */
-
-              width: calc(100%
-                            - max(10%, 50px) /* button width */
-                            - 20px /* margins */);
-
-              border: 1px solid #EEE;
-            }
-
-            #search button {
-              width: calc(max(10%, 50px));
-
-              border: 1px solid #AAA;
-            }
-
-            /* This is the load more results button */
-            #search .pagefind-ui__drawer button {
-              margin-left: 0;
-              margin-right: 0;
-              width: 100%;
-            }
-          </style>
+          <link rel="stylesheet" type="text/css" href="./search.css" />
         </head>
         <body class="width40">
 
         <div id="search"></div>
         <hr>
-    """
+        """
 
     pre-render-wikilinks <$path | cmark
 
-    echo """
-        <script src="./pagefind/pagefind-ui.js"></script>
-        <script>
-            window.addEventListener('DOMContentLoaded', (event) => {
-                new PagefindUI({ element: "#search", showSubResults: true });
-            });
-        </script>
-      </body>
-    </html>
-    """
+    echo '''
+          <script src="./pagefind/pagefind-ui.js"></script>
+          <script>
+              window.addEventListener('DOMContentLoaded', (event) => {
+                  new PagefindUI({ element: "#search", showSubResults: true });
+              });
+          </script>
+        </body>
+      </html>
+      '''
   }
 }
 
@@ -164,6 +127,46 @@ proc render() {
 
   pull-latest $WIKI_DIR https://github.com/oils-for-unix/oils.wiki.git
   find $WIKI_DIR -name '*.md' -print0 | xargs -I {} -0 -- $0 render-one {}
+
+  fopen >$WIKI_OUT_DIR/search.css {
+    echo '''
+      #search > div {
+        margin-top: 8px;
+        width: 100%;
+      }
+
+      #search input[type=text], #search button {
+        padding: 4px 8px;
+
+        background-color: #EEE;
+        color: #444;
+      }
+
+      /* We cannot control the search UI, so manually calculate widths for sizing */
+      #search input {
+        padding-right: 4px !important; /* Pagefind likes to add a large padding here, disable it */
+
+        width: calc(100%
+                      - max(10%, 50px) /* button width */
+                      - 20px /* margins */);
+
+        border: 1px solid #EEE;
+      }
+
+      #search button {
+        width: calc(max(10%, 50px));
+
+        border: 1px solid #AAA;
+      }
+
+      /* This is the load more results button */
+      #search .pagefind-ui__drawer button {
+        margin-left: 0;
+        margin-right: 0;
+        width: 100%;
+      }
+      '''
+  }
 }
 
 
