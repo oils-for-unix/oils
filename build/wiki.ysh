@@ -9,6 +9,7 @@
 #   build/wiki.ysh build-search-index
 #   build/wiki.ysh local-serve
 #   build/wiki.ysh commit-push
+#   build/wiki.ysh commit-push $customGitUrl
 #
 # # Action: render
 #
@@ -35,6 +36,9 @@
 # This requires an environment variable to be set (usually in GitHub Actions
 # secrets): `OILS_PAGES_GITHUB_TOKEN`. This is a PAT with `content: write`
 # permissions to the oils-for-unix.github.io repo.
+#
+# Passing a custom git url as a positional argument removes the need for a PAT.
+# It can be used to target a different repository for testing.
 
 const WIKI_OUT_DIR = '_tmp/wiki/out'
 const WIKI_DIR = '_tmp/wiki/git'
@@ -177,11 +181,21 @@ proc local-preview() {
 }
 
 
-proc commit-push() {
+proc commit-push(customGitUrl="") {
   ## Commit and push the most recent build to oils-for-unix.github.io
+  ##
+  ## When a customGitUrl is passed, push to that repo instead.
 
-  var PAT = ENV.OILS_PAGES_GITHUB_TOKEN
-  pull-latest $PAGES_DIR "https://x-access-token:$PAT@github.com/oils-for-unix/oils-for-unix.github.io.git"
+  var GIT_URL
+  if (customGitUrl) {
+    setvar GIT_URL = customGitUrl
+  } else {
+    var PAT = ENV.OILS_PAGES_GITHUB_TOKEN
+    setvar GIT_URL = gitUrl or "https://x-access-token:$PAT@github.com/oils-for-unix/oils-for-unix.github.io.git"
+  }
+
+  rm -rf $PAGES_DIR
+  pull-latest $PAGES_DIR $GIT_URL
 
   # Stash and pending changes (there should be none)
   cd $PAGES_DIR {
