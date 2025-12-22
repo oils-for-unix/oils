@@ -20,6 +20,8 @@
 # This will download the pagefind tool, and run it over the wiki built in
 # build-search-index. This is used for our static wiki-wide search.
 #
+# Pagefind Docs: https://pagefind.app/docs/
+#
 # # Action: local-serve
 #
 # Run a server with the current build locally. This will also copy the contents
