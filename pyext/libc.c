@@ -395,14 +395,13 @@ func_strsignal(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, "signal number out of range");
     return NULL;
   }
-  
-  errno = 0;
+
   res = strsignal(sig_num);
-  
-  if (errno || res == NULL || strstr(res, "Unknown signal") != NULL) {
+
+  if (res == NULL || strstr(res, "Unknown signal") != NULL) {
     Py_RETURN_NONE;
   }
-  
+
   return PyString_FromString(res);
 }
 

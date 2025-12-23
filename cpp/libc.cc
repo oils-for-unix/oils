@@ -258,11 +258,10 @@ BigStr* strsignal(int sig_num) {
     throw Alloc<ValueError>(StrFromC("signal number out of range"));
   }
 
-  errno = 0;
   char* res = ::strsignal(sig_num);
 
-  // Return nullptr if there's an error, NULL result, or "Unknown signal" message
-  if (errno != 0 || res == nullptr || strstr(res, "Unknown signal") != nullptr) {
+  // Return nullptr if there's a NULL result or "Unknown signal" message
+  if (res == nullptr || strstr(res, "Unknown signal") != nullptr) {
     return nullptr;
   }
 
