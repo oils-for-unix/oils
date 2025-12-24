@@ -409,7 +409,7 @@ aports-report-tasks() {
 os-info           soil/diagnose.sh os-info                  -
 dump-env          soil/diagnose.sh dump-env                 -
 py-all            build/py.sh all                           -
-generate-report   regtest/aports-update-causes.sh update-latest    -
+generate-report   regtest/aports-update-causes.ysh update-latest    -
 EOF
 }
 

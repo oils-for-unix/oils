@@ -22,7 +22,7 @@ source test/tsv-lib.sh  # tsv2html3
 source web/table/html.sh  # table-sort-{begin,end}
 source benchmarks/common.sh  # cmark
 source build/dev-shell.sh  # python2
-set -x
+
 sqlite-tabs-headers() {
   sqlite3 \
     -cmd '.mode tabs' \
