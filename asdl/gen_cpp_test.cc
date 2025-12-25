@@ -281,29 +281,34 @@ TEST list_defaults_test() {
 }
 
 TEST type_id_test() {
+  log("--- TYPE ID test");
+  auto unique = Alloc<Dict<int, bool>>();
+
   auto w1 = Alloc<typed_demo_asdl::word>(StrFromC("left"));
   auto w2 = Alloc<typed_demo_asdl::word>(StrFromC("right"));
-  auto b = Alloc<bool_expr__Binary>(w1, w2);
 
+  int type_id;
+  type_id = w1->type_id();
+  unique->set(type_id, true);
+  log("(product type) word type_id = %d", type_id);
+
+  auto b = Alloc<bool_expr__Binary>(w1, w2);
   // constexpr function
   auto sum_type_id = b->sum_type_id();
-  log("bool_expr sum_type_id = %d", sum_type_id);
+  log("bool_expr sum_type_id() = %d", sum_type_id);
 
-  auto type_id = b->type_id();
-  log("bool_expr.Binary type_id = %d", type_id);
+  type_id = b->type_id();
+  unique->set(type_id, true);
+  log("bool_expr.Binary type_id() = %d", type_id);
 
   auto a = Alloc<a_word::String>(StrFromC("foo"));
-  log("a_word sum_type_id = %d", a->sum_type_id());
-  log("a_word.String type_id = %d", a->type_id());
+  log("a_word sum_type_id() = %d", a->sum_type_id());
+  type_id = a->type_id();
+  unique->set(type_id, true);
+  log("a_word.String type_id() = %d", a->type_id());
 
-  // TODO: each type gets an ID, without a vtable
-  // Is it constexpr, so you can also generate a global table?  At compile
-  // time?
-  // and then you look it up in a table
-  //int i1 = w1->type_id();
-  //int i2 = b->type_id();
-
-  // TODO: also do a_word()
+  // We set() 3 type IDs, they should be UNIQUE
+  ASSERT_EQ(3, len(unique));
 
   PASS();
 }

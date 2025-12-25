@@ -211,6 +211,14 @@ def _HNodeExpr(typ, var_name):
     return code_str, none_guard
 
 
+# Variant tags are NOT unique:
+#   for each sum type, they go from 0, 1, 2 ... N
+#   There can be up to 64
+# Product types tags ARE unique, because any of them can be SHARED between sum types
+#   They start at 64
+MAX_VARIANTS_PER_SUM = 64
+
+
 class ClassDefVisitor(visitor.AsdlVisitor):
     """Generate C++ declarations and type-safe enums."""
 
@@ -225,8 +233,13 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self.debug_info = debug_info if debug_info is not None else {}
 
         self._shared_type_tags = {}
-        self._product_counter = 64  # start halfway through the range 0-127
-        self._compound_sum_counter = 0  # where type_id() starts
+        self._product_counter = MAX_VARIANTS_PER_SUM
+
+        # type_id() does NOT have to fit into a GC header like type_tag, so
+        # It's an int, not a uint8_t
+        # Product types start at 64, so let's start sum types/variants at 256
+        # (greater than uint8_t)
+        self._compound_sum_counter = 256  # where variant type_id() starts
 
         self._products = []
         self._base_classes = defaultdict(list)
@@ -333,8 +346,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         #log('%d variants in %s', len(sum.types), sum_name)
 
         # Must fit in 7 bit Obj::type_tag
-        assert len(
-            sum.types) < 64, 'sum type %r has too many variants' % sum_name
+        assert len(sum.types) < MAX_VARIANTS_PER_SUM, \
+                'sum type %r has too many variants' % sum_name
 
         # This is a sign that Python needs string interpolation!!!
         def Emit(s, depth=depth):
@@ -360,7 +373,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         Emit('  constexpr int sum_type_id() {')
         # There's no inheritance relationship, so we have to reinterpret_cast.
         Emit('    return %d;' % self._compound_sum_counter)
-        self._compound_sum_counter += 1
+        # Each sum type potentially takes up 64 integer type_id()
+        self._compound_sum_counter += MAX_VARIANTS_PER_SUM
         Emit('  }')
 
         if self.pretty_print_methods:
@@ -382,11 +396,14 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                 tag = 'static_cast<uint16_t>(%s_e::%s)' % (sum_name,
                                                            variant.name)
                 class_name = '%s__%s' % (sum_name, variant.name)
-                self._GenClass(variant.fields,
-                               class_name, [super_name],
-                               depth,
-                               tag,
-                               gen_type_id=True)
+                self._GenClass(
+                    variant.fields,
+                    class_name,
+                    [super_name],
+                    depth,
+                    tag,
+                    # unique ID is base class ID + variant ID
+                    type_id_body='this->sum_type_id() + this->tag()')
 
         # Generate 'extern' declarations for zero arg singleton globals
         for variant in sum.types:
@@ -429,7 +446,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self.Emit('};', depth)
         self.Emit('', depth)
 
-    def _EmitMethodsInHeader(self, obj_header_str, gen_type_id=False):
+    def _EmitMethodsInHeader(self, obj_header_str, type_id_body=None):
         """Generate PrettyTree(), type_id(), obj_header()"""
         if self.pretty_print_methods:
             self.Emit(
@@ -437,10 +454,10 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             )
             self.Emit('')
 
-        if gen_type_id:
+        if type_id_body:
             # Unique integer per type, for graph traversal
             self.Emit('int type_id() {')
-            self.Emit('  return this->sum_type_id() + this->tag();')
+            self.Emit('  return %s;' % type_id_body)
             self.Emit('}')
             self.Emit('')
 
@@ -496,7 +513,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                   depth,
                   tag_num,
                   obj_header_str='',
-                  gen_type_id=False):
+                  type_id_body=None):
         """For Product and Constructor."""
         self._GenClassBegin(class_name, base_classes, depth)
 
@@ -557,7 +574,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         obj_header_str = 'ObjHeader::AsdlClass(%s, %d)' % (tag_num,
                                                            len(managed_fields))
         self.Indent()
-        self._EmitMethodsInHeader(obj_header_str, gen_type_id=gen_type_id)
+        self._EmitMethodsInHeader(obj_header_str, type_id_body=type_id_body)
         self.Dedent()
 
         #
@@ -590,7 +607,15 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             ast_node, name, depth, tag_num = args
             # Figure out base classes AFTERWARD.
             bases = self._base_classes[name]
-            self._GenClass(ast_node.fields, name, bases, depth, tag_num)
+            self._GenClass(
+                ast_node.fields,
+                name,
+                bases,
+                depth,
+                tag_num,
+                # product types: this expression is the same as this->tag() for variants
+                # but we don't use that anywhere else in the code
+                type_id_body='ObjHeader::FromObject(this)->type_tag')
 
         for args in self._subtypes:
             subtype, tag_num = args
