@@ -368,6 +368,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                 '  hnode_t* PrettyTree(bool do_abbrev, Dict<int, bool>* seen = nullptr);'
             )
 
+        Emit('')
         Emit('  DISALLOW_COPY_AND_ASSIGN(%(sum_name)s_t)')
         Emit('};')
         Emit('')
@@ -381,8 +382,11 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                 tag = 'static_cast<uint16_t>(%s_e::%s)' % (sum_name,
                                                            variant.name)
                 class_name = '%s__%s' % (sum_name, variant.name)
-                self._GenClass(variant.fields, class_name, [super_name], depth,
-                               tag)
+                self._GenClass(variant.fields,
+                               class_name, [super_name],
+                               depth,
+                               tag,
+                               gen_type_id=True)
 
         # Generate 'extern' declarations for zero arg singleton globals
         for variant in sum.types:
@@ -425,17 +429,24 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self.Emit('};', depth)
         self.Emit('', depth)
 
-    def _EmitMethodDecl(self, obj_header_str, depth):
+    def _EmitMethodsInHeader(self, obj_header_str, gen_type_id=False):
+        """Generate PrettyTree(), type_id(), obj_header()"""
         if self.pretty_print_methods:
             self.Emit(
-                '  hnode_t* PrettyTree(bool do_abbrev, Dict<int, bool>* seen = nullptr);',
-                depth)
+                'hnode_t* PrettyTree(bool do_abbrev, Dict<int, bool>* seen = nullptr);'
+            )
             self.Emit('')
 
-        self.Emit('  static constexpr ObjHeader obj_header() {')
-        self.Emit('    return %s;' % obj_header_str)
-        self.Emit('  }')
-        self.Emit('')
+        if gen_type_id:
+            # Unique integer per type, for graph traversal
+            self.Emit('int type_id() {')
+            self.Emit('  return this->sum_type_id() + this->tag();')
+            self.Emit('}')
+            self.Emit('')
+
+        self.Emit('static constexpr ObjHeader obj_header() {')
+        self.Emit('  return %s;' % obj_header_str)
+        self.Emit('}')
 
     def _GenClassForList(self, class_name, base_classes, tag_num):
         depth = 0
@@ -472,7 +483,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         # field_mask() should call List superclass, since say word_t won't have it
         obj_header_str = 'ObjHeader::TaggedSubtype(%d, field_mask())' % tag_num
-        self._EmitMethodDecl(obj_header_str, depth)
+        self.Indent()
+        self._EmitMethodsInHeader(obj_header_str)
+        self.Dedent()
 
         self._GenClassEnd(class_name, depth)
 
@@ -482,7 +495,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                   base_classes,
                   depth,
                   tag_num,
-                  obj_header_str=''):
+                  obj_header_str='',
+                  gen_type_id=False):
         """For Product and Constructor."""
         self._GenClassBegin(class_name, base_classes, depth)
 
@@ -542,7 +556,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         obj_header_str = 'ObjHeader::AsdlClass(%s, %d)' % (tag_num,
                                                            len(managed_fields))
-        self._EmitMethodDecl(obj_header_str, depth)
+        self.Indent()
+        self._EmitMethodsInHeader(obj_header_str, gen_type_id=gen_type_id)
+        self.Dedent()
 
         #
         # Members

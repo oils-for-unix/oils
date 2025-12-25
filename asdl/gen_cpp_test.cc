@@ -289,8 +289,12 @@ TEST type_id_test() {
   auto sum_type_id = b->sum_type_id();
   log("bool_expr sum_type_id = %d", sum_type_id);
 
+  auto type_id = b->type_id();
+  log("bool_expr.Binary type_id = %d", type_id);
+
   auto a = Alloc<a_word::String>(StrFromC("foo"));
   log("a_word sum_type_id = %d", a->sum_type_id());
+  log("a_word.String type_id = %d", a->type_id());
 
   // TODO: each type gets an ID, without a vtable
   // Is it constexpr, so you can also generate a global table?  At compile
