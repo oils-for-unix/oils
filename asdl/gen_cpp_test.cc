@@ -25,6 +25,7 @@ using typed_demo_asdl::bool_expr__LogicalBinary;
 using typed_demo_asdl::bool_expr_t;
 using typed_demo_asdl::op_array;
 using typed_demo_asdl::op_id_e;
+using typed_demo_asdl::a_word;
 
 using hnode_asdl::hnode__Leaf;
 using hnode_asdl::hnode_e;
@@ -279,6 +280,30 @@ TEST list_defaults_test() {
   PASS();
 }
 
+TEST type_id_test() {
+  auto w1 = Alloc<typed_demo_asdl::word>(StrFromC("left"));
+  auto w2 = Alloc<typed_demo_asdl::word>(StrFromC("right"));
+  auto b = Alloc<bool_expr__Binary>(w1, w2);
+
+  // constexpr function
+  auto sum_type_id = b->sum_type_id();
+  log("bool_expr sum_type_id = %d", sum_type_id);
+
+  auto a = Alloc<a_word::String>(StrFromC("foo"));
+  log("a_word sum_type_id = %d", a->sum_type_id());
+
+  // TODO: each type gets an ID, without a vtable
+  // Is it constexpr, so you can also generate a global table?  At compile
+  // time?
+  // and then you look it up in a table
+  //int i1 = w1->type_id();
+  //int i2 = b->type_id();
+
+  // TODO: also do a_word()
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -293,6 +318,7 @@ int main(int argc, char** argv) {
   RUN_TEST(literal_test);
   RUN_TEST(string_defaults_test);
   RUN_TEST(list_defaults_test);
+  RUN_TEST(type_id_test);
 
   gHeap.CleanProcessExit();
 

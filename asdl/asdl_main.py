@@ -126,15 +126,7 @@ def main(argv):
 #include "mycpp/runtime.h"
 """)
             if opts.pretty_print_methods:
-                if 1:
-                    # TODO: gradually migrate to this templated code, reducing code gen
-                    f.write('#include "asdl/cpp_runtime.h"\n')
-                else:
-                    f.write("""\
-#include "_gen/asdl/hnode.asdl.h"
-using hnode_asdl::hnode_t;
-
-""")
+                f.write('#include "asdl/cpp_runtime.h"\n')
 
             if app_types:
                 f.write("""\
@@ -167,7 +159,7 @@ using id_kind_asdl::Id_t;
                 type_name = names[-1]
                 cpp_namespace = names[-2]
 
-                # TODO: This isn't enough for Oils
+                # TODO: This 'extern' feature isn't enough for Oils
                 # I think we would have to export header to
                 # _gen/bin/oils_for_unix.mycpp.cc or something
                 # Does that create circular dependencies?

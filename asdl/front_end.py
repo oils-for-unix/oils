@@ -237,7 +237,7 @@ class ASDLParser(object):
 
     def _parse_extern(self):
         """
-        extern: 'extern' NAME+
+        extern: 'extern' '[' NAME+ ']'
 
         Examples:
           extern _Builtin

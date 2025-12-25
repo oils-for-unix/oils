@@ -226,6 +226,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         self._shared_type_tags = {}
         self._product_counter = 64  # start halfway through the range 0-127
+        self._compound_sum_counter = 0  # where type_id() starts
 
         self._products = []
         self._base_classes = defaultdict(list)
@@ -355,6 +356,11 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         Emit('  int tag() const {')
         # There's no inheritance relationship, so we have to reinterpret_cast.
         Emit('    return ObjHeader::FromObject(this)->type_tag;')
+        Emit('  }')
+        Emit('  constexpr int sum_type_id() {')
+        # There's no inheritance relationship, so we have to reinterpret_cast.
+        Emit('    return %d;' % self._compound_sum_counter)
+        self._compound_sum_counter += 1
         Emit('  }')
 
         if self.pretty_print_methods:
