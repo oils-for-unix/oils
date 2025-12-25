@@ -32,9 +32,19 @@ class GlobalList {
   List<T>* name = reinterpret_cast<List<T>*>(&_list_##name.obj);
 
 template <typename T>
-class List {
+class List : public Walkable {
  public:
   List() : len_(0), capacity_(0), slab_(nullptr) {
+  }
+
+  // Walkable::type_id()
+  int type_id() const {
+    // Only walk when it it's List<T*>
+    if (std::is_pointer<T>()) {
+      return TypeTag::List;
+    } else {
+      return kDoNotWalk;  // opaque slab doesn't need to be walked
+    }
   }
 
  protected:

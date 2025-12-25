@@ -20,12 +20,12 @@ using typed_arith_asdl::arith_expr__FuncCall;
 using typed_arith_asdl::arith_expr__Unary;
 using typed_arith_asdl::arith_expr__Var;
 
+using typed_demo_asdl::a_word;
 using typed_demo_asdl::bool_expr__Binary;
 using typed_demo_asdl::bool_expr__LogicalBinary;
 using typed_demo_asdl::bool_expr_t;
 using typed_demo_asdl::op_array;
 using typed_demo_asdl::op_id_e;
-using typed_demo_asdl::a_word;
 
 using hnode_asdl::hnode__Leaf;
 using hnode_asdl::hnode_e;
@@ -309,6 +309,12 @@ TEST type_id_test() {
 
   // We set() 3 type IDs, they should be UNIQUE
   ASSERT_EQ(3, len(unique));
+
+  auto opaque_list = Alloc<List<int>>();
+  ASSERT_EQ(kDoNotWalk, opaque_list->type_id());
+
+  auto pointer_list = Alloc<List<typed_demo_asdl::word*>>();
+  ASSERT_EQ(TypeTag::List, pointer_list->type_id());
 
   PASS();
 }
