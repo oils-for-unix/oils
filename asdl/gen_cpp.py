@@ -360,6 +360,10 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         # This is the base class.
         Emit('class %(sum_name)s_t {')
+
+        # to implement Walkable, we'd need all types to fit in in the GC header
+        #Emit('class %(sum_name)s_t : public Walkable {')
+
         # Can't be constructed directly.  Note: this shows up in uftrace in debug
         # mode, e.g. when we instantiate Token.  Do we need it?
         Emit(' protected:')
@@ -439,6 +443,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit("class %s : %s {" % (class_name, bases), depth)
         else:
             self.Emit("class %s {" % class_name, depth)
+            #self.Emit("class %s : public Walkable {" % class_name, depth)
+
         self.Emit(" public:", depth)
 
     def _GenClassEnd(self, class_name, depth):

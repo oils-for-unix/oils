@@ -32,11 +32,12 @@ class GlobalList {
   List<T>* name = reinterpret_cast<List<T>*>(&_list_##name.obj);
 
 template <typename T>
-class List : public Walkable {
+class List {
  public:
   List() : len_(0), capacity_(0), slab_(nullptr) {
   }
 
+#if 0
   // Walkable::type_id()
   int type_id() const {
     // Only walk when it it's List<T*>
@@ -46,6 +47,7 @@ class List : public Walkable {
       return kDoNotWalk;  // opaque slab doesn't need to be walked
     }
   }
+#endif
 
  protected:
   // Used for ASDL subtypes with <.  NOT even a shallow copy - it ALIASES thes
