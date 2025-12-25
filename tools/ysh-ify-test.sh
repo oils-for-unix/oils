@@ -9,7 +9,7 @@
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
-source test/common.sh  # $OSH
+source test/common.sh  # $OSH, run-test-funcs
 
 readonly TEMP_DIR=_tmp
 

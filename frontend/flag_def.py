@@ -277,17 +277,24 @@ MAIN_SPEC.LongFlag('--version')
 #   undefined-vars - a static analysis pass
 #   parse-glob - to debug parsing
 #   parse-printf
-MAIN_SPEC.LongFlag('--tool', [
-    'tokens',
-    'lossless-cat',
-    'syntax-tree',
-    'fmt',
-    'test',
-    'ysh-ify',
-    'deps',
-    'cat-em',
-    'find-lhs-array',
-])
+MAIN_SPEC.LongFlag(
+    '--tool',
+    [
+        # Debug printing
+        'tokens',
+        'syntax-tree',
+        'cat-em',
+        # Tree-walking tools
+        'fmt',
+        'lint',
+        'ysh-ify',
+        'deps',
+        # Not sure
+        'test',
+        # Private
+        'find-lhs-array',
+        'lossless-cat',
+    ])
 
 MAIN_SPEC.ShortFlag('-i')  # interactive
 MAIN_SPEC.ShortFlag('-l')  # login - currently no-op
