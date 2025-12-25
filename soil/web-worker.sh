@@ -278,6 +278,11 @@ deploy-job-results() {
   local run_dir=$2  # e.g. 1234  # make this dir
   local job_name=$3  # e.g. cpp-small for example.com/github-jobs/1234/cpp-small.wwz
 
+  local payload_type=${prefix}jobs
+  if [ ${job_name} == 'aports-report' ]; then
+    payload_type='github-jobs'
+  fi
+
   # rest of args are more env vars
   shift 3
 
@@ -300,11 +305,11 @@ deploy-job-results() {
     local remote_dest_dir="$SOIL_REMOTE_DIR/${prefix}jobs/$run_dir"
     my-ssh $SOIL_USER_HOST "mkdir -p $remote_dest_dir"
 
-    # Do JSON last because that's what 'list-json' looks for
+  # Do JSON last because that's what 'list-json' looks for
     my-scp $job_name.{wwz,tsv,json} "$SOIL_USER_HOST:$remote_dest_dir"
   else
     curl --include --fail-with-body \
-      --form "payload-type=${prefix}jobs" \
+      --form "payload-type=${payload_type}" \
       --form "subdir=$run_dir" \
       --form "file1=@${job_name}.wwz" \
       --form "file2=@${job_name}.tsv" \
@@ -313,6 +318,12 @@ deploy-job-results() {
   fi
 
   show-soil-urls $prefix $run_dir $job_name
+}
+
+publish-aport-report() {
+  # TODO: Determine aports_path? Or just glob?
+  local remote_dest_dir="$SOIL_REMOTE_DIR/${prefix}jobs/$run_dir"
+  my-ssh $SOIL_USER_HOST "mkdir -p $remote_dest_dir" 
 }
 
 show-soil-urls() {
@@ -406,13 +417,17 @@ remote-event-job-done() {
   ### "Client side" handler: a job calls this when it's done
 
   local prefix=$1  # 'github-' or 'sourcehut-'
+  # TODO: remove this, temporary workaround
+  if [ prefix != "github-" ]; then
+    prefix="github-"
+  fi
   local run_id=$2  # $GITHUB_RUN_NUMBER or git-$hash
 
   log "remote-event-job-done $prefix $run_id"
 
   # Deployed code dir
   if false; then
-    sshq soil-web/soil/web.sh event-job-done "$@"
+    sshq soil-web/soil/web.sh event-job-done $prefix $run_id
   else
     # Note: I think curl does URL escaping of arg1= arg2= ?
     curl --include --fail-with-body \

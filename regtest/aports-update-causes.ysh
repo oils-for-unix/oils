@@ -61,7 +61,7 @@ proc generate-new-report(new_epoch, use_main) {
 
 proc deploy-new-report(new_epoch) {
   regtest/aports-html.sh make-wwz "_tmp/aports-report/$new_epoch"
-  regtest/aports-html.sh deploy-wwz-op "_tmp/aports-report/$new_epoch.wwz"
+  # regtest/aports-html.sh deploy-wwz-op "_tmp/aports-report/$new_epoch.wwz"
 }
 
 proc update-latest() {

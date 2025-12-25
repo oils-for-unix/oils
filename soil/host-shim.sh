@@ -326,10 +326,7 @@ run-job-uke() {
   if [ $job_name == aports-report ]; then
     flags+=( -e "REGTEST_CAUSES_BASE_REPORT=$REGTEST_CAUSES_BASE_REPORT" )
     flags+=( -e "REGTEST_CAUSES_KIND=$REGTEST_CAUSES_KIND" )
-    flags+=( -v "$HOME/.ssh:/home/uke/.ssh" )
   fi
-
-  echo "Flags: $flags"
 
   local image="ghcr.io/oils-for-unix/soil-$image_id"
 

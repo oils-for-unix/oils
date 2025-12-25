@@ -550,7 +550,7 @@ run-tasks() {
       "${argv[@]}" > $log_path 2>&1 < $stdin_tty
     else
       # Temporary fix: build/doc.sh soil-run reads from stdin!
-      "${argv[@]}" # > $log_path 2>&1 < /dev/null
+      "${argv[@]}" > $log_path 2>&1 < /dev/null
     fi
     status=$?
     set -o errexit

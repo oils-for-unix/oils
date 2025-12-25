@@ -22,15 +22,15 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          echo "${{ secrets.SSH_KEY_OP_OILS_PUB }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan op.oils.pub >> ~/.ssh/known_hosts
       - name: aports-report
         run: |
           soil/github-actions.sh run-job aports-report podman
+      - name: publish-html-logs
+        run: |
+          soil/github-actions.sh publish-and-exit aports-report T aports-report-
+      # - name: publish-html
+      #   run: |
+      #     soil/github-actions.sh publish-and-exit dummy T
+
 
 

@@ -23,15 +23,14 @@ keygen() {
 publish-html-assuming-ssh-key() {
   local job_name=$1
   local update_status_api=${2:-}
-
+  local prefix=${3:-"github-"}
   if true; then
-    local prefix='github-'
     local run_dir=$GITHUB_RUN_NUMBER 
     # https://docs.github.com/en/actions/reference/environment-variables
 
     # Recommended by the docs
     export JOB_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-
+    
     # Note $GITHUB_RUN_NUMBER is a different sequence for all-builds.yml vs.
     # fast-subset.yml
 
