@@ -91,6 +91,7 @@ class _Attributes {
   List<BigStr*>* actions{};
   bool show_options{};
   bool saw_double_dash{};
+  bool saw_single_dash{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(5, sizeof(_Attributes));
