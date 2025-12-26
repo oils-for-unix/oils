@@ -324,6 +324,8 @@ TEST type_id_test() {
     log("w %d", w->type_id());
   }
 #endif
+
+  PASS();
 }
 
 #include <unordered_map>
