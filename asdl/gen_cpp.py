@@ -28,7 +28,7 @@ from asdl import ast
 from asdl import visitor
 from asdl.util import log
 
-from typing import Tuple
+from typing import Tuple, cast
 
 _ = log
 
@@ -174,11 +174,12 @@ def _DefaultValue(typ, conditional=True):
 
 
 def _HNodeExpr(typ, var_name):
-    # type: (ast.AST, str) -> Tuple[str, bool]
+    # type: (ast.type_ref_t, str) -> Tuple[str, bool]
     none_guard = False
 
     if typ.IsOptional():
-        typ = typ.children[0]  # descend one level
+        narrow = cast(ast.ParameterizedType, typ)
+        typ = narrow.children[0]  # descend one level
 
     if isinstance(typ, ast.ParameterizedType):
         code_str = '%s->PrettyTree()' % var_name

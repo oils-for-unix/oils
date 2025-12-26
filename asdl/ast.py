@@ -141,7 +141,21 @@ class SubTypeDecl(AST):
         f.write('%s}\n' % ind)
 
 
-class NamedType(AST):
+class type_ref_t(object):
+    def __init__(self):
+        pass
+
+    def IsOptional(self):
+        return False
+
+    def IsList(self):
+        return False
+
+    def IsDict(self):
+        return False
+
+
+class NamedType(type_ref_t):
     """Int, string are resolved to a Primitive type 'Point' can be resolved to
     CompoundSum instance, etc."""
 
@@ -157,17 +171,8 @@ class NamedType(AST):
         f.write('NamedType %s' % (self.name))  # printed after field
         f.write(' (%r)' % self.resolved)
 
-    def IsOptional(self):
-        return False
 
-    def IsList(self):
-        return False
-
-    def IsDict(self):
-        return False
-
-
-class ParameterizedType(AST):
+class ParameterizedType(type_ref_t):
     """A parameterized type expression, e.g. the type of a field.
 
     e.g. Dict[string, int]   Dict[int, array[string]]
@@ -182,7 +187,7 @@ class ParameterizedType(AST):
 
     def __init__(self, type_name, children):
         self.type_name = type_name  # type: str
-        self.children = children  # type: List[AST]
+        self.children = children  # type: List[type_ref_t]
 
     def Print(self, f, indent):
         """Printed on one line."""
