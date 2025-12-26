@@ -21,8 +21,9 @@ def _CreateSum(sum_name, variant_names):
     from _devbuild.gen.option_asdl import opt_num
     opt_num.nounset
     """
-    sum_ = ast.SimpleSum([ast.Constructor(name) for name in variant_names],
-                         generate=['integers'])
+    sum_ = ast.SimpleSum(
+        [ast.MakeSimpleVariant(name) for name in variant_names],
+        generate=['integers'])
     typ = ast.TypeDecl(sum_name, sum_)
     return typ
 

@@ -125,10 +125,10 @@ def _DefaultValue(typ, mypy_type):
 
 
 def _HNodeExpr(typ, var_name):
-    # type: (ast.type_ref_t, str) -> Tuple[str, bool]
+    # type: (ast.type_expr_t, str) -> Tuple[str, bool]
     none_guard = False
 
-    if typ.IsOptional():
+    if ast.IsOptional(typ):
         narrow = cast(ast.ParameterizedType, typ)
         typ = narrow.children[0]  # descend one level
 
@@ -267,7 +267,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         """Generate code that returns an hnode for a field."""
         out_val_name = 'x%d' % counter
 
-        if field.typ.IsList():
+        if ast.IsList(field.typ):
             iter_name = 'i%d' % counter
 
             typ = field.typ
@@ -294,7 +294,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self.Emit('    L.append(Field(%r, %s))' %
                       (field.name, out_val_name))
 
-        elif field.typ.IsDict():
+        elif ast.IsDict(field.typ):
             k = 'k%d' % counter
             v = 'v%d' % counter
 
@@ -320,7 +320,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self.Emit('    L.append(Field(%r, %s))' %
                       (field.name, out_val_name))
 
-        elif field.typ.IsOptional():
+        elif ast.IsOptional(field.typ):
             typ = field.typ.children[0]
 
             self.Emit('  if self.%s is not None:  # Optional' % field.name)
@@ -646,7 +646,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
             bases.append(_MyPyType(subtype.base_class))
 
-            if subtype.base_class.IsList():
+            if ast.IsList(subtype.base_class):
                 self._GenListSubclass(subtype.name, bases, tag_num)
             else:
                 self._GenClass([], subtype.name, bases, tag_num)

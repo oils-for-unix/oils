@@ -14,12 +14,18 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source devtools/common.sh  # banner
 source test/common.sh      # run-one-test
 
-unit() {
+cpp-unit() {
   ### Run unit tests
 
   for variant in asan asan+gcalways ubsan; do
     run-one-test 'asdl/gen_cpp_test' '' $variant
     run-one-test 'asdl/gc_test' '' $variant
+  done
+}
+
+py-unit() {
+  find asdl -name '*_test.py' | while read test_path; do
+    test/unit.sh run-unit-test ':vendor/' $test_path
   done
 }
 

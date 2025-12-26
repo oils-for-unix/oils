@@ -174,10 +174,10 @@ def _DefaultValue(typ, conditional=True):
 
 
 def _HNodeExpr(typ, var_name):
-    # type: (ast.type_ref_t, str) -> Tuple[str, bool]
+    # type: (ast.type_expr_t, str) -> Tuple[str, bool]
     none_guard = False
 
-    if typ.IsOptional():
+    if ast.IsOptional(typ):
         narrow = cast(ast.ParameterizedType, typ)
         typ = narrow.children[0]  # descend one level
 
@@ -725,7 +725,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         """Generate code that returns an hnode for a field."""
         out_val_name = 'x%d' % counter
 
-        if field.typ.IsList():
+        if ast.IsList(field.typ):
             self.Emit('if (this->%s != nullptr) {  // List' % field.name)
             self.Indent()
             self._EmitListPrettyPrint(field, out_val_name)
@@ -734,14 +734,14 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             self.Dedent()
             self.Emit('}')
 
-        elif field.typ.IsDict():
+        elif ast.IsDict(field.typ):
             self.Emit('if (this->%s != nullptr) {  // Dict' % field.name)
             self.Indent()
             self._EmitDictPrettyPrint(field)
             self.Dedent()
             self.Emit('}')
 
-        elif field.typ.IsOptional():
+        elif ast.IsOptional(field.typ):
             typ = field.typ.children[0]
 
             self.Emit('if (this->%s) {  // Optional' % field.name)

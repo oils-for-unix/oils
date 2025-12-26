@@ -484,7 +484,7 @@ _PRIMITIVE_TYPES = [
 
 
 def _ResolveType(typ, type_lookup):
-    # type: (ast.type_ref_t, Dict[str, Any]) -> None
+    # type: (ast.type_expr_t, Dict[str, Any]) -> None
     """Recursively attach a 'resolved' field to AST nodes."""
     if isinstance(typ, ast.NamedType):
         if typ.name not in _PRIMITIVE_TYPES:
@@ -614,7 +614,7 @@ def _ResolveModule(module, app_types, do_count=None):
 
 
 def _CountType(typ, type_lookup, seen):
-    # type: (ast.type_ref_t, Dict[str, Any], Dict[str, bool]) -> None
+    # type: (ast.type_expr_t, Dict[str, Any], Dict[str, bool]) -> None
     """Given an AST node, add the types it references to seen"""
     if isinstance(typ, ast.NamedType):
         if typ.name not in _PRIMITIVE_TYPES:

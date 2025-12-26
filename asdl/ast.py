@@ -2,13 +2,13 @@
 
 This is not self-hosted!  If it were, it would look something like this.
 
-(TODO: we should probably improve it!  And add static types)
+TODO: move it toward this schema
 
-type_ref =
-  NamedType(str name, type resolved)
-| ParameterizedType(str type_name, List[type_ref] children)
+type_expr =
+  NamedType(str name, asdl_type resolved)
+| ParameterizedType(str type_name, List[type_expr] children)
 
-Field = (type_ref typ, str name)
+Field = (type_expr typ, str name)
 
 Constructor = (List[Field] fields, str name, str shared_type)
 
@@ -18,7 +18,7 @@ variant =
   Compound(str name, List[fields])
   SharedVariant(str tag_name, str shared_variant)
 
-type =
+asdl_type =
     Sum(List[Constructor] variants, List[str] generate)
   | SimpleSum()  # This is just List[name]
   | Product(List[Field] fields)
@@ -31,8 +31,8 @@ Module = (str name, List[Use] uses, List[Extern] externs, List[binding] defs)
 # Note: binding and entry can be combined
 
 binding = 
-  TypeDecl(str name, type value)
-| SubTypeDecl(str name, type_ref base_class)
+  TypeDecl(str name, asdl_type value)
+| SubTypeDecl(str name, type_expr base_class)
 
 entry =
   Use %Use
@@ -43,14 +43,14 @@ from __future__ import print_function
 
 import cStringIO
 
-from typing import List
+from typing import List, Optional
 
 # The following classes are the AST for the ASDL schema, i.e. the "meta-AST".
 # See the EBNF at the top of the file to understand the logical connection
 # between the various node types.
 
 
-class AST(object):
+class _Printable(object):
 
     def Print(self, f, indent):
         raise NotImplementedError()
@@ -61,9 +61,10 @@ class AST(object):
         return f.getvalue()
 
 
-class Use(AST):
+class Use(_Printable):
 
     def __init__(self, module_parts, type_names):
+        # type: (List[str], List[str]) -> None
         self.module_parts = module_parts
         self.type_names = type_names
 
@@ -74,9 +75,10 @@ class Use(AST):
         f.write('%s}\n' % ind)
 
 
-class Extern(AST):
+class Extern(_Printable):
 
     def __init__(self, names):
+        # type: (List[str]) -> None
         self.names = names
 
     def Print(self, f, indent):
@@ -84,9 +86,10 @@ class Extern(AST):
         f.write('%sExtern [ %s ]\n' % (ind, ' '.join(self.names)))
 
 
-class Module(AST):
+class Module(_Printable):
 
     def __init__(self, name, uses, externs, dfns):
+        # type: (str, List[Use], List[Extern], List[binding_t]) -> None
         self.name = name
         self.uses = uses
         self.externs = externs
@@ -110,12 +113,17 @@ class Module(AST):
         f.write('%s}\n' % ind)
 
 
-class TypeDecl(AST):
+class binding_t(_Printable):
+    pass
+
+
+class TypeDecl(binding_t):
     """A binding of name to a Sum or Product type."""
 
     def __init__(self, name, value):
-        self.name = name  # type: str
-        self.value = value  # type: AST
+        # type: (str, asdl_type_t) -> None
+        self.name = name
+        self.value = value
 
     def Print(self, f, indent):
         ind = indent * '  '
@@ -124,15 +132,16 @@ class TypeDecl(AST):
         f.write('%s}\n' % ind)
 
 
-class SubTypeDecl(AST):
+class SubTypeDecl(binding_t):
     """A declaration of a subtype.
 
     CompoundWord < List[word_part]
     """
 
     def __init__(self, name, base_class):
-        self.name = name  # type: str
-        self.base_class = base_class  # type: AST
+        # type: (str, type_expr_t) -> None
+        self.name = name
+        self.base_class = base_class
 
     def Print(self, f, indent):
         ind = indent * '  '
@@ -141,22 +150,11 @@ class SubTypeDecl(AST):
         f.write('%s}\n' % ind)
 
 
-class type_ref_t(object):
-
-    def __init__(self):
-        pass
-
-    def IsOptional(self):
-        return False
-
-    def IsList(self):
-        return False
-
-    def IsDict(self):
-        return False
+class type_expr_t(object):
+    pass
 
 
-class NamedType(type_ref_t):
+class NamedType(type_expr_t):
     """Int, string are resolved to a Primitive type 'Point' can be resolved to
     CompoundSum instance, etc."""
 
@@ -173,7 +171,7 @@ class NamedType(type_ref_t):
         f.write(' (%r)' % self.resolved)
 
 
-class ParameterizedType(type_ref_t):
+class ParameterizedType(type_expr_t):
     """A parameterized type expression, e.g. the type of a field.
 
     e.g. Dict[string, int]   Dict[int, array[string]]
@@ -187,8 +185,9 @@ class ParameterizedType(type_ref_t):
     """
 
     def __init__(self, type_name, children):
-        self.type_name = type_name  # type: str
-        self.children = children  # type: List[type_ref_t]
+        # type: (str, List[type_expr_t]) -> None
+        self.type_name = type_name
+        self.children = children
 
     def Print(self, f, indent):
         """Printed on one line."""
@@ -201,28 +200,11 @@ class ParameterizedType(type_ref_t):
                 child.Print(f, indent + 1)
             f.write(' ]')
 
-    def IsOptional(self):
-        return self.type_name == 'Optional'
 
-    def IsList(self):
-        if self.type_name == 'List':
-            return True
-        if self.type_name == 'Optional':
-            return self.children[0].IsList()
-        return False
-
-    def IsDict(self):
-        if self.type_name == 'Dict':
-            return True
-        if self.type_name == 'Optional':
-            return self.children[0].IsDict()
-        return False
-
-
-class Field(AST):
+class Field(_Printable):
 
     def __init__(self, typ, name):
-        # type: (AST, str) -> None
+        # type: (type_expr_t, str) -> None
         self.typ = typ  # type expression
         self.name = name  # variable name
 
@@ -233,22 +215,28 @@ class Field(AST):
         f.write('\n')
 
 
-class _CompoundAST(AST):
+class asdl_type_t(_Printable):
+    pass
+
+
+class _CompoundAST(asdl_type_t):
     """Either a Product or Constructor.
 
     encode.py and format.py need a reflection API.
     """
 
     def __init__(self, fields):
+        # type: (List[Field]) -> None
         self.fields = fields or []
 
 
-class Constructor(_CompoundAST):
+class Constructor(asdl_type_t):
 
-    def __init__(self, name, shared_type=None, fields=None):
-        _CompoundAST.__init__(self, fields)
+    def __init__(self, name, shared_type, fields):
+        # type: (str, Optional[type_expr_t], List[Field]) -> None
         self.name = name
         self.shared_type = shared_type  # for DoubleQuoted %DoubleQuoted
+        self.fields = fields or []
 
     def Print(self, f, indent):
         ind = indent * '  '
@@ -265,11 +253,12 @@ class Constructor(_CompoundAST):
         f.write('\n')
 
 
-class Sum(AST):
+class Sum(_Printable):
 
     def __init__(self, types, generate=None):
-        self.types = types  # type: List[Constructor]
-        self.generate = generate or []
+        # type: (List[Constructor], Optional[List[str]]) -> None
+        self.types = types
+        self.generate = generate or []  # type: List[str]
 
     def Print(self, f, indent):
         ind = indent * '  '
@@ -288,7 +277,8 @@ class SimpleSum(Sum):
 class Product(_CompoundAST):
 
     def __init__(self, fields):
-        _CompoundAST.__init__(self, fields)
+        # type: (List[Field]) -> None
+        self.fields = fields
 
     def Print(self, f, indent):
         ind = indent * '  '
@@ -311,3 +301,55 @@ def TypeNameHeuristic(t):
     the name!  e.g. re_t or BraceGroup
     """
     return '%s_t' % t if t[0].islower() else t
+
+
+def MakeSimpleVariant(name):
+    # type: (str) -> Constructor
+    """
+    Used by frontend/{consts,options}_gen.py
+    """
+    return Constructor(name, None, None)
+
+
+def IsOptional(t):
+    # type: (type_expr_t) -> bool
+    if isinstance(t, NamedType):
+        return False
+
+    elif isinstance(t, ParameterizedType):
+        return t.type_name == 'Optional'
+
+    else:
+        raise AssertionError()
+
+
+def IsList(t):
+    # type: (type_expr_t) -> bool
+    if isinstance(t, NamedType):
+        return False
+
+    elif isinstance(t, ParameterizedType):
+        if t.type_name == 'List':
+            return True
+        if t.type_name == 'Optional':
+            return IsList(t.children[0])
+        return False
+
+    else:
+        raise AssertionError()
+
+
+def IsDict(t):
+    # type: (type_expr_t) -> bool
+    if isinstance(t, NamedType):
+        return False
+
+    elif isinstance(t, ParameterizedType):
+        if t.type_name == 'Dict':
+            return True
+        if t.type_name == 'Optional':
+            return IsDict(t.children[0])
+        return False
+
+    else:
+        raise AssertionError()
