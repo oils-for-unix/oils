@@ -8,6 +8,8 @@ from asdl import ast
 from asdl import visitor
 from asdl.util import log
 
+from typing import Tuple
+
 _ = log  # shut up lint
 
 _PRIMITIVES = {
@@ -61,7 +63,7 @@ def _MyPyType(typ):
 
 
 def _CastedNull(mypy_type):
-    # type: (str) -> None
+    # type: (str) -> str
     return "cast('%s', None)" % mypy_type
 
 
@@ -123,7 +125,7 @@ def _DefaultValue(typ, mypy_type):
 
 
 def _HNodeExpr(typ, var_name):
-    # type: (str, ast.TypeExpr, str) -> str
+    # type: (ast.AST, str) -> Tuple[str, bool]
     none_guard = False
 
     if typ.IsOptional():

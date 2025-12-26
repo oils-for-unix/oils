@@ -83,6 +83,16 @@ mypy-check() {
     python3 -m mypy "$@"
 }
 
+check-asdl-compiler() {
+  ### Check ASDL compiler
+
+  # Note: asdl/TEST.sh has a check for the generated code and urntime
+
+  #local -a flags=( --strict --no-strict-optional --follow-imports=silent --py2 )
+  local -a flags=( --no-strict-optional --follow-imports=silent --py2 )
+  mypy-check "${flags[@]}" asdl/{asdl_main,ast,front_end,gen_cpp,gen_python,metrics,util,visitor}.py
+}
+
 check-mycpp() {
   banner 'Type checking mycpp'
 

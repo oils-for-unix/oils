@@ -1,6 +1,43 @@
 """AST for ASDL.
 
-(Not self-hosted!)
+This is not self-hosted!  If it were, it would look something like this.
+
+(TODO: we should probably improve it!  And add static types)
+
+type_ref =
+  NamedType(str name, type resolved)
+| ParameterizedType(str type_name, List[type_ref] children)
+
+Field = (type_ref typ, str name)
+
+Constructor = (List[Field] fields, str name, str shared_type)
+
+# TODO: use variant instead of constructor
+variant =
+  Simple(str name)
+  Compound(str name, List[fields])
+  SharedVariant(str tag_name, str shared_variant)
+
+type =
+    Sum(List[Constructor] variants, List[str] generate)
+  | SimpleSum()  # This is just List[name]
+  | Product(List[Field] fields)
+
+Use = (List[str] module_parts, str type_names)
+Extern = (List[str] names)
+
+Module = (str name, List[Use] uses, List[Extern] externs, List[binding] defs)
+
+# Note: binding and entry can be combined
+
+binding = 
+  TypeDecl(str name, type value)
+| SubTypeDecl(str name, type_ref base_class)
+
+entry =
+  Use %Use
+| Extern %Extern
+| Binding(binding b)
 """
 from __future__ import print_function
 

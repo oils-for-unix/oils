@@ -12,6 +12,7 @@ from asdl import ast
 from asdl import front_end
 from asdl import gen_cpp
 from asdl import gen_python
+from asdl import metrics
 #from asdl.util import log
 
 ARG_0 = os.path.basename(sys.argv[0])
@@ -93,7 +94,18 @@ def main(argv):
     # e.g. syntax_abbrev
     abbrev_ns = opts.abbrev_module.split('.')[-1] if abbrev_mod else None
 
-    if action == 'c':  # Generate C code for the lexer
+    if action == 'metrics':  # Sum type metrics
+        with open(schema_path) as f:
+            schema_ast = front_end.LoadSchema(f, app_types)
+
+        v = metrics.MetricsVisitor(sys.stdout)
+        v.VisitModule(schema_ast)
+
+    elif action == 'command_t':  # count all types that command_t references
+        with open(schema_path) as f:
+            schema_ast = front_end.LoadSchema(f, app_types, do_count='command')
+
+    elif action == 'c':  # Generate C code for the lexer
         with open(schema_path) as f:
             schema_ast = front_end.LoadSchema(f, app_types)
 

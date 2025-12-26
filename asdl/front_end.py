@@ -524,7 +524,7 @@ def _ResolveFields(field_ast_nodes, type_lookup):
         _ResolveType(field.typ, type_lookup)
 
 
-def _ResolveModule(module, app_types):
+def _ResolveModule(module, app_types, do_count=None):
     """Name resolution for NamedType."""
     # Types that fields are declared with: int, id, word_part, etc.
     # Fields are NOT declared with Constructor names.
@@ -576,8 +576,69 @@ def _ResolveModule(module, app_types):
 
         raise AssertionError(ast_node)
 
+    # OPTIONAL Third pass: print metrics about a type, like command_t
+    if do_count:
+        seen = {}
+        for d in module.dfns:
+            if d.name != do_count:  # start with command_t type
+                continue
 
-def LoadSchema(f, app_types, verbose=False):
+            # TODO: FIx this algorithm !!!
+            #
+            # 1. Walk the fields in each _CompoundAST
+            # 2. For each field, look at foo.resolved
+            #
+            # Is that it?
+
+            if isinstance(d, SubTypeDecl):  # no fields
+                _CountType(d.base_class, type_lookup, seen)
+                continue
+
+            ast_node = d.value
+            if isinstance(ast_node, ast.Product):
+                #log('fields %s', ast_node.fields)
+                _CountFields(ast_node.fields, type_lookup, seen)
+                continue
+
+            if isinstance(ast_node, ast.Sum):
+                for cons in ast_node.types:
+                    key = '%s.%s' % (d.name, cons.name)
+                    seen[key] = True
+                    _CountFields(cons.fields, type_lookup, seen)
+                continue
+
+            raise AssertionError(ast_node)
+
+        for name in sorted(seen):
+            print(name)
+
+
+def _CountType(typ, type_lookup, seen):
+    # type: (AST, Dict[str, Any], Dict[str, bool]) -> None
+    """Given an AST node, add the types it references to seen"""
+    if isinstance(typ, ast.NamedType):
+        if typ.name not in _PRIMITIVE_TYPES:
+            ast_node = type_lookup.get(typ.name)
+            if ast_node is None:
+                raise ASDLSyntaxError("Couldn't find type %r" % typ.name)
+            typ.resolved = ast_node
+
+            seen[typ.name] = True
+
+    elif isinstance(typ, ast.ParameterizedType):
+        for child in typ.children:
+            _CountType(child, type_lookup, seen)
+
+    else:
+        raise AssertionError()
+
+
+def _CountFields(field_ast_nodes, type_lookup, seen):
+    for field in field_ast_nodes:
+        _CountType(field.typ, type_lookup, seen)
+
+
+def LoadSchema(f, app_types, verbose=False, do_count=None):
     """Returns an AST for the schema."""
     p = ASDLParser()
     schema_ast = p.parse(f)
@@ -586,5 +647,5 @@ def LoadSchema(f, app_types, verbose=False):
         schema_ast.Print(sys.stdout, 0)
 
     # Make sure all the names are valid
-    _ResolveModule(schema_ast, app_types)
+    _ResolveModule(schema_ast, app_types, do_count=do_count)
     return schema_ast

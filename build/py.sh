@@ -130,6 +130,22 @@ gen-asdl-py() {
   log "$asdl_path -> (asdl_main) -> $out"
 }
 
+asdl-metrics() {
+  # sum types with the most variants:
+  #
+  # 20 expr
+  # 22 command
+  # 28 value
+
+  for schema in */*.asdl; do
+    asdl/asdl_main.py metrics $schema
+  done | sort -n
+}
+
+asdl-command-t() {
+  asdl/asdl_main.py command_t frontend/syntax.asdl
+}
+
 py-codegen() {
   # note: filename must come first
   # hnode.asdl has REQUIRED fields so it's --py-init-N

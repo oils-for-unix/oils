@@ -28,6 +28,8 @@ from asdl import ast
 from asdl import visitor
 from asdl.util import log
 
+from typing import Tuple
+
 _ = log
 
 
@@ -172,7 +174,7 @@ def _DefaultValue(typ, conditional=True):
 
 
 def _HNodeExpr(typ, var_name):
-    # type: (str, ast.TypeExpr, str) -> str
+    # type: (ast.AST, str) -> Tuple[str, bool]
     none_guard = False
 
     if typ.IsOptional():
