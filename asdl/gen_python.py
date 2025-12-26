@@ -45,15 +45,13 @@ def _MyPyType(typ):
             if isinstance(typ.resolved, ast.Product):
                 return typ.name
             if isinstance(typ.resolved, ast.Use):
-                return ast.TypeNameHeuristic(typ.name)
+                py_name, _ = ast.TypeNameHeuristic(typ.name)
+                return py_name
             if isinstance(typ.resolved, ast.Extern):
                 r = typ.resolved
                 type_name = r.names[-1]
                 py_module = r.names[-2]
                 return '%s.%s' % (py_module, type_name)
-            if isinstance(typ.resolved, ast.UserType):
-                return typ.resolved.type_name
-
             raise AssertionError(typ)
 
         return _PRIMITIVES[typ.name]
@@ -253,6 +251,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('', depth)
 
         self._EmitDict(sum_name, int_to_str, depth)
+
+        sum_name = ast.NameHack(sum_name)
 
         self.Emit('def %s_str(val, dot=True):' % sum_name, depth)
         self.Emit('  # type: (%s_t, bool) -> str' % sum_name, depth)
@@ -549,6 +549,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('', depth)
 
         self._EmitDict(sum_name, int_to_str, depth)
+
+        sum_name = ast.NameHack(sum_name)
 
         self.Emit('def %s_str(tag, dot=True):' % sum_name, depth)
         self.Emit('  # type: (int, bool) -> str', depth)

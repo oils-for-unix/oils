@@ -68,11 +68,6 @@ def main(argv):
         raise RuntimeError('Schema path required')
 
     schema_filename = os.path.basename(schema_path)
-    if schema_filename in ('syntax.asdl', 'runtime.asdl'):
-        app_types = {'id': ast.UserType('id_kind_asdl', 'Id_t')}
-    else:
-        app_types = {}
-
     if opts.abbrev_module:
         # Weird Python rule for importing: fromlist needs to be non-empty.
         abbrev_mod = __import__(opts.abbrev_module, fromlist=['.'])
@@ -82,6 +77,9 @@ def main(argv):
     abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
     # e.g. syntax_abbrev
     abbrev_ns = opts.abbrev_module.split('.')[-1] if abbrev_mod else None
+
+    # TODO: remove this
+    app_types = {}
 
     if action == 'metrics':  # Sum type metrics
         with open(schema_path) as f:
@@ -129,28 +127,23 @@ def main(argv):
             if opts.pretty_print_methods:
                 f.write('#include "asdl/cpp_runtime.h"\n')
 
-            if app_types:
-                f.write("""\
-#include "_gen/frontend/id_kind.asdl.h"
-using id_kind_asdl::Id_t;
-
-""")
-            # Only works with gross hacks
-            if 0:
-                #if schema_path.endswith('/syntax.asdl'):
-                f.write(
-                    '#include  "prebuilt/frontend/syntax_abbrev.mycpp.h"\n')
-
             for use in schema_ast.uses:
+                # HACK to work around limitation: we can't "use" simple enums
+                if use.module_parts == ['frontend', 'id_kind']:
+                    f.write('namespace %s_asdl { typedef uint16_t Id_t; }\n' %
+                            use.module_parts[-1])
+                    continue
+
                 # Forward declarations in the header, like
                 # namespace syntax_asdl { class command_t; }
                 # must come BEFORE namespace, so it can't be in the visitor.
 
                 # assume sum type for now!
-                cpp_names = [
-                    'class %s;' % ast.TypeNameHeuristic(n)
-                    for n in use.type_names
-                ]
+                cpp_names = []
+                for n in use.type_names:
+                    py_name, _ = ast.TypeNameHeuristic(n)
+                    cpp_names.append('class %s;' % py_name)
+
                 f.write('namespace %s_asdl { %s }\n' %
                         (use.module_parts[-1], ' '.join(cpp_names)))
                 f.write('\n')
@@ -240,8 +233,11 @@ tags_to_types = \\
 
                 # To call pretty-printing methods
                 for use in schema_ast.uses:
-                    f.write('#include "_gen/%s.asdl.h"  // "use" in ASDL \n' %
+                    f.write('#include "_gen/%s.asdl.h"  // "use" in ASDL\n' %
                             '/'.join(use.module_parts))
+                    # HACK
+                    if use.module_parts == ['frontend', 'id_kind']:
+                        f.write('using id_kind_asdl::Id_str;\n')
 
                 f.write("""\
 
@@ -251,9 +247,6 @@ using hnode_asdl::Field;
 using hnode_asdl::color_e;
 
 """)
-
-                if app_types:
-                    f.write('using id_kind_asdl::Id_str;\n')
 
                 f.write("""
 namespace %s {
@@ -283,11 +276,20 @@ from mycpp import mops
 from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
 """)
 
+        for use in schema_ast.uses:
+            # HACK
+            if use.module_parts == ['frontend', 'id_kind']:
+                f.write('from _devbuild.gen.id_kind_asdl import Id_str\n')
+
         if schema_ast.uses:
             f.write('\n')
             f.write('if TYPE_CHECKING:\n')
         for use in schema_ast.uses:
-            py_names = [ast.TypeNameHeuristic(n) for n in use.type_names]
+            py_names = []
+            for n in use.type_names:
+                py_name, _ = ast.TypeNameHeuristic(n)
+                py_names.append(py_name)
+
             # indented
             f.write('  from _devbuild.gen.%s_asdl import %s\n' %
                     (use.module_parts[-1], ', '.join(py_names)))
@@ -299,13 +301,6 @@ from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
             n = extern.names
             mod_parts = n[:-2]
             f.write('  from %s import %s\n' % ('.'.join(mod_parts), n[-2]))
-
-        for typ in app_types.itervalues():
-            if isinstance(typ, ast.UserType):
-                f.write('from _devbuild.gen.%s import %s\n' %
-                        (typ.mod_name, typ.type_name))
-                # HACK
-                f.write('from _devbuild.gen.%s import Id_str\n' % typ.mod_name)
 
         if opts.pretty_print_methods:
             f.write("""

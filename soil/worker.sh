@@ -142,7 +142,7 @@ repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
 oils-types          devtools/types.sh soil-run                   -
 asdl-compiler       devtools/types.sh check-asdl-compiler        -
-asdl-output         asdl/TEST.sh check-types                     -
+asdl-py-output      asdl/TEST.sh check-py-output                 -
 mycpp-compiler      devtools/types.sh assert-mycpp               -
 unit                test/unit.sh minimal                         _test/py-unit/
 lossless            test/lossless.sh soil-run                    -

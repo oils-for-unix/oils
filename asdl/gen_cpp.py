@@ -12,7 +12,6 @@ TODO:
 
 - NoOp needs to be instantiated without args?
 - dict becomes Dict[str, str] ?
-- how to handle UserType(id) ?
 
 - How do optional ASDL values like int? work?  Use C++ default values?
   - This means that all the optionals have to be on the end.  That seems OK.
@@ -98,17 +97,15 @@ def _GetCppType(typ):
             if isinstance(typ.resolved, ast.Product):
                 return '%s*' % typ.name
             if isinstance(typ.resolved, ast.Use):
-                return '%s_asdl::%s*' % (typ.resolved.module_parts[-1],
-                                         ast.TypeNameHeuristic(typ.name))
+                py_name, is_pointer = ast.TypeNameHeuristic(typ.name)
+                star = '*' if is_pointer else ''
+                return '%s_asdl::%s%s' % (typ.resolved.module_parts[-1],
+                                          py_name, star)
             if isinstance(typ.resolved, ast.Extern):
                 r = typ.resolved
                 type_name = r.names[-1]
                 cpp_namespace = r.names[-2]
                 return '%s::%s*' % (cpp_namespace, type_name)
-            if isinstance(typ.resolved, ast.UserType):
-                # Right now we need only Id_t, not id_kind_asdl::Id_t
-                #return '%s::%s' % (typ.resolved.mod_name, typ.resolved.type_name)
-                return typ.resolved.type_name
             raise AssertionError()
 
         return _PRIMITIVES[typ.name]
@@ -289,6 +286,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit('', depth)
 
             if self.pretty_print_methods:
+                sum_name = ast.NameHack(sum_name)
                 self.Emit(
                     'BigStr* %s_str(%s tag, bool dot = true);' %
                     (sum_name, enum_name), depth)
@@ -324,6 +322,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit('', depth)
 
             if self.pretty_print_methods:
+                sum_name = ast.NameHack(sum_name)
                 self.Emit(
                     'BigStr* %s_str(int tag, bool dot = true);' % sum_name,
                     depth)

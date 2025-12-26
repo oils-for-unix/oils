@@ -76,7 +76,7 @@ typed-arith-asdl() {
   echo
 }
 
-check-types() {
+check-py-output() {
   build/py.sh py-asdl-examples
 
   asdl-check _devbuild/gen/shared_variant_asdl.py

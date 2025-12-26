@@ -70,18 +70,6 @@ class asdl_type_t(_Printable):
     pass
 
 
-class UserType(asdl_type_t):
-
-    def __init__(self, mod_name, type_name):
-        # type: (str, str) -> None
-        self.mod_name = mod_name
-        self.type_name = type_name
-
-    def Print(self, f, indent):
-        ind = indent * '  '
-        f.write('%sUserType %s %s' % (self.mod_name, self.type_name))
-
-
 class Use(asdl_type_t):
 
     def __init__(self, module_parts, type_names):
@@ -295,14 +283,38 @@ class Product(_Printable):
 #
 
 
-def TypeNameHeuristic(t):
+def TypeNameHeuristic(asdl_name):
     # type: (str) -> str
     """For 'use'.
 
     We don't parse the imported file, so we have a heuristic based on
     the name!  e.g. re_t or BraceGroup
     """
-    return '%s_t' % t if t[0].islower() else t
+    is_pointer = True
+
+    if asdl_name == 'id':
+        py_name = 'Id_t'
+        is_pointer = False
+
+    elif asdl_name == 'kind':
+        py_name = 'Kind_t'
+        is_pointer = False
+
+    elif asdl_name[0].islower():
+        py_name = '%s_t' % asdl_name
+
+    else:
+        py_name = asdl_name
+
+    return py_name, is_pointer
+
+
+def NameHack(sum_name):
+    if sum_name == 'id':
+        return 'Id'
+    elif sum_name == 'kind':
+        return 'Kind'
+    return sum_name
 
 
 def MakeSimpleVariant(name):
