@@ -4,8 +4,8 @@ from __future__ import print_function
 import re
 
 from asdl import ast
-from asdl.ast import (AST, Use, Module, TypeDecl, SubTypeDecl, Constructor,
-                      Field, Sum, SimpleSum, Product, Extern)
+from asdl.ast import (Use, Module, TypeDecl, SubTypeDecl, Constructor, Field,
+                      Sum, SimpleSum, Product, Extern)
 from asdl.util import log
 
 # type checking not turned on yet

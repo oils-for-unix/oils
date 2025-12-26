@@ -142,6 +142,7 @@ class SubTypeDecl(AST):
 
 
 class type_ref_t(object):
+
     def __init__(self):
         pass
 
