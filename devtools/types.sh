@@ -92,8 +92,7 @@ check-asdl-compiler() {
   local -a flags=( --no-strict-optional --follow-imports=silent --py2 )
   local -a files=( asdl/{asdl_main,ast,front_end,gen_cpp,gen_python,metrics,util,visitor}.py )
 
-  # temporarily allow failure
-  mypy-check "${flags[@]}" "${files[@]}" || true
+  mypy-check "${flags[@]}" "${files[@]}"
 }
 
 check-mycpp() {

@@ -552,15 +552,21 @@ def _ResolveModule(module, app_types, do_count=None):
         type_lookup[last] = ex
 
     for d in module.dfns:
-        if d.name in type_lookup:
-            raise ASDLSyntaxError('Type %r was already defined' % d.name)
 
         if isinstance(d, SubTypeDecl):
+            if d.name in type_lookup:
+                raise ASDLSyntaxError('Type %r was already defined' % d.name)
+
             # e.g. CompoundWord < List[str]
-            type_lookup[d.name] = d.base_class
+            type_lookup[d.name] = ast.DummyType()  # this value isn't used?
+
         elif isinstance(d, TypeDecl):
+            if d.name in type_lookup:
+                raise ASDLSyntaxError('Type %r was already defined' % d.name)
+
             # e.g. Token = (str a)
             type_lookup[d.name] = d.value
+
         else:
             raise AssertionError()
 
@@ -589,34 +595,35 @@ def _ResolveModule(module, app_types, do_count=None):
     if do_count:
         seen = {}  # type: Dict[str, bool]
         for d in module.dfns:
-            if d.name != do_count:  # start with command_t type
-                continue
-
-            # TODO: FIx this algorithm !!!
-            #
-            # 1. Walk the fields in each _CompoundAST
-            # 2. For each field, look at foo.resolved
-            #
-            # Is that it?
 
             if isinstance(d, SubTypeDecl):  # no fields
-                _CountType(d.base_class, type_lookup, seen)
+                # Don't count these types
                 continue
 
-            ast_node = d.value
-            if isinstance(ast_node, ast.Product):
-                #log('fields %s', ast_node.fields)
-                _CountFields(ast_node.fields, type_lookup, seen)
-                continue
+            elif isinstance(d, TypeDecl):  # no fields
+                if d.name != do_count:  # start with command_t type
+                    continue
 
-            if isinstance(ast_node, ast.Sum):
-                for cons in ast_node.types:
-                    key = '%s.%s' % (d.name, cons.name)
-                    seen[key] = True
-                    _CountFields(cons.fields, type_lookup, seen)
-                continue
+                # TODO: FIx this algorithm !!!
+                #
+                # 1. Walk the fields in each _CompoundAST
+                # 2. For each field, look at foo.resolved
+                #
+                # Is that it?
 
-            raise AssertionError(ast_node)
+                ast_node = d.value
+                if isinstance(ast_node, ast.Product):
+                    #log('fields %s', ast_node.fields)
+                    _CountFields(ast_node.fields, type_lookup, seen)
+                elif isinstance(ast_node, ast.Sum):
+                    for cons in ast_node.types:
+                        key = '%s.%s' % (d.name, cons.name)
+                        seen[key] = True
+                        _CountFields(cons.fields, type_lookup, seen)
+                else:
+                    raise AssertionError(ast_node)
+            else:
+                raise AssertionError(d)
 
         for name in sorted(seen):
             print(name)

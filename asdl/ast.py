@@ -1,4 +1,4 @@
-"""AST for ASDL.
+"""AST type definitions for Zephyr ASDL itself.
 
 This is not self-hosted!  If it were, it would look something like this.
 
@@ -48,11 +48,7 @@ from __future__ import print_function
 
 import cStringIO
 
-from typing import List, Optional
-
-# The following classes are the AST for the ASDL schema, i.e. the "meta-AST".
-# See the EBNF at the top of the file to understand the logical connection
-# between the various node types.
+from typing import List, Optional, Tuple
 
 
 class _Printable(object):
@@ -67,6 +63,15 @@ class _Printable(object):
 
 
 class asdl_type_t(_Printable):
+    pass
+
+
+class DummyType(asdl_type_t):
+    """
+    Dummy value for subtyping: List_of_command < List[command]
+
+    TODO: Improve this representation
+    """
     pass
 
 
@@ -284,7 +289,7 @@ class Product(_Printable):
 
 
 def TypeNameHeuristic(asdl_name):
-    # type: (str) -> str
+    # type: (str) -> Tuple[str, bool]
     """For 'use'.
 
     We don't parse the imported file, so we have a heuristic based on
