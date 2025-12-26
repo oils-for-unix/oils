@@ -18,26 +18,31 @@ variant =
   Compound(str name, List[fields])
   SharedVariant(str tag_name, str shared_variant)
 
+Use = (List[str] module_parts, str type_names)
+Extern = (List[str] names)
+
 asdl_type =
     Sum(List[Constructor] variants, List[str] generate)
   | SimpleSum()  # This is just List[name]
   | Product(List[Field] fields)
 
-Use = (List[str] module_parts, str type_names)
-Extern = (List[str] names)
-
-Module = (str name, List[Use] uses, List[Extern] externs, List[binding] defs)
-
-# Note: binding and entry can be combined
+    # These go in the TypeLookup dict!
+    # Shouldn't they be a BINDING?
+  | Use %Use
+  | Extern %Extern
 
 binding = 
   TypeDecl(str name, asdl_type value)
 | SubTypeDecl(str name, type_expr base_class)
 
-entry =
-  Use %Use
-| Extern %Extern
-| Binding(binding b)
+Module = (
+  str name,
+  List[Use] uses,
+  List[Extern] externs,
+  # Are Type and SubType ordered?  Right now they are.  C++ and Python may
+  # differ in terms of order.
+  List[binding] defs
+)
 """
 from __future__ import print_function
 
@@ -61,7 +66,23 @@ class _Printable(object):
         return f.getvalue()
 
 
-class Use(_Printable):
+class asdl_type_t(_Printable):
+    pass
+
+
+class UserType(asdl_type_t):
+
+    def __init__(self, mod_name, type_name):
+        # type: (str, str) -> None
+        self.mod_name = mod_name
+        self.type_name = type_name
+
+    def Print(self, f, indent):
+        ind = indent * '  '
+        f.write('%sUserType %s %s' % (self.mod_name, self.type_name))
+
+
+class Use(asdl_type_t):
 
     def __init__(self, module_parts, type_names):
         # type: (List[str], List[str]) -> None
@@ -75,7 +96,7 @@ class Use(_Printable):
         f.write('%s}\n' % ind)
 
 
-class Extern(_Printable):
+class Extern(asdl_type_t):
 
     def __init__(self, names):
         # type: (List[str]) -> None
@@ -150,7 +171,7 @@ class SubTypeDecl(binding_t):
         f.write('%s}\n' % ind)
 
 
-class type_expr_t(object):
+class type_expr_t(_Printable):
     pass
 
 
@@ -163,10 +184,9 @@ class NamedType(type_expr_t):
         self.name = name
 
         # Mutated by _ResolveModule / _ResolveType
-        self.resolved = None
+        self.resolved = None  # type: Optional[asdl_type_t]
 
     def Print(self, f, indent):
-        """Printed on one line."""
         f.write('NamedType %s' % (self.name))  # printed after field
         f.write(' (%r)' % self.resolved)
 
@@ -174,14 +194,11 @@ class NamedType(type_expr_t):
 class ParameterizedType(type_expr_t):
     """A parameterized type expression, e.g. the type of a field.
 
-    e.g. Dict[string, int]   Dict[int, array[string]]
-
-    self.children is empty if it's a leaf.
-
-    Note:
-
-    string*  <=>  array[string]
-    mytype?  <=>  maybe[mytype]
+    Examples:
+        List[mytype]       # used to be mytype*
+        Optional[mytype]   # used to by mytype?
+        Dict[str, int]
+        Dict[int, List[str]]
     """
 
     def __init__(self, type_name, children):
@@ -213,21 +230,6 @@ class Field(_Printable):
         f.write('%sField %r ' % (ind, self.name))
         self.typ.Print(f, indent)
         f.write('\n')
-
-
-class asdl_type_t(_Printable):
-    pass
-
-
-class _CompoundAST(asdl_type_t):
-    """Either a Product or Constructor.
-
-    encode.py and format.py need a reflection API.
-    """
-
-    def __init__(self, fields):
-        # type: (List[Field]) -> None
-        self.fields = fields or []
 
 
 class Constructor(asdl_type_t):
@@ -274,7 +276,7 @@ class SimpleSum(Sum):
     pass
 
 
-class Product(_CompoundAST):
+class Product(_Printable):
 
     def __init__(self, fields):
         # type: (List[Field]) -> None

@@ -20,9 +20,6 @@ _PRIMITIVES = {
     'float': 'float',
     'bool': 'bool',
     'any': 'Any',
-    # TODO: frontend/syntax.asdl should properly import id enum instead of
-    # hard-coding it here.
-    'id': 'Id_t',
 }
 
 
@@ -54,8 +51,11 @@ def _MyPyType(typ):
                 type_name = r.names[-1]
                 py_module = r.names[-2]
                 return '%s.%s' % (py_module, type_name)
+            if isinstance(typ.resolved, ast.UserType):
+                return typ.resolved.type_name
 
-        # 'id' falls through here
+            raise AssertionError(typ)
+
         return _PRIMITIVES[typ.name]
 
     else:

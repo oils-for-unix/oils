@@ -52,9 +52,6 @@ _PRIMITIVES = {
     'float': 'double',
     'bool': 'bool',
     'any': 'void*',
-    # TODO: frontend/syntax.asdl should properly import id enum instead of
-    # hard-coding it here.
-    'id': 'Id_t',
 }
 
 
@@ -108,8 +105,12 @@ def _GetCppType(typ):
                 type_name = r.names[-1]
                 cpp_namespace = r.names[-2]
                 return '%s::%s*' % (cpp_namespace, type_name)
+            if isinstance(typ.resolved, ast.UserType):
+                # Right now we need only Id_t, not id_kind_asdl::Id_t
+                #return '%s::%s' % (typ.resolved.mod_name, typ.resolved.type_name)
+                return typ.resolved.type_name
+            raise AssertionError()
 
-        # 'id' falls through here
         return _PRIMITIVES[typ.name]
 
     else:

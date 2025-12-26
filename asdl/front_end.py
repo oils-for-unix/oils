@@ -9,7 +9,7 @@ from asdl.ast import (Use, Module, TypeDecl, SubTypeDecl, Constructor, Field,
 from asdl.util import log
 
 # type checking not turned on yet
-from typing import Dict, Any
+from typing import List, Dict, Optional, cast, TYPE_CHECKING
 
 _ = log
 
@@ -112,8 +112,8 @@ def _Tokenize(f):
 def _SumIsSimple(variant_list):
     """Return True if a sum is a simple.
 
-    A sum is simple if its types have no fields, e.g. unaryop = Invert |
-    Not | UAdd | USub
+    A sum is simple if its types have no fields, e.g.
+        unaryop = Invert | Not | UAdd | USub
     """
     for t in variant_list:
         if t.fields or t.shared_type:
@@ -482,9 +482,12 @@ _PRIMITIVE_TYPES = [
     'any',
 ]
 
+if TYPE_CHECKING:
+    TypeLookup = Dict[str, ast.asdl_type_t]
+
 
 def _ResolveType(typ, type_lookup):
-    # type: (ast.type_expr_t, Dict[str, Any]) -> None
+    # type: (ast.type_expr_t, TypeLookup) -> None
     """Recursively attach a 'resolved' field to AST nodes."""
     if isinstance(typ, ast.NamedType):
         if typ.name not in _PRIMITIVE_TYPES:
@@ -516,6 +519,7 @@ def _ResolveType(typ, type_lookup):
 
 
 def _ResolveFields(field_ast_nodes, type_lookup):
+    # type: (List[Field], TypeLookup) -> None
     """
     Args:
       type_lookup: Populated by name resolution
@@ -525,6 +529,7 @@ def _ResolveFields(field_ast_nodes, type_lookup):
 
 
 def _ResolveModule(module, app_types, do_count=None):
+    # type: (Module, TypeLookup, Optional[str]) -> None
     """Name resolution for NamedType."""
     # Types that fields are declared with: int, id, word_part, etc.
     # Fields are NOT declared with Constructor names.
@@ -534,7 +539,7 @@ def _ResolveModule(module, app_types, do_count=None):
     # C++.  A consequence of this is TypeNameHeuristic().
     for u in module.uses:
         for type_name in u.type_names:
-            type_lookup[type_name] = u  # type: ast.Use()
+            type_lookup[type_name] = u
 
     # NOTE: We need two passes because types can be mutually recursive, e.g.
     # asdl/arith.asdl.
@@ -553,15 +558,19 @@ def _ResolveModule(module, app_types, do_count=None):
         if isinstance(d, SubTypeDecl):
             # e.g. CompoundWord < List[str]
             type_lookup[d.name] = d.base_class
-        else:
+        elif isinstance(d, TypeDecl):
             # e.g. Token = (str a)
             type_lookup[d.name] = d.value
+        else:
+            raise AssertionError()
 
     # Second pass: add NamedType.resolved field
     for d in module.dfns:
         if isinstance(d, SubTypeDecl):  # no fields
             _ResolveType(d.base_class, type_lookup)
             continue
+
+        d = cast(ast.TypeDecl, d)
 
         ast_node = d.value
         if isinstance(ast_node, ast.Product):
@@ -578,7 +587,7 @@ def _ResolveModule(module, app_types, do_count=None):
 
     # OPTIONAL Third pass: print metrics about a type, like command_t
     if do_count:
-        seen = {}
+        seen = {}  # type: Dict[str, bool]
         for d in module.dfns:
             if d.name != do_count:  # start with command_t type
                 continue
@@ -614,15 +623,10 @@ def _ResolveModule(module, app_types, do_count=None):
 
 
 def _CountType(typ, type_lookup, seen):
-    # type: (ast.type_expr_t, Dict[str, Any], Dict[str, bool]) -> None
+    # type: (ast.type_expr_t, TypeLookup, Dict[str, bool]) -> None
     """Given an AST node, add the types it references to seen"""
     if isinstance(typ, ast.NamedType):
         if typ.name not in _PRIMITIVE_TYPES:
-            ast_node = type_lookup.get(typ.name)
-            if ast_node is None:
-                raise ASDLSyntaxError("Couldn't find type %r" % typ.name)
-            typ.resolved = ast_node
-
             seen[typ.name] = True
 
     elif isinstance(typ, ast.ParameterizedType):
@@ -634,6 +638,7 @@ def _CountType(typ, type_lookup, seen):
 
 
 def _CountFields(field_ast_nodes, type_lookup, seen):
+    # type: (List[Field], TypeLookup, Dict[str, bool]) -> None
     for field in field_ast_nodes:
         _CountType(field.typ, type_lookup, seen)
 

@@ -53,17 +53,6 @@ def Options():
     return p
 
 
-class UserType(object):
-    """TODO: Delete this class after we have modules with 'use'?"""
-
-    def __init__(self, mod_name, type_name):
-        self.mod_name = mod_name
-        self.type_name = type_name
-
-    def __repr__(self):
-        return '<UserType %s %s>' % (self.mod_name, self.type_name)
-
-
 def main(argv):
     o = Options()
     opts, argv = o.parse_args(argv)
@@ -80,7 +69,7 @@ def main(argv):
 
     schema_filename = os.path.basename(schema_path)
     if schema_filename in ('syntax.asdl', 'runtime.asdl'):
-        app_types = {'id': UserType('id_kind_asdl', 'Id_t')}
+        app_types = {'id': ast.UserType('id_kind_asdl', 'Id_t')}
     else:
         app_types = {}
 
@@ -312,7 +301,7 @@ from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
             f.write('  from %s import %s\n' % ('.'.join(mod_parts), n[-2]))
 
         for typ in app_types.itervalues():
-            if isinstance(typ, UserType):
+            if isinstance(typ, ast.UserType):
                 f.write('from _devbuild.gen.%s import %s\n' %
                         (typ.mod_name, typ.type_name))
                 # HACK
