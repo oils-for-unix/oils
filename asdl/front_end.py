@@ -528,7 +528,7 @@ def _ResolveFields(field_ast_nodes, type_lookup):
         _ResolveType(field.typ, type_lookup)
 
 
-def _ResolveModule(module, app_types, do_count=None):
+def _ResolveModule(module, app_types, do_closure=None):
     # type: (Module, TypeLookup, Optional[str]) -> None
     """Name resolution for NamedType."""
     # Types that fields are declared with: int, id, word_part, etc.
@@ -592,65 +592,99 @@ def _ResolveModule(module, app_types, do_count=None):
         raise AssertionError(ast_node)
 
     # OPTIONAL Third pass: print metrics about a type, like command_t
-    if do_count:
+    if do_closure:
         seen = {}  # type: Dict[str, bool]
-        for d in module.dfns:
+        c = ClosureWalk(type_lookup, seen)
+        c.DoModule(module, do_closure)
+        for name in sorted(seen):
+            print(name)
+        log('SHARED (%d): %s', len(c.shared), ' '.join(sorted(c.shared)))
 
-            if isinstance(d, SubTypeDecl):  # no fields
+
+class ClosureWalk(object):
+    """Analyze how many unique IDs needed for all of syntax.asdl command_t."""
+
+    def __init__(self, type_lookup, seen):
+        # type: (TypeLookup, Dict[str, bool]) -> None
+        self.type_lookup = type_lookup
+        self.seen = seen
+        self.shared = {}  # type: Dict[str, bool]
+        self.visited = {}  # type: Dict[str, bool]
+
+    def DoModule(self, module, type_name):
+        # type: (ast.Module, str) -> None
+        for d in module.dfns:
+            if isinstance(d, SubTypeDecl):
                 # Don't count these types
                 continue
 
-            elif isinstance(d, TypeDecl):  # no fields
-                if d.name != do_count:  # start with command_t type
-                    continue
-
-                # TODO: FIx this algorithm !!!
-                #
-                # 1. Walk the fields in each _CompoundAST
-                # 2. For each field, look at foo.resolved
-                #
-                # Is that it?
-
-                ast_node = d.value
-                if isinstance(ast_node, ast.Product):
-                    #log('fields %s', ast_node.fields)
-                    _CountFields(ast_node.fields, type_lookup, seen)
-                elif isinstance(ast_node, ast.Sum):
-                    for cons in ast_node.types:
-                        key = '%s.%s' % (d.name, cons.name)
-                        seen[key] = True
-                        _CountFields(cons.fields, type_lookup, seen)
-                else:
-                    raise AssertionError(ast_node)
+            elif isinstance(d, TypeDecl):
+                # Only walk for what the user asked for, e.g. the command_t type
+                if d.name == type_name:
+                    self.DoType(d.name, d.value)
             else:
                 raise AssertionError(d)
 
-        for name in sorted(seen):
-            print(name)
+    def DoType(self, type_name, typ):
+        # type: (str, ast.asdl_type_t) -> None
+        """Given an AST node, add the types it references to seen"""
+        assert typ is not None, typ
+
+        if isinstance(typ, ast.Product):
+            #log('fields %s', ast_node.fields)
+            self.seen[type_name] = True
+            self.DoFields(typ.fields)
+
+        elif isinstance(typ, ast.Sum):
+            for cons in typ.types:
+                # Shared variants will live in a different namespace!
+                if cons.shared_type:
+                    self.shared[cons.shared_type] = True
+                    continue
+                key = '%s.%s' % (type_name, cons.name)
+                self.seen[key] = True
+                self.DoFields(cons.fields)
+
+        elif isinstance(typ, ast.Use):
+            # Note: we don't 'use core value { value }'?  We don't need to walk
+            # that one, because it's really a "cached" value attached to the
+            # AST, not part of the SYNTAX.
+            pass
+        else:
+            raise AssertionError(typ)
+
+    def DoFields(self, field_ast_nodes):
+        # type: (List[Field]) -> None
+        for field in field_ast_nodes:
+            self.DoTypeExpr(field.typ)
+
+    def DoTypeExpr(self, ty_expr):
+        # type: (ast.type_expr_t) -> None
+        """Given an AST node, add the types it references to seen"""
+        if isinstance(ty_expr, ast.NamedType):
+            type_name = ty_expr.name
+
+            if type_name in self.visited:
+                return
+
+            self.visited[type_name] = True
+
+            #typ = self.type_lookup.get(type_name)
+            typ = ty_expr.resolved
+            if typ is None:
+                return
+
+            self.DoType(type_name, typ)
+
+        elif isinstance(ty_expr, ast.ParameterizedType):
+            for child in ty_expr.children:
+                self.DoTypeExpr(child)
+
+        else:
+            raise AssertionError()
 
 
-def _CountType(typ, type_lookup, seen):
-    # type: (ast.type_expr_t, TypeLookup, Dict[str, bool]) -> None
-    """Given an AST node, add the types it references to seen"""
-    if isinstance(typ, ast.NamedType):
-        if typ.name not in _PRIMITIVE_TYPES:
-            seen[typ.name] = True
-
-    elif isinstance(typ, ast.ParameterizedType):
-        for child in typ.children:
-            _CountType(child, type_lookup, seen)
-
-    else:
-        raise AssertionError()
-
-
-def _CountFields(field_ast_nodes, type_lookup, seen):
-    # type: (List[Field], TypeLookup, Dict[str, bool]) -> None
-    for field in field_ast_nodes:
-        _CountType(field.typ, type_lookup, seen)
-
-
-def LoadSchema(f, app_types, verbose=False, do_count=None):
+def LoadSchema(f, app_types, verbose=False, do_closure=None):
     """Returns an AST for the schema."""
     p = ASDLParser()
     schema_ast = p.parse(f)
@@ -659,5 +693,5 @@ def LoadSchema(f, app_types, verbose=False, do_count=None):
         schema_ast.Print(sys.stdout, 0)
 
     # Make sure all the names are valid
-    _ResolveModule(schema_ast, app_types, do_count=do_count)
+    _ResolveModule(schema_ast, app_types, do_closure=do_closure)
     return schema_ast

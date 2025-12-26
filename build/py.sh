@@ -142,8 +142,26 @@ asdl-metrics() {
   done | sort -n
 }
 
-asdl-command-t() {
-  asdl/asdl_main.py command_t frontend/syntax.asdl
+asdl-closure() {
+  local type=${1:-command}
+
+  local out=_tmp/closure-$type.txt
+
+  asdl/asdl_main.py closure frontend/syntax.asdl $type > $out
+
+  tail $out
+  echo
+
+  # Should only appear ONCE, if we're accounting for shared variants
+  if grep SingleQuoted $out; then
+    echo 'FAIL: shared variant bug'
+    return 1
+  fi
+
+  wc -l $out
+  echo
+
+  echo "Wrote $out"
 }
 
 py-codegen() {

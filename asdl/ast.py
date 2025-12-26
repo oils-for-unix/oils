@@ -228,7 +228,7 @@ class Field(_Printable):
 class Constructor(asdl_type_t):
 
     def __init__(self, name, shared_type, fields):
-        # type: (str, Optional[type_expr_t], List[Field]) -> None
+        # type: (str, Optional[str], List[Field]) -> None
         self.name = name
         self.shared_type = shared_type  # for DoubleQuoted %DoubleQuoted
         self.fields = fields or []

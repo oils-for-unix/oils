@@ -88,9 +88,12 @@ def main(argv):
         v = metrics.MetricsVisitor(sys.stdout)
         v.VisitModule(schema_ast)
 
-    elif action == 'command_t':  # count all types that command_t references
+    elif action == 'closure':  # count all types that command_t references
+        type_name = argv[3]
         with open(schema_path) as f:
-            schema_ast = front_end.LoadSchema(f, app_types, do_count='command')
+            schema_ast = front_end.LoadSchema(f,
+                                              app_types,
+                                              do_closure=type_name)
 
     elif action == 'c':  # Generate C code for the lexer
         with open(schema_path) as f:
