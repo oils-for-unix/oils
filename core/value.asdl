@@ -14,6 +14,7 @@ module value
     BraceGroup SourceLine
     debug_frame
     ShFunction
+    cmd_frag
   }
 
   use core runtime {
@@ -68,13 +69,6 @@ module value
   regex_match = 
     No
   | Yes %RegexMatch
-
-  # Retain references to lines
-  LiteralBlock = (BraceGroup brace_group, str? code_str)
-
-  cmd_frag =
-    LiteralBlock %LiteralBlock  # p { echo hi } has backing lines
-  | Expr(command c)             # var b = ^(echo hi)
 
   # Arbitrary objects, where attributes are looked up on the prototype chain.
   Obj = (Obj? prototype, Dict[str, value] d)

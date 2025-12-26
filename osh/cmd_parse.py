@@ -60,8 +60,8 @@ from _devbuild.gen.syntax_asdl import (
     VarDecl,
     ExprCommand,
     ShFunction,
+    LiteralBlock,
 )
-from _devbuild.gen.value_asdl import LiteralBlock
 from core import alloc
 from core import error
 from core.error import p_die

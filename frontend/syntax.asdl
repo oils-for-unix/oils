@@ -28,7 +28,7 @@
 module syntax
 {
   use core value {
-    value LiteralBlock
+    value
   }
 
   # More efficient than the List[bool] pattern we've been using
@@ -414,6 +414,13 @@ module syntax
       Token? keyword, Token name_tok, str name, command body,
       str? code_str
   )
+
+  # Retain references to lines
+  LiteralBlock = (BraceGroup brace_group, str? code_str)
+
+  cmd_frag =
+    LiteralBlock %LiteralBlock  # p { echo hi } has backing lines
+  | Expr(command c)             # var b = ^(echo hi)
 
   command =
     NoOp

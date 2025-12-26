@@ -2,9 +2,9 @@
 
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import command_e, BraceGroup, command_t
-from _devbuild.gen.value_asdl import (value, value_t, LiteralBlock, cmd_frag,
-                                      cmd_frag_e)
+from _devbuild.gen.syntax_asdl import (BraceGroup, command_e, command_t,
+                                       cmd_frag, cmd_frag_e, LiteralBlock)
+from _devbuild.gen.value_asdl import (value, value_t)
 
 from core import num
 from core import state
