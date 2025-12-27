@@ -270,64 +270,6 @@ TEST list_defaults_test() {
   PASS();
 }
 
-TEST type_id_test() {
-  log("--- TYPE ID test");
-  auto unique = Alloc<Dict<int, bool>>();
-
-  auto w1 = Alloc<typed_demo_asdl::word>(StrFromC("left"));
-  auto w2 = Alloc<typed_demo_asdl::word>(StrFromC("right"));
-
-  int type_id;
-  type_id = w1->type_id();
-  unique->set(type_id, true);
-  log("(product type) word type_id = %d", type_id);
-
-  auto b = Alloc<bool_expr::Binary>(w1, w2);
-  // constexpr function
-  auto sum_type_id = b->sum_type_id();
-  log("bool_expr sum_type_id() = %d", sum_type_id);
-
-  type_id = b->type_id();
-  unique->set(type_id, true);
-  log("bool_expr.Binary type_id() = %d", type_id);
-
-  auto a = Alloc<a_word::String>(StrFromC("foo"));
-  log("a_word sum_type_id() = %d", a->sum_type_id());
-  type_id = a->type_id();
-  unique->set(type_id, true);
-  log("a_word.String type_id() = %d", a->type_id());
-
-  // We set() 3 type IDs, they should be UNIQUE
-  ASSERT_EQ(3, len(unique));
-
-#if 0
-  auto opaque_list = Alloc<List<int>>();
-  ASSERT_EQ(kDoNotWalk, opaque_list->type_id());
-
-  auto pointer_list = Alloc<List<typed_demo_asdl::word*>>();
-  ASSERT_EQ(TypeTag::List, pointer_list->type_id());
-
-  log("sizeof(word) = %d", sizeof(typed_demo_asdl::word));
-
-  // Now test if they can be put in the same collection
-  auto to_walk = Alloc<List<Walkable*>>();
-  to_walk->append(w1);
-  to_walk->append(b);
-  to_walk->append(a);
-  to_walk->append(opaque_list);
-  to_walk->append(pointer_list);
-
-  // Crap, we need to retain the base type ...
-  // do_command_t() etc.
-  for (int i = 0; i < len(to_walk); ++i) {
-    Walkable* w = to_walk->at(i);
-    log("w %d", w->type_id());
-  }
-#endif
-
-  PASS();
-}
-
 #include <unordered_map>
 
 class NodeWalker {
@@ -397,7 +339,6 @@ int main(int argc, char** argv) {
   RUN_TEST(literal_test);
   RUN_TEST(string_defaults_test);
   RUN_TEST(list_defaults_test);
-  RUN_TEST(type_id_test);
   RUN_TEST(walker_test);
 
   gHeap.CleanProcessExit();

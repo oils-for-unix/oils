@@ -6,13 +6,13 @@ from asdl import ast
 
 
 class AsdlVisitor:
-    """Base class for visitors.
+    """Tree walker base class.
 
-    TODO:
-    - It might be useful to separate this into VisitChildren() / generic_visit()
-      like Python's ast.NodeVisitor  does.
-    - Also remove self.f and self.Emit.  Those can go in self.output?
-    - Move to common location, since gen_python uses it as well.
+    This is NOT a visitor, since it doesn't have accept(self) and double
+    dispatch.
+
+    VisitModule uses the "template method pattern" 
+        https://en.wikipedia.org/wiki/Template_method_pattern
     """
 
     def __init__(self, f):
@@ -31,29 +31,35 @@ class AsdlVisitor:
         for line in FormatLines(s, depth, reflow=reflow):
             self.f.write(line)
 
-    def VisitModule(self, mod):
+    def VisitModule(self, mod, depth=0):
+        """
+        Template method
+        """
         for dfn in mod.dfns:
             if isinstance(dfn, ast.SubTypeDecl):
                 self.VisitSubType(dfn)
+
+            elif isinstance(dfn, ast.TypeDecl):
+                typ = dfn
+                if isinstance(typ.value, ast.SimpleSum):
+                    self.VisitSimpleSum(typ.value, typ.name, depth)
+
+                elif isinstance(typ.value, ast.Sum):
+                    self.VisitCompoundSum(typ.value, typ.name, depth)
+
+                elif isinstance(typ.value, ast.Product):
+                    self.VisitProduct(typ.value, typ.name, depth)
+
+                else:
+                    raise AssertionError(typ)
+
             else:
-                self.VisitType(dfn)
+                raise AssertionError(dfn)
+
         self.EmitFooter()
 
     def VisitSubType(self, subtype):
         pass
-
-    def VisitType(self, typ, depth=0):
-        if isinstance(typ.value, ast.SimpleSum):
-            self.VisitSimpleSum(typ.value, typ.name, depth)
-
-        elif isinstance(typ.value, ast.Sum):
-            self.VisitCompoundSum(typ.value, typ.name, depth)
-
-        elif isinstance(typ.value, ast.Product):
-            self.VisitProduct(typ.value, typ.name, depth)
-
-        else:
-            raise AssertionError(typ)
 
     # Optionally overridden.
     def VisitSimpleSum(self, value, name, depth):

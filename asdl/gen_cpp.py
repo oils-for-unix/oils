@@ -236,12 +236,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self._shared_type_tags = {}
         self._product_counter = MAX_VARIANTS_PER_SUM
 
-        # type_id() does NOT have to fit into a GC header like type_tag, so
-        # It's an int, not a uint8_t
-        # Product types start at 64, so let's start sum types/variants at 256
-        # (greater than uint8_t)
-        self._compound_sum_counter = 256  # where variant type_id() starts
-
         self._products = []
         self._base_classes = defaultdict(list)
 
@@ -377,12 +371,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         # There's no inheritance relationship, so we have to reinterpret_cast.
         Emit('    return ObjHeader::FromObject(this)->type_tag;')
         Emit('  }')
-        Emit('  constexpr int sum_type_id() {')
-        # There's no inheritance relationship, so we have to reinterpret_cast.
-        Emit('    return %d;' % self._compound_sum_counter)
-        # Each sum type potentially takes up 64 integer type_id()
-        self._compound_sum_counter += MAX_VARIANTS_PER_SUM
-        Emit('  }')
 
         if self.pretty_print_methods:
             self.Emit(
@@ -403,14 +391,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                 tag = 'static_cast<uint16_t>(%s_e::%s)' % (sum_name,
                                                            variant.name)
                 class_name = '%s__%s' % (sum_name, variant.name)
-                self._GenClass(
-                    variant.fields,
-                    class_name,
-                    [super_name],
-                    depth,
-                    tag,
-                    # unique ID is base class ID + variant ID
-                    type_id_body='this->sum_type_id() + this->tag()')
+                self._GenClass(variant.fields, class_name, [super_name], depth,
+                               tag)
 
         # Generate 'extern' declarations for zero arg singleton globals
         for variant in sum.types:
@@ -455,19 +437,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self.Emit('};', depth)
         self.Emit('', depth)
 
-    def _EmitMethodsInHeader(self, obj_header_str, type_id_body=None):
+    def _EmitMethodsInHeader(self, obj_header_str):
         """Generate PrettyTree(), type_id(), obj_header()"""
         if self.pretty_print_methods:
             self.Emit(
                 'hnode_t* PrettyTree(bool do_abbrev, Dict<int, bool>* seen = nullptr);'
             )
-            self.Emit('')
-
-        if type_id_body:
-            # Unique integer per type, for graph traversal
-            self.Emit('int type_id() {')
-            self.Emit('  return %s;' % type_id_body)
-            self.Emit('}')
             self.Emit('')
 
         self.Emit('static constexpr ObjHeader obj_header() {')
@@ -521,8 +496,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                   base_classes,
                   depth,
                   tag_num,
-                  obj_header_str='',
-                  type_id_body=None):
+                  obj_header_str=''):
         """For Product and Constructor."""
         self._GenClassBegin(class_name, base_classes, depth)
 
@@ -583,7 +557,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         obj_header_str = 'ObjHeader::AsdlClass(%s, %d)' % (tag_num,
                                                            len(managed_fields))
         self.Indent()
-        self._EmitMethodsInHeader(obj_header_str, type_id_body=type_id_body)
+        self._EmitMethodsInHeader(obj_header_str)
         self.Dedent()
 
         #
@@ -616,15 +590,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             ast_node, name, depth, tag_num = args
             # Figure out base classes AFTERWARD.
             bases = self._base_classes[name]
-            self._GenClass(
-                ast_node.fields,
-                name,
-                bases,
-                depth,
-                tag_num,
-                # product types: this expression is the same as this->tag() for variants
-                # but we don't use that anywhere else in the code
-                type_id_body='ObjHeader::FromObject(this)->type_tag')
+            self._GenClass(ast_node.fields, name, bases, depth, tag_num)
 
         for args in self._subtypes:
             subtype, tag_num = args
