@@ -398,7 +398,7 @@ func_strsignal(PyObject *self, PyObject *args) {
 
   res = strsignal(sig_num);
 
-  if (res == NULL || strstr(res, "Unknown signal") != NULL) {
+  if (res == NULL) {
     Py_RETURN_NONE;
   }
 

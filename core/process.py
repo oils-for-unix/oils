@@ -2208,7 +2208,7 @@ class Waiter(object):
                 msg = GetSignalMessage(term_sig)
                 if msg is not None:
                     # WCOREDUMP checks if process dumped core
-                    # On systems without WCOREDUMP, this will be False
+                    # On systems without WCOREDUMP, we provide a fallback
                     if WCOREDUMP(status):
                         msg = msg + ' (core dumped)'
                     print_stderr(msg)

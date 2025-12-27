@@ -260,8 +260,8 @@ BigStr* strsignal(int sig_num) {
 
   char* res = ::strsignal(sig_num);
 
-  // Return nullptr if there's a NULL result or "Unknown signal" message
-  if (res == nullptr || strstr(res, "Unknown signal") != nullptr) {
+  // Return nullptr only if strsignal() fails (returns NULL)
+  if (res == nullptr) {
     return nullptr;
   }
 
