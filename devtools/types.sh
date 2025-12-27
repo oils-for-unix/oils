@@ -106,6 +106,7 @@ check-asdl-compiler() {
     files+=( $name )
   done
 
+  set -x
   mypy-check "${flags[@]}" "${files[@]}"
 }
 
