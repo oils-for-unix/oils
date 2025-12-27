@@ -48,7 +48,7 @@ from __future__ import print_function
 
 import cStringIO
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, IO
 
 
 class _Printable(object):
@@ -57,6 +57,7 @@ class _Printable(object):
         raise NotImplementedError()
 
     def __str__(self):
+        # type: () -> str
         f = cStringIO.StringIO()
         self.Print(f, 0)
         return f.getvalue()
@@ -83,6 +84,7 @@ class Use(asdl_type_t):
         self.type_names = type_names
 
     def Print(self, f, indent):
+        # type: (IO, int) -> None
         ind = indent * '  '
         f.write('%sUse %s {\n' % (ind, ' '.join(self.module_parts)))
         f.write('  %s%s\n' % (ind, ', '.join(t for t in self.type_names)))
@@ -96,6 +98,7 @@ class Extern(asdl_type_t):
         self.names = names
 
     def Print(self, f, indent):
+        # type: (IO, int) -> None
         ind = indent * '  '
         f.write('%sExtern [ %s ]\n' % (ind, ' '.join(self.names)))
 
@@ -110,6 +113,7 @@ class Module(_Printable):
         self.dfns = dfns
 
     def Print(self, f, indent):
+        # type: (IO, int) -> None
         ind = indent * '  '
         f.write('%sModule %s {\n' % (ind, self.name))
 
@@ -140,6 +144,7 @@ class TypeDecl(binding_t):
         self.value = value
 
     def Print(self, f, indent):
+        # type: (IO, int) -> None
         ind = indent * '  '
         f.write('%sType %s {\n' % (ind, self.name))
         self.value.Print(f, indent + 1)
@@ -158,6 +163,7 @@ class SubTypeDecl(binding_t):
         self.base_class = base_class
 
     def Print(self, f, indent):
+        # type: (IO, int) -> None
         ind = indent * '  '
         f.write('%sType %s {\n' % (ind, self.name))
         self.base_class.Print(f, indent + 1)
@@ -180,6 +186,7 @@ class NamedType(type_expr_t):
         self.resolved = None  # type: Optional[asdl_type_t]
 
     def Print(self, f, indent):
+        # type: (IO, int) -> None
         f.write('NamedType %s' % (self.name))  # printed after field
         f.write(' (%r)' % self.resolved)
 
@@ -200,6 +207,7 @@ class ParameterizedType(type_expr_t):
         self.children = children
 
     def Print(self, f, indent):
+        # type: (IO, int) -> None
         """Printed on one line."""
         f.write('%s' % (self.type_name))  # printed after field
         if self.children:
@@ -219,6 +227,7 @@ class Field(_Printable):
         self.name = name  # variable name
 
     def Print(self, f, indent):
+        # type: (IO, int) -> None
         ind = indent * '  '
         f.write('%sField %r ' % (ind, self.name))
         self.typ.Print(f, indent)
@@ -234,6 +243,7 @@ class Constructor(asdl_type_t):
         self.fields = fields or []
 
     def Print(self, f, indent):
+        # type: (IO, int) -> None
         ind = indent * '  '
         f.write('%sConstructor %s' % (ind, self.name))
         if self.shared_type:
@@ -256,6 +266,7 @@ class Sum(_Printable):
         self.generate = generate or []  # type: List[str]
 
     def Print(self, f, indent):
+        # type: (IO[bytes], int) -> None
         ind = indent * '  '
         f.write('%sSum {\n' % ind)
         for t in self.types:
@@ -276,6 +287,7 @@ class Product(_Printable):
         self.fields = fields
 
     def Print(self, f, indent):
+        # type: (IO[bytes], int) -> None
         ind = indent * '  '
         f.write('%sProduct {\n' % ind)
         for field in self.fields:

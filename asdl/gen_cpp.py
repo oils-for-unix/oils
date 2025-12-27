@@ -384,15 +384,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         for variant in sum.types:
             if variant.shared_type:
-                # Don't generate a class.
-                pass
-            else:
-                super_name = '%s_t' % sum_name
-                tag = 'static_cast<uint16_t>(%s_e::%s)' % (sum_name,
-                                                           variant.name)
-                class_name = '%s__%s' % (sum_name, variant.name)
-                self._GenClass(variant.fields, class_name, [super_name], depth,
-                               tag)
+                continue  # Don't generate a class.
+            super_name = '%s_t' % sum_name
+            tag = 'static_cast<uint16_t>(%s_e::%s)' % (sum_name, variant.name)
+            class_name = '%s__%s' % (sum_name, variant.name)
+            self._GenClass(variant.fields, class_name, [super_name], depth,
+                           tag)
 
         # Generate 'extern' declarations for zero arg singleton globals
         for variant in sum.types:

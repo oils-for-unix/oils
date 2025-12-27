@@ -8,7 +8,7 @@ from asdl.ast import (Use, Module, TypeDecl, SubTypeDecl, Constructor, Field,
                       Sum, SimpleSum, Product, Extern)
 from asdl.util import log
 
-from typing import List, Dict, cast, TYPE_CHECKING
+from typing import List, Dict, Tuple, IO, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     TypeLookup = Dict[str, ast.asdl_type_t]
@@ -65,6 +65,7 @@ for i, (name, val) in enumerate(_TOKENS):
 class Token(object):
 
     def __init__(self, kind, value, lineno):
+        # type: (int, str, int) -> None
         self.kind = kind
         self.value = value
         self.lineno = lineno
@@ -73,6 +74,7 @@ class Token(object):
 class ASDLSyntaxError(Exception):
 
     def __init__(self, msg, lineno=None):
+        # type: (str, Any) -> None
         self.msg = msg
         self.lineno = lineno or '<unknown>'
 
@@ -84,6 +86,7 @@ TOKEN_RE = r'\s*(\w+|--.*|#.*|.)'
 
 
 def _Tokenize(f):
+    # type: (IO) -> Any
     """Tokenize the given buffer.
 
     Yield Token objects.
@@ -92,10 +95,10 @@ def _Tokenize(f):
         for m in re.finditer(TOKEN_RE, line.strip()):
             c = m.group(1)
             if c in _KEYWORDS:
-                yield Token(TokenKind.Keyword, c, lineno)
+                yield Token(TokenKind.Keyword, c, lineno)  # type: ignore
 
             elif c[0].isalpha() or c[0] == '_':
-                yield Token(TokenKind.Name, c, lineno)
+                yield Token(TokenKind.Name, c, lineno)  # type: ignore
 
             elif c.startswith('--') or c.startswith('#'):
                 # ASDL comments start with --
@@ -152,9 +155,10 @@ class ASDLParser(object):
 
     def __init__(self):
         self._tokenizer = None
-        self.cur_token = None
+        self.cur_token = None  # type: Token
 
     def parse(self, f):
+        # type: (IO) -> ast.Module
         """Parse the ASDL in the file and return an AST with a Module root."""
         self._tokenizer = _Tokenize(f)
         self._advance()
@@ -589,6 +593,7 @@ def _ResolveModule(module, type_lookup):
 
 
 def LoadSchema(f, verbose=False):
+    # type: (IO, bool) -> Tuple[ast.Module, TypeLookup]
     """Returns an AST for the schema."""
     p = ASDLParser()
     schema_ast = p.parse(f)
@@ -597,6 +602,6 @@ def LoadSchema(f, verbose=False):
         schema_ast.Print(sys.stdout, 0)
 
     # Make sure all the names are valid
-    type_lookup = {}
+    type_lookup = {}  # type: TypeLookup
     _ResolveModule(schema_ast, type_lookup)
     return schema_ast, type_lookup

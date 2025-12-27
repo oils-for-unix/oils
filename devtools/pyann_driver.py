@@ -13,6 +13,7 @@ from osh import arith_parse_test
 from osh import bool_parse_test
 from osh import cmd_parse_test
 from osh import word_parse_test
+from asdl.util import log
 
 import glob
 
@@ -57,13 +58,16 @@ def UnitTests():
     loader = unittest.TestLoader()
 
     g = glob.glob
-    py = g('lazylex/*_test.py') + g('doctools/*_test.py')
+    py = g('asdl/*_test.py')
+
+    #py = g('lazylex/*_test.py') + g('doctools/*_test.py')
     #py = g('frontend/*_test.py') + g('osh/*_test.py') + g('core/*_test.py') + g('')
     # hangs
     #py.remove('core/process_test.py')
 
     modules = []
     for p in py:
+        log('p %s', p)
         mod_name = p[:-3].replace('/', '.')
         print(mod_name)
         modules.append(__import__(mod_name, fromlist=['.']))
@@ -82,10 +86,6 @@ def UnitTests():
     collect_types.init_types_collection()
     with collect_types.collect():
         runner.run(suite)
-        if 0:
-            TopLevel()
-            Match()
-            Arith()
 
     collect_types.dump_stats('type_info.json')
 
@@ -107,8 +107,8 @@ def Doctools():
 
 
 def main():
-    #UnitTests()
-    Doctools()
+    UnitTests()
+    #Doctools()
 
 
 if __name__ == '__main__':
