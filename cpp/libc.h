@@ -36,6 +36,8 @@ int wcswidth(BigStr* str);
 int get_terminal_width();
 int sleep_until_error(double seconds);
 
+BigStr* strsignal(int sig_num);
+
 }  // namespace libc
 
 // pylib/locale_.py

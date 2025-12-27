@@ -7,6 +7,8 @@
 #include <glob.h>
 #include <locale.h>
 #include <regex.h>
+#include <signal.h>   // NSIG
+#include <string.h>   // strsignal(), strstr()
 #include <sys/ioctl.h>
 #include <time.h>    // nanosleep()
 #include <unistd.h>  // gethostname()
@@ -248,6 +250,22 @@ int sleep_until_error(double seconds) {
     result = errno;
   }
   return result;
+}
+
+BigStr* strsignal(int sig_num) {
+  // Validate signal number range
+  if (sig_num < 1 || sig_num >= NSIG) {
+    throw Alloc<ValueError>(StrFromC("signal number out of range"));
+  }
+
+  char* res = ::strsignal(sig_num);
+
+  // Return nullptr only if strsignal() fails (returns NULL)
+  if (res == nullptr) {
+    return nullptr;
+  }
+
+  return StrFromC(res);
 }
 
 }  // namespace libc
