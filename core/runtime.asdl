@@ -2,6 +2,9 @@
 
 module runtime
 {
+  use frontend id_kind {
+    id  # special case use of uint16_t: normally we can only use pointer types
+  }
   # import from frontend/syntax.asdl
   use frontend syntax {
     loc Token

@@ -35,6 +35,7 @@ from _devbuild.gen.syntax_asdl import (
     CharRange,
     ArgList,
     Eggex,
+    cmd_frag,
 )
 from _devbuild.gen.runtime_asdl import (
     coerced_e,
@@ -46,7 +47,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, IntBox, LeftName,
-                                      Obj, cmd_frag)
+                                      Obj)
 from core import error
 from core.error import e_die, e_die_status
 from core import num

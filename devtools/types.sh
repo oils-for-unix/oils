@@ -83,6 +83,38 @@ mypy-check() {
     python3 -m mypy "$@"
 }
 
+check-asdl-compiler() {
+  ### Check ASDL compiler
+
+  # Note: asdl/TEST.sh has a check for the generated code and urntime
+
+  local -a flags=( --no-strict-optional --follow-imports=silent --py2 )
+
+  # 100 type errors in asdl/front_end.py
+  flags+=( --strict )
+
+  local -a files
+  for name in asdl/*.py; do
+    case $name in
+      asdl/NINJA_subgraph.py) continue ;;
+      asdl/*_test.py) continue ;;
+
+      # This file has reflection via dynamic typing
+      asdl/parse.py) continue ;;
+
+      # These files part of the runtime, and pull in j8_lite.py etc.
+      asdl/format.py) continue ;;
+      asdl/pybase.py) continue ;;
+      asdl/runtime.py) continue ;;
+    esac
+
+    files+=( $name )
+  done
+
+  set -x
+  mypy-check "${flags[@]}" "${files[@]}"
+}
+
 check-mycpp() {
   banner 'Type checking mycpp'
 

@@ -220,11 +220,11 @@ def PrintTokens(arena):
 
 def TreeFind(arena, node, errfmt):
     # type: (alloc.Arena, command_t, ui.ErrorFormatter) -> None
-    """
-    Find various constructs in the tree.  TODO: could this be like query
-    language?
-    TreeSitter has a query language for CSTs.  But those are untyped, whereas
-    we are strongly typed.
+    """For analyzing whether we need a[x + 1]=foo
+
+    TODO: it would be nice to generalize this more.  TreeSitter has a query
+    language for CSTs.  But those are untyped, whereas our tree is strongly
+    typed.
     """
     fi = Finder(arena, errfmt)
     fi.DoCommand(node)

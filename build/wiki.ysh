@@ -6,12 +6,27 @@
 # # Usage:
 #
 #   build/wiki.ysh render
+#   build/wiki.ysh build-search-index
+#   build/wiki.ysh local-serve
 #   build/wiki.ysh commit-push
+#   build/wiki.ysh commit-push $customGitUrl
 #
 # # Action: render
 #
 # This will clone the oils-for-unix/oils wiki, and render all of the markdown
 # files using doc tools. The docs are saved to _tmp/wiki/out.
+#
+# # Action: build-search-index
+#
+# This will download the pagefind tool, and run it over the wiki built in
+# build-search-index. This is used for our static wiki-wide search.
+#
+# Pagefind Docs: https://pagefind.app/docs/
+#
+# # Action: local-serve
+#
+# Run a server with the current build locally. This will also copy the contents
+# of web/ into the build folder so that CSS is present in the preview.
 #
 # # Action: commit-push
 #
@@ -21,6 +36,9 @@
 # This requires an environment variable to be set (usually in GitHub Actions
 # secrets): `OILS_PAGES_GITHUB_TOKEN`. This is a PAT with `content: write`
 # permissions to the oils-for-unix.github.io repo.
+#
+# Passing a custom git url as a positional argument removes the need for a PAT.
+# It can be used to target a different repository for testing.
 
 const WIKI_OUT_DIR = '_tmp/wiki/out'
 const WIKI_DIR = '_tmp/wiki/git'
@@ -77,18 +95,34 @@ proc render-one(path) {
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>$title</title>
+
           <link rel="stylesheet" type="text/css" href="../web/base.css" />
+          <link rel="stylesheet" type="text/css" href="./search.css" />
         </head>
         <body class="width40">
-    """
+
+        <div id="search"></div>
+        <hr>
+        """
 
     pre-render-wikilinks <$path | cmark
 
-    echo """
-      </body>
-    </html>
-    """
+    echo '''
+          <script src="./pagefind/pagefind-ui.js"></script>
+          <script>
+              window.addEventListener('DOMContentLoaded', (event) => {
+                  new PagefindUI({ element: "#search", showSubResults: true });
+              });
+          </script>
+        </body>
+      </html>
+      '''
   }
+}
+
+proc build-search-index() {
+  python3 -m pip install 'pagefind[extended]'
+  python3 -m pagefind --site $WIKI_OUT_DIR
 }
 
 
@@ -97,14 +131,71 @@ proc render() {
 
   pull-latest $WIKI_DIR https://github.com/oils-for-unix/oils.wiki.git
   find $WIKI_DIR -name '*.md' -print0 | xargs -I {} -0 -- $0 render-one {}
+
+  fopen >$WIKI_OUT_DIR/search.css {
+    echo '''
+      #search > div {
+        margin-top: 8px;
+        width: 100%;
+      }
+
+      #search input[type=text], #search button {
+        padding: 4px 8px;
+
+        background-color: #EEE;
+        color: #444;
+      }
+
+      /* We cannot control the search UI, so manually calculate widths for sizing */
+      #search input {
+        padding-right: 4px !important; /* Pagefind likes to add a large padding here, disable it */
+
+        width: calc(100%
+                      - max(10%, 50px) /* button width */
+                      - 20px /* margins */);
+
+        border: 1px solid #EEE;
+      }
+
+      #search button {
+        width: calc(max(10%, 50px));
+
+        border: 1px solid #AAA;
+      }
+
+      /* This is the load more results button */
+      #search .pagefind-ui__drawer button {
+        margin-left: 0;
+        margin-right: 0;
+        width: 100%;
+      }
+      '''
+  }
 }
 
 
-proc commit-push() {
-  ## Commit and push the most recent build to oils-for-unix.github.io
+proc local-preview() {
+  cp -r web $WIKI_OUT_DIR/..
 
-  var PAT = ENV.OILS_PAGES_GITHUB_TOKEN
-  pull-latest $PAGES_DIR "https://x-access-token:$PAT@github.com/oils-for-unix/oils-for-unix.github.io.git"
+  python3 -m http.server -d $WIKI_OUT_DIR/..
+}
+
+
+proc commit-push(customGitUrl="") {
+  ## Commit and push the most recent build to oils-for-unix.github.io
+  ##
+  ## When a customGitUrl is passed, push to that repo instead.
+
+  var GIT_URL
+  if (customGitUrl) {
+    setvar GIT_URL = customGitUrl
+  } else {
+    var PAT = ENV.OILS_PAGES_GITHUB_TOKEN
+    setvar GIT_URL = gitUrl or "https://x-access-token:$PAT@github.com/oils-for-unix/oils-for-unix.github.io.git"
+  }
+
+  rm -rf $PAGES_DIR
+  pull-latest $PAGES_DIR $GIT_URL
 
   # Stash and pending changes (there should be none)
   cd $PAGES_DIR {

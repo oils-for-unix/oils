@@ -25,6 +25,7 @@ namespace error {  // forward declare
   class FatalRuntime;
   class Strict;
   class ErrExit;
+  class NoUnset;
   class Expr;
   class Structured;
   class AssertionErr;
@@ -37,6 +38,10 @@ namespace error {  // forward declare
 
 namespace error {  // declare
 
+extern int EXPR_STATUS;
+extern int CODEC_STATUS;
+extern int GLOB_STATUS;
+extern int BUILTIN_DEFAULT_STATUS;
 BigStr* _ValType(value_asdl::value_t* val);
 class _ErrorWithLocation {
  public:
@@ -196,6 +201,21 @@ class ErrExit : public ::error::FatalRuntime {
   }
 
   DISALLOW_COPY_AND_ASSIGN(ErrExit)
+};
+
+class NoUnset : public ::error::FatalRuntime {
+ public:
+  NoUnset(BigStr* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return ::error::FatalRuntime::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(NoUnset));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(NoUnset)
 };
 
 class Expr : public ::error::FatalRuntime {

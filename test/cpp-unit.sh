@@ -10,7 +10,7 @@ set -o pipefail
 set -o errexit
 
 all-tests() {
-  asdl/TEST.sh unit
+  asdl/TEST.sh cpp-unit
 
   core/TEST.sh unit
 

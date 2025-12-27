@@ -66,16 +66,17 @@ peek-type-info() {
 
 apply-types() {
   local json=${1:-type_info.json}
-  shift
+  local do_write_flag=${2:-}  # -w to write
+
   #local -a files=(osh/builtin_comp.py core/completion.py)
-  local -a files=(doctools/*.py)
+  local -a files=(asdl/*.py)
 
   #local -a files=( $(cat _tmp/osh-parse-src.txt | grep -v syntax_asdl.py ) )
 
   # Use -w to write files
   set -x
   PYTHONPATH=$PY_PATH_2 \
-    python2 -m pyannotate_tools.annotations --type-info $json "${files[@]}" "$@"
+    python2 -m pyannotate_tools.annotations --type-info $json $do_write_flag "${files[@]}"
 
   #pyann-patched --type-info $json "${files[@]}" "$@"
 }

@@ -18,14 +18,20 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source soil/common.sh
 source test/tsv-lib.sh
 
+readonly REGISTRY='ghcr.io'
+
 live-image-tag() {
   ### image ID -> Docker tag name
   local image_id=$1
 
-  # podman build migration!
-  echo 'v-2025-11-02'
+  # ghcr.io migration
+  echo 'v-2025-12-21'
+
   return
 
+  #
+  # UNUSED
+  #
   case $image_id in
     app-tests)
       # wedges 2025
@@ -194,8 +200,8 @@ job-reset() {
 }
 
 image-layers-tsv() {
-  local docker=${1:-docker}
-  local image=${2:-oilshell/soil-dummy}
+  local docker=${1:-podman}
+  local image=${2:-oils-for-unix/soil-dummy}
   local tag=${3:-latest}
 
   # --human=0 gives us raw bytes and ISO timestamps
@@ -210,7 +216,7 @@ image-layers-tsv() {
   $docker history \
     --no-trunc --human=0 \
     --format json \
-    $image:$tag | python3 -c '
+    $REGISTRY/$image:$tag | python3 -c '
 import sys, json
 array = json.load(sys.stdin)
 for row in array:
@@ -220,8 +226,8 @@ for row in array:
 
 save-image-stats() {
   local soil_dir=${1:-_tmp/soil}
-  local docker=${2:-docker}
-  local image=${3:-oilshell/soil-dummy}
+  local docker=${2:-podman}
+  local image=${3:-oils-for-unix/soil-dummy}
   local tag=${4:-latest}
 
   log "save-image-stats with $(which $docker)"
@@ -231,10 +237,10 @@ save-image-stats() {
   mkdir -p $soil_dir
 
   # NOTE: Works on my dev machine, but produces an empty table on CI?
-  $docker images "$image:v-*" > $soil_dir/images-tagged.txt
+  $docker images "$REGISTRY/$image:v-*" > $soil_dir/images-tagged.txt
   log "Wrote $soil_dir/images-tagged.txt"
 
-  $docker history $image:$tag > $soil_dir/image-layers.txt
+  $docker history $REGISTRY/$image:$tag > $soil_dir/image-layers.txt
   log "Wrote $soil_dir/image-layers.txt"
 
   image-layers-tsv $docker $image $tag > $soil_dir/image-layers.tsv
@@ -319,7 +325,7 @@ run-job-uke() {
       fi
   esac
 
-  local image="docker.io/oilshell/soil-$image_id"
+  local image="oils-for-unix/soil-$image_id"
 
   local tag=$(live-image-tag $image_id)
 
@@ -327,7 +333,7 @@ run-job-uke() {
   # Use external time command in POSIX format, so it's consistent between hosts
   set -o errexit
   command time -p -o $soil_dir/image-pull-time.txt \
-    $docker pull $image:$tag
+    $docker pull $REGISTRY/$image:$tag
   pull_status=$?
   set +o errexit
 
@@ -365,7 +371,7 @@ run-job-uke() {
   set -x
   $docker run "${flags[@]}" \
       --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
-      $image:$tag \
+      $REGISTRY/$image:$tag \
       "${args[@]}"
   set +x
 }

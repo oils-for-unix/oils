@@ -130,6 +130,40 @@ gen-asdl-py() {
   log "$asdl_path -> (asdl_main) -> $out"
 }
 
+asdl-metrics() {
+  # sum types with the most variants:
+  #
+  # 20 expr
+  # 22 command
+  # 28 value
+
+  for schema in */*.asdl; do
+    asdl/asdl_main.py metrics $schema
+  done | sort -n
+}
+
+asdl-closure() {
+  local type=${1:-command}
+
+  local out=_tmp/closure-$type.txt
+
+  asdl/asdl_main.py closure frontend/syntax.asdl $type > $out
+
+  tail $out
+  echo
+
+  # Should only appear ONCE, if we're accounting for shared variants
+  if grep SingleQuoted $out; then
+    echo 'FAIL: shared variant bug'
+    return 1
+  fi
+
+  wc -l $out
+  echo
+
+  echo "Wrote $out"
+}
+
 py-codegen() {
   # note: filename must come first
   # hnode.asdl has REQUIRED fields so it's --py-init-N

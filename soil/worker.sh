@@ -140,9 +140,10 @@ dump-env            soil/diagnose.sh dump-env                    -
 build-minimal       build/py.sh minimal                          -
 repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
-asdl-types          asdl/TEST.sh check-types                     -
 oils-types          devtools/types.sh soil-run                   -
-mycpp-types         devtools/types.sh assert-mycpp               -
+asdl-compiler       devtools/types.sh check-asdl-compiler        -
+asdl-py-output      asdl/TEST.sh check-py-output                 -
+mycpp-compiler      devtools/types.sh assert-mycpp               -
 unit                test/unit.sh minimal                         _test/py-unit/
 lossless            test/lossless.sh soil-run                    -
 parse-errors        test/parse-errors.sh soil-run-py             -
@@ -434,7 +435,8 @@ build-minimal          build/py.sh minimal                        -
 configure-test         ./configure-test.sh soil_run               -
 time-test              benchmarks/time-test.sh soil-run           -
 tsv-lib-test           test/tsv-lib-test.sh soil-run              -
-ysh-ify                test/ysh-ify.sh soil-run                   -
+ysh-ify                tools/ysh-ify-test.sh soil-run             -
+tools-smoke-test       tools/smoke-test.sh soil-run               -
 R-test                 devtools/R-test.sh soil-run                -
 xargs-test             test/other.sh xargs-test                   -
 csv2html-test          test/other.sh csv2html-test                -

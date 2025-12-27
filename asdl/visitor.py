@@ -3,69 +3,92 @@ from __future__ import print_function
 
 import sys
 from asdl import ast
+from typing import List, IO
 
 
 class AsdlVisitor:
-    """Base class for visitors.
+    """Tree walker base class.
 
-    TODO:
-    - It might be useful to separate this into VisitChildren() / generic_visit()
-      like Python's ast.NodeVisitor  does.
-    - Also remove self.f and self.Emit.  Those can go in self.output?
-    - Move to common location, since gen_python uses it as well.
+    This is NOT a visitor, since it doesn't have accept(self) and double
+    dispatch.
+
+    VisitModule uses the "template method pattern" 
+        https://en.wikipedia.org/wiki/Template_method_pattern
     """
 
     def __init__(self, f):
+        # type: (IO[bytes]) -> None
         self.f = f
         self.current_depth = 0  # the current number of indent levels
 
     def Indent(self):
+        # type: () -> None
         self.current_depth += 1
 
     def Dedent(self):
+        # type: () -> None
         self.current_depth -= 1
 
     def Emit(self, s, depth=-1, reflow=True):
+        # type: (str, int, bool) -> None
         if depth == -1:
             depth = self.current_depth
         for line in FormatLines(s, depth, reflow=reflow):
             self.f.write(line)
 
-    def VisitModule(self, mod):
+    def VisitModule(self, mod, depth=0):
+        # type: (ast.Module, int) -> None
+        """
+        Template method
+        """
+        self.EmitHeader(mod)
+
         for dfn in mod.dfns:
             if isinstance(dfn, ast.SubTypeDecl):
                 self.VisitSubType(dfn)
+
+            elif isinstance(dfn, ast.TypeDecl):
+                typ = dfn
+                if isinstance(typ.value, ast.SimpleSum):
+                    self.VisitSimpleSum(typ.value, typ.name, depth)
+
+                elif isinstance(typ.value, ast.Sum):
+                    self.VisitCompoundSum(typ.value, typ.name, depth)
+
+                elif isinstance(typ.value, ast.Product):
+                    self.VisitProduct(typ.value, typ.name, depth)
+
+                else:
+                    raise AssertionError(typ)
+
             else:
-                self.VisitType(dfn)
+                raise AssertionError(dfn)
+
         self.EmitFooter()
 
     def VisitSubType(self, subtype):
+        # type: (ast.SubTypeDecl) -> None
         pass
-
-    def VisitType(self, typ, depth=0):
-        if isinstance(typ.value, ast.SimpleSum):
-            self.VisitSimpleSum(typ.value, typ.name, depth)
-
-        elif isinstance(typ.value, ast.Sum):
-            self.VisitCompoundSum(typ.value, typ.name, depth)
-
-        elif isinstance(typ.value, ast.Product):
-            self.VisitProduct(typ.value, typ.name, depth)
-
-        else:
-            raise AssertionError(typ)
 
     # Optionally overridden.
     def VisitSimpleSum(self, value, name, depth):
+        # type: (ast.SimpleSum, str, int) -> None
         pass
 
     def VisitCompoundSum(self, value, name, depth):
+        # type: (ast.Sum, str, int) -> None
         pass
 
     def VisitProduct(self, value, name, depth):
+        # type: (ast.Product, str, int) -> None
+        pass
+
+    def EmitHeader(self, schema_ast):
+        # type: (ast.Module) -> None
         pass
 
     def EmitFooter(self):
+        # type: () -> None
         pass
 
 
@@ -76,6 +99,7 @@ MAX_COL = 80
 
 
 def _ReflowLines(s, depth):
+    # type: (str, int) -> List[str]
     """Reflow the line s indented depth tabs.
 
     Return a sequence of lines where no line extends beyond MAX_COL when
@@ -124,6 +148,7 @@ def _ReflowLines(s, depth):
 
 
 def FormatLines(s, depth, reflow=True):
+    # type: (str, int, bool) -> List[str]
     """Make the generated code readable.
 
     Args:
@@ -168,6 +193,3 @@ def f():
           b = {b}
          |''')
 """
-
-
-

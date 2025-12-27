@@ -306,6 +306,7 @@ TEST stat_test() {
     bool exists, isreg;
   };
 
+  // clang-format off
   Case cases[] = {
     /* path                exists  isreg */
     {",",                  false,  false},
@@ -314,6 +315,7 @@ TEST stat_test() {
     {"/usr/bin/sh",        true,   true},
     {"/nonexistent__ZZZZ", false,  false}
   };
+  // clang-format on
 
   for (auto& c : cases) {
     auto st = mylib::stat(StrFromC(c.path));

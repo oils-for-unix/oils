@@ -78,9 +78,10 @@ from osh import word_eval
 from mycpp import iolib
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import NewDict, print_stderr, log
+from mycpp.mylib import NewDict, print_stderr, log, str_switch
 from pylib import os_path
 from tools import deps
+from tools import lint
 from tools import fmt
 from tools import ysh_ify
 from ysh import expr_eval
@@ -1254,34 +1255,47 @@ def Main(
             errfmt.PrettyPrintError(e)
             return 2
 
-        if tool_name == 'syntax-tree':
-            ui.PrintAst(node, flag)
+        with str_switch(tool_name) as case:
+            # like osh -n
+            if case('syntax-tree'):
+                ui.PrintAst(node, flag)
 
-        elif tool_name == 'tokens':
-            ysh_ify.PrintTokens(arena)
+            elif case('tokens'):
+                ysh_ify.PrintTokens(arena)
 
-        elif tool_name == 'find-lhs-array':
-            ysh_ify.TreeFind(arena, node, errfmt)
+            # OSH or YSH lint
+            elif case('lint'):
+                lint.Lint(arena, node)
 
-        elif tool_name == 'lossless-cat':  # for test/lossless.sh
-            ysh_ify.LosslessCat(arena)
+            # formatter: start with indenting
+            elif case('fmt'):
+                fmt.Format(arena, node)
 
-        elif tool_name == 'fmt':
-            fmt.Format(arena, node)
+            # rough translator
+            elif case('ysh-ify'):
+                ysh_ify.Ysh_ify(arena, node)
 
-        elif tool_name == 'test':
-            # Do we need this?  Couldn't this just be a YSH script?
-            raise AssertionError('TODO')
+            # dependency resolver
+            elif case('deps'):
+                if mylib.PYTHON:
+                    deps.Deps(node)
 
-        elif tool_name == 'ysh-ify':
-            ysh_ify.Ysh_ify(arena, node)
+            # Test runner?  Or this 'byo test'
+            elif case('test'):
+                raise AssertionError('TODO')
 
-        elif tool_name == 'deps':
-            if mylib.PYTHON:
-                deps.Deps(node)
+            # TESTING ONLY: for test/lossless.sh
+            elif case('lossless-cat'):
+                ysh_ify.LosslessCat(arena)
 
-        else:
-            raise AssertionError(tool_name)  # flag parser validated it
+            # TESTING ONLY: one-off
+            elif case('find-lhs-array'):
+                # For analyzing whether we need a[x + 1]=foo
+                # This is similar to "lint"
+                ysh_ify.TreeFind(arena, node, errfmt)
+
+            else:
+                raise AssertionError(tool_name)  # flag parser validated it
 
         return 0
 

@@ -12,12 +12,18 @@ from asdl import ast
 from asdl import front_end
 from asdl import gen_cpp
 from asdl import gen_python
-#from asdl.util import log
+from asdl import metrics
+from asdl.util import log
+
+from typing import Dict
+from typing import Any
+from typing import List
 
 ARG_0 = os.path.basename(sys.argv[0])
 
 
 def Options():
+    # type: () -> Any
     """Returns an option parser instance."""
 
     p = optparse.OptionParser()
@@ -52,18 +58,8 @@ def Options():
     return p
 
 
-class UserType(object):
-    """TODO: Delete this class after we have modules with 'use'?"""
-
-    def __init__(self, mod_name, type_name):
-        self.mod_name = mod_name
-        self.type_name = type_name
-
-    def __repr__(self):
-        return '<UserType %s %s>' % (self.mod_name, self.type_name)
-
-
 def main(argv):
+    # type: (List[str]) -> None
     o = Options()
     opts, argv = o.parse_args(argv)
 
@@ -78,11 +74,6 @@ def main(argv):
         raise RuntimeError('Schema path required')
 
     schema_filename = os.path.basename(schema_path)
-    if schema_filename in ('syntax.asdl', 'runtime.asdl'):
-        app_types = {'id': UserType('id_kind_asdl', 'Id_t')}
-    else:
-        app_types = {}
-
     if opts.abbrev_module:
         # Weird Python rule for importing: fromlist needs to be non-empty.
         abbrev_mod = __import__(opts.abbrev_module, fromlist=['.'])
@@ -93,18 +84,37 @@ def main(argv):
     # e.g. syntax_abbrev
     abbrev_ns = opts.abbrev_module.split('.')[-1] if abbrev_mod else None
 
-    if action == 'c':  # Generate C code for the lexer
+    if action == 'metrics':  # Sum type metrics
         with open(schema_path) as f:
-            schema_ast = front_end.LoadSchema(f, app_types)
+            schema_ast, _ = front_end.LoadSchema(f)
 
-        v = gen_cpp.CEnumVisitor(sys.stdout)
+        v = metrics.MetricsVisitor(sys.stdout)
         v.VisitModule(schema_ast)
+
+    elif action == 'closure':  # count all types that command_t references
+        type_name = argv[3]
+        with open(schema_path) as f:
+            schema_ast, type_lookup = front_end.LoadSchema(f)
+
+        seen = {}  # type: Dict[str, bool]
+        c = metrics.ClosureWalk(type_lookup, seen)
+        c.DoModule(schema_ast, type_name)
+        for name in sorted(seen):
+            print(name)
+        log('SHARED (%d): %s', len(c.shared), ' '.join(sorted(c.shared)))
+
+    elif action == 'c':  # Generate C code for the lexer
+        with open(schema_path) as f:
+            schema_ast, _ = front_end.LoadSchema(f)
+
+        v0 = gen_cpp.CEnumVisitor(sys.stdout)
+        v0.VisitModule(schema_ast)
 
     elif action == 'cpp':  # Generate C++ code for ASDL schemas
         out_prefix = argv[3]
 
         with open(schema_path) as f:
-            schema_ast = front_end.LoadSchema(f, app_types)
+            schema_ast, _ = front_end.LoadSchema(f)
 
         # asdl/typed_arith.asdl -> typed_arith_asdl
         ns = os.path.basename(schema_path).replace('.', '_')
@@ -117,47 +127,31 @@ def main(argv):
 #ifndef %s
 #define %s
 
+#include <cstdint>
+#include "mycpp/runtime.h"
+
 """ % (out_prefix, ARG_0, guard, guard))
 
-            f.write("""\
-#include <cstdint>
-""")
-            f.write("""
-#include "mycpp/runtime.h"
-""")
             if opts.pretty_print_methods:
-                if 1:
-                    # TODO: gradually migrate to this templated code, reducing code gen
-                    f.write('#include "asdl/cpp_runtime.h"\n')
-                else:
-                    f.write("""\
-#include "_gen/asdl/hnode.asdl.h"
-using hnode_asdl::hnode_t;
-
-""")
-
-            if app_types:
-                f.write("""\
-#include "_gen/frontend/id_kind.asdl.h"
-using id_kind_asdl::Id_t;
-
-""")
-            # Only works with gross hacks
-            if 0:
-                #if schema_path.endswith('/syntax.asdl'):
-                f.write(
-                    '#include  "prebuilt/frontend/syntax_abbrev.mycpp.h"\n')
+                f.write('#include "asdl/cpp_runtime.h"\n')
 
             for use in schema_ast.uses:
+                # HACK to work around limitation: we can't "use" simple enums
+                if use.module_parts == ['frontend', 'id_kind']:
+                    f.write('namespace %s_asdl { typedef uint16_t Id_t; }\n' %
+                            use.module_parts[-1])
+                    continue
+
                 # Forward declarations in the header, like
                 # namespace syntax_asdl { class command_t; }
                 # must come BEFORE namespace, so it can't be in the visitor.
 
                 # assume sum type for now!
-                cpp_names = [
-                    'class %s;' % ast.TypeNameHeuristic(n)
-                    for n in use.type_names
-                ]
+                cpp_names = []
+                for n in use.type_names:
+                    py_name, _ = ast.TypeNameHeuristic(n)
+                    cpp_names.append('class %s;' % py_name)
+
                 f.write('namespace %s_asdl { %s }\n' %
                         (use.module_parts[-1], ' '.join(cpp_names)))
                 f.write('\n')
@@ -167,7 +161,7 @@ using id_kind_asdl::Id_t;
                 type_name = names[-1]
                 cpp_namespace = names[-2]
 
-                # TODO: This isn't enough for Oils
+                # TODO: This 'extern' feature isn't enough for Oils
                 # I think we would have to export header to
                 # _gen/bin/oils_for_unix.mycpp.cc or something
                 # Does that create circular dependencies?
@@ -192,10 +186,10 @@ namespace %s {
 
 """ % ns)
 
-            v = gen_cpp.ForwardDeclareVisitor(f)
-            v.VisitModule(schema_ast)
+            v1 = gen_cpp.ForwardDeclareVisitor(f)
+            v1.VisitModule(schema_ast)
 
-            debug_info = {}
+            debug_info = {}  # type: Dict[str, int]
             v2 = gen_cpp.ClassDefVisitor(
                 f,
                 pretty_print_methods=opts.pretty_print_methods,
@@ -247,8 +241,11 @@ tags_to_types = \\
 
                 # To call pretty-printing methods
                 for use in schema_ast.uses:
-                    f.write('#include "_gen/%s.asdl.h"  // "use" in ASDL \n' %
+                    f.write('#include "_gen/%s.asdl.h"  // "use" in ASDL\n' %
                             '/'.join(use.module_parts))
+                    # HACK
+                    if use.module_parts == ['frontend', 'id_kind']:
+                        f.write('using id_kind_asdl::Id_str;\n')
 
                 f.write("""\
 
@@ -258,9 +255,6 @@ using hnode_asdl::Field;
 using hnode_asdl::color_e;
 
 """)
-
-                if app_types:
-                    f.write('using id_kind_asdl::Id_str;\n')
 
                 f.write("""
 namespace %s {
@@ -279,58 +273,17 @@ namespace %s {
 
     elif action == 'mypy':  # Generated typed MyPy code
         with open(schema_path) as f:
-            schema_ast = front_end.LoadSchema(f, app_types)
+            schema_ast, _ = front_end.LoadSchema(f)
 
-        f = sys.stdout
+        f = sys.stdout  # type: ignore
 
-        # TODO: Remove Any once we stop using it
-        f.write("""\
-from asdl import pybase
-from mycpp import mops
-from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
-""")
-
-        if schema_ast.uses:
-            f.write('\n')
-            f.write('if TYPE_CHECKING:\n')
-        for use in schema_ast.uses:
-            py_names = [ast.TypeNameHeuristic(n) for n in use.type_names]
-            # indented
-            f.write('  from _devbuild.gen.%s_asdl import %s\n' %
-                    (use.module_parts[-1], ', '.join(py_names)))
-
-        if schema_ast.externs:
-            f.write('\n')
-            f.write('if TYPE_CHECKING:\n')
-        for extern in schema_ast.externs:
-            n = extern.names
-            mod_parts = n[:-2]
-            f.write('  from %s import %s\n' % ('.'.join(mod_parts), n[-2]))
-
-        for typ in app_types.itervalues():
-            if isinstance(typ, UserType):
-                f.write('from _devbuild.gen.%s import %s\n' %
-                        (typ.mod_name, typ.type_name))
-                # HACK
-                f.write('from _devbuild.gen.%s import Id_str\n' % typ.mod_name)
-
-        if opts.pretty_print_methods:
-            f.write("""
-from asdl import runtime  # For runtime.NO_SPID
-from asdl.runtime import NewRecord, NewLeaf, TraversalState
-from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, Field
-
-""")
-        if opts.abbrev_module:
-            f.write('from %s import *\n' % opts.abbrev_module)
-            f.write('\n')
-
-        v = gen_python.GenMyPyVisitor(
+        v4 = gen_python.GenMyPyVisitor(
             f,
+            opts.abbrev_module,
             abbrev_mod_entries,
             pretty_print_methods=opts.pretty_print_methods,
             py_init_n=opts.py_init_n)
-        v.VisitModule(schema_ast)
+        v4.VisitModule(schema_ast)
 
     else:
         raise RuntimeError('Invalid action %r' % action)

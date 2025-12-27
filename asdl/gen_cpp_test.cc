@@ -14,19 +14,12 @@ using typed_arith_asdl::arith_expr;    // variant type namespace
 using typed_arith_asdl::arith_expr_e;  // variant tag type
 using typed_arith_asdl::arith_expr_t;  // sum type
 
-using typed_arith_asdl::arith_expr__Big;
-using typed_arith_asdl::arith_expr__Const;
-using typed_arith_asdl::arith_expr__FuncCall;
-using typed_arith_asdl::arith_expr__Unary;
-using typed_arith_asdl::arith_expr__Var;
-
-using typed_demo_asdl::bool_expr__Binary;
-using typed_demo_asdl::bool_expr__LogicalBinary;
+using typed_demo_asdl::a_word;
+using typed_demo_asdl::bool_expr;
 using typed_demo_asdl::bool_expr_t;
 using typed_demo_asdl::op_array;
 using typed_demo_asdl::op_id_e;
 
-using hnode_asdl::hnode__Leaf;
 using hnode_asdl::hnode_e;
 
 void PrintTag(arith_expr_t* a) {
@@ -51,21 +44,21 @@ TEST misc_test() {
   log("c->tag = %d", c->tag());
   PrintTag(c);
 
-  auto v = Alloc<arith_expr__Var>(StrFromC("foo"));
+  auto v = Alloc<arith_expr::Var>(StrFromC("foo"));
   log("sizeof *v = %d", sizeof *v);  // 24 bytes
 
   ASSERT(str_equals(StrFromC("foo"), v->name));
   log("v->tag = %d", v->tag());
   PrintTag(v);
 
-  auto u = Alloc<arith_expr__Unary>(StrFromC("-"), v);
+  auto u = Alloc<arith_expr::Unary>(StrFromC("-"), v);
   log("u->op = %s", u->op->data_);
 
-  auto v1 = Alloc<arith_expr__Var>(StrFromC("v1"));
-  auto v2 = Alloc<arith_expr__Var>(StrFromC("v2"));
+  auto v1 = Alloc<arith_expr::Var>(StrFromC("v1"));
+  auto v2 = Alloc<arith_expr::Var>(StrFromC("v2"));
   auto args = NewList<arith_expr_t*>({v1, v2});
 
-  auto f = Alloc<arith_expr__FuncCall>(StrFromC("f"), args);
+  auto f = Alloc<arith_expr::FuncCall>(StrFromC("f"), args);
   log("f->name = %s", f->name->data_);
 
   auto p = Alloc<pipeline>(true);
@@ -94,8 +87,6 @@ TEST misc_test() {
 }
 
 using shared_variant_asdl::DoubleQuoted;
-using shared_variant_asdl::word_part_e;
-using shared_variant_asdl::word_part_t;
 
 using shared_variant_asdl::tok;
 using shared_variant_asdl::tok_e;
@@ -105,7 +96,7 @@ using shared_variant_asdl::Token;
 TEST shared_variant_test() {
   auto* dq = Alloc<DoubleQuoted>(0, Alloc<List<BigStr*>>());
 
-  word_part_t* wp = nullptr;
+  shared_variant_asdl::word_part_t* wp = nullptr;
   wp = dq;  // assign to base type
 
   log("wp->tag() %d", wp->tag());
@@ -133,7 +124,7 @@ TEST pretty_print_test() {
 
   auto w1 = Alloc<typed_demo_asdl::word>(StrFromC("left"));
   auto w2 = Alloc<typed_demo_asdl::word>(StrFromC("right"));
-  b = Alloc<bool_expr__Binary>(w1, w2);
+  b = Alloc<bool_expr::Binary>(w1, w2);
 
   hnode_t* t1 = b->PrettyTree(false);
   ASSERT_EQ_FMT(hnode_e::Record, t1->tag(), "%d");
@@ -156,13 +147,13 @@ TEST pretty_print_test() {
   StackRoot _r2(&c);
   StackRoot _r3(&big);
 
-  c = Alloc<arith_expr__Const>(42);
+  c = Alloc<arith_expr::Const>(42);
   hnode_t* t2 = c->PrettyTree(false);
   ASSERT_EQ(hnode_e::Record, t2->tag());
   format::HNodePrettyPrint(t2, f);
   printf("\n");
 
-  big = Alloc<arith_expr__Big>(mops::BigInt(INT64_MAX));
+  big = Alloc<arith_expr::Big>(mops::BigInt(INT64_MAX));
   hnode_t* t3 = big->PrettyTree(false);
   ASSERT_EQ(hnode_e::Record, t3->tag());
   format::HNodePrettyPrint(t3, f);
@@ -279,6 +270,61 @@ TEST list_defaults_test() {
   PASS();
 }
 
+#include <unordered_map>
+
+class NodeWalker {
+ public:
+  virtual void methodA() {
+    log("Base::methodA");
+  }
+  virtual void methodB() {
+    log("Base::methodB");
+  }
+  virtual ~NodeWalker() = default;
+};
+
+class Linter : public NodeWalker {
+ public:
+  void methodA() override {
+    log("Derived::methodA");
+  }
+  void methodB() override {
+    log("Derived::methodB");
+  }
+};
+
+using typed_demo_asdl::word2;
+using typed_demo_asdl::word_part;
+using typed_demo_asdl::word_part_t;
+
+TEST walker_test() {
+  log("Walk");
+
+  // Make recursive structure
+  //
+  // [[ $([[ a ]]) ]]
+
+  auto tok = Alloc<typed_demo_asdl::Token>(StrFromC("a"), true);
+  auto parts = Alloc<List<word_part_t*>>();
+  typed_demo_asdl::word_part_t* part = tok;
+  parts->append(part);
+  auto w = Alloc<word2::Compound>(parts);
+  auto b = Alloc<bool_expr::WordTest>(w);
+
+#if 1
+  // Map from int to member function pointer
+  // Note: we don't use Dict because we don't need a GC type, and Dicts can
+  // only hold pointer-sized things, for tracing.  Pointers to members may be
+  // bigger.
+  auto dispatch_table = std::unordered_map<int, void (NodeWalker::*)()>();
+
+  dispatch_table[1] = &NodeWalker::methodA;
+  dispatch_table[2] = &NodeWalker::methodB;
+#endif
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -293,6 +339,7 @@ int main(int argc, char** argv) {
   RUN_TEST(literal_test);
   RUN_TEST(string_defaults_test);
   RUN_TEST(list_defaults_test);
+  RUN_TEST(walker_test);
 
   gHeap.CleanProcessExit();
 
