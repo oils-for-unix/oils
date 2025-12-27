@@ -1,6 +1,5 @@
 ## compare_shells: dash bash mksh ash
 ## oils_failures_allowed: 2
-## oils_cpp_failures_allowed: 2
 
 #### traps are not active inside subshells $() ()  trap | cat
 

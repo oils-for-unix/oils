@@ -1,6 +1,5 @@
 ## compare_shells: bash dash mksh
 ## oils_failures_allowed: 1
-## oils_cpp_failures_allowed: 1
 ## tags: interactive
 
 # Test options to set, shopt, $SH.

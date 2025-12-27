@@ -1,5 +1,4 @@
 ## oils_failures_allowed: 3
-## oils_cpp_failures_allowed: 3
 ## compare_shells: bash
 
 #### complete with no args and complete -p both print completion spec
