@@ -73,14 +73,8 @@ namespace option_asdl {
     elif action == 'mypy':
         from asdl import gen_python
 
-        f = sys.stdout
-
-        f.write("""\
-from asdl import pybase
-
-""")
         # option_i type
-        v = gen_python.GenMyPyVisitor(f, None)
+        v = gen_python.GenMyPyVisitor(sys.stdout)
         v.VisitModule(schema_ast)
 
     else:

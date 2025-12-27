@@ -183,6 +183,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     def __init__(
             self,
             f,  # type: IO[bytes]
+            abbrev_module=None,  # type: Optional[str]
             abbrev_mod_entries=None,  # type: Optional[List[str]]
             pretty_print_methods=True,  # type: bool
             py_init_n=False,  # type: bool
@@ -190,6 +191,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # type: (...) -> None
 
         visitor.AsdlVisitor.__init__(self, f)
+        self.abbrev_module = abbrev_module
         self.abbrev_mod_entries = abbrev_mod_entries or []
         self.pretty_print_methods = pretty_print_methods
         self.py_init_n = py_init_n
@@ -201,6 +203,54 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self._base_classes = defaultdict(list)  # type: Dict[str, List[str]]
 
         self._subtypes = []  # type: List[Any]
+
+    def EmitHeader(self, schema_ast):
+        # type: (ast.Module) -> None
+        f = self.f
+
+        # TODO: Remove Any once we stop using it
+        f.write("""\
+from asdl import pybase
+from mycpp import mops
+from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
+""")
+
+        for use in schema_ast.uses:
+            # HACK
+            if use.module_parts == ['frontend', 'id_kind']:
+                f.write('from _devbuild.gen.id_kind_asdl import Id_str\n')
+
+        if schema_ast.uses:
+            f.write('\n')
+            f.write('if TYPE_CHECKING:\n')
+        for use in schema_ast.uses:
+            py_names = []
+            for n in use.type_names:
+                py_name, _ = ast.TypeNameHeuristic(n)
+                py_names.append(py_name)
+
+            # indented
+            f.write('  from _devbuild.gen.%s_asdl import %s\n' %
+                    (use.module_parts[-1], ', '.join(py_names)))
+
+        if schema_ast.externs:
+            f.write('\n')
+            f.write('if TYPE_CHECKING:\n')
+        for extern in schema_ast.externs:
+            names = extern.names
+            mod_parts = names[:-2]
+            f.write('  from %s import %s\n' % ('.'.join(mod_parts), names[-2]))
+
+        if self.pretty_print_methods:
+            f.write("""
+from asdl import runtime  # For runtime.NO_SPID
+from asdl.runtime import NewRecord, NewLeaf, TraversalState
+from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, Field
+
+""")
+        if self.abbrev_module:
+            f.write('from %s import *\n' % self.abbrev_module)
+            f.write('\n')
 
     def _EmitDict(self, name, d, depth):
         # type: (str, Dict[int, str], int) -> None

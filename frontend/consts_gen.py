@@ -300,14 +300,8 @@ namespace id_kind_asdl {
         schema_ast = _CreateModule(ID_SPEC, ids)
         #print(schema_ast)
 
-        f = sys.stdout
-
-        f.write("""\
-from asdl import pybase
-
-""")
         # Minor style issue: we want Id and Kind, not Id_e and Kind_e
-        v = gen_python.GenMyPyVisitor(f)
+        v = gen_python.GenMyPyVisitor(sys.stdout)
         v.VisitModule(schema_ast)
 
     elif action == 'cpp-consts':

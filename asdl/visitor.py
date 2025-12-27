@@ -41,6 +41,8 @@ class AsdlVisitor:
         """
         Template method
         """
+        self.EmitHeader(mod)
+
         for dfn in mod.dfns:
             if isinstance(dfn, ast.SubTypeDecl):
                 self.VisitSubType(dfn)
@@ -79,6 +81,10 @@ class AsdlVisitor:
 
     def VisitProduct(self, value, name, depth):
         # type: (ast.Product, str, int) -> None
+        pass
+
+    def EmitHeader(self, schema_ast):
+        # type: (ast.Module) -> None
         pass
 
     def EmitFooter(self):
