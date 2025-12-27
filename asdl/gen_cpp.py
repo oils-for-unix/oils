@@ -27,7 +27,7 @@ from asdl import ast
 from asdl import visitor
 from asdl.util import log
 
-from typing import List, Dict, Tuple, IO, Any, cast
+from typing import List, Dict, Tuple, IO, Union, Optional, Any, cast
 
 _ = log
 
@@ -61,16 +61,20 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
     """
 
     def VisitCompoundSum(self, sum, name, depth):
+        # type: (ast.Sum, str, int) -> None
         self.Emit("class %(name)s_t;" % locals(), depth)
 
     def VisitProduct(self, product, name, depth):
+        # type: (ast.Product, str, int) -> None
         self.Emit("class %(name)s;" % locals(), depth)
 
     def EmitFooter(self):
+        # type: () -> None
         self.Emit("", 0)  # blank line
 
 
 def _GetCppType(typ):
+    # type: (ast.type_expr_t) -> str
     if isinstance(typ, ast.ParameterizedType):
         type_name = typ.type_name
 
@@ -79,13 +83,15 @@ def _GetCppType(typ):
             v_type = _GetCppType(typ.children[1])
             return 'Dict<%s, %s>*' % (k_type, v_type)
 
-        elif type_name == 'List':
+        if type_name == 'List':
             c_type = _GetCppType(typ.children[0])
             return 'List<%s>*' % (c_type)
 
-        elif type_name == 'Optional':
+        if type_name == 'Optional':
             c_type = _GetCppType(typ.children[0])
             return c_type
+
+        raise AssertionError()
 
     elif isinstance(typ, ast.NamedType):
 
@@ -115,11 +121,13 @@ def _GetCppType(typ):
 
 
 def _IsManagedType(typ):
+    # type: (ast.type_expr_t) -> bool
     # This is a little cheesy, but works
     return _GetCppType(typ).endswith('*')
 
 
 def _DefaultValue(typ, conditional=True):
+    # type: (ast.type_expr_t, bool) -> str
     """Values that the ::CreateNull() constructor passes."""
 
     if isinstance(typ, ast.ParameterizedType):
@@ -248,6 +256,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self._subtypes = []  # type: List[Any]
 
     def _EmitEnum(self, sum, sum_name, depth, strong=False, is_simple=False):
+        # type: (ast.Sum, str, int, bool, bool) -> Dict[int, str]
         enum = []
         int_to_type = {}
         add_suffix = not ('no_namespace_suffix' in sum.generate)
@@ -331,6 +340,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         return int_to_type
 
     def VisitSimpleSum(self, sum, name, depth):
+        # type: (ast.SimpleSum, str, int) -> None
         # Note: there can be more than 128 variants in a simple sum, because it's an
         # integer and doesn't have an object header.
 
@@ -346,6 +356,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self._EmitEnum(sum, name, depth, strong=True)
 
     def VisitCompoundSum(self, sum, sum_name, depth):
+        # type: (ast.Sum, str, int) -> None
         #log('%d variants in %s', len(sum.types), sum_name)
 
         # Must fit in 7 bit Obj::type_tag
@@ -354,6 +365,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         # This is a sign that Python needs string interpolation!!!
         def Emit(s, depth=depth):
+            # type: (str, int) -> None
             self.Emit(s % sys._getframe(1).f_locals, depth)
 
         int_to_type = self._EmitEnum(sum, sum_name, depth)
@@ -426,6 +438,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         Emit('')
 
     def _GenClassBegin(self, class_name, base_classes, depth):
+        # type: (str, List[str], int) -> None
         if base_classes:
             bases = ', '.join('public %s' % b for b in base_classes)
             self.Emit("class %s : %s {" % (class_name, bases), depth)
@@ -436,11 +449,13 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self.Emit(" public:", depth)
 
     def _GenClassEnd(self, class_name, depth):
+        # type: (str, int) -> None
         self.Emit('  DISALLOW_COPY_AND_ASSIGN(%s)' % class_name)
         self.Emit('};', depth)
         self.Emit('', depth)
 
     def _EmitMethodsInHeader(self, obj_header_str):
+        # type: (str) -> None
         """Generate PrettyTree(), type_id(), obj_header()"""
         if self.pretty_print_methods:
             self.Emit(
@@ -453,6 +468,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self.Emit('}')
 
     def _GenClassForList(self, class_name, base_classes, tag_num):
+        # type: (str, List[str], int) -> None
         depth = 0
         self._GenClassBegin(class_name, base_classes, depth)
 
@@ -493,13 +509,16 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         self._GenClassEnd(class_name, depth)
 
-    def _GenClass(self,
-                  fields,
-                  class_name,
-                  base_classes,
-                  depth,
-                  tag_num,
-                  obj_header_str=''):
+    def _GenClass(
+            self,
+            fields,  # type: List[ast.Field]
+            class_name,  # type: str
+            base_classes,  # type: List[str]
+            depth,  # type: int
+            tag_num,  # type: Union[int, str]
+            obj_header_str='',  # type: str
+    ):
+        # type: (...) -> None
         """For Product and Constructor."""
         self._GenClassBegin(class_name, base_classes, depth)
 
@@ -515,6 +534,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         all_fields = managed_fields + unmanaged_fields
 
         def FieldInitJoin(strs):
+            # type: (List[str]) -> str
             # reflow doesn't work well here, so do it manually
             return ',\n        '.join(strs)
 
@@ -573,6 +593,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self._GenClassEnd(class_name, depth)
 
     def VisitSubType(self, subtype):
+        # type: (ast.SubTypeDecl) -> None
         self._shared_type_tags[subtype.name] = self._product_counter
 
         # Also create these last. They may inherit from sum types that have yet
@@ -581,6 +602,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self._product_counter += 1
 
     def VisitProduct(self, product, name, depth):
+        # type: (ast.Product, str, int) -> None
         self._shared_type_tags[name] = self._product_counter
         # Create a tuple of _GenClass args to create LAST.  They may inherit from
         # sum types that have yet to be defined.
@@ -588,6 +610,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self._product_counter += 1
 
     def EmitFooter(self):
+        # type: () -> None
         # Now generate all the product types we deferred.
         for args in self._products:
             ast_node, name, depth, tag_num = args
@@ -624,15 +647,18 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     """
 
     def __init__(self, f, abbrev_ns=None, abbrev_mod_entries=None):
+        # type: (IO, Optional[Any], List) -> None
         visitor.AsdlVisitor.__init__(self, f)
         self.abbrev_ns = abbrev_ns
         self.abbrev_mod_entries = abbrev_mod_entries or []
 
     def _EmitList(self, list_str, item_type, out_val_name):
+        # type: (str, ast.type_expr_t, str) -> None
         # used in format strings
         c_item_type = _GetCppType(item_type)
 
         def _Emit(s):
+            # type: (str) -> None
             self.Emit(s % sys._getframe(1).f_locals, self.current_depth)
 
         _Emit(
@@ -654,10 +680,11 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         _Emit('}')
 
     def _EmitListPrettyPrint(self, field, out_val_name):
+        # type: (ast.Field, str) -> None
         typ = field.typ
-        if typ.type_name == 'Optional':  # descend one level
-            typ = typ.children[0]
-        item_type = typ.children[0]
+        if ast.IsOptional(typ):  # descend one level
+            typ = cast(ast.ParameterizedType, typ).children[0]
+        item_type = cast(ast.ParameterizedType, typ).children[0]
 
         self._EmitList('this->%s' % field.name, item_type, out_val_name)
 
@@ -691,6 +718,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                   field.name)
 
     def _EmitCodeForField(self, field, counter):
+        # type: (ast.Field, int) -> None
         """Generate code that returns an hnode for a field."""
         out_val_name = 'x%d' % counter
 
@@ -711,7 +739,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             self.Emit('}')
 
         elif ast.IsOptional(field.typ):
-            typ = field.typ.children[0]
+            typ = cast(ast.ParameterizedType, field.typ).children[0]
 
             self.Emit('if (this->%s) {  // Optional' % field.name)
             child_code_str, _ = _HNodeExpr(typ, 'this->%s' % field.name)
@@ -738,6 +766,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                                 all_fields,
                                 sum_name=None,
                                 list_item_type=None):
+        # type: (str, List[ast.Field], Optional[str], Optional[Any]) -> None
         """
         """
         self.Emit('')
@@ -801,6 +830,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                          depth,
                          strong=False,
                          simple=False):
+        # type: (ast.Sum, str, int, bool, bool) -> None
         add_suffix = not ('no_namespace_suffix' in sum.generate)
         if add_suffix:
             if simple:
@@ -845,12 +875,14 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self.Emit('}', depth)
 
     def VisitSimpleSum(self, sum, name, depth):
+        # type: (ast.SimpleSum, str, int) -> None
         if 'integers' in sum.generate or 'uint16' in sum.generate:
             self._EmitStrFunction(sum, name, depth, strong=False, simple=True)
         else:
             self._EmitStrFunction(sum, name, depth, strong=True)
 
     def VisitCompoundSum(self, sum, sum_name, depth):
+        # type: (ast.Sum, str, int) -> None
         self._EmitStrFunction(sum, sum_name, depth)
 
         # Generate definitions for the for zero arg singleton globals
@@ -905,9 +937,11 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self.Emit('}')
 
     def VisitProduct(self, product, name, depth):
+        # type: (ast.Product, str, int) -> None
         self._EmitPrettyPrintMethods(name, product.fields)
 
     def VisitSubType(self, subtype):
+        # type: (ast.SubTypeDecl) -> None
         list_item_type = None
         b = subtype.base_class
         if isinstance(b, ast.ParameterizedType):

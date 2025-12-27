@@ -111,7 +111,8 @@ def AsdlCompiler():
 
     collect_types.init_types_collection()
     with collect_types.collect():
-        asdl_main.main(['', 'mypy', 'frontend/syntax.asdl'])
+        #asdl_main.main(['', 'mypy', 'frontend/syntax.asdl'])
+        asdl_main.main(['', 'cpp', 'frontend/syntax.asdl', '_tmp'])
 
     collect_types.dump_stats('type_info.json')
 

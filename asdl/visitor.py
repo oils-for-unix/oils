@@ -5,6 +5,8 @@ import sys
 from asdl import ast
 from asdl.ast import Module
 from typing import List, IO
+from asdl.ast import SubTypeDecl
+from asdl.ast import SimpleSum
 
 
 class AsdlVisitor:
@@ -66,10 +68,12 @@ class AsdlVisitor:
         self.EmitFooter()
 
     def VisitSubType(self, subtype):
+        # type: (SubTypeDecl) -> None
         pass
 
     # Optionally overridden.
     def VisitSimpleSum(self, value, name, depth):
+        # type: (SimpleSum, str, int) -> None
         pass
 
     def VisitCompoundSum(self, value, name, depth):
@@ -79,6 +83,7 @@ class AsdlVisitor:
         pass
 
     def EmitFooter(self):
+        # type: () -> None
         pass
 
 
