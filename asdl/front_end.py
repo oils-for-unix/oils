@@ -86,7 +86,7 @@ TOKEN_RE = r'\s*(\w+|--.*|#.*|.)'
 
 
 def _Tokenize(f):
-    # type: (IO) -> Any
+    # type: (IO[bytes]) -> Any
     """Tokenize the given buffer.
 
     Yield Token objects.
@@ -158,7 +158,7 @@ class ASDLParser(object):
         self.cur_token = None  # type: Token
 
     def parse(self, f):
-        # type: (IO) -> ast.Module
+        # type: (IO[bytes]) -> ast.Module
         """Parse the ASDL in the file and return an AST with a Module root."""
         self._tokenizer = _Tokenize(f)
         self._advance()
@@ -593,7 +593,7 @@ def _ResolveModule(module, type_lookup):
 
 
 def LoadSchema(f, verbose=False):
-    # type: (IO, bool) -> Tuple[ast.Module, TypeLookup]
+    # type: (IO[bytes], bool) -> Tuple[ast.Module, TypeLookup]
     """Returns an AST for the schema."""
     p = ASDLParser()
     schema_ast = p.parse(f)

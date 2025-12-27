@@ -3,10 +3,7 @@ from __future__ import print_function
 
 import sys
 from asdl import ast
-from asdl.ast import Module
 from typing import List, IO
-from asdl.ast import SubTypeDecl
-from asdl.ast import SimpleSum
 
 
 class AsdlVisitor:
@@ -20,7 +17,7 @@ class AsdlVisitor:
     """
 
     def __init__(self, f):
-        # type: (IO) -> None
+        # type: (IO[bytes]) -> None
         self.f = f
         self.current_depth = 0  # the current number of indent levels
 
@@ -40,7 +37,7 @@ class AsdlVisitor:
             self.f.write(line)
 
     def VisitModule(self, mod, depth=0):
-        # type: (Module, int) -> None
+        # type: (ast.Module, int) -> None
         """
         Template method
         """
@@ -68,18 +65,20 @@ class AsdlVisitor:
         self.EmitFooter()
 
     def VisitSubType(self, subtype):
-        # type: (SubTypeDecl) -> None
+        # type: (ast.SubTypeDecl) -> None
         pass
 
     # Optionally overridden.
     def VisitSimpleSum(self, value, name, depth):
-        # type: (SimpleSum, str, int) -> None
+        # type: (ast.SimpleSum, str, int) -> None
         pass
 
     def VisitCompoundSum(self, value, name, depth):
+        # type: (ast.Sum, str, int) -> None
         pass
 
     def VisitProduct(self, value, name, depth):
+        # type: (ast.Product, str, int) -> None
         pass
 
     def EmitFooter(self):

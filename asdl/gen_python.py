@@ -182,7 +182,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     def __init__(
             self,
-            f,  # type: IO
+            f,  # type: IO[bytes]
             abbrev_mod_entries=None,  # type: Optional[List[str]]
             pretty_print_methods=True,  # type: bool
             py_init_n=False,  # type: bool

@@ -37,6 +37,8 @@ _ = log
 class CEnumVisitor(visitor.AsdlVisitor):
 
     def VisitSimpleSum(self, sum, name, depth):
+        # type: (ast.SimpleSum, str, int) -> None
+
         # Just use #define, since enums aren't namespaced.
         for i, variant in enumerate(sum.types):
             self.Emit('#define %s__%s %d' % (name, variant.name, i + 1), depth)
@@ -233,9 +235,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
     def __init__(
             self,
-            f,  # type: IO
+            f,  # type: IO[bytes]
             pretty_print_methods=True,  # type: bool
-            debug_info=None,  # Optional[Dict[str, int]]
+            debug_info=None,  # type: Optional[Dict[str, Any]]
     ):
         # type: (...) -> None
         """
@@ -647,7 +649,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     """
 
     def __init__(self, f, abbrev_ns=None, abbrev_mod_entries=None):
-        # type: (IO, Optional[Any], List) -> None
+        # type: (IO[bytes], Optional[Any], List[Any]) -> None
         visitor.AsdlVisitor.__init__(self, f)
         self.abbrev_ns = abbrev_ns
         self.abbrev_mod_entries = abbrev_mod_entries or []
@@ -689,12 +691,13 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self._EmitList('this->%s' % field.name, item_type, out_val_name)
 
     def _EmitDictPrettyPrint(self, field):
+        # type: (ast.Field) -> None
         typ = field.typ
-        if typ.type_name == 'Optional':  # descend one level
-            typ = typ.children[0]
+        if ast.IsOptional(typ):  # descend one level
+            typ = cast(ast.ParameterizedType, typ).children[0]
 
-        k_typ = typ.children[0]
-        v_typ = typ.children[1]
+        k_typ = cast(ast.ParameterizedType, typ).children[0]
+        v_typ = cast(ast.ParameterizedType, typ).children[1]
 
         k_c_type = _GetCppType(k_typ)
         v_c_type = _GetCppType(v_typ)
