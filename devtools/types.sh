@@ -102,8 +102,10 @@ check-asdl-compiler() {
       # This file has reflection via dynamic typing
       asdl/parse.py) continue ;;
 
-      # This is part of the runtime, and pulls in j8_lite.py etc.
+      # These files part of the runtime, and pull in j8_lite.py etc.
       asdl/format.py) continue ;;
+      asdl/pybase.py) continue ;;
+      asdl/runtime.py) continue ;;
     esac
 
     files+=( $name )
