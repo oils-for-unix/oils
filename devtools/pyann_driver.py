@@ -106,9 +106,20 @@ def Doctools():
     collect_types.dump_stats('type_info.json')
 
 
+def AsdlCompiler():
+    from asdl import asdl_main
+
+    collect_types.init_types_collection()
+    with collect_types.collect():
+        asdl_main.main(['', 'mypy', 'frontend/syntax.asdl'])
+
+    collect_types.dump_stats('type_info.json')
+
+
 def main():
-    UnitTests()
+    #UnitTests()
     #Doctools()
+    AsdlCompiler()
 
 
 if __name__ == '__main__':

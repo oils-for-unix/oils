@@ -16,11 +16,14 @@ from asdl import metrics
 from asdl.util import log
 
 from typing import Dict
+from typing import Any
+from typing import List
 
 ARG_0 = os.path.basename(sys.argv[0])
 
 
 def Options():
+    # type: () -> Any
     """Returns an option parser instance."""
 
     p = optparse.OptionParser()
@@ -56,6 +59,7 @@ def Options():
 
 
 def main(argv):
+    # type: (List[str]) -> None
     o = Options()
     opts, argv = o.parse_args(argv)
 
@@ -103,8 +107,8 @@ def main(argv):
         with open(schema_path) as f:
             schema_ast, _ = front_end.LoadSchema(f)
 
-        v = gen_cpp.CEnumVisitor(sys.stdout)
-        v.VisitModule(schema_ast)
+        v0 = gen_cpp.CEnumVisitor(sys.stdout)
+        v0.VisitModule(schema_ast)
 
     elif action == 'cpp':  # Generate C++ code for ASDL schemas
         out_prefix = argv[3]
@@ -185,10 +189,10 @@ namespace %s {
 
 """ % ns)
 
-            v = gen_cpp.ForwardDeclareVisitor(f)
-            v.VisitModule(schema_ast)
+            v1 = gen_cpp.ForwardDeclareVisitor(f)
+            v1.VisitModule(schema_ast)
 
-            debug_info = {}
+            debug_info = {}  # type: Dict[str, int]
             v2 = gen_cpp.ClassDefVisitor(
                 f,
                 pretty_print_methods=opts.pretty_print_methods,
@@ -274,7 +278,7 @@ namespace %s {
         with open(schema_path) as f:
             schema_ast, _ = front_end.LoadSchema(f)
 
-        f = sys.stdout
+        f = sys.stdout  # type: ignore
 
         # TODO: Remove Any once we stop using it
         f.write("""\
@@ -305,9 +309,9 @@ from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
             f.write('\n')
             f.write('if TYPE_CHECKING:\n')
         for extern in schema_ast.externs:
-            n = extern.names
-            mod_parts = n[:-2]
-            f.write('  from %s import %s\n' % ('.'.join(mod_parts), n[-2]))
+            names = extern.names
+            mod_parts = names[:-2]
+            f.write('  from %s import %s\n' % ('.'.join(mod_parts), names[-2]))
 
         if opts.pretty_print_methods:
             f.write("""
@@ -320,12 +324,12 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, Field
             f.write('from %s import *\n' % opts.abbrev_module)
             f.write('\n')
 
-        v = gen_python.GenMyPyVisitor(
+        v4 = gen_python.GenMyPyVisitor(
             f,
             abbrev_mod_entries,
             pretty_print_methods=opts.pretty_print_methods,
             py_init_n=opts.py_init_n)
-        v.VisitModule(schema_ast)
+        v4.VisitModule(schema_ast)
 
     else:
         raise RuntimeError('Invalid action %r' % action)

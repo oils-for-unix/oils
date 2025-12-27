@@ -27,7 +27,7 @@ from asdl import ast
 from asdl import visitor
 from asdl.util import log
 
-from typing import Tuple, cast
+from typing import List, Dict, Tuple, IO, Any, cast
 
 _ = log
 
@@ -223,7 +223,13 @@ MAX_VARIANTS_PER_SUM = 64
 class ClassDefVisitor(visitor.AsdlVisitor):
     """Generate C++ declarations and type-safe enums."""
 
-    def __init__(self, f, pretty_print_methods=True, debug_info=None):
+    def __init__(
+            self,
+            f,  # type: IO
+            pretty_print_methods=True,  # type: bool
+            debug_info=None,  # Optional[Dict[str, int]]
+    ):
+        # type: (...) -> None
         """
         Args:
           f: file to write to
@@ -233,13 +239,13 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self.pretty_print_methods = pretty_print_methods
         self.debug_info = debug_info if debug_info is not None else {}
 
-        self._shared_type_tags = {}
+        self._shared_type_tags = {}  # type: Dict[str, int]
         self._product_counter = MAX_VARIANTS_PER_SUM
 
-        self._products = []
-        self._base_classes = defaultdict(list)
+        self._products = []  # type: List[Any]
+        self._base_classes = defaultdict(list)  # type: Dict[str, List[str]]
 
-        self._subtypes = []
+        self._subtypes = []  # type: List[Any]
 
     def _EmitEnum(self, sum, sum_name, depth, strong=False, is_simple=False):
         enum = []

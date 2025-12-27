@@ -327,6 +327,7 @@ def TypeNameHeuristic(asdl_name):
 
 
 def NameHack(sum_name):
+    # type: (str) -> str
     if sum_name == 'id':
         return 'Id'
     elif sum_name == 'kind':

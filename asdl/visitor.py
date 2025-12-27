@@ -3,6 +3,8 @@ from __future__ import print_function
 
 import sys
 from asdl import ast
+from asdl.ast import Module
+from typing import List, IO
 
 
 class AsdlVisitor:
@@ -16,22 +18,27 @@ class AsdlVisitor:
     """
 
     def __init__(self, f):
+        # type: (IO) -> None
         self.f = f
         self.current_depth = 0  # the current number of indent levels
 
     def Indent(self):
+        # type: () -> None
         self.current_depth += 1
 
     def Dedent(self):
+        # type: () -> None
         self.current_depth -= 1
 
     def Emit(self, s, depth=-1, reflow=True):
+        # type: (str, int, bool) -> None
         if depth == -1:
             depth = self.current_depth
         for line in FormatLines(s, depth, reflow=reflow):
             self.f.write(line)
 
     def VisitModule(self, mod, depth=0):
+        # type: (Module, int) -> None
         """
         Template method
         """
@@ -82,6 +89,7 @@ MAX_COL = 80
 
 
 def _ReflowLines(s, depth):
+    # type: (str, int) -> List[str]
     """Reflow the line s indented depth tabs.
 
     Return a sequence of lines where no line extends beyond MAX_COL when
@@ -130,6 +138,7 @@ def _ReflowLines(s, depth):
 
 
 def FormatLines(s, depth, reflow=True):
+    # type: (str, int, bool) -> List[str]
     """Make the generated code readable.
 
     Args:

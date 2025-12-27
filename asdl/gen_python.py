@@ -8,7 +8,7 @@ from asdl import ast
 from asdl import visitor
 from asdl.util import log
 
-from typing import Tuple, cast
+from typing import List, Dict, Optional, Union, Tuple, IO, Any, cast
 
 _ = log  # shut up lint
 
@@ -24,6 +24,7 @@ _PRIMITIVES = {
 
 
 def _MyPyType(typ):
+    # type: (ast.type_expr_t) -> str
     """ASDL type to MyPy Type."""
     if isinstance(typ, ast.ParameterizedType):
 
@@ -37,6 +38,8 @@ def _MyPyType(typ):
 
         if typ.type_name == 'Optional':
             return 'Optional[%s]' % _MyPyType(typ.children[0])
+
+        raise AssertionError()
 
     elif isinstance(typ, ast.NamedType):
         if typ.resolved:
@@ -66,6 +69,7 @@ def _CastedNull(mypy_type):
 
 
 def _DefaultValue(typ, mypy_type):
+    # type: (ast.type_expr_t, str) -> str
     """Values that the static CreateNull() constructor passes.
 
     mypy_type is used to cast None, to maintain mypy --strict for ASDL.
@@ -176,31 +180,30 @@ def _HNodeExpr(typ, var_name):
 class GenMyPyVisitor(visitor.AsdlVisitor):
     """Generate Python code with MyPy type annotations."""
 
-    def __init__(self,
-                 f,
-                 abbrev_mod_entries=None,
-                 pretty_print_methods=True,
-                 py_init_n=False,
-                 simple_int_sums=None):
+    def __init__(
+            self,
+            f,  # type: IO
+            abbrev_mod_entries=None,  # type: Optional[List[str]]
+            pretty_print_methods=True,  # type: bool
+            py_init_n=False,  # type: bool
+    ):
+        # type: (...) -> None
 
         visitor.AsdlVisitor.__init__(self, f)
         self.abbrev_mod_entries = abbrev_mod_entries or []
         self.pretty_print_methods = pretty_print_methods
         self.py_init_n = py_init_n
 
-        # For Id to use different code gen.  It's used like an integer, not just
-        # like an enum.
-        self.simple_int_sums = simple_int_sums or []
-
-        self._shared_type_tags = {}
+        self._shared_type_tags = {}  # type: Dict[str, int]
         self._product_counter = 64  # matches asdl/gen_cpp.py
 
-        self._products = []
-        self._base_classes = defaultdict(list)
+        self._products = []  # type: List[Any]
+        self._base_classes = defaultdict(list)  # type: Dict[str, List[str]]
 
-        self._subtypes = []
+        self._subtypes = []  # type: List[Any]
 
     def _EmitDict(self, name, d, depth):
+        # type: (str, Dict[int, str], int) -> None
         self.Emit('_%s_str = {' % name, depth)
         for k in sorted(d):
             self.Emit('%d: %r,' % (k, d[k]), depth + 1)
@@ -208,6 +211,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('', depth)
 
     def VisitSimpleSum(self, sum, sum_name, depth):
+        # type: (ast.SimpleSum, str, int) -> None
         int_to_str = {}
         variants = []
         for i, variant in enumerate(sum.types):
@@ -264,6 +268,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('', depth)
 
     def _EmitCodeForField(self, field, counter):
+        # type: (ast.Field, int) -> None
         """Generate code that returns an hnode for a field."""
         out_val_name = 'x%d' % counter
 
@@ -271,9 +276,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             iter_name = 'i%d' % counter
 
             typ = field.typ
-            if typ.type_name == 'Optional':  # descend one level
-                typ = typ.children[0]
-            item_type = typ.children[0]
+            if ast.IsOptional(typ):  # descend one level
+                typ = cast(ast.ParameterizedType, typ).children[0]
+            item_type = cast(ast.ParameterizedType, typ).children[0]
 
             self.Emit('  if self.%s is not None:  # List' % field.name)
             self.Emit('    %s = hnode.Array([])' % out_val_name)
@@ -299,11 +304,11 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             v = 'v%d' % counter
 
             typ = field.typ
-            if typ.type_name == 'Optional':  # descend one level
-                typ = typ.children[0]
+            if ast.IsOptional(typ):  # descend one level
+                typ = cast(ast.ParameterizedType, typ).children[0]
 
-            k_typ = typ.children[0]
-            v_typ = typ.children[1]
+            k_typ = cast(ast.ParameterizedType, typ).children[0]
+            v_typ = cast(ast.ParameterizedType, typ).children[1]
 
             k_code_str, _ = _HNodeExpr(k_typ, k)
             v_code_str, _ = _HNodeExpr(v_typ, v)
@@ -321,7 +326,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                       (field.name, out_val_name))
 
         elif ast.IsOptional(field.typ):
-            typ = field.typ.children[0]
+            typ = cast(ast.ParameterizedType, field.typ).children[0]
 
             self.Emit('  if self.%s is not None:  # Optional' % field.name)
             child_code_str, _ = _HNodeExpr(typ, 'self.%s' % field.name)
@@ -341,10 +346,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                       depth)
 
     def _GenClassBegin(self, class_name, base_classes, tag_num):
+        # type: (str, Union[List[str], Tuple[str]], int) -> None
         self.Emit('class %s(%s):' % (class_name, ', '.join(base_classes)))
         self.Emit('  _type_tag = %d' % tag_num)
 
     def _GenListSubclass(self, class_name, base_classes, tag_num, class_ns=''):
+        # type: (str, List[str], int, str) -> None
         self._GenClassBegin(class_name, base_classes, tag_num)
 
         # TODO: Do something nicer
@@ -379,12 +386,15 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         if self.pretty_print_methods:
             self._EmitPrettyPrintMethodsForList(class_name)
 
-    def _GenClass(self,
-                  fields,
-                  class_name,
-                  base_classes,
-                  tag_num,
-                  class_ns=''):
+    def _GenClass(
+            self,
+            fields,  # type: List[ast.Field]
+            class_name,  # type: str
+            base_classes,  # type: Union[List[str], Tuple[str]]
+            tag_num,  # type: int
+            class_ns='',  # type: str
+    ):
+        # type: (...) -> None
         """Generate a typed Python class.
 
         Used for both Sum variants ("constructors") and Product types.
@@ -442,6 +452,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self._EmitPrettyPrintMethods(class_name, class_ns, fields)
 
     def _EmitPrettyBegin(self):
+        # type: () -> None
         self.Emit('  def PrettyTree(self, do_abbrev, trav=None):')
         self.Emit('    # type: (bool, Optional[TraversalState]) -> hnode_t')
         self.Emit('    trav = trav or TraversalState()')
@@ -452,6 +463,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('    trav.seen[heap_id] = True')
 
     def _EmitPrettyPrintMethodsForList(self, class_name):
+        # type: (str) -> None
         self._EmitPrettyBegin()
         self.Emit('    h = runtime.NewRecord(%r)' % class_name)
         self.Emit(
@@ -460,6 +472,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('')
 
     def _EmitPrettyPrintMethods(self, class_name, class_ns, fields):
+        # type: (str, str, List[ast.Field]) -> None
         if len(fields) == 0:
             # value__Stdin -> value.Stdin (defined at top level)
             pretty_cls_name = class_name.replace('__', '.')
@@ -502,6 +515,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('')
 
     def VisitCompoundSum(self, sum, sum_name, depth):
+        # type: (ast.Sum, str, int) -> None
         """Note that the following is_simple:
 
           cflow = Break | Continue
@@ -615,6 +629,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('')
 
     def VisitSubType(self, subtype):
+        # type: (ast.SubTypeDecl) -> None
         self._shared_type_tags[subtype.name] = self._product_counter
 
         # Also create these last. They may inherit from sum types that have yet
@@ -623,6 +638,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self._product_counter += 1
 
     def VisitProduct(self, product, name, depth):
+        # type: (ast.Product, str, int) -> None
         self._shared_type_tags[name] = self._product_counter
         # Create a tuple of _GenClass args to create LAST.  They may inherit from
         # sum types that have yet to be defined.
@@ -630,6 +646,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self._product_counter += 1
 
     def EmitFooter(self):
+        # type: () -> None
         # Now generate all the product types we deferred.
         for args in self._products:
             ast_node, name, depth, tag_num = args
