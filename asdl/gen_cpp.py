@@ -1,21 +1,5 @@
 """
 gen_cpp.py - Generate C++ classes from an ASDL schema.
-
-TODO:
-
-- Integrate some of the lessons here:
-  - https://github.com/oilshell/blog-code/tree/master/asdl
-  - And maybe mycpp/target_lang.cc
-
-- pretty printing methods
-  - so asdl/format.py get translated?
-
-- NoOp needs to be instantiated without args?
-- dict becomes Dict[str, str] ?
-
-- How do optional ASDL values like int? work?  Use C++ default values?
-  - This means that all the optionals have to be on the end.  That seems OK.
-  - I guess that's how Python does it.
 """
 from __future__ import print_function
 
@@ -50,7 +34,9 @@ class CEnumVisitor(visitor.AsdlVisitor):
 
 def WriteDebugInfo(debug_info, ns, debug_info_path):
     # type: (Dict[str, Any], str, str) -> None
-
+    """
+    Emit info for the devtools/oils.gdb plugin.  Not used very often.
+    """
     with open(debug_info_path, 'w') as f:
         from pprint import pformat
         f.write('''\

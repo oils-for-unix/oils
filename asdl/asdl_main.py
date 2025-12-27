@@ -152,10 +152,8 @@ def main(argv):
         with open(schema_path) as f:
             schema_ast, _ = front_end.LoadSchema(f)
 
-        f = sys.stdout  # type: ignore
-
         v4 = gen_python.GenMyPyVisitor(
-            f,
+            sys.stdout,
             opts.abbrev_module,
             abbrev.mod_entries,
             pretty_print_methods=opts.pretty_print_methods,
