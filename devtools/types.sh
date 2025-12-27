@@ -91,9 +91,20 @@ check-asdl-compiler() {
   local -a flags=( --no-strict-optional --follow-imports=silent --py2 )
 
   # 100 type errors in asdl/front_end.py
-  #flags+=( --strict )
+  flags+=( --strict )
 
-  local -a files=( asdl/{asdl_main,ast,front_end,gen_cpp,gen_python,metrics,util,visitor}.py )
+  local -a files
+  for name in asdl/*.py; do
+    case $name in
+      asdl/NINJA_subgraph.py) continue ;;
+      asdl/*_test.py) continue ;;
+
+      # This file has reflection via dynamic typing
+      asdl/parse.py) continue ;;
+    esac
+
+    files+=( $name )
+  done
 
   mypy-check "${flags[@]}" "${files[@]}"
 }

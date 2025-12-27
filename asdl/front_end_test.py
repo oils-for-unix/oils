@@ -8,6 +8,7 @@ import unittest
 from asdl import front_end  # module under test
 from asdl import ast
 from asdl import format as fmt
+from asdl import parse
 
 
 class FrontEndTest(unittest.TestCase):
@@ -49,7 +50,7 @@ class FrontEndTest(unittest.TestCase):
 
     def _assertParse(self, code_str):
         f = cStringIO.StringIO(code_str)
-        p = front_end.ASDLParser()
+        p = parse.ASDLParser()
         schema_ast = p.parse(f)
         print(schema_ast)
         # For now just test its type
@@ -94,7 +95,7 @@ module foo {
 
     def _assertParseError(self, code_str):
         f = cStringIO.StringIO(code_str)
-        p = front_end.ASDLParser()
+        p = parse.ASDLParser()
         try:
             schema_ast = p.parse(f)
         except front_end.ASDLSyntaxError as e:
