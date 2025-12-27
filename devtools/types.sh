@@ -101,11 +101,17 @@ check-asdl-compiler() {
 
       # This file has reflection via dynamic typing
       asdl/parse.py) continue ;;
+
+      # These files part of the runtime, and pull in j8_lite.py etc.
+      asdl/format.py) continue ;;
+      asdl/pybase.py) continue ;;
+      asdl/runtime.py) continue ;;
     esac
 
     files+=( $name )
   done
 
+  set -x
   mypy-check "${flags[@]}" "${files[@]}"
 }
 
