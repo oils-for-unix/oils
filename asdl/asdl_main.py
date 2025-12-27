@@ -13,7 +13,9 @@ from asdl import front_end
 from asdl import gen_cpp
 from asdl import gen_python
 from asdl import metrics
-#from asdl.util import log
+from asdl.util import log
+
+from typing import Dict
 
 ARG_0 = os.path.basename(sys.argv[0])
 
@@ -78,12 +80,9 @@ def main(argv):
     # e.g. syntax_abbrev
     abbrev_ns = opts.abbrev_module.split('.')[-1] if abbrev_mod else None
 
-    # TODO: remove this
-    app_types = {}
-
     if action == 'metrics':  # Sum type metrics
         with open(schema_path) as f:
-            schema_ast = front_end.LoadSchema(f, app_types)
+            schema_ast, _ = front_end.LoadSchema(f)
 
         v = metrics.MetricsVisitor(sys.stdout)
         v.VisitModule(schema_ast)
@@ -91,13 +90,18 @@ def main(argv):
     elif action == 'closure':  # count all types that command_t references
         type_name = argv[3]
         with open(schema_path) as f:
-            schema_ast = front_end.LoadSchema(f,
-                                              app_types,
-                                              do_closure=type_name)
+            schema_ast, type_lookup = front_end.LoadSchema(f)
+
+        seen = {}  # type: Dict[str, bool]
+        c = metrics.ClosureWalk(type_lookup, seen)
+        c.DoModule(schema_ast, type_name)
+        for name in sorted(seen):
+            print(name)
+        log('SHARED (%d): %s', len(c.shared), ' '.join(sorted(c.shared)))
 
     elif action == 'c':  # Generate C code for the lexer
         with open(schema_path) as f:
-            schema_ast = front_end.LoadSchema(f, app_types)
+            schema_ast, _ = front_end.LoadSchema(f)
 
         v = gen_cpp.CEnumVisitor(sys.stdout)
         v.VisitModule(schema_ast)
@@ -106,7 +110,7 @@ def main(argv):
         out_prefix = argv[3]
 
         with open(schema_path) as f:
-            schema_ast = front_end.LoadSchema(f, app_types)
+            schema_ast, _ = front_end.LoadSchema(f)
 
         # asdl/typed_arith.asdl -> typed_arith_asdl
         ns = os.path.basename(schema_path).replace('.', '_')
@@ -268,7 +272,7 @@ namespace %s {
 
     elif action == 'mypy':  # Generated typed MyPy code
         with open(schema_path) as f:
-            schema_ast = front_end.LoadSchema(f, app_types)
+            schema_ast, _ = front_end.LoadSchema(f)
 
         f = sys.stdout
 

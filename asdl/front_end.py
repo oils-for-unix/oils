@@ -8,8 +8,10 @@ from asdl.ast import (Use, Module, TypeDecl, SubTypeDecl, Constructor, Field,
                       Sum, SimpleSum, Product, Extern)
 from asdl.util import log
 
-# type checking not turned on yet
-from typing import List, Dict, Optional, cast, TYPE_CHECKING
+from typing import List, Dict, cast, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    TypeLookup = Dict[str, ast.asdl_type_t]
 
 _ = log
 
@@ -482,9 +484,6 @@ _PRIMITIVE_TYPES = [
     'any',
 ]
 
-if TYPE_CHECKING:
-    TypeLookup = Dict[str, ast.asdl_type_t]
-
 
 def _ResolveType(typ, type_lookup):
     # type: (ast.type_expr_t, TypeLookup) -> None
@@ -528,12 +527,9 @@ def _ResolveFields(field_ast_nodes, type_lookup):
         _ResolveType(field.typ, type_lookup)
 
 
-def _ResolveModule(module, app_types, do_closure=None):
-    # type: (Module, TypeLookup, Optional[str]) -> None
+def _ResolveModule(module, type_lookup):
+    # type: (Module, TypeLookup) -> None
     """Name resolution for NamedType."""
-    # Types that fields are declared with: int, id, word_part, etc.
-    # Fields are NOT declared with Constructor names.
-    type_lookup = dict(app_types)
 
     # Note: we don't actually load the type, and instead leave that to MyPy /
     # C++.  A consequence of this is TypeNameHeuristic().
@@ -591,100 +587,8 @@ def _ResolveModule(module, app_types, do_closure=None):
 
         raise AssertionError(ast_node)
 
-    # OPTIONAL Third pass: print metrics about a type, like command_t
-    if do_closure:
-        seen = {}  # type: Dict[str, bool]
-        c = ClosureWalk(type_lookup, seen)
-        c.DoModule(module, do_closure)
-        for name in sorted(seen):
-            print(name)
-        log('SHARED (%d): %s', len(c.shared), ' '.join(sorted(c.shared)))
 
-
-class ClosureWalk(object):
-    """Analyze how many unique IDs needed for all of syntax.asdl command_t."""
-
-    def __init__(self, type_lookup, seen):
-        # type: (TypeLookup, Dict[str, bool]) -> None
-        self.type_lookup = type_lookup
-        self.seen = seen
-        self.shared = {}  # type: Dict[str, bool]
-        self.visited = {}  # type: Dict[str, bool]
-
-    def DoModule(self, module, type_name):
-        # type: (ast.Module, str) -> None
-        for d in module.dfns:
-            if isinstance(d, SubTypeDecl):
-                # Don't count these types
-                continue
-
-            elif isinstance(d, TypeDecl):
-                # Only walk for what the user asked for, e.g. the command_t type
-                if d.name == type_name:
-                    self.DoType(d.name, d.value)
-            else:
-                raise AssertionError(d)
-
-    def DoType(self, type_name, typ):
-        # type: (str, ast.asdl_type_t) -> None
-        """Given an AST node, add the types it references to seen"""
-        assert typ is not None, typ
-
-        if isinstance(typ, ast.Product):
-            #log('fields %s', ast_node.fields)
-            self.seen[type_name] = True
-            self.DoFields(typ.fields)
-
-        elif isinstance(typ, ast.Sum):
-            for cons in typ.types:
-                # Shared variants will live in a different namespace!
-                if cons.shared_type:
-                    self.shared[cons.shared_type] = True
-                    continue
-                key = '%s.%s' % (type_name, cons.name)
-                self.seen[key] = True
-                self.DoFields(cons.fields)
-
-        elif isinstance(typ, ast.Use):
-            # Note: we don't 'use core value { value }'?  We don't need to walk
-            # that one, because it's really a "cached" value attached to the
-            # AST, not part of the SYNTAX.
-            pass
-        else:
-            raise AssertionError(typ)
-
-    def DoFields(self, field_ast_nodes):
-        # type: (List[Field]) -> None
-        for field in field_ast_nodes:
-            self.DoTypeExpr(field.typ)
-
-    def DoTypeExpr(self, ty_expr):
-        # type: (ast.type_expr_t) -> None
-        """Given an AST node, add the types it references to seen"""
-        if isinstance(ty_expr, ast.NamedType):
-            type_name = ty_expr.name
-
-            if type_name in self.visited:
-                return
-
-            self.visited[type_name] = True
-
-            #typ = self.type_lookup.get(type_name)
-            typ = ty_expr.resolved
-            if typ is None:
-                return
-
-            self.DoType(type_name, typ)
-
-        elif isinstance(ty_expr, ast.ParameterizedType):
-            for child in ty_expr.children:
-                self.DoTypeExpr(child)
-
-        else:
-            raise AssertionError()
-
-
-def LoadSchema(f, app_types, verbose=False, do_closure=None):
+def LoadSchema(f, verbose=False):
     """Returns an AST for the schema."""
     p = ASDLParser()
     schema_ast = p.parse(f)
@@ -693,5 +597,6 @@ def LoadSchema(f, app_types, verbose=False, do_closure=None):
         schema_ast.Print(sys.stdout, 0)
 
     # Make sure all the names are valid
-    _ResolveModule(schema_ast, app_types, do_closure=do_closure)
-    return schema_ast
+    type_lookup = {}
+    _ResolveModule(schema_ast, type_lookup)
+    return schema_ast, type_lookup
