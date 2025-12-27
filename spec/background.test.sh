@@ -1,5 +1,5 @@
 ## oils_failures_allowed: 3
-## oils_cpp_failures_allowed: 4
+## oils_cpp_failures_allowed: 3
 ## compare_shells: dash bash mksh
 
 # Job control constructs:

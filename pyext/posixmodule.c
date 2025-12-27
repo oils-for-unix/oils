@@ -2606,6 +2606,9 @@ static PyMethodDef posix_methods[] = {
   {"WIFSTOPPED", posix_WIFSTOPPED, METH_VARARGS},
   {"WSTOPSIG", posix_WSTOPSIG, METH_VARARGS},
   {"WIFCONTINUED",posix_WIFCONTINUED, METH_VARARGS},
+#ifdef WCOREDUMP
+  {"WCOREDUMP", posix_WCOREDUMP, METH_VARARGS},
+#endif
   {0},
 };
 
