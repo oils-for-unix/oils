@@ -114,17 +114,19 @@
 
 # # 2025-11-16: fresh run
 # readonly TARBALL_ID='10856'
+# const TARBALL_ID='11092'
 
-# download-oils() {
-#   local tarball_id=${1:-$TARBALL_ID}
+proc download-oils() {
+  var tarball_id=${1:-$TARBALL_ID}
 
-#   local url="https://op.oilshell.org/uuu/github-jobs/$tarball_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
+  # var url="https://op.oilshell.org/uuu/github-jobs/$tarball_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
+  var url="https://op.oilshell.org/code/github-jobs/git-fd65318bebefcacf83f0ba8678575c4a8f56fa4b/oils-for-unix.tar"
 
-#   rm -f -v _tmp/oils-for-unix.tar
+  rm -f -v _tmp/oils-for-unix.tar
 
-#   #wget --no-clobber --directory-prefix _tmp "$url"
-#   wget --directory-prefix _tmp "$url"
-# }
+  #wget --no-clobber --directory-prefix _tmp "$url"
+  wget --directory-prefix _tmp "$url"
+}
 
 # make-chroot() {
 #   local aci='../alpine-chroot-install/alpine-chroot-install'
@@ -150,33 +152,22 @@
 #   time sudo $aci -n -d $PWD/$CHROOT_DIR -b $branch
 # }
 
-# make-user() {
-#   enter-rootfs adduser -D udu || true
+proc make-user() {
+  exec-chroot "useradd -m -s /bin/bash udu" 
 
-#   # put it in abuild group
-#   enter-rootfs addgroup udu abuild || true
-#   # 'wheel' is for 'sudo'
-#   enter-rootfs addgroup udu wheel || true
+  # 'wheel' is for 'sudo'
+  exec-chroot "groupadd -f wheel"
+  exec-chroot "adduser udu wheel"
+}
 
-#   # CHeck the state
-#   enter-rootfs-user sh -c 'whoami; echo GROUPS; groups'
-# }
+proc setup-doas() {
+  #sudo cat _chroot/aports-build/etc/doas.conf
+  sudo rm -f $CHROOT_DIR/etc/doas.conf
 
-# setup-doas() {
-#   # Manual configuration for abuild-keygen
+  # no password
+  exec-chroot u'echo "permit nopass :wheel" >> /etc/doas.conf'
+}
 
-#   #sudo cat _chroot/aports-build/etc/doas.conf
-#   sudo rm -f $CHROOT_DIR/etc/doas.conf
-
-#   # no password
-#   enter-rootfs sh -c 'echo "permit nopass :wheel" >> /etc/doas.conf'
-# }
-
-# config-chroot() {
-#   make-user
-#   setup-doas
-#   keygen
-# }
 
 # add-build-deps() {
 #   # Must be done as root; there is no 'sudo'
@@ -196,14 +187,13 @@
 #   # enter-rootfs -u udu bash -c 'echo "hi from bash"'
 # }
 
-# change-perms() {
-#   # pass any number of args
+proc change-perms(path) {
+  # pass any number of args
 
-#   # get uid from /home/udu
-#   local uid
-#   uid=$(stat -c '%u' $CHROOT_HOME_DIR)
-#   sudo chown --verbose --recursive $uid "$@"
-# }
+  # get uid from /home/udu
+  var uid=$(stat -c '%u' $CHROOT_HOME_DIR)
+  sudo chown --verbose --recursive $uid $path
+}
 
 # copy-aports() {
 #   # 'main' and 'community' are two "Alpine repos" stored the 'aports' git repo
@@ -296,28 +286,27 @@
 #   '
 # }
 
-# oils-in-chroot() {
-#   copy-aports
+proc oils-in-chroot() {
+  # copy-aports
 
-#   patch-yash-to-disable-tests
+  # patch-yash-to-disable-tests
 
-#   copy-code
-#   test-time-tsv
+  # copy-code
+  # test-time-tsv
+  copy-oils
+  build-oils
+}
 
-#   copy-oils
-#   build-oils
-# }
+proc copy-oils() {
+  var dest=CHROOT_HOME_DIR
 
-# copy-oils() {
-#   local dest=$CHROOT_HOME_DIR
+  var tar=$(pwd) ++ '/_tmp/oils-for-unix.tar'
+  pushd $dest
+  sudo tar -x < $tar
+  popd
 
-#   local tar=$PWD/_tmp/oils-for-unix.tar
-#   pushd $dest
-#   sudo tar -x < $tar
-#   popd
-
-#   change-perms $dest/oils-for-unix-*
-# }
+  change-perms "$dest/oils-for-unix-0.37.0"
+}
 
 # keygen() {
 #   enter-rootfs-user sh -c '
@@ -342,47 +331,46 @@
 #   wc -l _tmp/apk-*-manifest.txt
 # }
 
-# build-oils() {
-#   enter-rootfs-user sh -c '
-#   cd oils-for-unix-*
-#   ./configure
-#   _build/oils.sh  # do not --skip-rebuild
-#   doas ./install
-#   '
-# }
+build-oils() {
+  exec-chroot-user 'cd oils-for-unix-*
+  ./configure
+  _build/oils.sh  # do not --skip-rebuild
+  doas ./install
+  '
+}
 
-# create-osh-overlay() {
-#   # _chroot/
-#   #   aports-build/  # chroot image
-#   #   osh-as-sh.overlay/     # overlay
-#   #     merged/      # permanently mounted
-#   #     work/
-#   #     layer/       # has the OSH symlink
+proc create-osh-overlay() {
+  # _debian_chroot/
+  #   debian-build/  # chroot image
+  #   osh-as-sh.overlay/     # overlay
+  #     merged/      # permanently mounted
+  #     work/
+  #     layer/       # has the OSH symlink
 
-#   local osh_overlay=_chroot/osh-as-sh.overlay
+  var osh_overlay='_debian_chroot/osh-as-sh.overlay'
 
-#   mkdir -v -p $osh_overlay/{merged,work,layer}
+  mkdir -v -p $osh_overlay/{merged,work,layer}
 
-#   # -o index=off fixes this error: fsconfig() failed: Stale file handle
-#   # See also https://oilshell.zulipchat.com/#narrow/channel/522730-distros/topic/setting.20up.20regtest.2Faports-setup.2Esh/with/544318771
-#   sudo mount \
-#     -t overlay \
-#     osh-as-sh \
-#     -o index=off \
-#     -o "lowerdir=$CHROOT_DIR,upperdir=$osh_overlay/layer,workdir=$osh_overlay/work" \
-#     $osh_overlay/merged
+  # -o index=off fixes this error: fsconfig() failed: Stale file handle
+  # See also https://oilshell.zulipchat.com/#narrow/channel/522730-distros/topic/setting.20up.20regtest.2Faports-setup.2Esh/with/544318771
+  sudo mount \
+    -t overlay \
+    osh-as-sh \
+    -o index=off \
+    -o "lowerdir=$CHROOT_DIR,upperdir=$osh_overlay/layer,workdir=$osh_overlay/work" \
+    $osh_overlay/merged
 
-#   $osh_overlay/merged/enter-chroot sh -c '
-#   set -x
-#   if ! test -f /usr/local/bin/oils-for-unix; then
-#     echo "Build Oils first"
-#     exit
-#   fi
-#   ln -s -f /usr/local/bin/oils-for-unix /bin/sh
-#   ln -s -f /usr/local/bin/oils-for-unix /bin/ash
-#   ln -s -f /usr/local/bin/oils-for-unix /bin/bash
-#   ' dummy0
-# }
+  exec-chroot-osh '
+  set -x
+  if ! test -f /usr/local/bin/oils-for-unix; then
+    echo "Build Oils first"
+    exit
+  fi
+  ln -s -f /usr/local/bin/oils-for-unix /bin/sh
+  ln -s -f /usr/local/bin/oils-for-unix /bin/dash
+  ln -s -f /usr/local/bin/oils-for-unix /bin/bash
+  '
+}
 
 # # Works?
 # patch-overlay-with-ash() {
@@ -393,11 +381,11 @@
 #   ls -l $dir/layer/bin
 # }
 
-# remove-osh-overlay() {
-#   local dir=_chroot/osh-as-sh.overlay
-#   sudo umount -l $dir/merged
-#   sudo rm -r -f $dir
-# }
+proc remove-osh-overlay() {
+  var dir='_debian_chroot/osh-as-sh.overlay'
+  sudo umount $dir/merged
+  sudo rm -r -f $dir
+}
 
 # remove-shard-layers() {
 #   sudo rm -r -f _chroot/shard*
@@ -422,9 +410,6 @@
 #   sudo tar --verbose -x --directory $CHROOT_DIR/var/cache/distfiles < $tar
 # }
 
-# show-distfiles() {
-#   ls -l $CHROOT_DIR/var/cache/distfiles
-# }
 
 # _install-hook() {
 #   local bwrap=${1:-}
@@ -459,26 +444,26 @@
 #   sudo $0 _install-enter-bwrap "$@"
 # }
 
-remove-all() {
+. regtest/debian-common.ysh
+
+proc remove-all() {
   set -x
-  remove-chroot || true
-#   remove-osh-overlay || true
+  remove-chroot 
+  remove-osh-overlay
 #   remove-shard-layers || true
 }
 
 proc remove-chroot() {
-  var chroot = $(pwd) ++ "/_debian_chroot"
-
   try {
-      sudo umount -R $chroot 2>/dev/null
+      sudo umount -R $CHROOT_DIR 2>/dev/null
   }
-  sudo rm -rf $chroot  
+  sudo rm -rf $CHROOT_DIR  
 }
 
 proc clone-debootstrap() {
   var dir = '../debianlinux'
-
   mkdir -p $dir
+  rm -rf "$dir/debootstrap"
   pushd $dir
 
   # Took 1m 13s, at 27 MiB /ssec
@@ -490,26 +475,42 @@ proc clone-debootstrap() {
 
 proc make-chroot() {
   var dir = '../debianlinux/debootstrap'
-  var chroot = $(pwd) ++ "/_debian_chroot"
   pushd $dir
   var debootstrap_dir = $(pwd)
 
   # This takes about 1m20s
   # need to pass --arch, automatic detection doesnt work on non-debian systems
-  sudo DEBOOTSTRAP_DIR=$debootstrap_dir ./debootstrap --arch=amd64 stable $chroot http://deb.debian.org/debian/
+  sudo DEBOOTSTRAP_DIR=$debootstrap_dir ./debootstrap --arch=amd64 stable $CHROOT_DIR http://deb.debian.org/debian/
   popd
 }
 
+proc exec-chroot(cmd) {
+  sudo chroot $CHROOT_DIR /bin/bash -l -c $cmd
+}
+
+proc exec-chroot-osh(cmd) {
+  sudo chroot $DEBIAN_ROOT/osh-as-sh.overlay/merged /bin/bash -l -c $cmd  
+}
+
+proc exec-chroot-user(cmd) {
+  sudo chroot $CHROOT_DIR su -l udu -c $cmd
+}
+
 proc add-build-deps() {
-  var chroot = $(pwd) ++ "/_debian_chroot"
   # takes around 2 minutes
-  sudo chroot $chroot /bin/bash -c "apt-get update; apt-get install dpkg-dev build-essential devscripts fakeroot apt-utils -y" 
+  exec-chroot "apt-get update; apt-get install doas dpkg-dev build-essential devscripts fakeroot apt-utils -y" 
+}
+
+proc config-chroot() {
+  exec-chroot 'echo "deb-src http://deb.debian.org/debian stable main" >> /etc/apt/sources.list'
+  make-user
+  setup-doas
 }
 
 proc fetch-all() {
   clone-debootstrap
 
-  # download-oils "$tarball_id"
+  download-oils 
 }
 
 proc prepare-all() {
@@ -523,12 +524,13 @@ proc prepare-all() {
 
   add-build-deps
 
-  # config-chroot -> add debsrc to /etc/apt/sources.list
-  #               -> mount /proc, maybe more
+  # TODO: mount /proc etc?
+  config-chroot 
 
-  # oils-in-chroot  
+  # TODO: implement enter-rootfs-user
+  oils-in-chroot  
 
-  # create-osh-overlay
+  create-osh-overlay
 
   # # makes a host file
   # apk-manifest
