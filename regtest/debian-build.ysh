@@ -1,0 +1,68 @@
+#!bin/ysh
+
+. regtest/debian-common.ysh
+
+proc create-package-layer(package) {
+    mkdir -p $DEBIAN_ROOT/package-overlays
+    var package_layer_dir = "$DEBIAN_ROOT/package-overlays/$package.overlay"
+    rm -rf $package_layer_dir
+    mkdir -v -p $package_layer_dir/{merged,work,layer}
+}
+
+proc remove-package-layer(package) {
+    var dir=DEBIAN_ROOT ++ '/package-overlays/' ++ package ++ '.overlay'
+    sudo umount $dir/merged || true
+    sudo rm -rf $dir
+}
+
+proc setup-package-layer(package, base) {
+    var package_dir = "$DEBIAN_ROOT/package-overlays/$package.overlay"
+    var lower_dir = ''
+    if(base === 'baseline') {
+        setvar lower_dir = CHROOT_DIR
+    } elif (base === 'osh-as-sh') {
+        setvar lower_dir=DEBIAN_ROOT ++ '/osh-as-sh.overlay/merged'
+    } else {
+        echo "Error: $base is not a valid option"
+        return 1
+    }
+    # -o index=off fixes this error: fsconfig() failed: Stale file handle
+    # See also https://oilshell.zulipchat.com/#narrow/channel/522730-distros/topic/setting.20up.20regtest.2Faports-setup.2Esh/with/544318771
+    sudo mount \
+      -t overlay \
+      $package-layer \
+      -o index=off \
+      -o "lowerdir=$lower_dir,upperdir=$package_dir/layer,workdir=$package_dir/work" \
+      $package_dir/merged
+}
+
+proc enter-package-layer(package, cmd) {
+  sudo chroot $DEBIAN_ROOT/package-overlays/$package.overlay/merged /bin/bash -l -c $cmd   
+}
+
+proc build-package(package) {
+    var cd='cd /home/udu;'
+    enter-package-layer $package "apt-get update"
+    enter-package-layer $package "$cd apt-get source $package"
+    enter-package-layer $package "$cd cd $package-*; apt-get build-dep -y $package; dpkg-buildpackage -us -uc -b"
+}
+
+proc osh-package-build(package) {
+    try {
+        remove-package-layer $package
+    }
+    create-package-layer $package
+    setup-package-layer $package osh-as-sh
+    build-package $package
+}
+proc baseline-package-build(package) {
+    try {
+        remove-package-layer $package
+    }
+    create-package-layer $package
+    setup-package-layer $package baseline
+    build-package $package
+}
+
+
+runproc @ARGV

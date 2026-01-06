@@ -1,0 +1,222 @@
+#!bin/ysh
+
+#
+# Set up Debian Linux chroot.  See regtest/aports.md
+#
+# Usage:
+#   regtest/aports-setup.sh <function name>
+
+proc download-oils() {
+  var tarball_id=${1:-$TARBALL_ID}
+
+  # var url="https://op.oilshell.org/uuu/github-jobs/$tarball_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
+  var url="https://op.oilshell.org/code/github-jobs/git-fd65318bebefcacf83f0ba8678575c4a8f56fa4b/oils-for-unix.tar"
+
+  rm -f -v _tmp/oils-for-unix.tar
+
+  #wget --no-clobber --directory-prefix _tmp "$url"
+  wget --directory-prefix _tmp "$url"
+}
+
+proc make-user() {
+  exec-chroot "useradd -m -s /bin/bash udu" 
+
+  # 'wheel' is for 'sudo'
+  exec-chroot "groupadd -f wheel"
+  exec-chroot "adduser udu wheel"
+}
+
+proc setup-doas() {
+  sudo rm -f $CHROOT_DIR/etc/doas.conf
+
+  # no password
+  exec-chroot u'echo "permit nopass :wheel" >> /etc/doas.conf'
+}
+
+proc change-perms(path) {
+  # pass any number of args
+
+  # get uid from /home/udu
+  var uid=$(stat -c '%u' $CHROOT_HOME_DIR)
+  sudo chown --verbose --recursive $uid $path
+}
+
+# test-time-tsv() {
+#   enter-rootfs-user sh -c '
+#   cd oils
+#   pwd
+#   whoami
+#   echo ---
+
+#   build/py.sh time-helper
+#   regtest/aports-guest.sh my-time-tsv-test
+#   '
+# }
+
+proc oils-in-chroot() {
+  # test-time-tsv
+  copy-oils
+  build-oils
+}
+
+proc copy-oils() {
+  var dest=CHROOT_HOME_DIR
+
+  var tar=$(pwd) ++ '/_tmp/oils-for-unix.tar'
+  pushd $dest
+  sudo tar -x < $tar
+  popd
+
+  change-perms "$dest/oils-for-unix-0.37.0"
+}
+
+proc build-oils() {
+  exec-chroot-user 'cd oils-for-unix-*
+  ./configure
+  _build/oils.sh  # do not --skip-rebuild
+  doas ./install
+  '
+}
+
+proc create-osh-overlay() {
+  # _debian_chroot/
+  #   debian-build/  # chroot image
+  #   osh-as-sh.overlay/     # overlay
+  #     merged/      # permanently mounted
+  #     work/
+  #     layer/       # has the OSH symlink
+
+
+  var osh_overlay=DEBIAN_ROOT ++ '/osh-as-sh.overlay'
+
+  mkdir -v -p $osh_overlay/{merged,work,layer}
+  cp regtest/sh_wrapper.sh $osh_overlay/layer/sh_wrapper.sh
+  chmod +x $osh_overlay/layer/sh_wrapper.sh
+
+  # -o index=off fixes this error: fsconfig() failed: Stale file handle
+  # See also https://oilshell.zulipchat.com/#narrow/channel/522730-distros/topic/setting.20up.20regtest.2Faports-setup.2Esh/with/544318771
+  sudo mount \
+    -t overlay \
+    osh-as-sh \
+    -o index=off \
+    -o "lowerdir=$CHROOT_DIR,upperdir=$osh_overlay/layer,workdir=$osh_overlay/work" \
+    $osh_overlay/merged
+
+  exec-chroot-osh '
+  set -x
+  if ! test -f /usr/local/bin/oils-for-unix; then
+    echo "Build Oils first"
+    exit
+  fi
+  ln -s -f /sh_wrapper.sh /bin/sh
+  ln -s -f /usr/local/bin/oils-for-unix /bin/dash
+  ln -s -f /usr/local/bin/oils-for-unix /bin/bash
+  '
+}
+
+proc remove-osh-overlay() {
+  var dir='_debian_chroot/osh-as-sh.overlay'
+  sudo umount $dir/merged || true
+  sudo rm -r -f $dir
+}
+
+# remove-shard-layers() {
+#   sudo rm -r -f _chroot/shard*
+# }
+
+# make-distfiles-tar() {
+#   local a_repo=$1  # 'main' or 'community'
+
+#   local tar=_chroot/distfiles-${a_repo}.tar
+#   tar --create --file $tar --directory $CHROOT_DIR/var/cache/distfiles .
+
+#   tar --list < $tar
+#   echo
+#   ls -l --si $tar
+#   echo
+# }
+
+# unpack-distfiles() {
+#   local a_repo=$1  # 'main' or 'community'
+
+#   local tar=_chroot/distfiles-${a_repo}.tar
+#   sudo tar --verbose -x --directory $CHROOT_DIR/var/cache/distfiles < $tar
+# }
+
+. regtest/debian-common.ysh
+
+proc remove-all() {
+  set -x
+  remove-chroot 
+  remove-osh-overlay
+#   remove-shard-layers || true
+}
+
+proc remove-chroot() {
+  try {
+      sudo umount -R $CHROOT_DIR 2>/dev/null
+  }
+  sudo rm -rf $CHROOT_DIR  
+}
+
+proc clone-debootstrap() {
+  var dir = '../debianlinux'
+  mkdir -p $dir
+  rm -rf "$dir/debootstrap"
+  pushd $dir
+
+  # Took 1m 13s, at 27 MiB /ssec
+  git clone \
+    https://salsa.debian.org/installer-team/debootstrap.git
+
+  popd
+}
+
+proc make-chroot() {
+  var dir = '../debianlinux/debootstrap'
+  pushd $dir
+  var debootstrap_dir = $(pwd)
+
+  # This takes about 1m20s
+  # need to pass --arch, automatic detection doesnt work on non-debian systems
+  sudo DEBOOTSTRAP_DIR=$debootstrap_dir ./debootstrap --arch=amd64 stable $CHROOT_DIR http://deb.debian.org/debian/
+  popd
+}
+
+proc add-build-deps() {
+  # takes around 2 minutes
+  exec-chroot "apt-get update; apt-get install doas dpkg-dev build-essential devscripts fakeroot apt-utils -y" 
+}
+
+proc config-chroot() {
+  exec-chroot 'echo "deb-src http://deb.debian.org/debian stable main" >> /etc/apt/sources.list'
+  exec-chroot 'apt-get update' # else apt still doesnt know we added the deb-src line
+  make-user
+  setup-doas
+}
+
+proc fetch-all() {
+  # Download the resources required for setting up a new chroot
+  clone-debootstrap
+
+  download-oils 
+}
+
+proc prepare-all() {
+  # Create a new chroot environment and set it up from scratch
+  make-chroot
+
+  add-build-deps
+
+  # TODO: mount /proc etc?
+  config-chroot 
+
+  oils-in-chroot  
+
+  create-osh-overlay
+
+  # # makes a host file
+  # apk-manifest
+}
+
+runproc @ARGV

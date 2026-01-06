@@ -33,6 +33,8 @@ tags
 # Our own temp dirs
 _bin/
 _build/
+_debian_chroot/
+_debian_build/
 _chroot/
 _devbuild/
 _gen
