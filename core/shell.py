@@ -152,7 +152,7 @@ def SourceStartupFile(
     # Bash also has --login.
 
     try:
-        f = fd_state.Open(rc_path)
+        f, fd = fd_state.Open(rc_path, persistent=True)
     except (IOError, OSError) as e:
         # TODO: Could warn about nonexistent explicit --rcfile?
         if e.errno != ENOENT:
@@ -160,7 +160,10 @@ def SourceStartupFile(
         return
 
     arena = parse_ctx.arena
-    rc_line_reader = reader.FileLineReader(f, arena)
+    file_line_reader = reader.FileLineReader(f, arena)
+    rc_line_reader = file_line_reader
+    fd_state.SetCallback(fd, file_line_reader)
+
     rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
 
     with alloc.ctx_SourceCode(arena, source.MainFile(rc_path)):
@@ -1074,12 +1077,14 @@ def Main(
         else:
             src = source.MainFile(script_name)
             try:
-                f = fd_state.Open(script_name)
+                f, fd = fd_state.Open(script_name, persistent=True)
             except (IOError, OSError) as e:
                 print_stderr("%s: Couldn't open %r: %s" %
                              (lang, script_name, posix.strerror(e.errno)))
                 return 1
-            line_reader = reader.FileLineReader(f, arena)
+            file_line_reader = reader.FileLineReader(f, arena)
+            line_reader = file_line_reader
+            fd_state.SetCallback(fd, file_line_reader)
 
     # Pretend it came from somewhere else
     if flag.location_str is not None:
