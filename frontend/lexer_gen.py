@@ -271,39 +271,6 @@ static inline int %s(const unsigned char* s, int len) {
 """)
 
 
-def StringToInt(func_name, name_def):
-    print(r"""
-static inline void %s(const unsigned char* s, int len, int* id) {
-  const unsigned char* p = s;  /* modified by re2c */
-  const unsigned char* end = s + len;
-
-  //fprintf(stderr, "*** s = %%s\n", s);
-
-  for (;;) {
-    /*!re2c
-""" % func_name)
-
-    for name, enum in name_def:
-        re2c_pat = TranslateConstant(name)
-        print('      %-30s { *id = %s; break; }' % (re2c_pat, enum))
-
-    # Not found.  * matches anything else.
-    print('      %-30s { *id = 0; return; }' % \
-        r'*')
-
-    print(r"""
-    */
-  }
-  if (p != end) {
-    //fprintf(stderr, "EXTRA CHARS\n", s);
-    *id = 0;  // Not an exact match
-  }
-}
-""")
-
-    # TODO: Check that we're at the END OF THE STRING
-
-
 def TranslateOshLexer(lexer_def):
     # https://stackoverflow.com/questions/12836171/difference-between-an-inline-function-and-static-inline-function
     # Has to be 'static inline' rather than 'inline', otherwise the
