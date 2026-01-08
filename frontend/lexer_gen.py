@@ -378,8 +378,6 @@ static inline int %s(const unsigned char* s, int len) {
   __attribute__((unused)) const unsigned char* YYMARKER;
 
   /*!re2c
-  re2c:define:YYCTYPE = "unsigned char";
-  re2c:define:YYCURSOR = p;
   %-30s { return p == end; }  // Match must be anchored right, like $
   *     { return 0; }
   */
