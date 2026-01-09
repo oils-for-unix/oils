@@ -8,7 +8,7 @@ set -o errexit
 
 # sourced
 WEDGE_NAME='re2c'
-WEDGE_VERSION='3.0'
+WEDGE_VERSION='4.3.1'
 WEDGE_IS_ABSOLUTE=1  # TODO: consider relaxing
 
 wedge-make() {

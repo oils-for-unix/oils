@@ -18,8 +18,8 @@ COPY --chown=uke \
   /home/uke/oils.DEPS/wedge/cmark/0.29.0
 
 COPY --chown=uke \
-  _build/boxed/wedge/re2c/3.0 \
-  /home/uke/oils.DEPS/wedge/re2c/3.0
+  _build/boxed/wedge/re2c/4.3.1 \
+  /home/uke/oils.DEPS/wedge/re2c/4.3.1
 
 COPY --chown=uke \
   _build/boxed/wedge/python3/3.10.4 \
@@ -27,7 +27,7 @@ COPY --chown=uke \
 
 # Put python3 in PATH before running install-py3-libs
 RUN mkdir -p /home/uke/oils.DEPS/bin && \
-    ln -s --relative /home/uke/oils.DEPS/wedge/re2c/3.0/bin/re2c /home/uke/oils.DEPS/bin && \
+    ln -s --relative /home/uke/oils.DEPS/wedge/re2c/4.3.1/bin/re2c /home/uke/oils.DEPS/bin && \
     ln -s --relative /home/uke/oils.DEPS/wedge/python3/3.10.4/bin/python3 /home/uke/oils.DEPS/bin
 
 # Copy _build/deps-source -> /home/uke/wedge for now.

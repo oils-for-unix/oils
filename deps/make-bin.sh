@@ -18,7 +18,7 @@ link-relative() {
 
 re2c() {
   local deps_dir=$1
-  link-relative $deps_dir/wedge/re2c/3.0/bin/re2c $deps_dir/bin 
+  link-relative $deps_dir/wedge/re2c/4.3.1/bin/re2c $deps_dir/bin
 }
 
 python2() {
