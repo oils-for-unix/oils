@@ -283,7 +283,7 @@ class ParseCommand(vm._Callable):
         rd.Done()
 
         line_reader = reader.StringLineReader(code_str, self.parse_ctx.arena)
-        c_parser = self.parse_ctx.MakeOshParser(line_reader)
+        c_parser = self.parse_ctx.MakeOshParser(line_reader, False)
 
         # TODO: it would be nice to point to the location of the expression
         # argument
