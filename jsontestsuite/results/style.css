@@ -1,0 +1,89 @@
+body {
+}
+
+/*
+.verticalTableHeader {
+	text-align:center;
+	white-space:nowrap;
+	transform-origin:50% 50%;
+	-webkit-transform: rotate(-90deg);
+	-moz-transform: rotate(-90deg);
+	-ms-transform: rotate(-90deg);
+	-o-transform: rotate(-90deg);
+	transform: rotate(-90deg);
+
+}
+
+.verticalTableHeader:before {
+	content:'';
+	padding-top:110%;
+	display:inline-block;
+	vertical-align:middle;
+}
+*/
+
+table {
+	border-collapse: collapse;
+	font-family: monospace;
+	font-size: 12px;
+}
+/*
+table, td, th {
+	border: 1px solid black;
+}
+*/
+th.vertical {
+    /* Something you can count on */
+    height: 240px;
+    white-space: nowrap;
+}
+ 
+th.vertical > div {
+    transform: 
+        translate(0px, 105px)
+        rotate(270deg); /* 360 - 90 */
+    width: 16px;
+}
+
+th.space > div {
+    width: 16px;
+}
+
+/*
+ colors from https://www.pinterest.com/pin/479000110340670725/
+ */
+
+.EXPECTED_RESULT {
+	border: 1px solid black;
+	background-color: #CCFFCC;
+}
+
+.SHOULD_HAVE_FAILED {
+	border: 1px solid black;
+	background-color: #FFCC33;
+}
+
+.SHOULD_HAVE_PASSED {
+	border: 1px solid black;
+	background-color: #CC6600;
+}
+
+.CRASH {
+	border: 1px solid black;
+	background-color: #FF3333;
+}
+
+.TIMEOUT {
+	border: 1px solid black;
+	background-color: #666666;
+}
+
+.IMPLEMENTATION_PASS {
+	border: 1px solid black;
+	background-color: #66CCFF;
+}
+
+.IMPLEMENTATION_FAIL {
+	border: 1px solid black;
+	background-color: #0066FF;
+}
