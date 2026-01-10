@@ -191,7 +191,8 @@ FC_SPEC.ShortFlag('-r')
 # osh/builtin_process.py
 #
 
-EXEC_SPEC = FlagSpec('exec')
+EXEC_SPEC = FlagSpec('exec_')
+EXEC_SPEC.ShortFlag('-a', args.String)
 
 WAIT_SPEC = FlagSpec('wait')
 WAIT_SPEC.ShortFlag('-n')

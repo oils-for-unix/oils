@@ -226,7 +226,8 @@ class Exec(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_util.ParseCmdVal('exec', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('exec_', cmd_val)
+        arg = arg_types.exec_(attrs.attrs)
 
         # Apply redirects in this shell.  # NOTE: Redirects were processed earlier.
         if arg_r.AtEnd():
@@ -245,7 +246,11 @@ class Exec(vm._Builtin):
             e_die_status(127, 'exec: %r not found' % cmd, cmd_val.arg_locs[1])
 
         # shift off 'exec', and remove typed args because they don't apply
-        c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:],
+        c2_argv = cmd_val.argv[i:]
+        if arg.a is not None:
+            c2_argv = [arg.a] + cmd_val.argv[i+1:]
+
+        c2 = cmd_value.Argv(c2_argv, cmd_val.arg_locs[i:],
                             cmd_val.is_last_cmd, cmd_val.self_obj, None)
 
         self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
