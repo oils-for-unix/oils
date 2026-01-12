@@ -246,9 +246,11 @@ class Exec(vm._Builtin):
             e_die_status(127, 'exec: %r not found' % cmd, cmd_val.arg_locs[1])
 
         # shift off 'exec', and remove typed args because they don't apply
-        c2_argv = cmd_val.argv[i:]
         if arg.a is not None:
-            c2_argv = [arg.a] + cmd_val.argv[i+1:]
+            c2_argv = [arg.a]
+            c2_argv.extend(cmd_val.argv[i+1:])
+        else:
+            c2_argv = cmd_val.argv[i:]
 
         c2 = cmd_value.Argv(c2_argv, cmd_val.arg_locs[i:],
                             cmd_val.is_last_cmd, cmd_val.self_obj, None)
