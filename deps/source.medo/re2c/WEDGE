@@ -21,10 +21,20 @@ wedge-make() {
   $src_dir/configure --help
   echo
 
-  # This makes it smaller and faster!  Only 30 seconds
+  # Disable everything except C and Rust: https://re2c.org/build/build.html
   time $src_dir/configure \
     --prefix=$install_dir \
-    --disable-golang --disable-rust
+    --enable-dlang=no \
+    --enable-golang=no \
+    --enable-haskell=no \
+    --enable-java=no \
+    --enable-js=no \
+    --enable-ocaml=no \
+    --enable-python=no \
+    --enable-swift=no \
+    --enable-vlang=no \
+    --enable-zig=no
+
   echo
 
   time make
