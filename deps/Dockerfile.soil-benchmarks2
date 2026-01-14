@@ -1,4 +1,4 @@
-FROM oilshell/soil-debian-12
+FROM ghcr.io/oils-for-unix/soil-debian-12
 
 # Copy again to prevent unsound caching
 COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
@@ -29,4 +29,4 @@ COPY --chown=uke \
 RUN mkdir -p /home/uke/oils.DEPS/bin && \
     ln -s --relative /home/uke/oils.DEPS/wedge/uftrace/0.13/bin/uftrace /home/uke/oils.DEPS/bin
 
-CMD ["sh", "-c", "echo 'hello from oilshell/soil-debian-12'"]
+CMD ["sh", "-c", "echo 'hello from ghcr.io/oils-for-unix/soil-debian-12'"]
