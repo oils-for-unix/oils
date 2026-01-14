@@ -24,15 +24,25 @@ live-image-tag() {
   ### image ID -> Docker tag name
   local image_id=$1
 
-  # ghcr.io migration
-  echo 'v-2025-12-21'
 
-  return
-
-  #
-  # UNUSED
-  #
   case $image_id in
+    dummy)
+      # re2c to version 4.3.1
+      echo 'v-2026-01-13'
+      ;;
+    app-tests|benchmarks|clang|cpp-small|cpp-spec|ovm-tarball|wild)
+      # re2c to version 4.3.1
+      echo 'v-2026-01-13'
+      ;;
+    *)
+      # ghcr.io migration
+      echo 'v-2025-12-21'
+      ;;
+
+    #
+    # UNUSED
+    #
+
     app-tests)
       # wedges 2025
       echo 'v-2025-10-28'
@@ -79,10 +89,6 @@ live-image-tag() {
       echo 'v-2025-10-28'
       ;;
     dev-minimal)
-      # wedges 2025
-      echo 'v-2025-10-28'
-      ;;
-    dummy)
       # wedges 2025
       echo 'v-2025-10-28'
       ;;

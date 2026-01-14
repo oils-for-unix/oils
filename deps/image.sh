@@ -19,8 +19,10 @@
 #
 # (3) Build wedges
 #
-#     build/deps.sh fetch
-#     build/deps.sh boxed-wedges-2025
+#     build/deps.sh fetch                   # tarballs
+#     deps/from-binary.sh download-clang    # needed for soil-clang image
+#     deps/from-tar.sh download-wild        # needed for soil-wild image
+#     build/deps.sh boxed-wedges-2025 soil  # soil wedges, not just contrib
 #
 # (4) Rebuild an image
 #
@@ -70,7 +72,7 @@ case $DOCKER in
     ;;
 esac
 
-readonly LATEST_TAG='v-2025-12-21'  # docker.io -> ghcr.io migraiton
+readonly LATEST_TAG='v-2026-01-13'  # rebuild with re2c 4.3.1 and ghcr.io
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'
@@ -119,13 +121,13 @@ list() {
 
 list-tagged() {
   "${docker_prefix[@]}" \
-    images 'oilshell/*' #:v-*'
+    images 'oils-for-unix/*' #:v-*'
 }
 
 _latest-one() {
   local name=$1
   "${docker_prefix[@]}" \
-    images "oilshell/$name" | head -n 3
+    images "oils-for-unix/$name" | head -n 3
 }
 
 #
@@ -201,7 +203,7 @@ tag-latest() {
 
   set -x  # 'docker tag' is annoyingly silent
   "${docker_prefix[@]}" \
-    tag oilshell/$name:{$tag_built_with,latest}
+    tag ghcr.io/oils-for-unix/$name:{$tag_built_with,latest}
 }
 
 build() {
@@ -231,32 +233,31 @@ build() {
   #sudo --preserve-env=CONTAINERS_REGISTRIES_CONF --preserve-env=REGISTRY_AUTH_FILE \
   "${docker_prefix[@]}" \
     build "${flags[@]}" \
-    --tag "oilshell/$name:$LATEST_TAG" \
+    --tag "ghcr.io/oils-for-unix/$name:$LATEST_TAG" \
     --file deps/Dockerfile.$name .
 
   # Avoid hassle by also tagging it
   tag-latest $name
 }
 
+build-many() {
+  for name in "$@"; do
+    build $name T  # use caching
+  done
+}
+
 push() {
   local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
 
-  # TODO: replace with flags
-  #export-podman
-
-  local image="oilshell/$name:$tag"
+  local image="ghcr.io/oils-for-unix/$name"
 
   set -x
 
-  # -E for export-podman vars
-  "${docker_prefix[@]}" \
-    push $image
-  #sudo -E $DOCKER --log-level=debug push $image
+  "${docker_prefix[@]}" push "$image:$tag"
 
   # Also push the 'latest' tag, to avoid getting out of sync
-  "${docker_prefix[@]}" \
-    push oilshell/$name:latest
+  "${docker_prefix[@]}" push "$image:latest"
 }
 
 push-many() {
@@ -484,7 +485,7 @@ _smoke() {
 
   $docker run "${flags[@]}" \
     --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
-    oilshell/$name:$tag "${argv[@]}"
+    oils-for-unix/$name:$tag "${argv[@]}"
 }
 
 smoke() {
@@ -507,7 +508,7 @@ smoke-podman() {
 
   local tag='latest'
   local prefix='docker.io/'
-  smoke-test-script | podman run -i ${prefix}oilshell/soil-$name:$tag bash
+  smoke-test-script | podman run -i ${prefix}oils-for-unix/soil-$name:$tag bash
 }
 
 cmd() {
@@ -517,7 +518,7 @@ cmd() {
 
   shift 2
 
-  sudo $DOCKER run oilshell/$name:$tag "$@"
+  sudo $DOCKER run oils-for-unix/$name:$tag "$@"
 }
 
 utf8() {
@@ -538,14 +539,14 @@ mount-test() {
   # mount 'oil' directory as /app.  TODO: Oils
   sudo $DOCKER run \
     --mount "type=bind,source=$PWD,target=/home/uke/oil" \
-    oilshell/$name "${argv[@]}"
+    oils-for-unix/$name "${argv[@]}"
 }
 
 image-history() {
   local image_id=${1:-soil-dummy}
   local tag=${2:-latest}
 
-  local image="oilshell/$image_id"
+  local image="oils-for-unix/$image_id"
 
   sudo $DOCKER history $image:$tag
 }
@@ -554,7 +555,7 @@ save() {
   local image_id=${1:-soil-dummy}
   local tag=${2:-latest}
 
-  local image="oilshell/$image_id"
+  local image="oils-for-unix/$image_id"
 
   mkdir -p _tmp/images
   local out=_tmp/images/$image_id.tar 
@@ -576,7 +577,7 @@ layers() {
   local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
 
-  local image="oilshell/$name:$tag"
+  local image="oils-for-unix/$name:$tag"
 
   # Gah this still prints 237M, not the exact number of bytes!
   # --format ' {{ .Size }} ' 

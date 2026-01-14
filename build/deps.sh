@@ -1365,7 +1365,7 @@ _boxed-wedges-2025() {
   local which_wedges=${1:-contrib}  # contrib | soil | smoke
 
   # deps/wedge.sh reads this
-  export DOCKER=${2:-docker}
+  export DOCKER=${2:-podman}
 
   # For contributor setup: we need to use this BEFORE running build/py.sh all
   #build/py.sh time-helper
