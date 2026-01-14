@@ -19,8 +19,8 @@ COPY --chown=uke \
   /home/uke/oils.DEPS/wedge/cmark/0.29.0
 
 COPY --chown=uke \
-  _build/boxed/wedge/re2c/3.0 \
-  /home/uke/oils.DEPS/wedge/re2c/3.0
+  _build/boxed/wedge/re2c/4.3.1 \
+  /home/uke/oils.DEPS/wedge/re2c/4.3.1
 
 # Shells for spec tests
 

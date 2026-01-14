@@ -44,7 +44,7 @@ mkdir -p $WEDGE_2025_DIR
 
 readonly DEPS_SOURCE_DIR=_build/deps-source
 
-readonly RE2C_VERSION=3.0
+readonly RE2C_VERSION=4.3.1
 readonly RE2C_URL="https://github.com/skvadrik/re2c/releases/download/$RE2C_VERSION/re2c-$RE2C_VERSION.tar.xz"
 
 readonly CMARK_VERSION=0.29.0
