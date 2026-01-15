@@ -115,3 +115,8 @@ status=0
 141
 ## END
 
+#### sh -c -- *args* doesnt work with osh (#2637)
+$SH -c -- echo hi
+## STDOUT:
+
+## END
