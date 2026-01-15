@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 # This file relates to:
 #
@@ -115,3 +115,8 @@ status=0
 141
 ## END
 
+#### sh -c -- *args* doesnt work with osh (#2637)
+$SH -c -- echo hi
+## STDOUT:
+
+## END
