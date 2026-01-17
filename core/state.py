@@ -31,8 +31,8 @@ from frontend import location
 from frontend import match
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import (log, print_stderr, str_switch, tagswitch, iteritems,
-                         NewDict)
+from mycpp.mylib import (log, rand, srand, print_stderr, str_switch, tagswitch,
+                         iteritems, NewDict)
 from pylib import os_path
 
 from libc import HAVE_GLOB_PERIOD
@@ -1385,6 +1385,10 @@ class Mem(object):
         from core import sh_init
         self.env_config = sh_init.EnvConfig(self, defaults)
 
+        self.random_is_special = True
+        # Provide a seed, otherwise libc's rand() is always seeded with 1
+        srand(int(time_.time()) ^ posix.getpid())
+
     def __repr__(self):
         # type: () -> str
         parts = []  # type: List[str]
@@ -1502,7 +1506,7 @@ class Mem(object):
     def SetLocationForExpr(self, blame_loc):
         # type: (loc_t) -> None
         """
-        A more specific fallback location, like the $[ in 
+        A more specific fallback location, like the $[ in
 
             echo $[len(42)]
         """
@@ -1668,7 +1672,7 @@ class Mem(object):
 
     def PushEnvObj(self, bindings):
         # type: (Dict[str, value_t]) -> None
-        """Push "bindings" as the MOST visible part of the ENV Obj 
+        """Push "bindings" as the MOST visible part of the ENV Obj
 
         i.e. first() / propView()
         """
@@ -2071,6 +2075,11 @@ class Mem(object):
                 # set -o nounset; local foo; echo $foo  # It's still undefined!
                 val = value.Undef  # export foo, readonly foo
 
+            # RANDOM=foo seeds the random number generator with foo
+            if lval.name == 'RANDOM' and val.tag() == value_e.Str:
+                str_val = cast(value.Str, val)
+                srand(hash(str_val.s))
+
             cell = Cell(bool(flags & SetExport), bool(flags & SetReadOnly),
                         bool(flags & SetNameref), val)
             var_frame[cell_name] = cell
@@ -2407,22 +2416,27 @@ class Mem(object):
                 assert ok, f  # should never be NAN or INFINITY
                 return value.Int(big_int)
 
+            elif case('RANDOM'):
+                if self.random_is_special:
+                    return value.Int(mops.BigInt(rand(32767)))
             else:
-                # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
-                # fix this:
-                # 1. Call self.unsafe_arith.ParseVarRef() -> BracedVarSub
-                # 2. Call self.unsafe_arith.GetNameref(bvs_part), and get a value_t
-                #    We still need a ref_trail to detect cycles.
-                cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
-                if cell:
-                    return cell.val
+                pass
 
-                builtin_val = self.builtins.get(name)
-                if builtin_val:
-                    return builtin_val
+        # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
+        # fix this:
+        # 1. Call self.unsafe_arith.ParseVarRef() -> BracedVarSub
+        # 2. Call self.unsafe_arith.GetNameref(bvs_part), and get a value_t
+        #    We still need a ref_trail to detect cycles.
+        cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
+        if cell:
+            return cell.val
 
-                # TODO: Can look in the builtins module, which is a value.Obj
-                return value.Undef
+        builtin_val = self.builtins.get(name)
+        if builtin_val:
+            return builtin_val
+
+        # TODO: Can look in the builtins module, which is a value.Obj
+        return value.Undef
 
     def GetCell(self, name, which_scopes=scope_e.Shopt):
         # type: (str, scope_t) -> Cell
@@ -2466,6 +2480,9 @@ class Mem(object):
             if case(sh_lvalue_e.Var):  # unset x
                 lval = cast(LeftName, UP_lval)
                 var_name = lval.name
+                # 'unset RANDOM' disables the random number generator
+                if var_name == 'RANDOM':
+                    self.random_is_special = False
             elif case(sh_lvalue_e.Indexed):  # unset 'a[1]'
                 lval = cast(sh_lvalue.Indexed, UP_lval)
                 var_name = lval.name

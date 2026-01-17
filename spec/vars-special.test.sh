@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 ## compare_shells: dash bash-4.4 mksh zsh
 
 
@@ -360,7 +360,6 @@ argv.py "${PIPESTATUS[@]}"
 ## END
 
 #### $RANDOM
-expr $0 : '.*/osh$' && exit 99  # Disabled because of spec-runner.sh issue
 echo $RANDOM | egrep '[0-9]+'
 ## status: 0
 ## N-I dash status: 1
