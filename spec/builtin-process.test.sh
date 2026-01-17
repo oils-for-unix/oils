@@ -1,6 +1,6 @@
 ## compare_shells: dash bash mksh zsh
-## oils_failures_allowed: 2
-## oils_cpp_failures_allowed: 3
+## oils_failures_allowed: 1
+## oils_cpp_failures_allowed: 2
 # case #24 with ulimit -f 1 is different under C++ for some reason - could be due to the python2
 # intepreter and SIGXFSZ
 
@@ -110,37 +110,6 @@ result=1
 ## N-I dash stdout-json: ""
 
 
-#### get umask
-umask | grep '[0-9]\+'  # check for digits
-## status: 0
-
-#### set umask in octal
-rm -f $TMP/umask-one $TMP/umask-two
-umask 0002
-echo one > $TMP/umask-one
-umask 0022
-echo two > $TMP/umask-two
-stat -c '%a' $TMP/umask-one $TMP/umask-two
-## status: 0
-## STDOUT:
-664
-644
-## END
-## stderr-json: ""
-
-#### set umask symbolically
-umask 0002  # begin in a known state for the test
-rm -f $TMP/umask-one $TMP/umask-two
-echo one > $TMP/umask-one
-umask g-w,o-w
-echo two > $TMP/umask-two
-stat -c '%a' $TMP/umask-one $TMP/umask-two
-## status: 0
-## STDOUT:
-664
-644
-## END
-## stderr-json: ""
 
 #### ulimit with no flags is like -f
 

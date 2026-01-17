@@ -1,8 +1,8 @@
 #!/usr/bin/env python2
 """
-builtin_process.py - Builtins that deal with processes or modify process state.
+process_osh.py - Builtins that deal with processes or modify process state.
 
-This is sort of the opposite of builtin_pure.py.
+This is sort of the opposite of pure_osh.py.
 """
 from __future__ import print_function
 
@@ -450,43 +450,6 @@ class Wait(vm._Builtin):
                 break
 
         return status
-
-
-class Umask(vm._Builtin):
-
-    def __init__(self):
-        # type: () -> None
-        """Dummy constructor for mycpp."""
-        pass
-
-    def Run(self, cmd_val):
-        # type: (cmd_value.Argv) -> int
-
-        argv = cmd_val.argv[1:]
-        if len(argv) == 0:
-            # umask() has a dumb API: you can't get it without modifying it first!
-            # NOTE: dash disables interrupts around the two umask() calls, but that
-            # shouldn't be a concern for us.  Signal handlers won't call umask().
-            mask = posix.umask(0)
-            posix.umask(mask)  #
-            print('0%03o' % mask)  # octal format
-            return 0
-
-        if len(argv) == 1:
-            a = argv[0]
-            try:
-                new_mask = int(a, 8)
-            except ValueError:
-                # NOTE: This also happens when we have '8' or '9' in the input.
-                print_stderr(
-                    "oils warning: umask with symbolic input isn't implemented"
-                )
-                return 1
-
-            posix.umask(new_mask)
-            return 0
-
-        e_usage('umask: unexpected arguments', loc.Missing)
 
 
 def _LimitString(lim, factor):
