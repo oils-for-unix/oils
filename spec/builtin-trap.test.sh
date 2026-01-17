@@ -47,6 +47,25 @@ trap | cat
 bye
 ## END
 
+#### ignored signals are active inside subshells
+trap '' USR1
+subshell_result=$(
+  trap '' USR2
+  trap - USR2
+  trap
+)
+
+# NOT a subshell
+trap > traps.txt
+shell_result=$(cat traps.txt)
+
+if test "$shell_result" = "$subshell_result"; then
+  echo ok
+fi
+
+## STDOUT:
+ok
+## END
 
 #### trap accepts/ignores --
 trap -- 'echo hi' EXIT
