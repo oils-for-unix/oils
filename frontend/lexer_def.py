@@ -175,6 +175,35 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + _VARS + [
     C('(', Id.Op_LParen),
     C(')', Id.Op_RParen),
     R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
+
+    # History expansion - only has special meaning in the interactive shell
+    # Example:
+    #
+    # $ foo=x
+    # $ echo $
+    # $ !!foo   # expands to echo $foo and prints x
+    #
+    # We can also reuse this in the RootCompleter to expand history interactively.
+    #
+    # bash note: handled in lib/readline/histexpand.c.  Quite messy and handles
+    # quotes AGAIN.
+    #
+    # Note: \! gets expanded to literal \! for the real lexer, but no history
+    # expansion occurs.
+    R(r'!!', Id.Lit_HistoryOp_PrevEntry),
+    R(r'!*', Id.Lit_HistoryOp_WordRest),
+    R(r'!\^', Id.Lit_HistoryOp_First),
+    R(r'!\$', Id.Lit_HistoryOp_Last),
+    # By command number.
+    R(r'!-?[0-9]+', Id.Lit_HistoryNum),
+    # Search by prefix of substring (optional '?').
+    # NOTE: there are no numbers allowed here!  Bash doesn't seem to support it.
+    # No hyphen since it conflits with $-1 too.
+    #
+    # Required trailing whitespace is there to avoid conflict with [!charclass]
+    # and ${!indirect}.  This is a simpler hack than the one bash has.  See
+    # frontend/lex_test.py.
+    R(r'!\??[a-zA-Z_/.][0-9a-zA-Z_/.]+[ \t\r\n]', Id.Lit_HistorySearch),
 ]
 
 # In lex_mode_e.{ShCommand,DBracket}
@@ -832,53 +861,6 @@ GLOB_DEF = [
     # '*.py' or 'alpha' in '[[:alpha:]]'.
     R(r'[a-zA-Z0-9_]+', Id.Glob_CleanLiterals),  # no regex escaping
     R(r'[^\0]', Id.Glob_OtherLiteral),  # anything else -- examine the char
-]
-
-# History expansion.  We're doing this as "pre-lexing" since that's what bash
-# and zsh seem to do.  Example:
-#
-# $ foo=x
-# $ echo $
-# $ !!foo   # expands to echo $foo and prints x
-#
-# We can also reuse this in the RootCompleter to expand history interactively.
-#
-# bash note: handled in lib/readline/histexpand.c.  Quite messy and handles
-# quotes AGAIN.
-#
-# Note: \! gets expanded to literal \! for the real lexer, but no history
-# expansion occurs.
-
-HISTORY_DEF = [
-    # Common operators.
-    R(r'![!*^$]', Id.History_Op),
-
-    # By command number.
-    R(r'!-?[0-9]+', Id.History_Num),
-
-    # Search by prefix of substring (optional '?').
-    # NOTE: there are no numbers allowed here!  Bash doesn't seem to support it.
-    # No hyphen since it conflits with $-1 too.
-    #
-    # Required trailing whitespace is there to avoid conflict with [!charclass]
-    # and ${!indirect}.  This is a simpler hack than the one bash has.  See
-    # frontend/lex_test.py.
-    R(r'!\??[a-zA-Z_/.][0-9a-zA-Z_/.]+[ \t\r\n]', Id.History_Search),
-
-    # Comment is until end of line
-    R(r"#[^\0]*", Id.History_Other),
-
-    # Single quoted, e.g. 'a' or $'\n'.  Terminated by another single quote or
-    # end of string.
-    R(r"'[^'\0]*'?", Id.History_Other),
-
-    # Runs of chars that are definitely not special
-    R(r"[^!\\'#\0]+", Id.History_Other),
-
-    # Escaped characters.  \! disables history
-    R(r'\\[^\0]', Id.History_Other),
-    # Other single chars, like a trailing \ or !
-    R(r'[^\0]', Id.History_Other),
 ]
 
 BRACE_RANGE_DEF = [

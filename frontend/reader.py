@@ -20,7 +20,6 @@ if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import Token, SourceLine
     from core.alloc import Arena
     from core.comp_ui import PromptState
-    from osh import history
     from osh import prompt
     from frontend.py_readline import Readline
 
@@ -190,7 +189,6 @@ class InteractiveLineReader(_Reader):
             self,
             arena,  # type: Arena
             prompt_ev,  # type: prompt.Evaluator
-            hist_ev,  # type: history.Evaluator
             line_input,  # type: Optional[Readline]
             prompt_state,  # type:PromptState
     ):
@@ -201,7 +199,6 @@ class InteractiveLineReader(_Reader):
         """
         _Reader.__init__(self, arena)
         self.prompt_ev = prompt_ev
-        self.hist_ev = hist_ev
         self.line_input = line_input
         self.prompt_state = prompt_state
 
@@ -261,16 +258,12 @@ class InteractiveLineReader(_Reader):
             # NOTE: Like bash, OSH does this on EVERY line in a multi-line command,
             # which is confusing.
 
-            # Also, in bash this is affected by HISTCONTROL=erasedups.  But I
-            # realized I don't like that behavior because it changes the numbers!  I
-            # can't just remember a number -- I have to type 'hi' again.
-            line = self.hist_ev.Eval(line)
-
             # Add the line if it's not EOL, not whitespace-only, not the same as the
             # previous line, and we have line_input.
             if (len(line.strip()) and line != self.prev_line and
                     self.line_input is not None):
                 # no trailing newlines
+                # TODO: need to rewrite this history entry with the expanded line at the parsing stage
                 self.line_input.add_history(line.rstrip())
                 self.prev_line = line
 

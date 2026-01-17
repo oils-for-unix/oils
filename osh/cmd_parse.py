@@ -64,6 +64,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from core import alloc
 from core import error
+from core import util
 from core.error import p_die
 from display import ui
 from frontend import consts
@@ -579,8 +580,9 @@ class CommandParser(object):
                  w_parser,
                  lexer,
                  line_reader,
+                 interactive,
                  eof_id=Id.Eof_Real):
-        # type: (ParseContext, optview.Parse, WordParser, Lexer, _Reader, Id_t) -> None
+        # type: (ParseContext, optview.Parse, WordParser, Lexer, _Reader, bool, Id_t) -> None
         self.parse_ctx = parse_ctx
         self.aliases = parse_ctx.aliases  # aliases to expand at parse time
 
@@ -589,6 +591,7 @@ class CommandParser(object):
         self.lexer = lexer  # for pushing hints, lookahead to (
         self.line_reader = line_reader  # for here docs
         self.eof_id = eof_id
+        self.interactive = interactive
 
         self.arena = line_reader.arena  # for adding here doc and alias spans
         self.aliases_in_flight = []  # type: AliasesInFlight
@@ -839,6 +842,51 @@ class CommandParser(object):
 
         return command.Redirect(node, redirects)
 
+    def _ExpandHistory(self, token):
+        # type: (Token) -> List[CompoundWord]
+        interactive_line_reader = cast(reader.InteractiveLineReader,
+                                       self.line_reader)
+        readline = interactive_line_reader.line_input
+        history_len = readline.get_current_history_length()
+
+        if token.id == Id.Lit_HistoryOp_PrevEntry:
+            # current line has already been added to history, previous entry is at -1
+            line = readline.get_history_item(history_len - 1)
+        elif token.id == Id.Lit_HistoryNum:
+            val = lexer.TokenVal(token)
+            index = int(val[1:])
+            if index < 0:
+                num = history_len + index
+            else:
+                num = index - 1
+
+            # print(index, num)
+            line = readline.get_history_item(num)
+            if line is None:  # out of range
+                raise util.HistoryError('%s: not found' % val)
+
+        line_reader = reader.StringLineReader(line, self.parse_ctx.arena)
+        c_parser = self.parse_ctx.MakeOshParser(line_reader, self.interactive)
+        words = []  # type: List[CompoundWord]
+        while True:
+            c_parser._GetWord()
+            c_parser._SetNext()
+            if c_parser.c_kind == Kind.Eof:
+                break
+            # hacky
+            w = cast(CompoundWord, c_parser.cur_word)
+            words.append(w)
+
+        # TODO:
+        # if token.id == Id.Lit_HistoryOp_WordRest:
+            # line = ' '.join(trail_words[1:-1])
+        # elif token.id == Id.Lit_HistoryOp_First:
+            # line = trail_words[1]
+        # elif token.id == Id.Lit_HistoryOp_Last:
+            # line = trail_words[-1]
+
+        return words
+
     def _ScanSimpleCommand(self):
         # type: () -> Tuple[List[Redir], List[CompoundWord], Optional[ArgList], Optional[LiteralBlock]]
         """YSH extends simple commands with typed args and blocks.
@@ -916,29 +964,39 @@ class CommandParser(object):
             elif kind2 == Kind.Word:
                 w = cast(CompoundWord, self.cur_word)  # Kind.Word ensures this
 
-                if i == 0:
-                    # Disallow leading =a because it's confusing
-                    if self.parse_opts.strict_parse_equals():
-                        bad_tok = word_.CheckLeadingEquals(w)
-                        if bad_tok:
-                            p_die(
-                                "=word isn't allowed.  Hint: add a space after =, or quote it",
-                                bad_tok)
+                left_tok = location.LeftTokenForCompoundWord(w)
+                if (self.interactive and left_tok.id
+                        in (Id.Lit_HistoryOp_PrevEntry,
+                            Id.Lit_HistoryOp_WordRest, Id.Lit_HistoryOp_First,
+                            Id.Lit_HistoryOp_Last, Id.Lit_HistoryNum,
+                            Id.Lit_HistorySearch)):
 
-                    # Is the first word a Hay Attr word?
-                    #
-                    # Can we remove this StaticEval() call, and just look
-                    # inside Token?  I think once we get rid of SHELL nodes,
-                    # this will be simpler.
+                    words.extend(self._ExpandHistory(left_tok))
 
-                    ok, word_str, quoted = word_.StaticEval(w)
-                    # Foo { a = 1 } is OK, but not foo { a = 1 } or FOO { a = 1 }
-                    if (ok and len(word_str) and word_str[0].isupper() and
-                            not word_str.isupper()):
-                        first_word_caps = True
-                        #log('W %s', word_str)
+                else:
+                    if i == 0:
+                        # Disallow leading =a because it's confusing
+                        if self.parse_opts.strict_parse_equals():
+                            bad_tok = word_.CheckLeadingEquals(w)
+                            if bad_tok:
+                                p_die(
+                                    "=word isn't allowed.  Hint: add a space after =, or quote it",
+                                    bad_tok)
 
-                words.append(w)
+                        # Is the first word a Hay Attr word?
+                        #
+                        # Can we remove this StaticEval() call, and just look
+                        # inside Token?  I think once we get rid of SHELL nodes,
+                        # this will be simpler.
+
+                        ok, word_str, quoted = word_.StaticEval(w)
+                        # Foo { a = 1 } is OK, but not foo { a = 1 } or FOO { a = 1 }
+                        if (ok and len(word_str) and word_str[0].isupper() and
+                                not word_str.isupper()):
+                            first_word_caps = True
+                            #log('W %s', word_str)
+
+                    words.append(w)
 
             else:
                 break
@@ -1124,7 +1182,7 @@ class CommandParser(object):
         # TODO: arena.PushSource()?
 
         line_reader = reader.StringLineReader(code_str, arena)
-        cp = self.parse_ctx.MakeOshParser(line_reader)
+        cp = self.parse_ctx.MakeOshParser(line_reader, self.interactive)
         cp.Init_AliasesInFlight(aliases_in_flight)
 
         # break circular dep
