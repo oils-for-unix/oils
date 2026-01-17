@@ -173,12 +173,31 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         # for loop test
         # if isinstance(o.index, TupleExpr):
 
+    def oils_visit_switch(self, expr: 'mypy.nodes.CallExpr',
+                          o: 'mypy.nodes.WithStmt',
+                          switch_type: str) -> None:
+        """Hook for handling switch statements.
+        
+        switch_type is one of: 'switch', 'str_switch', 'tagswitch'
+        """
+        self.accept(expr)
+        self.accept(o.body)
+
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> None:
         assert len(o.expr) == 1, o.expr
         expr = o.expr[0]
         assert isinstance(expr, CallExpr), expr
-        self.accept(expr)
-        self.accept(o.body)
+
+        # Check if this is a switch statement
+        callee_name = None
+        if isinstance(expr.callee, NameExpr):
+            callee_name = expr.callee.name
+
+        if callee_name in ('switch', 'str_switch', 'tagswitch'):
+            self.oils_visit_switch(expr, o, callee_name)
+        else:
+            self.accept(expr)
+            self.accept(o.body)
 
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
                             current_class_name: Optional[util.SymbolPath],
