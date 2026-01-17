@@ -44,7 +44,7 @@ stdout
 ## BUG mksh stdout-json: ""
 
 #### exec -a sets argv[0]
-exec -a FOOPROC /bin/bash -c 'echo $0'
+exec -a FOOPROC sh -c 'echo $0'
 ## STDOUT:
 FOOPROC
 ## END
