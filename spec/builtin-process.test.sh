@@ -43,6 +43,14 @@ stdout
 ## BUG mksh status: -11
 ## BUG mksh stdout-json: ""
 
+#### exec -a sets argv[0]
+exec -a FOOPROC sh -c 'echo $0'
+## STDOUT:
+FOOPROC
+## END
+## N-I dash status: 127
+## N-I dash stdout-json: ""
+
 #### Exit out of function
 f() { exit 3; }
 f
