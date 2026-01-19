@@ -886,3 +886,19 @@ build_proc
 }
 version = 3.12, url = https://python.org/release/3.12/
 ## END
+
+#### hay crash when source file has a syntax error
+shopt --set ysh:all
+
+# crash.hay contains invalid hay
+echo 'echo =' > crash.hay
+
+try {
+  const h = parseHay("crash.hay")
+}
+if (_error.code === 3) {
+  echo OK  # parseHay should raise an error.Expr
+}
+## STDOUT:
+OK
+## END
