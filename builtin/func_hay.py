@@ -68,7 +68,7 @@ class ParseHay(vm._Callable):
                 node = main_loop.ParseWholeFile(c_parser)
         except error.Parse as e:
             self.errfmt.PrettyPrintError(e)
-            return None
+            raise error.Expr("Failed to parse %r" % path, call_loc)
 
         return value.Command(cmd_frag.Expr(node), self.mem.CurrentFrame(),
                              self.mem.GlobalFrame())
