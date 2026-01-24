@@ -139,7 +139,7 @@ searchbar.addEventListener('input', async (event) => {
     const item = document.createElement('li');
     const link = document.createElement('a');
     link.innerHTML = result.symbol;
-    link.href = window.basePath + result.anchor;
+    link.href = window.basePath + '/' + result.anchor;
     item.appendChild(link);
     resultsList.appendChild(item);
   }

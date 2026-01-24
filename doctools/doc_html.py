@@ -123,9 +123,9 @@ def Footer(meta, f):
       const parts = window.location.pathname.split('/');
       const docIndex = parts.indexOf('doc');
       if (docIndex === -1) {
-        window.basePath = './'; // If not found, assume we are at the root
+        window.basePath = '.'; // If not found, assume we are at the root
       } else {
-        window.basePath = parts.slice(0, docIndex).join('/') + '/';
+        window.basePath = parts.slice(0, docIndex).join('/');
       }
 
       // Load scripts irrespective of our location in the doc-tree
