@@ -1666,6 +1666,20 @@ class Mem(object):
         self._BindEnvObj()
         self.did_ysh_env = True
 
+    def MaybeMigrateEnvToVars(self):
+        # type: () -> None
+        """Migrate important ENV dict variables to regular shell variables.
+
+        Called when unsetting ysh:all or ysh:upgrade, which disables env_obj.
+        """
+        for var_name in ['PS1', 'PS2', 'PS3', 'PS4']:
+            val = self.env_dict.get(var_name)
+            if val is None:
+                val = self.defaults.get(var_name)
+            if val is not None and val.tag() == value_e.Str:
+                s = cast(value.Str, val).s
+                SetGlobalString(self, var_name, s)
+
     def PushEnvObj(self, bindings):
         # type: (Dict[str, value_t]) -> None
         """Push "bindings" as the MOST visible part of the ENV Obj 
