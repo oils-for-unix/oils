@@ -1,4 +1,4 @@
-const res = await fetch("/index.json");
+const res = await fetch(`${window.basePath}/index.json`);
 const index = await res.json();
 
 /**
@@ -139,7 +139,7 @@ searchbar.addEventListener('input', async (event) => {
     const item = document.createElement('li');
     const link = document.createElement('a');
     link.innerHTML = result.symbol;
-    link.href = '/' + result.anchor;
+    link.href = window.basePath + result.anchor;
     item.appendChild(link);
     resultsList.appendChild(item);
   }
