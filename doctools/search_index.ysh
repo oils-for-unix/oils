@@ -1,0 +1,29 @@
+#!/usr/bin/env ysh
+
+# Usage:
+#
+#  $0 index
+
+proc index-all(...files;; baseDir) {
+  for file in (files) {
+    echo Indexing $file >&2
+    doctools/search_index.py --base-dir $baseDir $file
+  }
+}
+
+proc parse-jsonl(; place) {
+  var index = []
+  for line in (io.stdin) {
+    var parsed = fromJson(line)
+    call index->extend(parsed)
+  }
+
+  call place->setValue(index)
+}
+
+proc index() {
+  index-all _release/VERSION/doc/{*,ref/*}.html (baseDir='_release/VERSION') | parse-jsonl (&indices)
+  json write (indices) > _release/VERSION/index.json
+}
+
+runproc @ARGV

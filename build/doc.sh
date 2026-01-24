@@ -216,7 +216,7 @@ split-and-render() {
   # css_files: a space-separated list
   # all_docs_url: so we link from doc/foo.html -> doc/
 
-  local css_files="$web_url/base.css $web_url/manual.css $web_url/toc.css $web_url/language.css $web_url/code.css"
+  local css_files="$web_url/base.css $web_url/manual.css $web_url/toc.css $web_url/language.css $web_url/code.css $web_url/search.css"
 
   PYTHONPATH='.:vendor' doctools/split_doc.py \
     -v build_timestamp="$DOC_TIMESTAMP" \
@@ -921,6 +921,10 @@ copy-release-pages() {
   cat < _tmp/release-quality.html > $root/quality.html
 }
 
+build-search-index() {
+  doctools/search_index.ysh index
+}
+
 run-for-release() {
   ### Build a tree.  Requires _build/release-date.txt to exist
 
@@ -951,6 +955,8 @@ run-for-release() {
   # Instead of linking, I should compress them all here.
 
   copy-web
+
+  build-search-index
 
   if command -v tree >/dev/null; then
     tree $root
