@@ -1,6 +1,6 @@
 ---
 in_progress: yes
-css_files: ../../web/base.css ../../web/manual.css ../../web/toc.css
+css_files: ../../web/base.css ../../web/manual.css ../../web/toc.css ../../web/search.css
 ---
 
 Oil's Expression Language: A Mix of Python and JavaScript
