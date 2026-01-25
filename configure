@@ -104,6 +104,13 @@ detected_deps=''
 
 have_readline=''
 readline_dir=''
+have_readline_callback_sigcleanup=''
+have_readline_catch=''
+have_readline_completion_display_matches_hook=''
+have_readline_completion_suppress_append=''
+have_readline_free_history_entry=''
+have_readline_list_funmap_names=''
+have_readline_resize_terminal=''
 
 have_systemtap_sdt=''
 
@@ -284,6 +291,62 @@ detect_readline() {
 
       readline_dir="$FLAG_readline"
       have_readline=1
+
+      if cc_quiet build/detect-readline-callback-sigcleanup.c \
+        -L "$FLAG_readline/lib" \
+        -I "$FLAG_readline/include" \
+        -l readline; then
+
+        have_readline_callback_sigcleanup=1
+      fi
+
+      if cc_quiet build/detect-readline-catch.c \
+        -L "$FLAG_readline/lib" \
+        -I "$FLAG_readline/include" \
+        -l readline; then
+
+        have_readline_catch=1
+      fi
+
+      if cc_quiet build/detect-readline-completion-display-matches-hook.c \
+        -L "$FLAG_readline/lib" \
+        -I "$FLAG_readline/include" \
+        -l readline; then
+
+        have_readline_completion_display_matches_hook=1
+      fi
+
+      if cc_quiet build/detect-readline-completion-suppress-append.c \
+        -L "$FLAG_readline/lib" \
+        -I "$FLAG_readline/include" \
+        -l readline; then
+
+        have_readline_completion_suppress_append=1
+      fi
+
+      if cc_quiet build/detect-readline-free-history-entry.c \
+        -L "$FLAG_readline/lib" \
+        -I "$FLAG_readline/include" \
+        -l readline; then
+
+        have_readline_free_history_entry=1
+      fi
+
+      if cc_quiet build/detect-readline-list-funmap-names.c \
+        -L "$FLAG_readline/lib" \
+        -I "$FLAG_readline/include" \
+        -l readline; then
+
+        have_readline_list_funmap_names=1
+      fi
+
+      if cc_quiet build/build/detect-resize-terminal.c \
+        -L "$FLAG_readline/lib" \
+        -I "$FLAG_readline/include" \
+        -l readline; then
+
+        have_readline_resize_terminal=1
+      fi
     fi
     return
   fi
@@ -291,6 +354,34 @@ detect_readline() {
   # Detect in default location
   if cc_quiet build/detect-readline.c -l readline; then
     have_readline=1
+    if cc_quiet build/detect-readline-callback-sigcleanup.c -l readline; then
+      have_readline_callback_sigcleanup=1
+    fi
+
+    if cc_quiet build/detect-readline-catch.c -l readline; then
+      have_readline_catch=1
+    fi
+
+    if cc_quiet build/detect-readline-completion-display-matches-hook.c -l readline; then
+      have_readline_completion_display_matches_hook=1
+    fi
+
+    if cc_quiet build/detect-readline-completion-suppress-append.c -l readline; then
+      have_readline_completion_suppress_append=1
+    fi
+
+    if cc_quiet build/detect-readline-free-history-entry.c -l readline; then
+      have_readline_free_history_entry=1
+    fi
+
+    if cc_quiet build/detect-readline-list-funmap-names.c -l readline; then
+      have_readline_list_funmap_names=1
+    fi
+
+    if cc_quiet build/detect-readline-resize-terminal.c -l readline; then
+      have_readline_resize_terminal=1
+    fi
+
     return
   fi
 
@@ -347,6 +438,7 @@ echo_shell_vars() {
     echo 'HAVE_READLINE='
     echo 'READLINE_DIR='
   fi
+
   echo
 
   echo "PREFIX=$FLAG_prefix"
@@ -523,6 +615,28 @@ echo_cpp() {
   # variable.  This is so _build/oils.sh --without-readline works, not just
   # ./configure --without-readline.
 
+  if test "$have_readline_callback_sigcleanup" = 1; then
+    echo '#define HAVE_READLINE_CALLBACK_SIGCLEANUP 1'
+  fi
+  if test "$have_readline_catch" = 1; then
+    echo '#define HAVE_READLINE_CATCH 1'
+  fi
+  if test "$have_readline_completion_display_matches_hook" = 1; then
+    echo '#define HAVE_READLINE_COMPLETION_DISPLAY_MATCHES_HOOK 1'
+  fi
+  if test "$have_readline_completion_suppress_append" = 1; then
+    echo '#define HAVE_READLINE_COMPLETION_SUPPRESS_APPEND 1'
+  fi
+  if test "$have_readline_free_history_entry" = 1; then
+    echo '#define HAVE_READLINE_FREE_HISTORY_ENTRY 1'
+  fi
+  if test "$have_readline_list_funmap_names" = 1; then
+    echo '#define HAVE_READLINE_LIST_FUNMAP_NAMES 1'
+  fi
+  if test "$have_readline_resize_terminal" = 1; then
+    echo '#define HAVE_READLINE_RESIZE_TERMINAL 1'
+  fi
+
   # Used by mycpp/probes.h
   if test "$have_systemtap_sdt" = 1; then
     echo '#define HAVE_SYSTEMTAP_SDT 1'
@@ -548,7 +662,7 @@ main() {
     die "Couldn't compile a basic C program (cc not installed?)"
   fi
 
-  # Sets globals $have_readline and $readline_dir
+  # Sets globals $have_readline, $readline_dir and $have_readline_*
   detect_readline
 
   detect_libc
