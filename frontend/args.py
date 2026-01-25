@@ -286,15 +286,12 @@ class AppendEvalFlag(_Action):
 
 class _ArgAction(_Action):
 
-    def __init__(self, name, quit_parsing_flags, valid=None):
-        # type: (str, bool, Optional[List[str]]) -> None
+    def __init__(self, name, valid=None):
+        # type: (str, Optional[List[str]]) -> None
         """
         Args:
-          quit_parsing_flags: Stop parsing args after this one.  for sh -c.
-            python -c behaves the same way.
         """
         self.name = name
-        self.quit_parsing_flags = quit_parsing_flags
         self.valid = valid
 
     def _Value(self, arg, location):
@@ -315,7 +312,7 @@ class _ArgAction(_Action):
 
         val = self._Value(arg, arg_r.Location())
         out.Set(self.name, val)
-        return self.quit_parsing_flags
+        return False
 
 
 class SetToInt(_ArgAction):
@@ -323,7 +320,7 @@ class SetToInt(_ArgAction):
     def __init__(self, name):
         # type: (str) -> None
         # repeat defaults for C++ translation
-        _ArgAction.__init__(self, name, False, valid=None)
+        _ArgAction.__init__(self, name, valid=None)
 
     def _Value(self, arg, location):
         # type: (str, loc_t) -> value_t
@@ -354,7 +351,7 @@ class SetToFloat(_ArgAction):
     def __init__(self, name):
         # type: (str) -> None
         # repeat defaults for C++ translation
-        _ArgAction.__init__(self, name, False, valid=None)
+        _ArgAction.__init__(self, name, valid=None)
 
     def _Value(self, arg, location):
         # type: (str, loc_t) -> value_t
@@ -374,9 +371,9 @@ class SetToFloat(_ArgAction):
 
 class SetToString(_ArgAction):
 
-    def __init__(self, name, quit_parsing_flags, valid=None):
-        # type: (str, bool, Optional[List[str]]) -> None
-        _ArgAction.__init__(self, name, quit_parsing_flags, valid=valid)
+    def __init__(self, name, valid=None):
+        # type: (str, Optional[List[str]]) -> None
+        _ArgAction.__init__(self, name, valid=valid)
 
     def _Value(self, arg, location):
         # type: (str, loc_t) -> value_t
@@ -633,8 +630,8 @@ def ParseLikeEcho(spec, arg_r):
     return out
 
 
-def ParseMore(spec, arg_r):
-    # type: (flag_spec._FlagSpecAndMore, Reader) -> _Attributes
+def ParseMore(spec, arg_r, sh_dash_c=False):
+    # type: (flag_spec._FlagSpecAndMore, Reader, bool) -> _Attributes
     """Return attributes and an index.
 
     Respects +, like set +eu
@@ -652,7 +649,7 @@ def ParseMore(spec, arg_r):
     """
     out = _Attributes(spec.defaults)
 
-    dash_c = False
+    do_special_arg = False
     while not arg_r.AtEnd():
         arg = arg_r.Peek()
         if arg == '--':
@@ -691,8 +688,8 @@ def ParseMore(spec, arg_r):
                 # Special case handled at the end.  ParseMore() is used for
                 # MAIN_SPEC and SET_SPEC (set builtin), but 'set -c' is not
                 # defined.
-                if ch == 'c':
-                    dash_c = True
+                if sh_dash_c and ch == 'c':
+                    do_special_arg = True
                     continue
 
                 action = spec.actions_short.get(ch)
@@ -708,7 +705,7 @@ def ParseMore(spec, arg_r):
 
         break  # it's a regular arg
 
-    if dash_c:
+    if do_special_arg:
         cmd = arg_r.Peek()
         if cmd is None:
             e_usage("expected argument to '-c'", loc.Missing)

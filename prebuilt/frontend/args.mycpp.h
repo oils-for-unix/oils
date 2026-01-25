@@ -164,12 +164,11 @@ class AppendEvalFlag : public ::args::_Action {
 
 class _ArgAction : public ::args::_Action {
  public:
-  _ArgAction(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid = nullptr);
+  _ArgAction(BigStr* name, List<BigStr*>* valid = nullptr);
   virtual value_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
   BigStr* name{};
-  bool quit_parsing_flags{};
   List<BigStr*>* valid{};
   
   static constexpr uint32_t field_mask() {
@@ -219,7 +218,7 @@ class SetToFloat : public ::args::_ArgAction {
 
 class SetToString : public ::args::_ArgAction {
  public:
-  SetToString(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid = nullptr);
+  SetToString(BigStr* name, List<BigStr*>* valid = nullptr);
   virtual value_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
@@ -352,7 +351,7 @@ class SetNamedAction : public ::args::_Action {
 
 args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r);
 args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r);
-args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* arg_r);
+args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* arg_r, bool sh_dash_c = false);
 
 }  // declare namespace args
 

@@ -261,7 +261,7 @@ def Main(
     assert lang in ('osh', 'ysh'), lang
 
     try:
-        attrs = flag_util.ParseMore('main', arg_r)
+        attrs = flag_util.ParseMore('main', arg_r, sh_dash_c=True)
     except error.Usage as e:
         print_stderr('%s usage error: %s' % (lang, e.msg))
         return 2
