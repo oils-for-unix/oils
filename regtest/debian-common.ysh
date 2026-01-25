@@ -1,7 +1,7 @@
 # Shared between regtest/debian-*.sh
 
-const DEBIAN_ROOT=$(pwd) ++ '/_debian_chroot'
-const CHROOT_DIR = DEBIAN_ROOT ++ '/debian_build'
+const DEBIAN_ROOT=$(pwd) ++ '/_regtest/debian-build'
+const CHROOT_DIR = DEBIAN_ROOT ++ '/chroot'
 
 const CHROOT_HOME_DIR= CHROOT_DIR ++ '/home/udu'
 

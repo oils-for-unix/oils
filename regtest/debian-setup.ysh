@@ -122,7 +122,7 @@ proc create-osh-overlay() {
 }
 
 proc remove-osh-overlay() {
-  var dir='_debian_chroot/osh-as-sh.overlay'
+  var dir= DEBIAN_ROOT  ++ '/osh-as-sh.overlay'
   sudo umount $dir/merged || true
   sudo rm -r -f $dir
 }
@@ -180,6 +180,7 @@ proc clone-debootstrap() {
 }
 
 proc make-chroot() {
+  mkdir -p $DEBIAN_ROOT
   var dir = '../debianlinux/debootstrap'
   pushd $dir
   var debootstrap_dir = $(pwd)
