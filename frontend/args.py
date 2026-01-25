@@ -310,8 +310,18 @@ class _ArgAction(_Action):
             arg_r.Next()
             arg = arg_r.Peek()
             if arg is None:
-                e_usage('expected argument to %r' % ('-' + self.name),
+                e_usage("expected argument to '-%s'" % self.name,
                         arg_r.Location())
+
+            if self.quit_parsing_flags:
+                # Weird special case for -c - and -c --
+                # This is bug #2638.  See spec/sh-usage.test.sh
+                if arg in ('-', '--'):
+                    arg_r.Next()
+                    arg = arg_r.Peek()
+                if arg is None:
+                    e_usage("expected argument to '-%s'" % self.name,
+                            arg_r.Location())
 
         val = self._Value(arg, arg_r.Location())
         out.Set(self.name, val)

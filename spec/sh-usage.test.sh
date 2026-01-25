@@ -241,3 +241,156 @@ LC_CTYPE _x_
 LC_CTYPE _x_
 0 err.txt
 ## END
+
+#### sh -c -- 'echo hi' does not run anything (#2637)
+
+$SH -c -z 'echo z'
+if test $? -ne 0; then
+  echo 'z failed'
+fi
+echo
+
+$SH -c --- 'echo three'
+if test $? -ne 0; then
+  echo three failed
+fi
+echo
+
+$SH -c -- 'echo two'
+echo two=$?
+echo
+
+$SH -c - 'echo one'
+echo one=$?
+echo
+
+$SH -c '' 'echo zero'
+echo zero=$?
+echo
+
+# odd
+$SH -c 'echo aa' 'echo bb'
+echo aa=$?
+
+## STDOUT:
+z failed
+
+three failed
+
+two
+two=0
+
+one
+one=0
+
+zero=0
+
+aa
+aa=0
+## END
+
+## BUG ash STDOUT:
+z failed
+
+three
+
+two
+two=0
+
+one
+one=0
+
+zero=0
+
+aa
+aa=0
+## END
+
+#### sh -c with multiple -- args
+
+# variant of above case
+
+$SH -c -- -- 'echo two'
+echo status=$?
+
+$SH -c -- -- -- 'echo two'
+echo status=$?
+
+$SH -c -z 'echo z'
+if test $? -ne 0; then
+  echo 'z failed'
+fi
+
+## STDOUT:
+status=127
+status=127
+z failed
+## END
+
+#### sh -c with no arg after --
+
+# variant of above case
+
+$SH -c --
+if test $? -ne 0; then
+  echo failed
+fi
+
+$SH -c -
+if test $? -ne 0; then
+  echo failed
+fi
+
+## STDOUT:
+failed
+failed
+## END
+
+#### Other flag parsers are not affected by - rule
+
+# -c is special, with quit_parsing_flags
+
+echo 'foo-bar' | { read -d -; echo reply=$REPLY; }
+
+## STDOUT:
+reply=foo
+## END
+## N-I dash STDOUT:
+reply=
+## END
+
+#### weird flag parsing -oo errexit noglob
+
+prog='
+case $- in
+  *e*) echo e ;;
+esac
+
+case $- in
+  *f*) echo f ;;
+esac
+'
+
+# normal way
+$SH -o errexit -o noglob -c "$prog"
+
+# odd way
+$SH -oo errexit noglob -c "$prog"
+
+## STDOUT:
+e
+f
+e
+f
+## END
+
+## BUG mksh status: 1
+## BUG mksh STDOUT:
+e
+f
+## END
+
+## BUG-2 zsh status: 1
+## BUG-2 zsh STDOUT:
+e
+## END
