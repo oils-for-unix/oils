@@ -394,3 +394,53 @@ f
 ## BUG-2 zsh STDOUT:
 e
 ## END
+
+#### 'sh -c -z' does not try to run -z
+
+$SH -c -z
+case $? in
+  1) echo flag-parsing-error ;;
+  2) echo flag-parsing-error ;;
+  *) echo fail ;;
+esac
+
+$SH -c 'echo 0=$0 1=$1' -z
+echo status=$?
+
+$SH -c 'echo 0=$0 1=$1' foo -z
+echo status=$?
+
+## STDOUT:
+flag-parsing-error
+0=-z 1=
+status=0
+0=foo 1=-z
+status=0
+## END
+
+#### sh -c -x 'echo hi' - order is reversed
+case $SH in zsh) exit ;; esac  # different -x format
+
+$SH -c -x 'echo hi'
+
+# two flags before the command
+$SH -c -x -e 'false; true'
+echo status=$?
+
+## STDOUT:
+hi
+status=1
+## END
+## STDERR:
++ echo hi
++ false
+## END
+## OK osh STDERR:
++ echo hi
++ 'false'
+## END
+
+## OK-2 zsh STDOUT:
+## END
+## OK-2 zsh STDERR:
+## END

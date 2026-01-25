@@ -313,16 +313,6 @@ class _ArgAction(_Action):
                 e_usage("expected argument to '-%s'" % self.name,
                         arg_r.Location())
 
-            if self.quit_parsing_flags:
-                # Weird special case for -c - and -c --
-                # This is bug #2638.  See spec/sh-usage.test.sh
-                if arg in ('-', '--'):
-                    arg_r.Next()
-                    arg = arg_r.Peek()
-                if arg is None:
-                    e_usage("expected argument to '-%s'" % self.name,
-                            arg_r.Location())
-
         val = self._Value(arg, arg_r.Location())
         out.Set(self.name, val)
         return self.quit_parsing_flags
@@ -662,7 +652,7 @@ def ParseMore(spec, arg_r):
     """
     out = _Attributes(spec.defaults)
 
-    quit = False
+    dash_c = False
     while not arg_r.AtEnd():
         arg = arg_r.Peek()
         if arg == '--':
@@ -694,25 +684,35 @@ def ParseMore(spec, arg_r):
             # note: we're not handling sh -cecho  (no space) as an argument
             # It complains about a missing argument
 
-            char0 = arg[0]
+            char0 = arg[0]  # - or +
 
-            # TODO: set - - empty
-            for ch in arg[1:]:
-                #log('ch %r arg_r %s', ch, arg_r)
+            for ch in arg[1:]:  # -xyz foo is like -x -y foo -z
+
+                # Special case handled at the end.  ParseMore() is used for
+                # MAIN_SPEC and SET_SPEC (set builtin), but 'set -c' is not
+                # defined.
+                if ch == 'c':
+                    dash_c = True
+                    continue
+
                 action = spec.actions_short.get(ch)
                 if action is None:
                     e_usage('got invalid flag %r' % ('-' + ch),
                             arg_r.Location())
 
                 attached_arg = char0 if ch in spec.plus_flags else None
-                quit = action.OnMatch(attached_arg, arg_r, out)
-            arg_r.Next()  # process the next flag
+                action.OnMatch(attached_arg, arg_r, out)
 
-            if quit:
-                break
-            else:
-                continue
+            arg_r.Next()  # process the next flag
+            continue
 
         break  # it's a regular arg
+
+    if dash_c:
+        cmd = arg_r.Peek()
+        if cmd is None:
+            e_usage("expected argument to '-c'", loc.Missing)
+        out.Set('c', value.Str(cmd))
+        arg_r.Next()
 
     return out

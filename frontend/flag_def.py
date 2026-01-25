@@ -266,8 +266,10 @@ MAIN_SPEC = FlagSpecAndMore('main')
 # Special case: Define --eval and --eval-pure
 MAIN_SPEC.EvalFlags()
 
-MAIN_SPEC.ShortFlag('-c', args.String,
-                    quit_parsing_flags=True)  # command string
+# sh -c takes an arg, but the logic to parse it is a special case ParseMore()
+# sh -c -x 'echo hi' sets the -x flag!
+MAIN_SPEC.ShortFlag('-c', args.String)  # command string
+
 MAIN_SPEC.LongFlag('--help')
 MAIN_SPEC.LongFlag('--version')
 
