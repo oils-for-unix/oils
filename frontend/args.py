@@ -649,7 +649,7 @@ def ParseMore(spec, arg_r, sh_dash_c=False):
     """
     out = _Attributes(spec.defaults)
 
-    do_special_arg = False
+    set_dash_c = False
     while not arg_r.AtEnd():
         arg = arg_r.Peek()
         if arg == '--':
@@ -685,11 +685,8 @@ def ParseMore(spec, arg_r, sh_dash_c=False):
 
             for ch in arg[1:]:  # -xyz foo is like -x -y foo -z
 
-                # Special case handled at the end.  ParseMore() is used for
-                # MAIN_SPEC and SET_SPEC (set builtin), but 'set -c' is not
-                # defined.
-                if sh_dash_c and ch == 'c':
-                    do_special_arg = True
+                if sh_dash_c and ch == 'c':  # special case
+                    set_dash_c = True  # handle below
                     continue
 
                 action = spec.actions_short.get(ch)
@@ -705,7 +702,7 @@ def ParseMore(spec, arg_r, sh_dash_c=False):
 
         break  # it's a regular arg
 
-    if do_special_arg:
+    if set_dash_c:
         cmd = arg_r.Peek()
         if cmd is None:
             e_usage("expected argument to '-c'", loc.Missing)

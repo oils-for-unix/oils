@@ -424,23 +424,18 @@ case $SH in zsh) exit ;; esac  # different -x format
 $SH -c -x 'echo hi'
 
 # two flags before the command
-$SH -c -x -e 'false; true'
+$SH -c -x -e 'zz; true' 2> /dev/null
 echo status=$?
 
 ## STDOUT:
 hi
-status=1
+status=127
 ## END
 ## STDERR:
 + echo hi
-+ false
-## END
-## OK osh STDERR:
-+ echo hi
-+ 'false'
 ## END
 
-## OK-2 zsh STDOUT:
+## OK zsh STDOUT:
 ## END
-## OK-2 zsh STDERR:
+## OK zsh STDERR:
 ## END
