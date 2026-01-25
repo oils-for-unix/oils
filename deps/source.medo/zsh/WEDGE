@@ -18,6 +18,12 @@ wedge-make() {
   local build_dir=$2
   local install_dir=$3
 
+  # FIX for zsh 5.1.1: 2009-era config.guess fails on ARM64 with "cannot guess build type"
+  local arch_flags=""
+  if [[ "$(uname -m)" == "aarch64" && "$WEDGE_VERSION" == "5.1.1" ]]; then
+    arch_flags="--build=aarch64-unknown-linux-gnu"
+  fi
+
   # FIX for Github Actions, there's "no controlling tty", so add --with-tcsetpgrp
   # https://www.linuxfromscratch.org/blfs/view/7.5/postlfs/zsh.html
 
@@ -33,6 +39,7 @@ wedge-make() {
   # zsh 5.9 probably doesn't need it?
 
   time $src_dir/configure \
+    $arch_flags \
     --disable-dynamic --with-tcsetpgrp \
     --prefix=$install_dir \
     CFLAGS="-Wno-error=incompatible-pointer-types"
