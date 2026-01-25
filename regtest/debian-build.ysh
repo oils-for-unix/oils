@@ -1,4 +1,14 @@
 #!bin/ysh
+#
+# Build packages using the debian chroot.
+#
+# Usage:
+#   regtest/debian-build.ysh <function-name>
+# Examples:
+#   regtest/debian-build.ysh osh-package-build <package>
+#     Build <package> using osh as the system shell
+#   regtest/debian-build.ysh prepare-all
+#     Build <package> in a standard Debian environment
 
 . regtest/debian-common.ysh
 

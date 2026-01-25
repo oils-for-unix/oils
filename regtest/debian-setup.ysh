@@ -1,10 +1,17 @@
 #!bin/ysh
 
 #
-# Set up Debian Linux chroot.  See regtest/aports.md
+# Set up Debian Linux chroot.
 #
 # Usage:
-#   regtest/aports-setup.sh <function name>
+#   regtest/debian-setup.ysh <function-name>
+# Examples:
+#   regtest/debian-setup.ysh fetch-all
+#     Download all the required files for the chroot.
+#     Only has to be run again if a newer version must be downloaded
+#   regtest/debian-setup.ysh prepare-all
+#     Create a new chroot environment. Must run fetch-all first
+#     Also sets up the osh-as-sh layer.
 
 proc download-oils() {
   var tarball_id=${1:-$TARBALL_ID}
