@@ -79,6 +79,23 @@ error
 124
 ## END
 
+#### symbolic syntax error: empty clause u-r,,u-r
+umask 0124
+umask 'u-r,u-r'
+echo status=$?
+umask
+
+# syntax error
+umask 'u+r,,u-r'
+if test $? -ne 0; then echo 'error'; fi
+umask
+## STDOUT:
+status=0
+0524
+error
+0524
+## END
+
 #### usage: invalid octal digits
 umask 089
 case $? in
