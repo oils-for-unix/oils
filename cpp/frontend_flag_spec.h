@@ -34,7 +34,7 @@ struct DefaultPair_c {
 
 // all concrete subtypes of args::_Action
 enum class ActionType_c {
-  SetToString,    // name, valid
+  SetToString,  // name, valid
 
   SetToInt,         // name
   SetToFloat,       // name
