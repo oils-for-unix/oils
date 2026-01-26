@@ -1,7 +1,54 @@
 ## compare_shells: dash bash mksh zsh
 ## oils_failures_allowed: 4
 
-#### 'umask' prints the umask
+#### usage: too many args
+
+# most shells don't verify this
+umask 1 2
+if test $? -ne 0; then
+  echo fail
+fi
+## STDOUT:
+fail
+## END
+## BUG dash/bash/mksh STDOUT:
+## END
+
+#### usage: bad symbolic input
+umask b=rwx
+## status: 1
+## OK dash status: 2
+
+#### usage: invalid octal digits
+umask 089
+case $? in
+  1) echo error ;;
+  2) echo error ;;
+esac
+## STDOUT:
+error
+## END
+
+#### usage: large octal number
+umask 0022
+
+# osh and other shells treat truncate 0o1234567 as 0o0567
+umask 1234567
+echo status=$?
+
+umask
+
+## status: 0
+## STDOUT:
+status=1
+0022
+## END
+## BUG mksh/zsh/dash STDOUT:
+status=0
+0567
+## END
+
+#### 'umask' without args prints the umask
 umask | tail --bytes 4  # 0022 versus 022
 echo status=$?
 
@@ -132,27 +179,6 @@ ok
 ## END
 ## BUG dash/mksh STDOUT:
 711
-## END
-
-#### umask bad symbolic input
-umask b=rwx
-## status: 1
-## OK dash status: 2
-
-#### umask octal number out of range
-umask 0022
-umask 1234567
-# osh currently treats 0o1234567 as 0o0567
-echo status=$?
-umask | tail -c 4
-## status: 0
-## STDOUT:
-status=1
-022
-## END
-## BUG mksh/zsh/dash STDOUT:
-status=0
-567
 ## END
 
 #### umask allow overwriting and duplicates

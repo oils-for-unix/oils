@@ -1166,58 +1166,74 @@ function.
 
 ### umask
 
-    umask OCTAL
-    umask SYMBOLIC[,SYMBOLIC]...
+Manage the bit mask that determines permissions for new files and directories.
+The mask is subtracted from 666 for files and 777 for directories.
 
-    umask FLAG*  # print the mask
+    umask FLAG?     # print the current mask
 
-Sets the bit mask that determines the permissions for new files and
-directories.  The mask is subtracted from 666 for files and 777 for
-directories.
+    umask OCTAL     # set the mask, e.g. umask 0124
 
-If no argument is provided, show the current mask.
+    umask SYMBOLIC  # set the mask, e.g. umask u+w
 
 Flags:
 
-    -p  print in a form that may be reused as input
-    -S  print in symbolic form
+    -p  Print the mask in a form that may be reused as input
 
-Symbolic mask:
+<!--
+Not implemented:
+    -S  print the mask in symbolic form
+-->
 
-    A SYMBOLIC clause is of the form '[ugoa]*([-+=]([rwxXstugo]*))*', the same as is accepted by chmod.
+#### Symbolic Masks
 
-    who :: u | g | o | a
-    operator :: + | - | =
+A symbolic mask is a comma-separated list of clauses, like:
+
+    umask ug=rwx,o-r
+
+Each clause is of the form:
+
+    who* (operator permission*)*  # this format is accepted by chmod
+
+where:
+
+    who        :: u | g | o | a
+    operator   :: + | - | =
     permission :: r | w | x | X | s | t | u | g | o
 
-    Who:
-        ugo  set the user, group, or other parts of the file mode bits, respectively
-        a    equivalent to all of ugo
+We can also express the syntax like this:
 
-    Operator:
-        +  removes specified permission bits from the umask according to who
-        -  adds specified permission bits to the umask according to who
-        =  set all who permissions to 0777, then remove specified permission bits from the umask according to who
+    [ugoa]*([-+=]([rwxXstugo]*))*
 
-    Permission:
-        rwx  set the read, write, or execute bit respectively
-        X    set the execute bit iff the umask before this operation has one of its 3 execute bits set
-        st   does nothing, but exists for POSIX compatibility
-        ugo  set permission equal to the umask's u, g, and o bits before this operation
+**Who** determines which sections of the bit mask to modify:
+
+    ugo  user, group, or other
+    a    Modify all bits, equivalent to 'ugo'
+
+**Operator** determines how to apply the permission:
+
+    +    Remove specified permission bits from the umask according to who
+    -    Adds specified permission bits to the umask according to who
+    =    set all who permissions to 0777, then remove specified permission bits
+         from the umask according to who
+
+**Permission** determines what can be done with the file system entry:
+
+    rwx  Set the read, write, or execute bit respectively
+    X    Set the execute bit iff the umask before this operation has one of its
+         3 execute bits set
+    st   Does nothing, but exists for POSIX compatibility
+    ugo  Set permission equal to the umask's u, g, and o bits before this
+         operation
 
 Examples:
 
-    umask  # get the current umask in octal form
-
-    umask 0124
-
-    umask ug=rwx,o-r  # clauses may be joined using commas
+    umask              # print the current umask in octal form
 
     umask u+rwx-x-w-r  # operators can be chained
 
-    umask a=u  # [ugo] after the operator represents the initial umask permissions
+    umask a=u          # [ugo] after the operator represents the initial umask
 
-    umask =u  # equivalent to `umask a=u`
+    umask =u           # equivalent to 'umask a=u'
 
 ### ulimit
 

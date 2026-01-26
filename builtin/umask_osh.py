@@ -198,8 +198,7 @@ def _ParseClause(mask, initial_mask, clause):
     # type: (int, int, str) -> Tuple[bool, int]
     if len(clause) == 0:
         # TODO: location highlighting would be nice
-        print_stderr(
-            "oils warning: symbolic mode operator cannot be empty")
+        print_stderr("oils warning: symbolic mode operator cannot be empty")
         return False, 0
 
     parser = SymbolicClauseParser(clause)
@@ -218,6 +217,10 @@ def _ParseClause(mask, initial_mask, clause):
 
 def _ParseClauseList(initial_mask, clause_list):
     # type: (int, List[str]) -> Tuple[bool, int]
+    """
+    There is a grammar for symbolic masks at
+        https://pubs.opengroup.org/onlinepubs/009696899/utilities/chmod.html
+    """
     mask = initial_mask
     for clause in clause_list:
         ok, mask = _ParseClause(mask, initial_mask, clause)
@@ -236,7 +239,6 @@ class Umask(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        # see https://pubs.opengroup.org/onlinepubs/009696899/utilities/chmod.html for more details
 
         attrs, arg_r = flag_util.ParseCmdVal('umask', cmd_val)
 
@@ -253,11 +255,11 @@ class Umask(vm._Builtin):
         first_arg, first_loc = arg_r.ReadRequired2('expected an argument')
         arg_r.Done()  # only one arg
 
-        if first_arg[0].isdigit():
+        if first_arg[0].isdigit():  # TODO: avoid this check?
             try:
                 new_mask = int(first_arg, 8)
             except ValueError:
-                # NOTE: This also happens when we have '8' or '9' in the input.
+                # NOTE: This happens when we have '8' or '9' in the input.
                 print_stderr("oils warning: `%s` is not an octal number" %
                              first_arg)
                 return 1
