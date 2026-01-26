@@ -26,40 +26,42 @@ def _WhoCharToBitset(who_ch):
     # type: (str) -> int
     if who_ch == "u":
         return 0o4
-    elif who_ch == "g":
+    if who_ch == "g":
         return 0o2
-    elif who_ch == "o":
+    if who_ch == "o":
         return 0o1
-    elif who_ch == "a":
+
+    # equivalent to 'ugo' bits
+    if who_ch == "a":
         return 0o7
-    else:
-        assert False, "unreachable"
-        return 0o0
+
+    raise AssertionError()
 
 
 def _PermlistCharToBitset(permlist_ch):
     # type: (str) -> int
     if permlist_ch == "r":
         return 0o400
-    elif permlist_ch == "w":
+    if permlist_ch == "w":
         return 0o200
-    elif permlist_ch == "x":
+    if permlist_ch == "x":
         return 0o100
-    elif permlist_ch == "X":
+    if permlist_ch == "X":
         return 0o040
-    elif permlist_ch == "s":
+
+    if permlist_ch == "s":
         return 0o020
-    elif permlist_ch == "t":
+    if permlist_ch == "t":
         return 0o010
-    elif permlist_ch == "u":
+
+    if permlist_ch == "u":
         return 0o004
-    elif permlist_ch == "g":
+    if permlist_ch == "g":
         return 0o002
-    elif permlist_ch == "o":
+    if permlist_ch == "o":
         return 0o001
-    else:
-        assert False, "unreachable"
-        return 0o0
+
+    raise AssertionError()
 
 
 # perm = [rwx][Xst][ugo]
@@ -75,23 +77,27 @@ def _PermlistToBits(permlist, initial_mask):
     if (permlist & 0o040) != 0 and (initial_mask & 0o111) != 0:
         # X == x iff one of the execute bits are set on the mask
         perm |= 0o1  # X
+
     if (permlist & 0o020) != 0:
         # does nothing b/c umask ignores the set-on-execution bits
         perm |= 0o0  # s
     if (permlist & 0o010) != 0:
         # also does nothing
         perm |= 0o0  # t
+
     if (permlist & 0o4) != 0:
         perm |= (~initial_mask & 0o700) >> 6  # u
     if (permlist & 0o2) != 0:
         perm |= (~initial_mask & 0o070) >> 3  # g
     if (permlist & 0o1) != 0:
         perm |= (~initial_mask & 0o007) >> 0  # o
+
     return perm
 
 
 def _SetMask(wholist, perm, mask):
     # type: (int, int, int) -> int
+    """ For operator - """
     if (wholist & 0o4) != 0:
         mask |= perm << 6
     if (wholist & 0o2) != 0:
@@ -101,9 +107,9 @@ def _SetMask(wholist, perm, mask):
     return mask
 
 
-# can these be done with |= ?
 def _ClearMask(wholist, perm, mask):
     # type: (int, int, int) -> int
+    """ For operators + = """
     if (wholist & 0o4) != 0:
         mask &= 0o777 - (perm << 6)
     if (wholist & 0o2) != 0:
@@ -255,16 +261,13 @@ class Umask(vm._Builtin):
         first_arg, first_loc = arg_r.ReadRequired2('expected an argument')
         arg_r.Done()  # only one arg
 
-        if first_arg[0].isdigit():  # TODO: avoid this check?
-            try:
-                new_mask = int(first_arg, 8)
-            except ValueError:
-                # NOTE: This happens when we have '8' or '9' in the input.
-                print_stderr("oils warning: `%s` is not an octal number" %
-                             first_arg)
-                return 1
-
-            posix.umask(new_mask)
+        octal_mask = -1
+        try:
+            octal_mask = int(first_arg, 8)
+        except ValueError:
+            pass
+        if octal_mask != -1:
+            posix.umask(octal_mask)
             return 0
 
         # NOTE: it's possible to avoid this extra syscall in cases where we don't care about

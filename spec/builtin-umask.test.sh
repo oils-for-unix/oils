@@ -14,10 +14,40 @@ fail
 ## BUG dash/bash/mksh STDOUT:
 ## END
 
+#### usage: empty input, space input
+umask ''
+case $? in
+  1) echo error ;;
+  2) echo error ;;
+  *) echo status=$? ;;
+esac
+
+umask ' '
+case $? in
+  1) echo error too ;;
+  2) echo error too ;;
+  *) echo status=$? ;;
+esac
+
+## STDOUT:
+error
+error too
+## END 
+## BUG dash/mksh STDOUT:
+status=0
+error too
+## END
+
 #### usage: bad symbolic input
 umask b=rwx
-## status: 1
-## OK dash status: 2
+case $? in
+  1) echo error ;;
+  2) echo error ;;
+  *) echo status=$? ;;
+esac
+## STDOUT:
+error
+## END
 
 #### usage: invalid octal digits
 umask 089
