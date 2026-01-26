@@ -274,16 +274,10 @@ class Umask(vm._Builtin):
         # the initial value (ex: umask ...,a=rwx) although it's non-trivial to determine
         # when, so it's probably not worth it
         initial_mask = posix.umask(0)
-        try:
-            ok, new_mask = _ParseClauseList(initial_mask, first_arg.split(","))
-            if not ok:
-                posix.umask(initial_mask)
-                return 1
-
-            posix.umask(new_mask)
-            return 0
-
-        except Exception as e:
-            # this guard protects the umask value against any accidental exceptions
+        ok, new_mask = _ParseClauseList(initial_mask, first_arg.split(","))
+        if not ok:
             posix.umask(initial_mask)
-            raise
+            return 1
+
+        posix.umask(new_mask)
+        return 0

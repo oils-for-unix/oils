@@ -39,14 +39,19 @@ error too
 ## END
 
 #### symbolic syntax error: b=rwx
+umask 0124
+
 umask b=rwx
 case $? in
   1) echo error ;;
   2) echo error ;;
   *) echo status=$? ;;
 esac
+
+umask  # make sure it hasn't changed
 ## STDOUT:
 error
+0124
 ## END
 
 #### symbolic syntax error: start with -
