@@ -1,5 +1,5 @@
 ## compare_shells: dash bash mksh zsh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 2
 
 #### usage: too many args
 
@@ -38,7 +38,7 @@ status=0
 error too
 ## END
 
-#### usage: bad symbolic input
+#### symbolic syntax error: b=rwx
 umask b=rwx
 case $? in
   1) echo error ;;
@@ -47,6 +47,31 @@ case $? in
 esac
 ## STDOUT:
 error
+## END
+
+#### symbolic syntax error: start with -
+umask 0124
+umask -rwx
+if test $? -ne 0; then echo 'error'; fi
+umask | tail -c 4
+
+umask 0124
+umask -wx
+if test $? -ne 0; then echo 'error'; fi
+umask | tail -c 4
+
+umask 0124
+umask -=+
+if test $? -ne 0; then echo 'error'; fi
+umask | tail -c 4
+## status: 0
+## STDOUT:
+error
+124
+error
+124
+error
+124
 ## END
 
 #### usage: invalid octal digits
@@ -70,12 +95,12 @@ umask
 
 ## status: 0
 ## STDOUT:
-status=1
-0022
-## END
-## BUG mksh/zsh/dash STDOUT:
 status=0
 0567
+## END
+## OK bash STDOUT:
+status=1
+0022
 ## END
 
 #### 'umask' without args prints the umask
@@ -410,30 +435,6 @@ umask | tail -c 4
 124
 ## END
 ## BUG zsh STDOUT: 
-## END
-
-#### umask bare op -
-umask 0124
-umask -rwx
-umask | tail -c 4
-
-umask 0124
-umask -wx
-umask | tail -c 4
-
-umask 0124
-umask -=+
-umask | tail -c 4
-## status: 0
-## STDOUT:
-777
-337
-777
-## END
-## N-I dash/bash/mksh/zsh STDOUT:
-124
-124
-124
 ## END
 
 #### umask permcopy
