@@ -1,5 +1,12 @@
-const res = await fetch(`${window.basePath}/index.json`);
-const index = await res.json();
+let _index;
+async function getIndex() {
+  if (!_index) {
+    const res = await fetch(`${window.basePath}/index.json`);
+    _index = await res.json();
+  }
+
+  return _index;
+}
 
 /**
  * True Damerau–Levenshtein distance (allows multiple transpositions).
@@ -90,10 +97,12 @@ function damerauLevenshteinDistance(textA, textB) {
   * Only the top 25 results are given. We first show the exact matches, and then
   * the inexact matches ranked by decreasing DL distance.
   */
-function search(query) {
+async function search(query) {
   if (!query) {
     return [];
   }
+
+  const index = await getIndex();
 
   // We do case insensitive matching.
   query = query.toLowerCase();
@@ -126,7 +135,7 @@ const searchbar = document.getElementById("searchbar");
 let resultsList = null;
 searchbar.addEventListener('input', async (event) => {
   const query = event.target.value;
-  const results = search(query);
+  const results = await search(query);
 
   if (resultsList) {
     resultsList.remove();
