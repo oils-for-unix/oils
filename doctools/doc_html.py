@@ -107,7 +107,7 @@ def Header(meta, f, draft_warning=False):
 
     f.write('''\
       <div id="search"></div>
-      <hr></hr>
+      <hr />
 ''')
 
 
