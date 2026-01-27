@@ -128,28 +128,40 @@ async function search(query) {
   return results.map(([entry, _rank]) => entry).slice(0, 25);
 }
 
+function searchbar() {
+  const searchDiv = document.getElementById("search");
 
-const searchDiv = document.getElementById("search");
-const searchbar = document.getElementById("searchbar");
+  // Create the searchbar dynamically so that users without JS enabled don't get
+  // a broken searchbar
+  const searchbar = document.createElement('input');
+  searchbar.id = 'searchbar';
+  searchbar.setAttribute('placeholder', 'Search');
+  searchbar.setAttribute('title', 'Search');
+  searchbar.setAttribute('autocapitalize', 'none');
+  searchbar.setAttribute('enterkeyhint', 'search');
+  searchDiv.appendChild(searchbar);
 
-let resultsList = null;
-searchbar.addEventListener('input', async (event) => {
-  const query = event.target.value;
-  const results = await search(query);
+  let resultsList = null;
+  searchbar.addEventListener('input', async (event) => {
+    const query = event.target.value;
+    const results = await search(query);
 
-  if (resultsList) {
-    resultsList.remove();
-  }
+    if (resultsList) {
+      resultsList.remove();
+    }
 
-  resultsList = document.createElement('ul');
-  searchDiv.appendChild(resultsList);
+    resultsList = document.createElement('ul');
+    searchDiv.appendChild(resultsList);
 
-  for (const result of results) {
-    const item = document.createElement('li');
-    const link = document.createElement('a');
-    link.innerHTML = result.symbol;
-    link.href = window.basePath + '/' + result.anchor;
-    item.appendChild(link);
-    resultsList.appendChild(item);
-  }
-});
+    for (const result of results) {
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      link.innerHTML = result.symbol;
+      link.href = window.basePath + '/' + result.anchor;
+      item.appendChild(link);
+      resultsList.appendChild(item);
+    }
+  });
+}
+
+searchbar();

@@ -106,9 +106,7 @@ def Header(meta, f, draft_warning=False):
 ''')
 
     f.write('''\
-      <div id="search">
-        <input id="searchbar" placeholder="Search" title="Search" autocapitalize="none" enterkeyhint="search" />
-      </div>
+      <div id="search"></div>
       <hr></hr>
 ''')
 
