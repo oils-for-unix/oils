@@ -1,8 +1,16 @@
+// Fetch the search index only when the user wants to search. Then cache it thereafter.
+//
+// We also have to avoid race conditions. On very slow networks, multiple calls to getIndex can be
+// made before the fetch completes. To remedy this, we store the promise returning the index in
+// _index. Then any calls to await getIndex() implicitly wait on this single promise.
 let _index;
-async function getIndex() {
+function getIndex() {
   if (!_index) {
-    const res = await fetch(`${window.basePath}/index.json`);
-    _index = await res.json();
+    _index = (async () => {
+      const res = await fetch(`${window.basePath}/index.json`);
+      _index = await res.json();
+      return _index;
+    })();
   }
 
   return _index;
@@ -141,11 +149,22 @@ function searchbar() {
   searchbar.setAttribute('enterkeyhint', 'search');
   searchDiv.appendChild(searchbar);
 
+  // We show a loading bar on the first fetch.
+  const loading = document.createElement('p');
+  loading.innerText = 'Loading...';
+  const showLoading = () => loading.style.display = 'block';
+  const hideLoading = () => loading.style.display = 'none';
+  hideLoading();
+  searchDiv.appendChild(loading);
+
   let resultsList = null;
   searchbar.addEventListener('input', async (event) => {
+    showLoading();
     const query = event.target.value;
     const results = await search(query);
+    hideLoading();
 
+    // Clear the previous results, if present
     if (resultsList) {
       resultsList.remove();
     }
