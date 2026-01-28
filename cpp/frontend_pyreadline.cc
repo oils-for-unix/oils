@@ -68,7 +68,7 @@ static void display_matches_hook(char** matches, int num_matches,
 
 static void free_history_entry_portable(HIST_ENTRY* entry) {
   // See also: https://github.com/python/cpython/issues/53695
-  #if HAVE_READLINE_FREE_HISTORY_ENTRY
+  #if HAVE_READLINE && HAVE_READLINE_FREE_HISTORY_ENTRY
   // GNU Readline 5.0+
   histdata_t data = free_history_entry(entry);
   free(data);
@@ -346,7 +346,7 @@ int Readline::get_current_history_length() {
 }
 
 void Readline::resize_terminal() {
-#if HAVE_READLINE_RESIZE_TERMINAL
+#if HAVE_READLINE && HAVE_READLINE_RESIZE_TERMINAL
   rl_resize_terminal();
 #else
   assert(0);  // not implemented
@@ -355,7 +355,7 @@ void Readline::resize_terminal() {
 
 // bind fns
 void Readline::list_funmap_names() {
-#if HAVE_READLINE_LIST_FUNMAP_NAMES
+#if HAVE_READLINE && HAVE_READLINE_LIST_FUNMAP_NAMES
   rl_list_funmap_names();
 #else
   assert(0);  // not implemented
