@@ -20,7 +20,6 @@ namespace py_readline {
 
 static Readline* gReadline = nullptr;
 
-// Assuming readline 4.0+
 #if HAVE_READLINE
 
 static char* do_complete(const char* text, int state) {
@@ -68,7 +67,7 @@ static void display_matches_hook(char** matches, int num_matches,
 
 static void free_history_entry_portable(HIST_ENTRY* entry) {
   // See also: https://github.com/python/cpython/issues/53695
-  #if HAVE_READLINE && HAVE_READLINE_FREE_HISTORY_ENTRY
+  #if HAVE_READLINE_FREE_HISTORY_ENTRY
   // GNU Readline 5.0+
   histdata_t data = free_history_entry(entry);
   free(data);
