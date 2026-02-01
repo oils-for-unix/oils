@@ -1166,15 +1166,103 @@ function.
 
 ### umask
 
-    umask MODE?
-
-Sets the bit mask that determines the permissions for new files and
-directories.  The mask is subtracted from 666 for files and 777 for
+Manage the bit mask that determines the permission metadata on new files and
 directories.
 
-Oils currently supports writing masks in octal.
+    umask FLAG?     # print the current mask
 
-If no MODE, show the current mask.
+    umask OCTAL     # set the mask, e.g. umask 0124
+
+    umask SYMBOLIC  # set the mask, e.g. umask u+w
+
+Flags:
+
+    -p  Print the mask in a form that may be reused as input
+
+#### How Masks Work
+
+Let's walk through an example.  A common `umask` is `0022`.  This is three
+**octal** digits corresponding to:
+
+    0      2      2
+    ^user  ^group ^other
+            write  write
+
+Each octal digit has 3 bits:
+
+    1  execute
+    2  write
+    4  read
+
+For example, 7 is equal to 1 + 2 + 4, so 7 represents the set of 3 bits `r w
+x`.
+
+---
+
+The mask is subtracted from 666 for files:
+
+      666  # rw-rw-rw- (not executable)
+    - 022
+    -----
+      644  # rw-r--r--
+
+And 777 for directories:
+
+      777  # rwxrwxrwx
+    - 022
+    -----
+      755  # rwxr-xr-x
+
+<!--
+Not implemented:
+    -S  print the mask in symbolic form
+-->
+
+#### Symbolic Masks
+
+Rather than specifying an octal mask, you can modify the umask with list of
+comma-separated **symbolic** clauses, like:
+
+    umask ug=rwx,o-r
+
+Each clause is of the form:
+
+    who* (operator permission*)*  # this format is accepted by chmod
+
+**Who** is a set, determining which sections of the mask to modify:
+
+    ugo  user, group, or other
+    a    Modify all bits, equivalent to 'ugo'
+
+**Operator** determines how to apply the permissions:
+
+    +    Entries will be created with the permissions
+    -    Entries will be created without the permission
+    =    Set the umask to (0777 - permissions)
+
+**Permission** is a set, determining what can be done with the entry:
+
+    rwx  Set the read, write, or execute bit respectively
+    X    Set the execute bit iff the umask before this operation has one of its
+         3 execute bits set
+    st   Does nothing, but exists for POSIX compatibility
+    ugo  Set permission equal to the umask's u, g, and o bits before this
+         operation
+
+We can also express the syntax like this:
+
+    [ugoa]*([-+=]([rwxXstugo]*))*
+
+
+#### Examples
+
+    umask              # print the current umask in octal form
+
+    umask u+rwx-x-w-r  # operators can be chained
+
+    umask a=u          # [ugo] after the operator represents the initial umask
+
+    umask =u           # equivalent to 'umask a=u'
 
 ### ulimit
 

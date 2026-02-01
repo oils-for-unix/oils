@@ -1,6 +1,7 @@
 #include "mycpp/gc_builtins.h"
 
 #include <assert.h>
+#include <errno.h>     // errno
 #include <inttypes.h>  // PRId64
 #include <limits.h>    // INT_MAX
 #include <math.h>      // INFINITY
@@ -201,6 +202,31 @@ TEST StringToInteger_test() {
   PASS();
 }
 
+TEST StringToInteger_test2() {
+  bool ok = true;
+  int i = 0;
+  int64_t i64 = 0;
+
+  char space[] = " ";
+
+  ok = StringToInt(space, strlen(space), 10, &i);
+  ASSERT(!ok);
+
+  ok = StringToInt64(space, strlen(space), 10, &i64);
+  ASSERT(!ok);
+
+  // Test raw strtol() function too
+  char* pos;
+  errno = 0;
+  long v = strtol(space, &pos, 10);
+  log("errno = %d", errno);
+  log("v = %d", v);
+  log("space = %p", space);
+  log("pos = %p", pos);
+
+  PASS();
+}
+
 TEST str_to_int_test() {
   int i;
 
@@ -220,9 +246,31 @@ TEST str_to_int_test() {
   i = to_int(StrFromC("077"), 8);
   ASSERT_EQ_FMT(63, i, "%d");
 
-  bool caught = false;
+  bool caught;
+
+  caught = false;
   try {
     i = to_int(StrFromC("zzz"));
+  } catch (ValueError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  // Bug fix: " " should not be accepted
+  caught = false;
+  try {
+    i = to_int(StrFromC(" "));
+    log("octal i = %d", i);
+  } catch (ValueError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  // Bug fix: " " is not octal either
+  caught = false;
+  try {
+    i = to_int(StrFromC(" "), 8);
+    log("octal i = %d", i);
   } catch (ValueError* e) {
     caught = true;
   }
@@ -438,6 +486,7 @@ int main(int argc, char** argv) {
   RUN_TEST(float_test);
 
   RUN_TEST(StringToInteger_test);
+  RUN_TEST(StringToInteger_test2);
   RUN_TEST(str_to_int_test);
   RUN_TEST(int_to_str_test);
   RUN_TEST(float_to_str_test);

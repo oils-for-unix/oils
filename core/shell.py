@@ -54,6 +54,7 @@ from builtin import pure_ysh
 from builtin import readline_osh
 from builtin import read_osh
 from builtin import trap_osh
+from builtin import umask_osh
 
 from builtin import func_eggex
 from builtin import func_hay
@@ -261,7 +262,7 @@ def Main(
     assert lang in ('osh', 'ysh'), lang
 
     try:
-        attrs = flag_util.ParseMore('main', arg_r)
+        attrs = flag_util.ParseMore('main', arg_r, sh_dash_c=True)
     except error.Usage as e:
         print_stderr('%s usage error: %s' % (lang, e.msg))
         return 2
@@ -770,7 +771,7 @@ def Main(
     ### Process builtins
     b[builtin_i.exec_] = process_osh.Exec(mem, ext_prog, fd_state, search_path,
                                           errfmt)
-    b[builtin_i.umask] = process_osh.Umask()
+    b[builtin_i.umask] = umask_osh.Umask()
     b[builtin_i.ulimit] = process_osh.Ulimit()
     b[builtin_i.wait] = process_osh.Wait(waiter, job_list, mem, tracer, errfmt)
 

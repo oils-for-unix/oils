@@ -66,28 +66,25 @@ def _FlagType(arg_type):
     return typ
 
 
-def _ActionForOneArg(arg_type, name, quit_parsing_flags=False):
-    # type: (Union[None, int, List[str]], str, bool) -> args._Action
+def _ActionForOneArg(arg_type, name):
+    # type: (Union[None, int, List[str]], str) -> args._Action
 
     if arg_type == args.Bool:
-        assert not quit_parsing_flags
         # TODO: remove all usages of --long=false, since it has a bug
         #log('ATTACHED %r', name)
         action = args.SetAttachedBool(name)  # type: args._Action
 
     elif arg_type == args.Int:
-        assert not quit_parsing_flags
         action = args.SetToInt(name)
 
     elif arg_type == args.Float:
-        assert not quit_parsing_flags
         action = args.SetToFloat(name)
 
     elif arg_type == args.String:
-        action = args.SetToString(name, quit_parsing_flags)
+        action = args.SetToString(name)
 
     elif isinstance(arg_type, list):
-        action = args.SetToString(name, quit_parsing_flags, valid=arg_type)
+        action = args.SetToString(name, valid=arg_type)
 
     else:
         raise AssertionError(arg_type)
@@ -271,25 +268,18 @@ class _FlagSpecAndMore(object):
         self.actions_long['eval'] = args.AppendEvalFlag('eval')
         self.actions_long['eval-pure'] = args.AppendEvalFlag('eval-pure')
 
-    def ShortFlag(self,
-                  short_name,
-                  arg_type=None,
-                  default=None,
-                  quit_parsing_flags=False,
-                  help=None):
-        # type: (str, int, Optional[Any], bool, Optional[str]) -> None
-        """ -c """
+    def ShortFlag(self, short_name, arg_type=None, default=None, help=None):
+        # type: (str, int, Optional[Any], Optional[str]) -> None
+        """ -x """
         assert short_name.startswith('-'), short_name
         assert len(short_name) == 2, short_name
 
         char = short_name[1]
         typ = _FlagType(arg_type)
         if arg_type is None:
-            assert quit_parsing_flags == False
             self.actions_short[char] = args.SetToTrue(char)
         else:
-            self.actions_short[char] = _ActionForOneArg(
-                arg_type, char, quit_parsing_flags=quit_parsing_flags)
+            self.actions_short[char] = _ActionForOneArg(arg_type, char)
 
         self.defaults[char] = _Default(arg_type, arg_default=default)
         self.fields[char] = typ

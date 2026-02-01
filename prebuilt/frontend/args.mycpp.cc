@@ -45,8 +45,10 @@ GLOBAL_STR(S_xmu, "[]");
 GLOBAL_STR(S_pcD, "]");
 GLOBAL_STR(S_tci, "_");
 GLOBAL_STR(S_gfw, "___ GC: after printing");
+GLOBAL_STR(S_emj, "c");
 GLOBAL_STR(S_gFE, "code");
 GLOBAL_STR(S_enh, "eval-pure");
+GLOBAL_STR(S_wFx, "expected argument to '-c'");
 GLOBAL_STR(S_Fvh, "extern");
 GLOBAL_STR(S_xaw, "extern_");
 GLOBAL_STR(S_xho, "failglob: ");
@@ -1580,9 +1582,8 @@ bool AppendEvalFlag::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_A
   return false;
 }
 
-_ArgAction::_ArgAction(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid) {
+_ArgAction::_ArgAction(BigStr* name, List<BigStr*>* valid) {
   this->name = name;
-  this->quit_parsing_flags = quit_parsing_flags;
   this->valid = valid;
 }
 
@@ -1600,15 +1601,15 @@ bool _ArgAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attri
     arg_r->Next();
     arg = arg_r->Peek();
     if (arg == nullptr) {
-      e_usage(StrFormat("expected argument to %r", str_concat(S_Bjq, this->name)), arg_r->Location());
+      e_usage(StrFormat("expected argument to '-%s'", this->name), arg_r->Location());
     }
   }
   val = this->_Value(arg, arg_r->Location());
   out->Set(this->name, val);
-  return this->quit_parsing_flags;
+  return false;
 }
 
-SetToInt::SetToInt(BigStr* name) : ::args::_ArgAction(name, false, nullptr) {
+SetToInt::SetToInt(BigStr* name) : ::args::_ArgAction(name, nullptr) {
 }
 
 value_asdl::value_t* SetToInt::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
@@ -1631,7 +1632,7 @@ value_asdl::value_t* SetToInt::_Value(BigStr* arg, syntax_asdl::loc_t* location)
   return Alloc<value::Int>(i);
 }
 
-SetToFloat::SetToFloat(BigStr* name) : ::args::_ArgAction(name, false, nullptr) {
+SetToFloat::SetToFloat(BigStr* name) : ::args::_ArgAction(name, nullptr) {
 }
 
 value_asdl::value_t* SetToFloat::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
@@ -1648,7 +1649,7 @@ value_asdl::value_t* SetToFloat::_Value(BigStr* arg, syntax_asdl::loc_t* locatio
   return Alloc<value::Float>(f);
 }
 
-SetToString::SetToString(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid) : ::args::_ArgAction(name, quit_parsing_flags, valid) {
+SetToString::SetToString(BigStr* name, List<BigStr*>* valid) : ::args::_ArgAction(name, valid) {
 }
 
 value_asdl::value_t* SetToString::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
@@ -1885,15 +1886,16 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
   return out;
 }
 
-args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* arg_r) {
+args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* arg_r, bool sh_dash_c) {
   args::_Attributes* out = nullptr;
-  bool quit;
+  bool do_special_arg;
   BigStr* arg = nullptr;
   args::_Action* action = nullptr;
   BigStr* char0 = nullptr;
   BigStr* attached_arg = nullptr;
+  BigStr* cmd = nullptr;
   out = Alloc<_Attributes>(spec->defaults);
-  quit = false;
+  do_special_arg = false;
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
     if (maybe_str_equals(arg, S_gpk)) {
@@ -1923,22 +1925,29 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
       char0 = arg->at(0);
       for (StrIter it(arg->slice(1)); !it.Done(); it.Next()) {
         BigStr* ch = it.Value();
+        if ((sh_dash_c and str_equals(ch, S_emj))) {
+          do_special_arg = true;
+          continue;
+        }
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
           e_usage(StrFormat("got invalid flag %r", str_concat(S_Bjq, ch)), arg_r->Location());
         }
         attached_arg = list_contains(spec->plus_flags, ch) ? char0 : nullptr;
-        quit = action->OnMatch(attached_arg, arg_r, out);
+        action->OnMatch(attached_arg, arg_r, out);
       }
       arg_r->Next();
-      if (quit) {
-        break;
-      }
-      else {
-        continue;
-      }
+      continue;
     }
     break;
+  }
+  if (do_special_arg) {
+    cmd = arg_r->Peek();
+    if (cmd == nullptr) {
+      e_usage(S_wFx, loc::Missing);
+    }
+    out->Set(S_emj, Alloc<value::Str>(cmd));
+    arg_r->Next();
   }
   return out;
 }

@@ -7,8 +7,8 @@
 #include <glob.h>
 #include <locale.h>
 #include <regex.h>
-#include <signal.h>   // NSIG
-#include <string.h>   // strsignal(), strstr()
+#include <signal.h>  // NSIG
+#include <string.h>  // strsignal(), strstr()
 #include <sys/ioctl.h>
 #include <time.h>    // nanosleep()
 #include <unistd.h>  // gethostname()

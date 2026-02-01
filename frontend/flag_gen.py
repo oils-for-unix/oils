@@ -91,10 +91,7 @@ def _WriteActions(f, var_name, actions, counter):
 
         name = None
         if isinstance(action, args.SetToString):
-            if action.quit_parsing_flags:
-                action_type = 'SetToString_q'
-            else:
-                action_type = 'SetToString'
+            action_type = 'SetToString'
             name = action.name
 
         elif isinstance(action, args.SetToInt):

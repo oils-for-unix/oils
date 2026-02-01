@@ -141,6 +141,10 @@ bool StringToInt(const char* s, int length, int base, int* result) {
   errno = 0;
   long v = strtol(s, &pos, base);
 
+  if (pos == s) {
+    return false;  // nothing consumed
+  }
+
   if (errno == ERANGE) {
     switch (v) {
     case LONG_MIN:
@@ -159,6 +163,7 @@ bool StringToInt(const char* s, int length, int base, int* result) {
   }
 
   const char* end = s + length;
+  // log("s %p, pos %p, end %p, length %d", s, pos, end, length);
   if (pos == end) {
     *result = v;
     return true;  // strtol() consumed ALL characters.
@@ -187,6 +192,10 @@ bool StringToInt64(const char* s, int length, int base, int64_t* result) {
 
   errno = 0;
   long long v = strtoll(s, &pos, base);
+
+  if (pos == s) {
+    return false;  // nothing consumed
+  }
 
   if (errno == ERANGE) {
     switch (v) {

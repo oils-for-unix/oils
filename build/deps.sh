@@ -153,6 +153,7 @@ readonly -a WEDGE_DEPS_DEBIAN=(
   cmake
   libreadline-dev 
   systemtap-sdt-dev
+  xz-utils
 
   # for Souffle, flex and bison
   #flex bison
