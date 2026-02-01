@@ -47,6 +47,7 @@ class EnvConfig(object):
         self.mem = mem
         self.exec_opts = mem.exec_opts
         self.defaults = defaults
+        self.env_obj_at_startup = None  # type: Optional[bool]
 
     def GetVal(self, var_name):
         # type: (str) -> value_t
@@ -54,7 +55,14 @@ class EnvConfig(object):
         YSH: Look at ENV.PATH, and then __defaults__.PATH
         OSH: Look at $PATH
         """
-        if self.mem.exec_opts.env_obj():  # e.g. $[ENV.PATH]
+        if self.env_obj_at_startup is None:
+            self.env_obj_at_startup = self.mem.exec_opts.env_obj()
+
+        use_env_obj = self.mem.exec_opts.env_obj()
+        if var_name in ('PS1', 'PS2', 'PS3', 'PS4'):
+            use_env_obj = self.env_obj_at_startup
+
+        if use_env_obj:  # e.g. $[ENV.PATH]
 
             val = self.mem.env_dict.get(var_name)
             if val is None:

@@ -159,7 +159,7 @@ hi
 ## stderr-json: "<Runtime error: Func 'renderPrompt' takes no positional args, but got 1><Runtime error: Func 'renderPrompt' takes no positional args, but got 1>"
 
 
-#### PS1 is migrated when unsetting ysh:all
+#### PS1 prompt persists after unsetting ysh:all
 
 echo 'shopt --unset ysh:all
 echo "hello"
@@ -168,14 +168,3 @@ echo "world"' | $[ENV.SH] -i 2>&1 | grep -c 'ysh-0.37\$'
 ## STDOUT:
 3
 ## END
-
-
-#### PS1 value is preserved when unsetting ysh:all in interactive mode
-
-echo 'shopt --unset ysh:all
-echo "PS1=[$PS1]"' | $[ENV.SH] -i 2>&1 | grep -o 'PS1=\[.*\]'
-
-## STDOUT:
-PS1=[\s-\v\$ ]
-## END
-

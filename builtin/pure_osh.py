@@ -335,16 +335,12 @@ class Shopt(vm._Builtin):
                     opt_nums.extend(consts.YSH_UPGRADE)
                     if b:
                         self.mem.MaybeInitEnvDict(self.environ)
-                    else:
-                        self.mem.MaybeMigrateEnvToVars()
                     continue
 
                 if opt_group == opt_group_i.YshAll:
                     opt_nums.extend(consts.YSH_ALL)
                     if b:
                         self.mem.MaybeInitEnvDict(self.environ)
-                    else:
-                        self.mem.MaybeMigrateEnvToVars()
                     continue
 
                 if opt_group == opt_group_i.StrictAll:
@@ -367,27 +363,9 @@ class Shopt(vm._Builtin):
 
         # Otherwise, set options.
         ignore_shopt_not_impl = self.exec_opts.ignore_shopt_not_impl()
-
-        need_init_env = False
-        need_migration = False
-        for opt_name in opt_names:
-            opt_group = consts.OptionGroupNum(opt_name)
-            if opt_group == opt_group_i.YshAll or opt_group == opt_group_i.YshUpgrade:
-                if b:
-                    need_init_env = True
-                else:
-                    need_migration = True
-                break
-
         for opt_name in opt_names:
             # We allow set -o options here
             self.mutable_opts.SetAnyOption(opt_name, b, ignore_shopt_not_impl)
-
-        if need_init_env:
-            self.mem.MaybeInitEnvDict(self.environ)
-
-        if need_migration:
-            self.mem.MaybeMigrateEnvToVars()
 
         return 0
 
