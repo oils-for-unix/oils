@@ -1,8 +1,9 @@
 #!bin/ysh
 
-# Usage:
+# Driver for doctools/search_index.py
 #
-#  $0 index
+# To index all HTML files in _release/VERSION/doc:
+#    $0 index
 
 proc index-all(...files;; baseDir) {
   for file in (files) {

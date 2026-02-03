@@ -3,8 +3,6 @@
 # This tool reads in the headings on a doc/ref page and produces a list of all
 # the symbols (and their anchors) which can be used as a search index.
 #
-# Currently a WIP.
-#
 # Usage:
 #
 #  doctools/search_index.py _release/VERSION/doc/ref/chap-builtin-func.html
