@@ -141,11 +141,7 @@ function filterAndRank(index, query) {
   }
 
   kept.sort((a, b) => (a._rank ?? Infinity) - (b._rank ?? Infinity));
-
-  return kept.filter((x) => {
-    delete x._rank;
-    return x;
-  });
+  return kept;
 }
 
 /**
