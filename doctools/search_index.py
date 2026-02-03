@@ -72,7 +72,7 @@ class FindHeadings(HTMLParser):
             self.heading['title'] = data
         self.heading['id'] = '#' + self.anchor
 
-    def get_symbols(self, relpath: str):
+    def get_symbols(self, relpath):
         symbol = None
         symbols = []
 
