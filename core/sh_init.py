@@ -8,6 +8,7 @@ from core import pyutil
 from core import optview
 from core import state
 from frontend import location
+from mycpp import mylib
 from mycpp.mylib import iteritems, tagswitch, log
 from osh import split
 from pylib import os_path
@@ -20,6 +21,9 @@ if TYPE_CHECKING:
     from _devbuild.gen import arg_types
 
 _ = log
+
+if mylib.PYTHON:
+    _env_config_instance = None  # type: EnvConfig
 
 
 class EnvConfig(object):
@@ -44,9 +48,15 @@ class EnvConfig(object):
 
     def __init__(self, mem, defaults):
         # type: (state.Mem, Dict[str, value_t]) -> None
+        if mylib.PYTHON:
+            global _env_config_instance
+            assert _env_config_instance is None, "Only one EnvConfig instance"
+            _env_config_instance = self
+
         self.mem = mem
         self.exec_opts = mem.exec_opts
         self.defaults = defaults
+        # Lazy init because exec_opts is None when Mem.__init__ creates EnvConfig
         self._did_capture_env_obj = False  # type: bool
         self._env_obj_at_startup = False  # type: bool
 
@@ -56,11 +66,14 @@ class EnvConfig(object):
         YSH: Look at ENV.PATH, and then __defaults__.PATH
         OSH: Look at $PATH
         """
+        # Capture env_obj on first use (can't do in __init__, exec_opts is None then)
         if not self._did_capture_env_obj:
             self._env_obj_at_startup = self.mem.exec_opts.env_obj()
             self._did_capture_env_obj = True
 
         use_env_obj = self.mem.exec_opts.env_obj()
+        # Prompt variables use startup value to fix #2367: prompt shouldn't
+        # disappear when 'shopt --unset ysh:all' or 'shopt --set ysh:all'
         if var_name in ('PS1', 'PS2', 'PS3', 'PS4'):
             use_env_obj = self._env_obj_at_startup
 

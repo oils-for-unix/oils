@@ -168,3 +168,13 @@ echo "world"' | $[ENV.SH] -i 2>&1 | grep -c 'ysh-0.37\$'
 ## STDOUT:
 3
 ## END
+
+#### PS1 prompt persists after setting ysh:all in OSH
+
+echo 'shopt --set ysh:all
+echo "hello"
+echo "world"' | $[ENV.SH.replace('ysh', 'osh')] -i 2>&1 | grep -c 'osh-0.37\$'
+
+## STDOUT:
+3
+## END
