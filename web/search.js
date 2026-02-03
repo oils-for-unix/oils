@@ -94,46 +94,136 @@ function damerauLevenshteinDistance(textA, textB) {
 }
 
 /**
-  * Search the global `index` against `query`.
-  *
-  * The matching algorithm is as follows, include all items with:
-  *  - An exact match
-  *  - Damerau-Levenshtein distance <= 5
-  *
-  * Note that all matching is case-insensitive.
-  *
-  * Only the top 25 results are given. We first show the exact matches, and then
-  * the inexact matches ranked by decreasing DL distance.
-  */
-async function search(query) {
-  if (!query) {
-    return [];
+ * Compute a match rank for a single label against query.
+ * Lower is better. 0 = exact substring match, 1..5 = fuzzy, Infinity = no match.
+ *
+ * Expects both symbol and query to be all lowercase.
+ */
+function rankSymbol(symbol, query) {
+  // Exact match
+  if (symbol.includes(query)) return 0;
+
+  const d = damerauLevenshteinDistance(query, symbol);
+  return d <= 5 ? d : Infinity;
+}
+
+/**
+ * Recursively filter the index to only branches containing matches.
+ *
+ * `query` must be a lowercase string.
+ */
+function filterAndRank(index, query) {
+  const kept = [];
+  for (const node of index) {
+    const symbol = node.symbol.toLowerCase();
+    const anchor = node.anchor;
+    const children = node.children ?? []; // We omit the children in the index when empty
+
+    const selfRank = rankSymbol(symbol, query);
+    const keptChildren = filterAndRank(children, query);
+
+    // Best descendant rank (if any)
+    let bestChildRank = Infinity;
+    for (const c of keptChildren) {
+      if (c._rank < bestChildRank) bestChildRank = c._rank;
+    }
+
+    // Keep node if it matches or has matching descendants
+    const bestRank = Math.min(selfRank, bestChildRank);
+    if (bestRank !== Infinity) {
+      const copy = { symbol, anchor, children: keptChildren };
+
+      // Store rank for sorting
+      copy._rank = bestRank;
+
+      kept.push(copy);
+    }
   }
+
+  kept.sort((a, b) => (a._rank ?? Infinity) - (b._rank ?? Infinity));
+
+  return kept.filter((x) => {
+    delete x._rank;
+    return x;
+  });
+}
+
+/**
+ * Trim the pruned tree to at most `limit` total rendered links (nodes).
+ * Keeps structure (parents) only as needed to show kept children.
+ *
+ * This way searching 'a' doesn't fill the entire page with junk.
+ * TODO: pagination / a next button
+ */
+function trimResults(results, limit) {
+  let count = 0;
+
+  function walk(list) {
+    const out = [];
+    for (const node of list) {
+      if (count >= limit) break;
+
+      // Count this node as one rendered link
+      count += 1;
+
+      const trimmedChildren = walk(node.children);
+
+      out.push({
+        symbol: node.symbol,
+        anchor: node.anchor,
+        children: trimmedChildren,
+      });
+    }
+    return out;
+  }
+
+  return walk(results);
+}
+
+/**
+ * Search across the website using the global search index.
+ * Returns a pruned tree (array of nodes) ready to render (see renderResults).
+ *
+ * Matching algorithm:
+ *  - Exact substring match: rank 0
+ *  - DL distance <= 5: rank 1..5
+ *  - Otherwise excluded
+ *
+ * Only the top `limit` rendered nodes are returned (default 25).
+ */
+async function search(query, { limit = 25 } = {}) {
+  if (!query) return [];
 
   const index = await getIndex();
+  const pruned = filterAndRank(index, query.toLowerCase());
+  return trimResults(pruned, limit);
+}
 
-  // We do case insensitive matching.
-  query = query.toLowerCase();
+/**
+ * Render as nested <ul>/<li> where *every* item is a link.
+ */
+function renderResults(nodes) {
+  const ul = document.createElement("ul");
 
-  // Results is a list of pairs [entry, rank] where a lower rank is better.
-  const results = [];
-  for (const entry of index) {
-    const symbol = entry.symbol.toLowerCase();
-    if (symbol.includes(query)) {
-      results.push([entry, 0]);
-      continue;
+  for (const node of nodes) {
+    const li = document.createElement("li");
+
+    const a = document.createElement("a");
+    a.textContent = String(node.symbol ?? "");
+    a.href = (typeof node.anchor === "string")
+      ? window.basePath + "/" + node.anchor
+      : "#";
+    li.appendChild(a);
+
+    const children = Array.isArray(node.children) ? node.children : [];
+    if (children.length) {
+      li.appendChild(renderResults(children));
     }
 
-    const distance = damerauLevenshteinDistance(query, entry.symbol);
-    if (distance > 5) {
-      continue;
-    }
-
-    results.push([entry, distance]);
+    ul.appendChild(li);
   }
 
-  results.sort(([_a, aRank], [_b, bRank]) => aRank - bRank);
-  return results.map(([entry, _rank]) => entry).slice(0, 25);
+  return ul;
 }
 
 function searchbar() {
@@ -141,45 +231,38 @@ function searchbar() {
 
   // Create the searchbar dynamically so that users without JS enabled don't get
   // a broken searchbar
-  const searchbar = document.createElement('input');
-  searchbar.id = 'searchbar';
-  searchbar.setAttribute('placeholder', 'Search');
-  searchbar.setAttribute('title', 'Search');
-  searchbar.setAttribute('autocapitalize', 'none');
-  searchbar.setAttribute('enterkeyhint', 'search');
+  const searchbar = document.createElement("input");
+  searchbar.id = "searchbar";
+  searchbar.setAttribute("placeholder", "Search");
+  searchbar.setAttribute("title", "Search");
+  searchbar.setAttribute("autocapitalize", "none");
+  searchbar.setAttribute("enterkeyhint", "search");
   searchDiv.appendChild(searchbar);
 
   // We show a loading bar on the first fetch.
-  const loading = document.createElement('p');
-  loading.innerText = 'Loading...';
-  const showLoading = () => loading.style.display = 'block';
-  const hideLoading = () => loading.style.display = 'none';
+  const loading = document.createElement("p");
+  loading.innerText = "Loading...";
+  const showLoading = () => (loading.style.display = "block");
+  const hideLoading = () => (loading.style.display = "none");
   hideLoading();
   searchDiv.appendChild(loading);
 
   let resultsList = null;
-  searchbar.addEventListener('input', async (event) => {
+  searchbar.addEventListener("input", async (event) => {
     showLoading();
     const query = event.target.value;
-    const results = await search(query);
+
+    const prunedTree = await search(query, { limit: 25 });
+
     hideLoading();
 
-    // Clear the previous results, if present
+    // We have to clear the previous results, if present
     if (resultsList) {
       resultsList.remove();
     }
 
-    resultsList = document.createElement('ul');
+    resultsList = renderResults(prunedTree);
     searchDiv.appendChild(resultsList);
-
-    for (const result of results) {
-      const item = document.createElement('li');
-      const link = document.createElement('a');
-      link.innerHTML = result.symbol;
-      link.href = window.basePath + '/' + result.anchor;
-      item.appendChild(link);
-      resultsList.appendChild(item);
-    }
   });
 }
 
