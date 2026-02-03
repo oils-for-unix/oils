@@ -131,7 +131,7 @@ function filterAndRank(index, query) {
     // Keep node if it matches or has matching descendants
     const bestRank = Math.min(selfRank, bestChildRank);
     if (bestRank !== Infinity) {
-      const copy = { symbol, anchor, children: keptChildren };
+      const copy = { symbol: node.symbol, anchor, children: keptChildren };
 
       // Store rank for sorting
       copy._rank = bestRank;
@@ -191,12 +191,12 @@ function trimResults(results, limit) {
  *
  * Only the top `limit` rendered nodes are returned (default 25).
  */
-async function search(query, { limit = 25 } = {}) {
+async function search(query) {
   if (!query) return [];
 
   const index = await getIndex();
   const pruned = filterAndRank(index, query.toLowerCase());
-  return trimResults(pruned, limit);
+  return trimResults(pruned, /* limit */ 25);
 }
 
 /**
@@ -252,7 +252,7 @@ function searchbar() {
     showLoading();
     const query = event.target.value;
 
-    const prunedTree = await search(query, { limit: 25 });
+    const prunedTree = await search(query);
 
     hideLoading();
 
