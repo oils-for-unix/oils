@@ -24,7 +24,12 @@ class FindHeadings(HTMLParser):
         self.anchor = None
         self.heading = None
 
+        self.title = None
+
     def handle_starttag(self, tag, attrs):
+        if tag == 'title':
+            self.title = ''
+
         if tag in ('h1', 'h2', 'h3', 'h4', 'h5', 'h6'):
             self.stack.append({ 'tag': tag, 'id': None })
             self.heading = dict(self.stack[-1])
@@ -45,6 +50,9 @@ class FindHeadings(HTMLParser):
             self.heading = None
 
     def handle_data(self, data):
+        if self.title == '':
+            self.title = data
+
         # Ignore data outside of headers
         if len(self.stack) == 0:
             return
@@ -64,17 +72,26 @@ class FindHeadings(HTMLParser):
             self.heading['title'] = data
         self.heading['id'] = '#' + self.anchor
 
-    def get_symbols(self):
+    def get_symbols(self, relpath: str):
         symbol = None
         symbols = []
-        for heading in self.headings:
-            if heading['tag'] == 'h2':
-                symbol = heading['title']
-                symbols.append({ 'symbol': symbol, 'anchor': heading['id'] })
-            elif heading['tag'] == 'h3':
-                symbols.append({ 'symbol': symbol + ' > ' + heading['title'], 'anchor': heading['id'] })
 
-        return symbols
+        if not self.title:
+            return []
+
+        for heading in self.headings:
+            symbol = heading['title']
+            if heading['tag'] == 'h2':
+                symbols.append({ 'symbol': symbol, 'children': [], 'anchor': relpath + heading['id'] })
+            elif heading['tag'] == 'h3':
+                symbols[-1]['children'].append({ 'symbol': symbol, 'anchor': relpath + heading['id'] })
+
+        # Trim empty children lists to save space (saves ~4kB at time of writing)
+        for item in symbols:
+            if len(item['children']) == 0:
+                del item['children']
+
+        return [{ 'symbol': self.title, 'children': symbols, 'anchor': relpath }]
 
 
 def main():
@@ -90,10 +107,8 @@ def main():
     find_headings = FindHeadings()
     find_headings.feed(source)
 
-    symbols = find_headings.get_symbols()
-    for sym in symbols:
-        relpath = os.path.relpath(args.html, start=args.base_dir)
-        sym['anchor'] = relpath + sym['anchor']
+    relpath = os.path.relpath(args.html, start=args.base_dir)
+    symbols = find_headings.get_symbols(relpath)
 
     print(json.dumps(symbols))
 
