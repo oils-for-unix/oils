@@ -22,8 +22,25 @@ proc parse-jsonl(; place) {
   call place->setValue(index)
 }
 
+proc find-docs(; out) {
+  ## Some docs have in_progress: yes, and thus should not be indexed.
+  ##
+  ## We check this, somewhat hackily, by the presence of the in-progress banner in
+  ## the HTML files (as those are what we index, instead of the source markdown.)
+
+  var docs = []
+  for doc in _release/VERSION/doc/{*,ref/*}.html {
+    if ! boolstatus grep 'Warning: Work in progress' $doc >/dev/null {
+      call docs->append(doc)
+    }
+  }
+
+  call out->setValue(docs)
+}
+
 proc index() {
-  index-all _release/VERSION/doc/{*,ref/*}.html (baseDir='_release/VERSION') | parse-jsonl (&indices)
+  find-docs (&docs)
+  index-all @docs (baseDir='_release/VERSION') | parse-jsonl (&indices)
   json write (indices) > _release/VERSION/index.json
 }
 
