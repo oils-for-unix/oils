@@ -115,12 +115,30 @@ class Cd(vm._Builtin):
                 if dest_dir is None:
                     self.errfmt.Print_(
                         "cd got no argument, and $HOME isn't set")
-                    return 1
+		    return 1
 
         # At most 1 arg is accepted
         arg_r.Next()
         if self.mem.exec_opts.strict_arg_parse():
             arg_r.Done()
+
+	# Check if the directory exists.  
+        # try treating the argument as a variable name.
+	dir_exists = True
+        try:
+            posix.stat(dest_dir)
+        except OSError:
+            dir_exists = False
+
+        # If it doesn't exist, check for cdable_vars
+        if not dir_exists and dest_dir != '-':
+            if self.mem.exec_opts.cdable_vars():
+                val = self.mem.GetValue(dest_dir)
+                # In Oils, Str values have an 's' attribute. 
+                # This check is safe and avoids complex ASDL imports.
+                if val and hasattr(val, 's'):
+                    dest_dir = val.s
+                    print(dest_dir)
 
         if dest_dir == '-':
             # Note: $OLDPWD isn't an env var; it's a global
