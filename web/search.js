@@ -131,11 +131,7 @@ function filterAndRank(index, query) {
     // Keep node if it matches or has matching descendants
     const bestRank = Math.min(selfRank, bestChildRank);
     if (bestRank !== Infinity) {
-      const copy = { symbol: node.symbol, anchor, children: keptChildren };
-
-      // Store rank for sorting
-      copy._rank = bestRank;
-
+      const copy = { _rank: bestRank, symbol: node.symbol, anchor, children: keptChildren };
       kept.push(copy);
     }
   }
@@ -262,4 +258,7 @@ function searchbar() {
   });
 }
 
-searchbar();
+if (!window.test) {
+  // Only run the UI in a non-test environment
+  searchbar();
+}
