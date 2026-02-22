@@ -921,10 +921,6 @@ copy-release-pages() {
   cat < _tmp/release-quality.html > $root/quality.html
 }
 
-build-search-index() {
-  doctools/search_index.ysh index
-}
-
 run-for-release() {
   ### Build a tree.  Requires _build/release-date.txt to exist
 
@@ -956,7 +952,7 @@ run-for-release() {
 
   copy-web
 
-  build-search-index
+  doctools/search_index.ysh build
 
   if command -v tree >/dev/null; then
     tree $root

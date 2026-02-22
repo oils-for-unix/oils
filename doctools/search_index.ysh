@@ -3,7 +3,7 @@
 # Driver for doctools/search_index.py
 #
 # To index all HTML files in _release/VERSION/doc:
-#    $0 index
+#    $0 build
 
 proc index-all(...files;; baseDir) {
   for file in (files) {
@@ -38,7 +38,7 @@ proc find-docs(; out) {
   call out->setValue(docs)
 }
 
-proc index() {
+proc build() {
   find-docs (&docs)
   index-all @docs (baseDir='_release/VERSION') | parse-jsonl (&indices)
   json write (indices) > _release/VERSION/index.json
