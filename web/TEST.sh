@@ -15,4 +15,8 @@ search() {
   node web/search.test.js
 }
 
+soil-run() {
+  $0 search
+}
+
 task-five "$@"
