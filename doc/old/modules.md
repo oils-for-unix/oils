@@ -1,7 +1,7 @@
 ---
 default_highlighter: oils-sh
 in_progress: true
-css_files: ../../web/base.css ../../web/manual.css ../../web/toc.css ../../web/search.css
+css_files: ../../web/base.css ../../web/manual.css ../../web/toc.css
 ---
 
 Oil Modules Safely Separate a Program Into Files

@@ -1,7 +1,7 @@
 ---
 in_progress: yes
 default_highlighter: oils-sh
-css_files: ../../web/base.css ../../web/manual.css ../../web/toc.css ../../web/search.css
+css_files: ../../web/base.css ../../web/manual.css ../../web/toc.css
 ---
 
 Oil Keywords
