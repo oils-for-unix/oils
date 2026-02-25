@@ -12,6 +12,9 @@ from frontend import flag_util
 from frontend import typed_args
 from mycpp.mylib import log
 from pylib import os_path
+from pylib import path_lib
+from core.value import value,value_e
+from typing import cast
 
 import libc
 import posix_ as posix
@@ -122,22 +125,14 @@ class Cd(vm._Builtin):
         if self.mem.exec_opts.strict_arg_parse():
             arg_r.Done()
 
-	# Check if the directory exists.  
-        # try treating the argument as a variable name.
-	dir_exists = True
-        try:
-            posix.stat(dest_dir)
-        except OSError:
-            dir_exists = False
-
-        # If it doesn't exist, check for cdable_vars
-        if not dir_exists and dest_dir != '-':
-            if self.mem.exec_opts.cdable_vars():
+	# Check for cdable_vars only if the option is enabled and not a hyphen
+        if self.mem.exec_opts.cdable_vars() and dest_dir != '-':
+            if not path_lib.isdir(dest_dir):
                 val = self.mem.GetValue(dest_dir)
-                # In Oils, Str values have an 's' attribute. 
-                # This check is safe and avoids complex ASDL imports.
-                if val and hasattr(val, 's'):
-                    dest_dir = val.s
+                if val.tag() == value_e.Str:
+                    val_str = cast(value.Str, val)
+                    dest_dir = val_str.s
+                    # Bash echoes the resolved path to stdout
                     print(dest_dir)
 
         if dest_dir == '-':
