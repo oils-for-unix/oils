@@ -619,10 +619,6 @@ def replaceNonPrintableCharacters(s):
     """j8 encoding a string is not suitable when you must preserve column info for the caret line"""
     # return "".join([c if c in string.printable else "\ufffd" for c in s])
     # mycpp can't handle this list comprehension
-    # mycpp can't handle string.printable ('string' has not been declared)
-    # mycpp can't handle the unicode replacement character existing in this file
-    # mycpp can't handle "\ufffd" (in the C++ version it becomes escaped)
-    # so instead I use ".", following convention for hex editors
     printable = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n'
     output = [] # type: List[str]
     for c in s:
