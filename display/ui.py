@@ -118,7 +118,7 @@ def _PrintCodeExcerpt(line, col, length, f):
     #   ^col 80  ^~~~~ error
 
     buf.write('  ')  # indent
-    buf.write(line.rstrip())
+    buf.write(j8_lite.EncodeString(line.rstrip(), unquoted_ok=True))
 
     buf.write('\n  ')  # indent
     PrintCaretLine(line, col, length, buf)
