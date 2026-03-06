@@ -617,8 +617,8 @@ def PrintShFunction(proc_val):
 def sanitizeLineOfCode(s):
     # type: (str) -> str
     """
-    all characters must take up one column width when printed, except tab
-    tab is handled specifically in PrintCaretLine
+    replaces characters in a string so that it is compatible with PrintCaretLine
+    all characters must take up one column width when printed, except tab which is handled specially
     """
     printable = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t'
     # mycpp can't handle this list comprehension
