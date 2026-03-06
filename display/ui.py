@@ -118,7 +118,7 @@ def _PrintCodeExcerpt(line, col, length, f):
     #   ^col 80  ^~~~~ error
 
     buf.write('  ')  # indent
-    buf.write(replaceNonPrintableCharacters(line.rstrip()))
+    buf.write(sanitizeLineOfCode(line.rstrip()))
 
     buf.write('\n  ')  # indent
     PrintCaretLine(line, col, length, buf)
@@ -614,13 +614,13 @@ def PrintShFunction(proc_val):
     else:
         print('%s() { : "function body not available"; }' % proc_val.name)
 
-def replaceNonPrintableCharacters(s):
+def sanitizeLineOfCode(s):
     # type: (str) -> str
     """
     all characters must take up one column width when printed, except tab
     tab is handled specifically in PrintCaretLine
     """
-    printable = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n'
+    printable = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t'
     # mycpp can't handle this list comprehension
     # return "".join([c if c in printable else "\ufffd" for c in s])
     output = [] # type: List[str]
