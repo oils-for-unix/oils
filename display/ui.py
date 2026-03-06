@@ -616,10 +616,13 @@ def PrintShFunction(proc_val):
 
 def replaceNonPrintableCharacters(s):
     # type: (str) -> str
-    """j8 encoding a string is not suitable when you must preserve column info for the caret line"""
-    # return "".join([c if c in string.printable else "\ufffd" for c in s])
-    # mycpp can't handle this list comprehension
+    """
+    all characters must take up one column width when printed, except tab
+    tab is handled specifically in PrintCaretLine
+    """
     printable = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n'
+    # mycpp can't handle this list comprehension
+    # return "".join([c if c in printable else "\ufffd" for c in s])
     output = [] # type: List[str]
     for c in s:
         output.append(c if c in printable else ".")
