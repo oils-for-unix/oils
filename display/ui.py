@@ -118,7 +118,7 @@ def _PrintCodeExcerpt(line, col, length, f):
     #   ^col 80  ^~~~~ error
 
     buf.write('  ')  # indent
-    buf.write(j8_lite.EncodeString(line.rstrip(), unquoted_ok=True))
+    buf.write(replaceNonPrintableCharacters(line.rstrip()))
 
     buf.write('\n  ')  # indent
     PrintCaretLine(line, col, length, buf)
@@ -613,3 +613,18 @@ def PrintShFunction(proc_val):
         print(proc_val.code_str)
     else:
         print('%s() { : "function body not available"; }' % proc_val.name)
+
+def replaceNonPrintableCharacters(s):
+    # type: (str) -> str
+    """j8 encoding a string is not suitable when you must preserve column info for the caret line"""
+    # return "".join([c if c in string.printable else "\ufffd" for c in s])
+    # mycpp can't handle this list comprehension
+    # mycpp can't handle string.printable ('string' has not been declared)
+    # mycpp can't handle the unicode replacement character existing in this file
+    # mycpp can't handle "\ufffd" (in the C++ version it becomes escaped)
+    # so instead I use ".", following convention for hex editors
+    printable = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n'
+    output = [] # type: List[str]
+    for c in s:
+        output.append(c if c in printable else ".")
+    return "".join(output)
