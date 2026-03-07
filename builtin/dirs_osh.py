@@ -118,14 +118,14 @@ class Cd(vm._Builtin):
                 if dest_dir is None:
                     self.errfmt.Print_(
                         "cd got no argument, and $HOME isn't set")
-		    return 1
+                    return 1
 
         # At most 1 arg is accepted
         arg_r.Next()
         if self.mem.exec_opts.strict_arg_parse():
             arg_r.Done()
 
-	# Check for cdable_vars only if the option is enabled and not a hyphen
+	# shopt -s cdable_vars allows you to type cd my_dir_var instead of cd $my_dir_var
         if self.mem.exec_opts.cdable_vars() and dest_dir != '-':
             if not path_lib.isdir(dest_dir):
                 val = self.mem.GetValue(dest_dir)
