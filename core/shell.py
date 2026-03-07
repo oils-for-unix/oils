@@ -108,8 +108,8 @@ def _UpdateTerminalSize(mem):
     # type: (state.Mem) -> None
     """Query the terminal for its current size and update COLUMNS and LINES.
 
-    Called at interactive shell startup and on SIGWINCH.  This is analogous to
-    bash's sh_set_lines_and_columns().
+    Called at interactive shell startup.  This is analogous to bash's
+    sh_set_lines_and_columns().
     """
     rows, cols = pyos.GetTerminalSize()
     if cols > 0:

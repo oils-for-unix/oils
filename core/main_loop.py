@@ -22,7 +22,6 @@ from core import util
 from display import ui
 from frontend import reader
 from osh import cmd_eval
-from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, probe, tagswitch
 
