@@ -18,6 +18,7 @@ from core import completion
 from core import main_loop
 from core import optview
 from core import process
+from core import pyos
 from core import pyutil
 from core import sh_init
 from core import state
@@ -101,6 +102,20 @@ if mylib.PYTHON:
         from _devbuild.gen import help_meta  # type: ignore
     except ImportError:
         help_meta = None
+
+
+def _UpdateTerminalSize(mem):
+    # type: (state.Mem) -> None
+    """Query the terminal for its current size and update COLUMNS and LINES.
+
+    Called at interactive shell startup and on SIGWINCH.  This is analogous to
+    bash's sh_set_lines_and_columns().
+    """
+    rows, cols = pyos.GetTerminalSize()
+    if cols > 0:
+        state.SetGlobalString(mem, 'COLUMNS', str(cols))
+    if rows > 0:
+        state.SetGlobalString(mem, 'LINES', str(rows))
 
 
 def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
@@ -1201,6 +1216,15 @@ def Main(
                                              debug_f, signal_safe)
 
         process.InitInteractiveShell(signal_safe)  # Set signal handlers
+
+        # Set COLUMNS and LINES from the actual terminal size (ioctl
+        # TIOCGWINSZ).  This is important because:
+        # 1. The pty initial size may be wrong (e.g. Ghostty HiDPI bug).
+        # 2. Unlike bash, OSH doesn't automatically update these on SIGWINCH.
+        # 3. readline uses its own internal screen width, but $COLUMNS is
+        #    used by other shell constructs (select, printf, etc.).
+        _UpdateTerminalSize(mem)
+
         # The interactive shell leads a process group which controls the terminal.
         # It MUST give up the terminal afterward, otherwise we get SIGTTIN /
         # SIGTTOU bugs.
@@ -1212,7 +1236,8 @@ def Main(
             prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev, errfmt)
             try:
                 status = main_loop.Interactive(flag, cmd_ev, c_parser, display,
-                                               prompt_plugin, waiter, errfmt)
+                                               prompt_plugin, waiter, errfmt,
+                                               readline=readline)
             except util.HardExit as e:
                 status = e.status
 
