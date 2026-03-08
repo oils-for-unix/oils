@@ -191,7 +191,7 @@ proc commit-push(customGitUrl="") {
     setvar GIT_URL = customGitUrl
   } else {
     var PAT = ENV.OILS_PAGES_GITHUB_TOKEN
-    setvar GIT_URL = gitUrl or "https://x-access-token:$PAT@github.com/oils-for-unix/oils-for-unix.github.io.git"
+    setvar GIT_URL = "https://x-access-token:$PAT@github.com/oils-for-unix/oils-for-unix.github.io.git"
   }
 
   rm -rf $PAGES_DIR
