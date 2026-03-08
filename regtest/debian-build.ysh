@@ -40,7 +40,7 @@ proc setup-package-layer(package, base) {
     # See also https://oilshell.zulipchat.com/#narrow/channel/522730-distros/topic/setting.20up.20regtest.2Faports-setup.2Esh/with/544318771
     sudo mount \
       -t overlay \
-      $package-layer \
+      "$package-layer" \
       -o index=off \
       -o "lowerdir=$lower_dir,upperdir=$package_dir/layer,workdir=$package_dir/work" \
       $package_dir/merged
@@ -65,6 +65,7 @@ proc osh-package-build(package) {
     setup-package-layer $package osh-as-sh
     build-package $package
 }
+
 proc baseline-package-build(package) {
     try {
         remove-package-layer $package
@@ -74,5 +75,32 @@ proc baseline-package-build(package) {
     build-package $package
 }
 
+
+proc build-many() {
+    # jq, vim baseline failed
+    # 'neofetch', not available
+    var packages = [
+      # 'hello', 'cowsay', 'fortune-mod', 'figlet', 'htop',
+      # 'tree', 'jq',
+      # 'curl', 'wget', 'tmux',
+      # 'screen', 'vim',
+      # 'nano', 'less', 'bc',
+      # 'file', 'zip', 'unzip', 'rsync', 'ncdu',
+      # 'sl', 'lolcat',
+      # 'bsdmainutils', 'dnsutils',
+      'net-tools', 'iputils-ping', 'traceroute', 'nmap', 'telnet',
+      'ftp', 'sqlite3', 'redis-tools', 'git', 'make',
+      'patch', 'diffutils', 'coreutils', 'sed', 'gawk',
+      'grep', 'findutils', 'tar', 'gzip', 'bzip2',
+      'xz-utils', 'man-db', 'strace', 'lsof', 'socat'
+    ]
+
+    for package in (packages) {
+        baseline-package-build $package
+        echo "baseline for $package succesful"
+        osh-package-build $package
+        echo "osh-as-sh for $package succesful"
+    }
+}
 
 runproc @ARGV

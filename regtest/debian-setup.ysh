@@ -123,8 +123,9 @@ proc create-osh-overlay() {
 
 proc remove-osh-overlay() {
   var dir= DEBIAN_ROOT  ++ '/osh-as-sh.overlay'
-  sudo umount $dir/merged || true
-  sudo rm -r -f $dir
+  echo $dir
+  sudo umount -R $dir/merged || true
+  sudo rm -rf $dir
 }
 
 # remove-shard-layers() {
@@ -154,16 +155,23 @@ proc remove-osh-overlay() {
 
 proc remove-all() {
   set -x
-  remove-chroot 
+  remove-package-layers
   remove-osh-overlay
+  remove-chroot 
 #   remove-shard-layers || true
 }
 
 proc remove-chroot() {
-  try {
-      sudo umount -R $CHROOT_DIR 2>/dev/null
-  }
+  $CHROOT_DIR/unmount --remove
   sudo rm -rf $CHROOT_DIR  
+}
+
+proc remove-package-layers {
+  for overlay in $DEBIAN_ROOT/package-overlays/*/merged {
+      if mountpoint -q $overlay {
+          sudo umount -R $overlay
+      }
+  }
 }
 
 proc clone-debootstrap() {
@@ -189,6 +197,8 @@ proc make-chroot() {
   # need to pass --arch, automatic detection doesnt work on non-debian systems
   sudo DEBOOTSTRAP_DIR=$debootstrap_dir ./debootstrap --arch=amd64 stable $CHROOT_DIR http://deb.debian.org/debian/
   popd
+
+  sudo cp regtest/debian-unmount.sh $CHROOT_DIR/unmount
 }
 
 proc add-build-deps() {
@@ -196,11 +206,26 @@ proc add-build-deps() {
   exec-chroot "apt-get update; apt-get install doas dpkg-dev build-essential devscripts fakeroot apt-utils -y" 
 }
 
+proc mount-host-dirs() {
+  sudo mount --bind /proc $CHROOT_DIR/proc
+}
+
 proc config-chroot() {
   exec-chroot 'echo "deb-src http://deb.debian.org/debian stable main" >> /etc/apt/sources.list'
   exec-chroot 'apt-get update' # else apt still doesnt know we added the deb-src line
+
+  # get rid of "warning: setlocale: LC_CTYPE: cannot change locale (en_US.UTF-8)"
+  # this is because in my host env $LANG is set to en_US.UTF-8.
+  # Probably a better fix is to force $LANG to something more neutral in the chroot
+  exec-chroot 'apt-get install locales -y'
+  exec-chroot u'echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen'
+  exec-chroot 'locale-gen'
+  exec-chroot 'locale -a'
+  exec-chroot 'update-locale LANG=C.UTF-8 LC_ALL=C.UTF-8'
+
   make-user
   setup-doas
+  mount-host-dirs
 }
 
 proc fetch-all() {
@@ -216,7 +241,6 @@ proc prepare-all() {
 
   add-build-deps
 
-  # TODO: mount /proc etc?
   config-chroot 
 
   oils-in-chroot  
