@@ -12,7 +12,7 @@ from frontend import flag_util
 from frontend import typed_args
 from mycpp.mylib import log
 from pylib import os_path
-from oil_lang import path_stat
+from pylib import path_stat
 from core import value
 from core.value import value_e
 from typing import cast
@@ -128,7 +128,7 @@ class Cd(vm._Builtin):
 
 	# shopt -s cdable_vars allows you to type cd my_dir_var instead of cd $my_dir_var
         if self.mem.exec_opts.cdable_vars() and dest_dir != '-':
-            if not path_stat.exists(dest_dir):
+            if not path_stat.isdir(dest_dir):
                 val = self.mem.GetValue(dest_dir)
                 if val and val.tag() == value_e.Str:
                     val_str = cast(value.Str, val)
