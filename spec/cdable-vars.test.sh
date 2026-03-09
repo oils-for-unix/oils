@@ -8,6 +8,9 @@ pwd
 ## status: 0
 ## STDOUT:
 /tmp
+## END
+## OK bash STDOUT:
+/tmp
 /tmp
 ## END
 
@@ -53,4 +56,5 @@ cd TARGET_DIR
 shopt -s cdable_vars
 TARGET_DIR=('/tmp' '/home')
 cd TARGET_DIR
-## status: 0
+## status: 1
+## BUG bash status: 0
