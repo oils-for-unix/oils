@@ -13,8 +13,7 @@ from frontend import typed_args
 from mycpp.mylib import log
 from pylib import os_path
 from pylib import path_stat
-from core import value
-from core.value import value_e
+from _devbuild.gen.value_asdl import value, value_e
 from typing import cast
 
 import libc
