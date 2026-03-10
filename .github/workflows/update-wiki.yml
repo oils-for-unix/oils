@@ -35,6 +35,12 @@ jobs:
         run: |
           build/wiki.ysh render
 
+          # build-search-index needs to run in a venv. On a dev machine, this is
+          # already present. In CI, we need to make one.
+          python3 -m venv venv
+          . venv/bin/activate
+          build/wiki.ysh build-search-index
+
       - name: Commit and Push
         run: |
           git config --global user.email "bot@oils.pub"
