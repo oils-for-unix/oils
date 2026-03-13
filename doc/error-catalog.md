@@ -618,6 +618,48 @@ Try this instead:
     var FOO = 'bar'
     eval 'echo FOO=$FOO'
 
+
+### OILS-ERR-303
+
+<!--
+Generated from an interactive shell example; see issue #1876
+-->
+
+Under `strict_errexit`, conditionals like `if` only allow **simple commands**.
+
+A pipeline is not a simple command, because it can have three different outcomes:
+
+- **true**
+- **false**
+- **fail**
+
+This makes conditionals ambiguous. For example:
+
+- What if one part of the pipeline fails?
+- What if the command does not exist?
+- Should failure be treated as `false`, or should it abort the program?
+
+To avoid conflating **pass/fail** with **true/false**, Oils rejects pipelines in
+conditionals when `strict_errexit` is enabled.
+
+Use the `try` builtin instead, which makes error handling explicit:
+
+    if try ls -la | head {
+      echo yes
+    }
+
+This does **not** work under `strict_errexit`:
+
+    if ls -la | head {
+      echo yes
+    }
+
+Related help topics:
+
+- [try](ref/chap-builtin-cmd.html#try)
+- [Guide to YSH Error Handling](ysh-error.html)
+- [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html)
+
 ## Appendix
 
 ### Kinds of Errors from Oils
