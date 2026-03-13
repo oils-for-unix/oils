@@ -998,8 +998,10 @@ class RootCompleter(object):
         self.parse_ctx.trail.Clear()
         line_reader = reader.StringLineReader(line_until_tab,
                                               self.parse_ctx.arena)
-        c_parser = self.parse_ctx.MakeOshParser(line_reader,
-                                                emit_comp_dummy=True)
+        c_parser = self.parse_ctx.MakeOshParser(
+            line_reader,
+            self.mem.exec_opts.interactive(),
+            emit_comp_dummy=True)
 
         # We want the output from parse_ctx, so we don't use the return value.
         try:
