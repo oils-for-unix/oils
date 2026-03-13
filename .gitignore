@@ -33,6 +33,7 @@ tags
 # Our own temp dirs
 _bin/
 _build/
+_regtest
 _chroot/
 _devbuild/
 _gen
