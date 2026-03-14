@@ -300,18 +300,21 @@ Yes:
 
 ### Use Multi-line Strings instead of Here Docs
 
-YSH has Multi-line Strings with `'''` and `"""`. Combined with `<<<` they can replace Here Docs completely, while being easier to remember:
+YSH has multi-line strings with `'''` and `"""`.  Combined with the `<<<`
+operator, they replace here docs.
 
 No:
 
     cat <<EOF
-    hello world
+    hello $name
+    bye
     EOF
 
 Yes:
 
     cat <<< """
-    hello world
+    hello $name
+    bye
     """
 
 No:
@@ -326,25 +329,23 @@ Yes:
     prize is $4.99
     '''
 
-Indents are removed based on the indentation of the end quotes. In comparison to `<<-EOF` this also works with space indentation, not just tabs.
+If there's whitespace before the closing quote, the same whitespace is removed
+from every line.  Compare with shell:
 
 No:
 
-    # Indent must be a tab
+    # special <<- operator removes leading tabs
     cat <<-EOF
-    	hello world
-    	EOF
-    # -> 'hello world'
+            hello $name
+            EOF
+    # ^^^^^^ tabs only, not spaces
 
 Yes:
 
-    # indent can be tab or space
-    # but must be consistent (not one line tab, next line spaces)
     cat <<< """
-        hello world
-        """ # -> 'hello world'
-
-It's also possible to have a comment after the end quote, which is not possible after the `EOF`.
+        hello $name
+        """
+    # ^^ indent can consist of spaces, making code look nicer
 
 ### Consider Using `--long-flags`
 
