@@ -119,6 +119,82 @@ Better;
 
 Note that `{1..3}` works in bash and YSH, but the numbers must be constant.
 
+## Strings and Quoting
+
+### Use J8 strings for C-style escapes, like `\n`
+
+Bash adds C-style strings to shell with the `$''` syntax.  YSH looks more like
+Python or Rust:
+
+No:
+
+    echo $'hi \n two'                       # two lines
+
+    echo $'mu \u03bc -- smiley \U0001f642'  # \u and \U escapes
+
+    echo $'raw byte \xff'
+
+Yes:
+
+    echo u'hi \n two'                       # two lines
+
+    echo u'mu \u{3bc} -- smiley \u{1f642}'  # one consistent syntax \u{}
+
+    echo b'raw byte \yff'                   # byte escapes with \yff
+
+Note that the syntax of YSH **code** matches our syntax for **data**, which is
+based on JSON.  See [Data Languages](ref/toc-data.html) > [J8
+Notation](ref/chap-j8.html).
+
+### Use Multi-line Strings instead of Here Docs
+
+YSH has multi-line strings with `'''` and `"""`.  Combined with the `<<<`
+operator, they replace here docs.
+
+No:
+
+    cat <<EOF
+    hello $name
+    bye
+    EOF
+
+Yes:
+
+    cat <<< """
+    hello $name
+    bye
+    """
+
+No:
+
+    cat <<'EOF'
+    prize is $4.99
+    EOF
+
+Yes:
+
+    cat <<< '''
+    prize is $4.99
+    '''
+
+If there's whitespace before the closing quote, the same whitespace is removed
+from every line.  Compare with shell:
+
+No:
+
+    # special <<- operator removes leading tabs
+    cat <<-EOF
+            hello $name
+            EOF
+    # ^^^^^^ tabs only, not spaces
+
+Yes:
+
+    cat <<< """
+        hello $name
+        """
+    # ^^ indent can consist of spaces, making code look nicer
+
 ## Avoid Ad Hoc Parsing and Splitting
 
 In other words, avoid *groveling through backslashes and spaces* in shell.  
@@ -904,7 +980,6 @@ Yes:
 
     # Possible, but a local var might be more readable
     echo flag=$['1' if x else '0']
-
 
 ## Use [Egg Expressions](eggex.html) instead of Regexes
 
