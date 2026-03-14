@@ -1,4 +1,4 @@
-FROM oilshell/soil-debian-12
+FROM ghcr.io/oils-for-unix/soil-debian-12
 
 # Copy again to prevent unsound caching
 COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
@@ -11,11 +11,6 @@ RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=
 
 # Build other dependencies as non-root uke
 USER uke
-
-# For measuring binary size
-#COPY --chown=uke \
-#  _build/wedge/binary/oils-for-unix.org/pkg/bloaty/1.1 \
-#  /wedge/oils-for-unix.org/pkg/bloaty/1.1
 
 # New structure
 COPY --chown=uke \

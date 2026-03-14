@@ -35,6 +35,7 @@ from _devbuild.gen.syntax_asdl import (
     CharRange,
     ArgList,
     Eggex,
+    cmd_frag,
 )
 from _devbuild.gen.runtime_asdl import (
     coerced_e,
@@ -46,7 +47,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, IntBox, LeftName,
-                                      Obj, cmd_frag)
+                                      Obj)
 from core import error
 from core.error import e_die, e_die_status
 from core import num
@@ -137,7 +138,7 @@ def _ConvertToNumber(val):
     return coerced_e.Neither, mops.MINUS_ONE, -1.0
 
 
-def _ConvertForBinaryOp(left, right):
+def ConvertForBinaryOp(left, right):
     # type: (value_t, value_t) -> Tuple[coerced_t, mops.BigInt, mops.BigInt, float, float]
     """
     Returns one of
@@ -574,7 +575,7 @@ class ExprEvaluator(object):
         Note: may be replaced with arithmetic on tagged integers, e.g. 60 bit
         with overflow detection
         """
-        c, i1, i2, f1, f2 = _ConvertForBinaryOp(left, right)
+        c, i1, i2, f1, f2 = ConvertForBinaryOp(left, right)
 
         op_id = op.id
 
@@ -687,10 +688,18 @@ class ExprEvaluator(object):
             c.extend(right.items)
             return value.List(c)
 
+        elif left.tag() == value_e.Dict and right.tag() == value_e.Dict:
+            left = cast(value.Dict, UP_left)
+            right = cast(value.Dict, UP_right)
+
+            res = left.d.copy()
+            res.update(right.d)
+            return value.Dict(res)
+
         else:
             raise error.TypeErrVerbose(
-                'Expected Str ++ Str or List ++ List, got %s ++ %s' %
-                (ui.ValType(left), ui.ValType(right)), op)
+                'Expected Str ++ Str, List ++ List, or Dict ++ Dict, got %s ++ %s'
+                % (ui.ValType(left), ui.ValType(right)), op)
 
     def _EvalBinary(self, node):
         # type: (expr.Binary) -> value_t
@@ -727,7 +736,7 @@ class ExprEvaluator(object):
 
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Token) -> bool
-        c, i1, i2, f1, f2 = _ConvertForBinaryOp(left, right)
+        c, i1, i2, f1, f2 = ConvertForBinaryOp(left, right)
 
         if c == coerced_e.Int:
             with switch(op.id) as case:

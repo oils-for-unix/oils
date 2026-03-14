@@ -44,8 +44,8 @@ error handling, and more.
   [Numbers]        Int
                    Float
                    Range
-  [String]         Str       X find()         X findLast()
-                             X contains()       replace()
+  [String]         Str         find()           findLast()
+                               contains()       replace()
                                trim()           trimStart()       trimEnd()
                                startsWith()     endsWith()
                                upper()          lower()
@@ -58,8 +58,8 @@ error handling, and more.
                                indexOf()        lastIndexOf()   X includes()
                                insert()         remove()
                                reverse()        List/clear()
-                   Dict        erase()        X Dict/clear()    X accum()
-                             X update()
+                   Dict        erase()          Dict/clear()      append()
+                               update()         inc()
                    Place       setValue()
   [Code Types]     Func        
                    BuiltinFunc
@@ -74,7 +74,8 @@ error handling, and more.
                    DebugFrame  toString()
                    io          stdin            io/eval()         io/evalExpr()
                                captureStdout()  captureAll()      promptVal()
-                             X time()         X strftime()      X glob()
+                             X time()         X strftime()        glob()
+                               libcGlob()
                    vm          getFrame()       getDebugStack()   id() 
 ```
 
@@ -88,12 +89,12 @@ error handling, and more.
                   str()             list()             dict()
                 X runes()         X encodeRunes()
                 X bytes()         X encodeBytes()
-  [Str]         X strcmp()          shSplit()
+  [Str]           strcmp()
   [List]          join()       
   [Dict]          keys()            values()           get()       
   [Float]         floatsEqual()   X isinf()          X isnan()
   [Obj]           first()           rest()             get()
-  [Word]          glob()            maybe()
+  [Word]          maybe()           shSplit()
   [Serialize]     toJson()          fromJson()
                   toJson8()         fromJson8()
                 X toJ8Line()      X fromJ8Line()
@@ -298,7 +299,7 @@ X [External Lang] BEGIN   END   when (awk)
                   expr-sub      $[myobj]
                   expr-splice   @[myobj]
   [Operators]     op-precedence Like Python
-                  concat        s1 ++ s2,  L1 ++ L2
+                  concat        s1 ++ s2,  L1 ++ L2,  dict1 ++ dict2
                   ysh-equals    ===   !==   ~==   is, is not
                   ysh-in        in, not in
                   ysh-compare   <  <=  >  >=  (numbers only)
@@ -365,7 +366,7 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-option
-  [Optimize]     rewrite_extern
+  [Optimize]     rewrite_extern  ysh_rewrite_extern
   [Groups]       strict:all      ysh:upgrade     ysh:all
   [YSH Details]  opts-redefine   opts-internal
 ```

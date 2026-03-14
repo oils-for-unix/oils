@@ -41,6 +41,89 @@ set -u -- x y z
 echo "$@"
 ## stdout: x y z
 
+#### set -u with undefined variable exits the interpreter
+
+# non-interactive
+$SH -c 'set -u; echo before; echo $x; echo after'
+if test $? -ne 0; then
+  echo OK
+fi
+
+# interactive
+$SH -i -c 'set -u; echo before; echo $x; echo after'
+if test $? -ne 0; then
+  echo OK
+fi
+
+## STDOUT:
+before
+OK
+before
+OK
+## END
+
+#### set -u with undefined var in interactive shell does NOT exit the interpreter
+
+# In bash, it aborts the LINE only.  The next line is executed!
+
+# non-interactive
+$SH -c 'set -u; echo before; echo $x; echo after
+echo line2
+'
+if test $? -ne 0; then
+  echo OK
+fi
+
+# interactive
+$SH -i -c 'set -u; echo before; echo $x; echo after
+echo line2
+'
+if test $? -ne 0; then
+  echo OK
+fi
+
+## STDOUT:
+before
+OK
+before
+line2
+## END
+
+## BUG dash/mksh/zsh STDOUT:
+before
+OK
+before
+OK
+## END
+
+#### set -u error can break out of nested evals
+$SH -c '
+set -u
+test_function_2() {
+  x=$blarg
+}
+test_function() {
+  eval "test_function_2"
+}
+
+echo before
+eval test_function
+echo after
+'
+# status must be non-zero: bash uses 1, ash/dash exit 2
+if test $? -ne 0; then
+  echo OK
+fi
+
+## STDOUT:
+before
+OK
+## END
+## BUG zsh/mksh STDOUT:
+before
+after
+## END
+
 #### reset option with long flag
 set -o errexit
 set +o errexit

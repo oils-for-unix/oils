@@ -78,12 +78,9 @@ void _CreateActions(Action_c* in, Dict<BigStr*, args::_Action*>* out) {
         valid = NewList<BigStr*>();
         _CreateStrList(p->strs, valid);
       }
-      auto a = Alloc<args::SetToString>(StrFromC(p->name), false, valid);
+      auto a = Alloc<args::SetToString>(StrFromC(p->name), valid);
       action = a;
     } break;
-    case ActionType_c::SetToString_q:
-      action = Alloc<args::SetToString>(StrFromC(p->name), true, nullptr);
-      break;
     case ActionType_c::SetToInt:
       action = Alloc<args::SetToInt>(StrFromC(p->name));
       break;

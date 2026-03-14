@@ -54,6 +54,7 @@ from builtin import pure_ysh
 from builtin import readline_osh
 from builtin import read_osh
 from builtin import trap_osh
+from builtin import umask_osh
 
 from builtin import func_eggex
 from builtin import func_hay
@@ -78,9 +79,10 @@ from osh import word_eval
 from mycpp import iolib
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import NewDict, print_stderr, log
+from mycpp.mylib import NewDict, print_stderr, log, str_switch
 from pylib import os_path
 from tools import deps
+from tools import lint
 from tools import fmt
 from tools import ysh_ify
 from ysh import expr_eval
@@ -260,7 +262,7 @@ def Main(
     assert lang in ('osh', 'ysh'), lang
 
     try:
-        attrs = flag_util.ParseMore('main', arg_r)
+        attrs = flag_util.ParseMore('main', arg_r, sh_dash_c=True)
     except error.Usage as e:
         print_stderr('%s usage error: %s' % (lang, e.msg))
         return 2
@@ -463,7 +465,7 @@ def Main(
 
     splitter = split.SplitContext(mem)
     # TODO: This is instantiation is duplicated in osh/word_eval.py
-    globber = glob_.Globber(exec_opts)
+    globber = glob_.Globber(exec_opts, mem)
 
     # This could just be OILS_TRACE_DUMPS='crash:argv0'
     crash_dump_dir = environ.get('OILS_CRASH_DUMP_DIR', '')
@@ -553,10 +555,11 @@ def Main(
     io_methods['M/evalInFrame'] = value.BuiltinFunc(
         method_io.EvalInFrame(mem, cmd_ev))
 
-    # TODO:
     io_methods['time'] = value.BuiltinFunc(method_io.Time())
     io_methods['strftime'] = value.BuiltinFunc(method_io.Strftime())
-    io_methods['glob'] = value.BuiltinFunc(method_io.Glob())
+    io_methods['glob'] = value.BuiltinFunc(
+        method_io.Glob(globber, is_method=True))
+    io_methods['libcGlob'] = value.BuiltinFunc(method_io.LibcGlob(globber))
 
     io_props = {'stdin': value.Stdin}  # type: Dict[str, value_t]
     io_obj = Obj(Obj(None, io_methods), io_props)
@@ -768,7 +771,7 @@ def Main(
     ### Process builtins
     b[builtin_i.exec_] = process_osh.Exec(mem, ext_prog, fd_state, search_path,
                                           errfmt)
-    b[builtin_i.umask] = process_osh.Umask()
+    b[builtin_i.umask] = umask_osh.Umask()
     b[builtin_i.ulimit] = process_osh.Ulimit()
     b[builtin_i.wait] = process_osh.Wait(waiter, job_list, mem, tracer, errfmt)
 
@@ -786,7 +789,7 @@ def Main(
     b[builtin_i.bind] = readline_osh.Bind(readline, errfmt, bindx_cb)
     b[builtin_i.history] = readline_osh.History(readline, sh_files, errfmt,
                                                 mylib.Stdout())
-    b[builtin_i.fc] = readline_osh.Fc(readline, mylib.Stdout())
+    b[builtin_i.fc] = readline_osh.Fc(exec_opts, readline, mylib.Stdout())
 
     # Completion
     spec_builder = completion_osh.SpecBuilder(cmd_ev, parse_ctx, word_ev,
@@ -826,8 +829,11 @@ def Main(
         'split': method_str.Split(),
         'lines': method_str.Lines(),
 
-        # finds a substring, optional position to start at
-        'find': None,
+        # finds a substring, optional named parameters specifying the slice
+        # of the string to search in - [start:end]
+        'find': method_str.Find(method_str.START),
+        'findLast': method_str.Find(method_str.END),
+        'contains': method_str.Contains(),
 
         # replace substring, OR an eggex
         # takes count=3, the max number of replacements to do.
@@ -849,14 +855,10 @@ def Main(
         # I think items() isn't as necessary because dicts are ordered?  YSH
         # code shouldn't use the List of Lists representation.
         'M/erase': method_dict.Erase(),
-        # could be d->tally() or d->increment(), but inc() is short
-        #
-        # call d->inc('mycounter')
-        # call d->inc('mycounter', 3)
-        'M/inc': None,
-
-        # call d->accum('mygroup', 'value')
-        'M/accum': None,
+        'M/clear': method_dict.Clear(),
+        'M/inc': method_dict.Inc(),
+        'M/append': method_dict.Append(),
+        'M/update': method_dict.Update(),
 
         # DEPRECATED - use free functions
         'get': method_dict.Get(),
@@ -982,7 +984,7 @@ def Main(
     _AddBuiltinFunc(mem, 'encodeBytes', func_misc.EncodeBytes())
 
     # Str
-    #_AddBuiltinFunc(mem, 'strcmp', None)
+    _AddBuiltinFunc(mem, 'strcmp', func_misc.StrCmp())
     # TODO: This should be Python style splitting
     _AddBuiltinFunc(mem, 'split', func_misc.Split(splitter))
     _AddBuiltinFunc(mem, 'shSplit', func_misc.Split(splitter))
@@ -993,7 +995,8 @@ def Main(
     # List
     _AddBuiltinFunc(mem, 'join', func_misc.Join())
     _AddBuiltinFunc(mem, 'maybe', func_misc.Maybe())
-    _AddBuiltinFunc(mem, 'glob', func_misc.Glob(globber))
+    # TODO: deprecate in favor of io.glob()
+    _AddBuiltinFunc(mem, 'glob', method_io.Glob(globber))
 
     # Serialize
     _AddBuiltinFunc(mem, 'toJson8', func_misc.ToJson8(True))
@@ -1018,7 +1021,7 @@ def Main(
             try:
                 ok, status = main_loop.EvalFile(path, fd_state, parse_ctx,
                                                 cmd_ev, lang)
-            except util.UserExit as e:
+            except util.HardExit as e:
                 # Doesn't seem like we need this, and verbose_errexit isn't the right option
                 #if exec_opts.verbose_errexit():
                 #    print-stderr('oils: --eval exit')
@@ -1137,14 +1140,14 @@ def Main(
                 try:
                     SourceStartupFile(fd_state, rc_path, lang, parse_ctx,
                                       cmd_ev, errfmt)
-                except util.UserExit as e:
+                except util.HardExit as e:
                     return e.status
 
         loop = main_loop.Headless(cmd_ev, parse_ctx, errfmt)
         try:
             # TODO: What other exceptions happen here?
             status = loop.Loop()
-        except util.UserExit as e:
+        except util.HardExit as e:
             status = e.status
 
         # Same logic as interactive shell
@@ -1171,7 +1174,7 @@ def Main(
                 try:
                     SourceStartupFile(fd_state, rc_path, lang, parse_ctx,
                                       cmd_ev, errfmt)
-                except util.UserExit as e:
+                except util.HardExit as e:
                     return e.status
 
         completion_display = state.MaybeString(mem, 'OILS_COMP_UI')
@@ -1210,7 +1213,7 @@ def Main(
             try:
                 status = main_loop.Interactive(flag, cmd_ev, c_parser, display,
                                                prompt_plugin, waiter, errfmt)
-            except util.UserExit as e:
+            except util.HardExit as e:
                 status = e.status
 
             mut_status = IntParamBox(status)
@@ -1253,34 +1256,47 @@ def Main(
             errfmt.PrettyPrintError(e)
             return 2
 
-        if tool_name == 'syntax-tree':
-            ui.PrintAst(node, flag)
+        with str_switch(tool_name) as case:
+            # like osh -n
+            if case('syntax-tree'):
+                ui.PrintAst(node, flag)
 
-        elif tool_name == 'tokens':
-            ysh_ify.PrintTokens(arena)
+            elif case('tokens'):
+                ysh_ify.PrintTokens(arena)
 
-        elif tool_name == 'find-lhs-array':
-            ysh_ify.TreeFind(arena, node, errfmt)
+            # OSH or YSH lint
+            elif case('lint'):
+                lint.Lint(arena, node)
 
-        elif tool_name == 'lossless-cat':  # for test/lossless.sh
-            ysh_ify.LosslessCat(arena)
+            # formatter: start with indenting
+            elif case('fmt'):
+                fmt.Format(arena, node)
 
-        elif tool_name == 'fmt':
-            fmt.Format(arena, node)
+            # rough translator
+            elif case('ysh-ify'):
+                ysh_ify.Ysh_ify(arena, node)
 
-        elif tool_name == 'test':
-            # Do we need this?  Couldn't this just be a YSH script?
-            raise AssertionError('TODO')
+            # dependency resolver
+            elif case('deps'):
+                if mylib.PYTHON:
+                    deps.Deps(node)
 
-        elif tool_name == 'ysh-ify':
-            ysh_ify.Ysh_ify(arena, node)
+            # Test runner?  Or this 'byo test'
+            elif case('test'):
+                raise AssertionError('TODO')
 
-        elif tool_name == 'deps':
-            if mylib.PYTHON:
-                deps.Deps(node)
+            # TESTING ONLY: for test/lossless.sh
+            elif case('lossless-cat'):
+                ysh_ify.LosslessCat(arena)
 
-        else:
-            raise AssertionError(tool_name)  # flag parser validated it
+            # TESTING ONLY: one-off
+            elif case('find-lhs-array'):
+                # For analyzing whether we need a[x + 1]=foo
+                # This is similar to "lint"
+                ysh_ify.TreeFind(arena, node, errfmt)
+
+            else:
+                raise AssertionError(tool_name)  # flag parser validated it
 
         return 0
 
@@ -1294,7 +1310,7 @@ def Main(
                                      c_parser,
                                      errfmt,
                                      cmd_flags=cmd_eval.IsMainProgram)
-        except util.UserExit as e:
+        except util.HardExit as e:
             status = e.status
         except KeyboardInterrupt:
             # The interactive shell handles this in main_loop.Interactive

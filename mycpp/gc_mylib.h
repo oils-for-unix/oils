@@ -3,12 +3,12 @@
 #ifndef MYCPP_GC_MYLIB_H
 #define MYCPP_GC_MYLIB_H
 
+#include <sys/stat.h>
+
 #include "mycpp/gc_alloc.h"  // gHeap
 #include "mycpp/gc_dict.h"   // for dict_erase()
 #include "mycpp/gc_mops.h"
 #include "mycpp/gc_tuple.h"
-
-#include <sys/stat.h>
 
 template <class K, class V>
 class Dict;
@@ -375,9 +375,8 @@ class UniqueObjects {
   Dict<void*, int> addresses_;
 };
 
-
 class StatResult {
-public:
+ public:
   bool isreg();
 
   static constexpr ObjHeader obj_header() {

@@ -182,4 +182,13 @@ struct LayoutFixed {
   RawObject* children_[kFieldMaskBits];
 };
 
+const int kDoNotWalk = -1;
+
+class Walkable {
+ public:
+  int type_id() const {
+    return kDoNotWalk;
+  }
+};
+
 #endif  // MYCPP_GC_OBJ_H

@@ -1479,7 +1479,7 @@ class ReadlineCallback(object):
         """Return a single match."""
         try:
             return self._GetNextCompletion(state)
-        except util.UserExit as e:
+        except util.HardExit as e:
             # TODO: Could use errfmt to show this
             print_stderr("oils: Ignoring 'exit' in completion plugin")
         except error.FatalRuntime as e:

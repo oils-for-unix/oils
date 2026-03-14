@@ -17,9 +17,7 @@ $[ENV.SH] -i -c 'echo "/$[get(ENV, "PS1")]/  /$[get(__defaults__, "PS1")]/"'
 /null/  /\s-\v\$ /
 ## END
 
-#### promptVal() with various values
-
-shopt -s ysh:upgrade
+#### promptVal() with $ and w
 
 var x = io.promptVal('$')
 
@@ -34,6 +32,21 @@ echo pass
 ## STDOUT:
 x=$
 pass
+## END
+
+#### promptVal('w') respects ENV.HOME
+
+# ENV not set in spec tests
+var x = io.promptVal('w')
+assert [x.startsWith('/')]
+
+# now set it
+setglobal ENV.HOME = '/home'
+
+var x = io.promptVal('w')
+assert [x.startsWith('~')]
+
+## STDOUT:
 ## END
 
 #### promptVal() with invalid chars

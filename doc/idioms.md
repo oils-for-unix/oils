@@ -285,7 +285,8 @@ shells.)
 
 ### Use `&` When Mentioning Variable Names
 
-YSH accepts this optional "pseudo-sigil" to make code more explicit.
+YSH uses [places](variables.html#return-by-mutating-a-place-advanced) to make
+out-parameters of procs more explicit.
 
 No:
 

@@ -286,15 +286,12 @@ class AppendEvalFlag(_Action):
 
 class _ArgAction(_Action):
 
-    def __init__(self, name, quit_parsing_flags, valid=None):
-        # type: (str, bool, Optional[List[str]]) -> None
+    def __init__(self, name, valid=None):
+        # type: (str, Optional[List[str]]) -> None
         """
         Args:
-          quit_parsing_flags: Stop parsing args after this one.  for sh -c.
-            python -c behaves the same way.
         """
         self.name = name
-        self.quit_parsing_flags = quit_parsing_flags
         self.valid = valid
 
     def _Value(self, arg, location):
@@ -310,12 +307,12 @@ class _ArgAction(_Action):
             arg_r.Next()
             arg = arg_r.Peek()
             if arg is None:
-                e_usage('expected argument to %r' % ('-' + self.name),
+                e_usage("expected argument to '-%s'" % self.name,
                         arg_r.Location())
 
         val = self._Value(arg, arg_r.Location())
         out.Set(self.name, val)
-        return self.quit_parsing_flags
+        return False
 
 
 class SetToInt(_ArgAction):
@@ -323,7 +320,7 @@ class SetToInt(_ArgAction):
     def __init__(self, name):
         # type: (str) -> None
         # repeat defaults for C++ translation
-        _ArgAction.__init__(self, name, False, valid=None)
+        _ArgAction.__init__(self, name, valid=None)
 
     def _Value(self, arg, location):
         # type: (str, loc_t) -> value_t
@@ -354,7 +351,7 @@ class SetToFloat(_ArgAction):
     def __init__(self, name):
         # type: (str) -> None
         # repeat defaults for C++ translation
-        _ArgAction.__init__(self, name, False, valid=None)
+        _ArgAction.__init__(self, name, valid=None)
 
     def _Value(self, arg, location):
         # type: (str, loc_t) -> value_t
@@ -374,9 +371,9 @@ class SetToFloat(_ArgAction):
 
 class SetToString(_ArgAction):
 
-    def __init__(self, name, quit_parsing_flags, valid=None):
-        # type: (str, bool, Optional[List[str]]) -> None
-        _ArgAction.__init__(self, name, quit_parsing_flags, valid=valid)
+    def __init__(self, name, valid=None):
+        # type: (str, Optional[List[str]]) -> None
+        _ArgAction.__init__(self, name, valid=valid)
 
     def _Value(self, arg, location):
         # type: (str, loc_t) -> value_t
@@ -633,8 +630,8 @@ def ParseLikeEcho(spec, arg_r):
     return out
 
 
-def ParseMore(spec, arg_r):
-    # type: (flag_spec._FlagSpecAndMore, Reader) -> _Attributes
+def ParseMore(spec, arg_r, sh_dash_c=False):
+    # type: (flag_spec._FlagSpecAndMore, Reader, bool) -> _Attributes
     """Return attributes and an index.
 
     Respects +, like set +eu
@@ -652,7 +649,7 @@ def ParseMore(spec, arg_r):
     """
     out = _Attributes(spec.defaults)
 
-    quit = False
+    set_dash_c = False
     while not arg_r.AtEnd():
         arg = arg_r.Peek()
         if arg == '--':
@@ -684,25 +681,32 @@ def ParseMore(spec, arg_r):
             # note: we're not handling sh -cecho  (no space) as an argument
             # It complains about a missing argument
 
-            char0 = arg[0]
+            char0 = arg[0]  # - or +
 
-            # TODO: set - - empty
-            for ch in arg[1:]:
-                #log('ch %r arg_r %s', ch, arg_r)
+            for ch in arg[1:]:  # -xyz foo is like -x -y foo -z
+
+                if sh_dash_c and ch == 'c':  # special case
+                    set_dash_c = True  # handle below
+                    continue
+
                 action = spec.actions_short.get(ch)
                 if action is None:
                     e_usage('got invalid flag %r' % ('-' + ch),
                             arg_r.Location())
 
                 attached_arg = char0 if ch in spec.plus_flags else None
-                quit = action.OnMatch(attached_arg, arg_r, out)
-            arg_r.Next()  # process the next flag
+                action.OnMatch(attached_arg, arg_r, out)
 
-            if quit:
-                break
-            else:
-                continue
+            arg_r.Next()  # process the next flag
+            continue
 
         break  # it's a regular arg
+
+    if set_dash_c:
+        cmd = arg_r.Peek()
+        if cmd is None:
+            e_usage("expected argument to '-c'", loc.Missing)
+        out.Set('c', value.Str(cmd))
+        arg_r.Next()
 
     return out

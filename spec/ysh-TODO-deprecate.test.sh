@@ -1,5 +1,6 @@
-# TODO-deprecate: Code we want to get rid of!
+## oils_failures_allowed: 1
 
+# ysh-TODO-deprecate: Code we want to get rid of!
 
 #### oil:upgrade as alias for ysh:upgrade
 
@@ -42,24 +43,6 @@ if ('foo42' ~ / <capture d+> /) {
 42
 ## END
 
-#### _status instead of _error.code
-
-shopt --set ysh:upgrade
-
-f() {
-  return 42
-}
-
-try {
-  f
-}
-echo status=$_status
-
-## STDOUT:
-status=42
-## END
-
-
 #### source ///osh/two.sh rather than source --builtin osh/two.sh
 
 source --builtin osh/two.sh
@@ -80,6 +63,8 @@ OIL
 ## END
 
 #### s.upper(), not s => upper() (might keep this)
+
+shopt --set parse_ysh_expr_sub
 
 echo $['foo' => upper()]
 
@@ -179,4 +164,12 @@ pp test_ ('~' ~ / [\y7e] /)
 ## STDOUT:
 (Bool)   true
 (Bool)   true
+## END
+
+#### glob() function should be retired in favor of io.glob()
+
+touch -- foo
+pp test_ (glob('*'))
+
+## STDOUT:
 ## END

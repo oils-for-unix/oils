@@ -141,19 +141,45 @@ An `Obj` instance representing the string type.  Let's use this definition:
 
 ### find()
 
-TODO:
+Returns the index of the first occurrence of the substring found within
+the slice of string[start:end]. Optional named parameters 'start' and
+'end' are byte indices into the searched string.
+
+If the substring is empty, it's always immediately found (unless the sliced
+range points past the string).
+
+If the substring is not found, returns -1.
 
 ```raw
 var i = mystr.find('y')
+var i = mystr.find('y', start=0, end=2)
 ```
 
-This is similar to
+### findLast()
+
+Returns the index of the last occurrence of the substring found within
+the slice of string[start:end]. Optional named parameters 'start' and
+'end' are byte indices into the searched string.
+
+If the substring is empty, it's always immediately found (unless the sliced
+range points past the string).
+
+If the substring is not found, returns -1.
+
+```raw
+var i = mystr.findLast('y')
+var i = mystr.findLast('y', start=0, end=2)
+```
+
+### contains()
+
+Returns true if the substring occurs in the string, false otherwise.
 
 ```raw
 = mystr.contains('y')
 ```
 
-Both of them do substring search.  Also similar to `mystr.search(/ 'y' /)`.
+For functions performing a regex search, see [`search`](#search).
 
 <!-- Note: Python also has start, end indices, to reduce allocations -->
 
@@ -607,29 +633,80 @@ Ensures that the given key does not exist in the dictionary.
     = book
     # => (Dict)   {title: 'The Histories'}
 
-### accum()
+### append()
 
-TODO:
+Appends the given value to the list pointed to by the key:
 
-```raw
-call mydict->accum('key', 'string to append')
-```
+    var mydict = {a: [1]}
+    = mydict
+    # => (Dict)   {a: [1]}
 
-Similar:
+    call mydict->append('a', 2)
+    = mydict
+    # => (Dict)   {a: [1, 2]}
 
-```raw
-setvar mydict['k'] += 3  # TODO: default value of 0
-```
+    call mydict->append('a', 'b')
+    = mydict
+    # => (Dict)   {a: [1, 2, 'b']}
+
+If the key doesn't have a binding, append() creates an empty list first:
+
+    call mydict->append('b', 1)
+    = mydict
+    # => (Dict)   {a: [1, 2, 'b'], b: [1]}
+
+    call mydict->append('c', [1,2])
+    = mydict
+    # => (Dict)   {a: [1, 2, 'b'], b: [1], c: [[1,2]]}
+
+### inc()
+
+Add a number to the value associated with a key:
+
+    var mydict = {
+      a: 1,
+      b: 3.14,
+    }
+
+    = mydict # => (Dict)   {a: 1, b: 3.14}
+
+    call mydict->inc('a', 2)
+    = mydict # => (Dict)   {a: 3, b: 3.14}
+
+    call mydict->inc('b', -2)
+    = mydict # => (Dict)   {a: 3, b: 1.14}
+
+If the key doesn't exist, then its default value is zero:
+
+    call mydict->inc('c', 1.5)
+    = mydict # => (Dict)   {a: 3, b: 1.14, c: 1.5}
+
+In other words, it's like `setvar mydict.k += 3`, but you don't have to
+initialize each value to zero.
+
+### update()
+
+Modifies the dictionary in place, merging the right operand into the left operand.
+If a key appears in both dictionaries, right-hand operand wins:
+
+    var d = {a: 2, b: 3}
+    var other = {a: 42}
+    call d->update(other)
+    = d # => (Dict)   {a: 42, b:3}
+
+Related: the [concat][] operator (++), which returns a new Dict instead of
+mutating the left operand:
+
+[concat]: chap-expr-lang.html#concat
 
 ### Dict/clear()
 
-TODO:
-
 Remove all entries from the Dict:
 
-```raw
-call mydict->clear()
-```
+    var d = {key: 'val'}
+    = len(d)  # => 1
+    call d->clear()
+    = len(d)  # => 0
 
 ### Place
 
@@ -1102,8 +1179,40 @@ database), and then C strftime().
 
 ### glob()
 
-TODO: The free function glob() actually does I/O.  Although maybe it doesn't
-fail?
+Return a list of of files that match a glob pattern:
+
+    = io.glob('*.py')  # => (List) ['__init__.py']
+
+It respects these shell filters:
+
+- [GLOBIGNORE][]
+- [Globbing options][]
+  - `dotglob globskipdots` (from bash)
+  - `no_dash_glob` (from Oils)
+  - (It doesn't respect options like `noglob` or `failglob`)
+
+[GLOBIGNORE]: chap-special-var.html#GLOBIGNORE
+[Globbing options]: chap-option.html#Globbing
+
+If the underlying libc `glob()` function returns an error, this function will
+raise an error.
+
+See [glob-pat][] for the pattern syntax.
+
+[glob-pat]: chap-mini-lang.html#glob-pat
+
+### libcGlob()
+
+Return a list of of files that match a glob pattern.
+
+    = io.libcGlob('*.py')  # => (List) ['__init__.py']
+
+Unlike `io.glob()`, it does **not** respect shell filters.
+
+If the underlying libc `glob()` function returns an error, this function will
+raise an error.
+
+See [glob-pat][] for the pattern syntax.
 
 ### vm
 

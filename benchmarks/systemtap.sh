@@ -29,7 +29,7 @@ stap-deps() {
 
 # NOTE: systemtap-3.2 is out, but doesn't compile on Ubuntu xenial!
 download() {
-  wget --no-clobber --directory _tmp \
+  wget --no-clobber --directory-prefix _tmp \
     https://sourceware.org/systemtap/ftp/releases/systemtap-3.1.tar.gz
 }
 

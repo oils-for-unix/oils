@@ -13,6 +13,8 @@ from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
 from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
                     SIGTTOU, SIGTTIN, SIGWINCH)
 
+import libc
+
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (job_state_e, job_state_t,
                                         job_state_str, wait_status,
@@ -50,6 +52,7 @@ from posix_ import (
     WEXITSTATUS,
     WSTOPSIG,
     WTERMSIG,
+    WCOREDUMP,
     WNOHANG,
     O_APPEND,
     O_CREAT,
@@ -70,6 +73,7 @@ if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from builtin import trap_osh
     from core import optview
+    from core import vm
     from core.util import _DebugFile
     from osh.cmd_eval import CommandEvaluator
 
@@ -863,6 +867,27 @@ class ExternalThunk(Thunk):
         self.ext_prog.Exec(self.argv0_path, self.cmd_val, self.environ)
 
 
+class BuiltinThunk(Thunk):
+    """Builtin thunk - for running builtins in a forked subprocess"""
+
+    def __init__(self, shell_ex, builtin_id, cmd_val):
+        # type: (vm._Executor, int, cmd_value.Argv) -> None
+        self.shell_ex = shell_ex
+        self.builtin_id = builtin_id
+        self.cmd_val = cmd_val
+
+    def UserString(self):
+        # type: () -> str
+        tmp = [j8_lite.MaybeShellEncode(a) for a in self.cmd_val.argv]
+        return '[builtin] %s' % ' '.join(tmp)
+
+    def Run(self):
+        # type: () -> None
+        """No exec - we need to exit ourselves"""
+        status = self.shell_ex.RunBuiltin(self.builtin_id, self.cmd_val)
+        posix._exit(status)
+
+
 class SubProgramThunk(Thunk):
     """A subprogram that can be executed in another process."""
 
@@ -915,7 +940,7 @@ class SubProgramThunk(Thunk):
             status = self.cmd_ev.LastStatus()
             # NOTE: We ignore the is_fatal return value.  The user should set -o
             # errexit so failures in subprocesses cause failures in the parent.
-        except util.UserExit as e:
+        except util.HardExit as e:
             status = e.status
 
         # Handle errors in a subshell.  These two cases are repeated from main()
@@ -2048,6 +2073,15 @@ W1_NO_CHANGE = -14  # WNOHANG was passed and there were no state changes
 NO_ARG = -20
 
 
+
+
+
+def GetSignalMessage(sig_num):
+    # type: (int) -> Optional[str]
+    """Get signal message from libc."""
+    return libc.strsignal(sig_num)
+
+
 class Waiter(object):
     """A capability to wait for processes.
 
@@ -2170,6 +2204,14 @@ class Waiter(object):
             # Print newline after Ctrl-C.
             if term_sig == SIGINT:
                 print('')
+            else:
+                msg = GetSignalMessage(term_sig)
+                if msg is not None:
+                    # WCOREDUMP checks if process dumped core
+                    # On systems without WCOREDUMP, we provide a fallback
+                    if WCOREDUMP(status):
+                        msg = msg + ' (core dumped)'
+                    print_stderr(msg)
 
             if proc:
                 proc.WhenExited(pid, status)

@@ -18,7 +18,7 @@ uninstall() {
 
 # /usr/local/bin/pprof also seems to have the 2.0 version number!
 download() {
-  wget --directory _deps \
+  wget --directory-prefix _deps \
     'https://github.com/gperftools/gperftools/releases/download/gperftools-2.7/gperftools-2.7.tar.gz'
 }
 

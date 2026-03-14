@@ -222,4 +222,205 @@ var vowelsLeft = / %start [a e i o u] /
   # does JS have match vs. search?  I think it might use  ^
 }
 
+string-contains() {
+  echo 'STRING CONTAINS PYTHON'
+
+  # Python sugar for 'contains' ('in' calls generic __contains__)
+  echo 'contains'
+  python3 -c 'print("ils" in "oils-for-unix")'
+  echo
+
+  echo 'contains empty string'
+  python3 -c 'print("" in "oils-for-unix")'
+  echo
+
+  echo 'does not contain'
+  python3 -c 'print("xoxo" not in "oils-for-unix")'
+  echo
+
+  echo 'STRING CONTAINS JS'
+  nodejs -e 'console.log("oils-for-unix".includes("ils"))'
+  echo
+
+  nodejs -e 'console.log("oils-for-unix".includes("ils", 2))'
+  echo
+
+  nodejs -e 'console.log("oils-for-unix".includes(""))'
+  nodejs -e 'console.log("oils-for-unix".includes("", 100))'
+}
+
+string-find() {
+  echo 'STRING FIND PYTHON'
+  echo
+
+  # Returns int of the index of the substring
+  python3 -c 'print("oils-for-unix".find("i"))'
+  echo
+
+  echo 'start=2'
+  python3 -c 'print("oils-for-unix".find("i", 2))'
+  echo
+
+  echo 'substring does not occur'
+  python3 -c 'print("oils-for-unix".find("y"))'
+  echo
+
+  echo 'start=-1'
+  python3 -c 'print("oils-for-unix".find("x", -1))'
+  echo
+
+  # also works for longer substrings
+  echo 'longer substrings'
+  python3 -c 'print("oils-for-unix".find("r-"))'
+  echo
+
+  # empty string is always immediately found
+  echo 'empty string'
+  python3 -c 'print("oils-for-unix".find(""))'
+  echo 'empty string with start past the end of the string'
+  python3 -c 'print("oils-for-unix".find("", 15))'
+  echo
+
+  # start and end are interpreted as in the slice notation [x:y]
+  echo 'start=5,end=8'
+  python3 -c 'print("oils-for-unix".find("-", 5, 8))'
+  echo
+
+  echo 'start=5,end=9'
+  python3 -c 'print("oils-for-unix".find("-", 5, 9))'
+  echo
+
+  echo 'start=5,end=100'
+  python3 -c 'print("oils-for-unix".find("-", 5, 100))'
+  echo
+
+  echo 'start=100'
+  python3 -c 'print("oils-for-unix".find("-", 100))'
+  python3 -c 'print("oils-for-unix".find("-", 100, 9))'
+  echo
+
+  echo 'STRING FIND JS'
+  echo
+
+  nodejs -e 'console.log("oils-for-unix".indexOf("i"))'
+  echo
+
+  echo 'start=2'
+  nodejs -e 'console.log("oils-for-unix".indexOf("i", 2))'
+  echo
+
+  echo 'substring does not occur'
+  nodejs -e 'console.log("oils-for-unix".indexOf("y", 2))'
+  echo
+
+  # Behaves as if start=0!
+  echo 'start=-1'
+  nodejs -e 'console.log("oils-for-unix".indexOf("i", -1))'
+  echo
+
+  nodejs -e 'console.log("oils-for-unix".indexOf("r-"))'
+  echo
+
+  # empty string is always immediately found
+  echo 'empty string'
+  nodejs -e 'console.log("oils-for-unix".indexOf(""))'
+  echo
+
+  # returns the length of the string!
+  echo 'empty string with start past the string'
+  nodejs -e 'console.log("oils-for-unix".indexOf("", 100))'
+  echo
+}
+
+string-last-find() {
+  echo 'STRING LAST FIND PYTHON'
+  echo
+
+  # Returns int of the index of the substring
+  python3 -c 'print("oils-for-unix".rfind("i"))'
+  echo
+
+  echo 'start=2, end=-2'
+  python3 -c 'print("oils-for-unix".rfind("i", 1, -2))'
+  echo
+
+  echo 'substring does not occur'
+  python3 -c 'print("oils-for-unix".rfind("y"))'
+  echo
+
+  echo 'start=-2'
+  python3 -c 'print("oils-for-unix".rfind("x", -2))'
+  echo
+
+  # also works for longer substrings
+  echo 'longer substrings'
+  python3 -c 'print("oils-for-unix".rfind("r-"))'
+  echo
+
+  # empty string is always immediately found
+  echo 'empty string'
+  python3 -c 'print("oils-for-unix".rfind(""))'
+  echo 'empty string with start past the string'
+  python3 -c 'print("oils-for-unix".rfind("", 15))'
+  echo
+
+  # start and end are interpreted as in the slice notation [x:y]
+  echo 'start=4,end=8'
+  python3 -c 'print("oils-for-unix".rfind("-", 4, 8))'
+  echo
+
+  echo 'start=4,end=9'
+  python3 -c 'print("oils-for-unix".rfind("-", 4, 9))'
+  echo
+
+  echo 'start=100'
+  python3 -c 'print("oils-for-unix".rfind("-", 100))'
+  python3 -c 'print("oils-for-unix".rfind("-", 100, 9))'
+  echo
+
+  echo 'STRING FIND JS'
+  echo
+
+  nodejs -e 'console.log("oils-for-unix".lastIndexOf("i"))'
+  echo
+
+  # the index taken is that of the end position, not start!
+  echo 'end=2'
+  nodejs -e 'console.log("oils-for-unix".lastIndexOf("i", 2))'
+  echo
+
+  # end is inclusive
+  echo 'end=1'
+  nodejs -e 'console.log("oils-for-unix".lastIndexOf("i", 1))'
+  echo
+
+  echo 'substring does not occur'
+  nodejs -e 'console.log("oils-for-unix".lastIndexOf("y"))'
+  echo
+
+  # Behaves as if end=0!
+  echo 'end=-1'
+  nodejs -e 'console.log("oils-for-unix".lastIndexOf("i", -1))'
+  echo
+
+  nodejs -e 'console.log("oils-for-unix".lastIndexOf("o", -1))'
+  echo
+
+  nodejs -e 'console.log("oils-for-unix".lastIndexOf("r-"))'
+  echo
+
+  # empty string is always immediately found
+  echo 'empty string'
+  nodejs -e 'console.log("oils-for-unix".lastIndexOf(""))'
+  echo
+
+  echo 'empty string with end past the string'
+  nodejs -e 'console.log("oils-for-unix".lastIndexOf("", 100))'
+  echo
+
+  echo 'empty string with end=0'
+  nodejs -e 'console.log("oils-for-unix".lastIndexOf("", 0))'
+  echo
+}
+
 "$@"

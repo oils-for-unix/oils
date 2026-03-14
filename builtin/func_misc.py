@@ -16,12 +16,11 @@ from frontend import match
 from frontend import typed_args
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import NewDict, iteritems, log, tagswitch
+from mycpp.mylib import NewDict, iteritems, log, tagswitch, str_cmp
 from ysh import val_ops
 
 from typing import TYPE_CHECKING, Dict, List, Optional, cast
 if TYPE_CHECKING:
-    from osh import glob_
     from osh import split
 
 _ = log
@@ -488,6 +487,21 @@ class EncodeBytes(vm._Callable):
         return value.Null
 
 
+class StrCmp(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        s = rd.PosStr()
+        s2 = rd.PosStr()
+        rd.Done()
+
+        return value.Int(mops.BigInt(str_cmp(s, s2)))
+
+
 class Split(vm._Callable):
 
     def __init__(self, splitter):
@@ -525,29 +539,6 @@ class FloatsEqual(vm._Callable):
         return value.Bool(left == right)
 
 
-class Glob(vm._Callable):
-
-    def __init__(self, globber):
-        # type: (glob_.Globber) -> None
-        vm._Callable.__init__(self)
-        self.globber = globber
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        s = rd.PosStr()
-        rd.Done()
-
-        out = []  # type: List[str]
-        self.globber._Glob(s, out)
-
-        l = [value.Str(elem) for elem in out]  # type: List[value_t]
-        return value.List(l)
-
-
-# status code 4 is special, for encode/decode errors.
-_CODEC_STATUS = 4
-
-
 class ToJson8(vm._Callable):
 
     def __init__(self, is_j8):
@@ -575,7 +566,7 @@ class ToJson8(vm._Callable):
             else:
                 j8.PrintJsonMessage(val, buf, indent, type_errors)
         except error.Encode as e:
-            raise error.Structured(_CODEC_STATUS, e.Message(),
+            raise error.Structured(error.CODEC_STATUS, e.Message(),
                                    rd.LeftParenToken())
 
         return value.Str(buf.getvalue())
@@ -605,7 +596,7 @@ class FromJson8(vm._Callable):
                 'start_pos': num.ToBig(e.start_pos),
                 'end_pos': num.ToBig(e.end_pos),
             }  # type: Dict[str, value_t]
-            raise error.Structured(_CODEC_STATUS, e.Message(),
+            raise error.Structured(error.CODEC_STATUS, e.Message(),
                                    rd.LeftParenToken(), props)
 
         return val

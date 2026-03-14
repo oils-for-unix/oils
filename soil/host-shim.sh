@@ -18,21 +18,31 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source soil/common.sh
 source test/tsv-lib.sh
 
+readonly REGISTRY='ghcr.io'
+
 live-image-tag() {
   ### image ID -> Docker tag name
-
-  # Revert to known good version
-  echo 'v-2025-10-28'
-  return
-
-  # 2025-10-29: build/deps.sh full-soil-rebuild !!
-  # 7 minutes to build boxed wedges, 9:30 to build 13+ containers, and then push all
-  echo 'v-2025-10-29'
-  return
-
   local image_id=$1
 
+
   case $image_id in
+    dummy)
+      # re2c to version 4.3.1
+      echo 'v-2026-01-13'
+      ;;
+    app-tests|benchmarks|clang|cpp-small|cpp-spec|ovm-tarball|wild)
+      # re2c to version 4.3.1
+      echo 'v-2026-01-13'
+      ;;
+    *)
+      # ghcr.io migration
+      echo 'v-2025-12-21'
+      ;;
+
+    #
+    # UNUSED
+    #
+
     app-tests)
       # wedges 2025
       echo 'v-2025-10-28'
@@ -79,10 +89,6 @@ live-image-tag() {
       echo 'v-2025-10-28'
       ;;
     dev-minimal)
-      # wedges 2025
-      echo 'v-2025-10-28'
-      ;;
-    dummy)
       # wedges 2025
       echo 'v-2025-10-28'
       ;;
@@ -199,30 +205,51 @@ job-reset() {
   show-disk-info
 }
 
+image-layers-tsv() {
+  local docker=${1:-podman}
+  local image=${2:-oils-for-unix/soil-dummy}
+  local tag=${3:-latest}
+
+  # --human=0 gives us raw bytes and ISO timestamps
+  # --no-trunc shows the full command line
+
+  # Removed .CreatedAt because of this issue
+  # https://github.com/containers/podman/issues/17738
+  #echo $'num_bytes\tcreated_at\tcreated_by'
+
+  echo $'num_bytes\tcreated_by'
+
+  $docker history \
+    --no-trunc --human=0 \
+    --format json \
+    $REGISTRY/$image:$tag | python3 -c '
+import sys, json
+array = json.load(sys.stdin)
+for row in array:
+  print("%s\t%s" % (row["size"], row["CreatedBy"]))
+'
+}
+
 save-image-stats() {
   local soil_dir=${1:-_tmp/soil}
-  local docker=${2:-docker}
-  local image=${3:-oilshell/soil-dummy}
+  local docker=${2:-podman}
+  local image=${3:-oils-for-unix/soil-dummy}
   local tag=${4:-latest}
 
-  # TODO: write image.json with the name and tag?
+  log "save-image-stats with $(which $docker)"
+  $docker --version
+  echo
 
   mkdir -p $soil_dir
 
   # NOTE: Works on my dev machine, but produces an empty table on CI?
-  $docker images "$image:v-*" > $soil_dir/images-tagged.txt
+  $docker images "$REGISTRY/$image:v-*" > $soil_dir/images-tagged.txt
   log "Wrote $soil_dir/images-tagged.txt"
 
-  $docker history $image:$tag > $soil_dir/image-layers.txt
+  $docker history $REGISTRY/$image:$tag > $soil_dir/image-layers.txt
   log "Wrote $soil_dir/image-layers.txt"
 
-  # NOTE: Works with docker but not podman!  podman doesn't support --format ?
-  {
-    # --human=0 gives us raw bytes and ISO timestamps
-    # --no-trunc shows the full command line
-    echo $'num_bytes\tcreated_at\tcreated_by'
-    $docker history --no-trunc --human=0 --format '{{.Size}}\t{{.CreatedAt}}\t{{.CreatedBy}}' $image:$tag
-  } > $soil_dir/image-layers.tsv
+  image-layers-tsv $docker $image $tag > $soil_dir/image-layers.tsv
   log "Wrote $soil_dir/image-layers.tsv"
 
   # TODO: sum into image-layers.json
@@ -239,6 +266,9 @@ EOF
   log "Wrote $soil_dir/image-layers.schema.tsv"
 }
 
+# for both ASAN/LeakSanitizer and GDB
+readonly PTRACE_FLAGS=( --cap-add=SYS_PTRACE --security-opt seccomp=unconfined )
+
 run-job-uke() {
   local docker=$1  # docker or podman
   local repo_root=$2
@@ -252,15 +282,10 @@ run-job-uke() {
   make-soil-dir
   local soil_dir=$repo_root/_tmp/soil
 
-  local -a flags=()
-
   local image_id=$job_name
-
   # Some jobs don't have their own image, and some need docker -t
   case $job_name in
     app-tests)
-      # to run ble.sh tests
-      flags=( -t )
       ;;
     cpp-coverage)
       image_id='clang'
@@ -279,15 +304,34 @@ run-job-uke() {
       image_id='benchmarks'
       ;;
     interactive)
-      # to run 'interactive-osh' with job control enabled
-      flags=( -t )
-
       # Reuse for now
       image_id='benchmarks'
       ;;
   esac
 
-  local image="docker.io/oilshell/soil-$image_id"
+  local -a flags=()
+  case $job_name in
+    app-tests|interactive)
+      # app-tests: to run ble.sh tests
+      # interactive: to run 'interactive-osh' with job control enabled
+      flags+=( -t )
+      ;;
+  esac
+
+  case $job_name in
+    cpp-small|cpp-spec|cpp-tarball|ovm-tarball)
+      # podman requires an additional flag for ASAN, so it can use ptrace()
+      # Otherwise we get:
+      # ==1194==LeakSanitizer has encountered a fatal error.
+      # ==1194==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)
+      #
+      # Note: somehow this isn't necessary locally: on podamn 4.3.1 on Debian 12
+      if test $docker = podman; then
+        flags+=( "${PTRACE_FLAGS[@]}" )
+      fi
+  esac
+
+  local image="ghcr.io/oils-for-unix/soil-$image_id"
 
   local tag=$(live-image-tag $image_id)
 
@@ -295,7 +339,7 @@ run-job-uke() {
   # Use external time command in POSIX format, so it's consistent between hosts
   set -o errexit
   command time -p -o $soil_dir/image-pull-time.txt \
-    $docker pull $image:$tag
+    $docker pull $REGISTRY/$image:$tag
   pull_status=$?
   set +o errexit
 
@@ -323,17 +367,19 @@ run-job-uke() {
 
     # So we can run GDB
     # https://stackoverflow.com/questions/35860527/warning-error-disabling-address-space-randomization-operation-not-permitted
-    flags+=( --cap-add SYS_PTRACE --security-opt seccomp=unconfined )
+    flags+=( "${PTRACE_FLAGS[@]}" )
 
     args=(bash)
   else
     args=(sh -c "cd /home/uke/oil; soil/worker.sh JOB-$job_name")
   fi
 
+  set -x
   $docker run "${flags[@]}" \
       --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
-      $image:$tag \
+      $REGISTRY/$image:$tag \
       "${args[@]}"
+  set +x
 }
 
 did-all-succeed() {
@@ -363,7 +409,7 @@ local-test-uke() {
   local job_name=${1:-dummy}
   local job2=${2:-}
   local debug_shell=${3:-}  # add 'bash' to change it to a debug shell
-  local docker=${4:-docker}
+  local docker=${4:-podman}
 
   local branch=$(git rev-parse --abbrev-ref HEAD)
 

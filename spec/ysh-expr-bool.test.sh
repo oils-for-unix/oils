@@ -62,6 +62,7 @@ true
 
 
 #### and-or chains for typed data
+shopt --set parse_ysh_expr_sub
 
 python2 -c 'print(None or "s")'
 python2 -c 'print(None and "s")'

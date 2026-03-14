@@ -5,6 +5,8 @@
 
 case $SH in bash|mksh) exit ;; esac
 
+shopt -s ysh:upgrade
+
 #pp test_ (a)
 
 sp=( foo {25..27} bar )
@@ -16,8 +18,6 @@ echo $[type(sp)]
 echo len: "${#sp[@]}"
 
 #echo $[len(sp)]
-
-shopt -s ysh:upgrade
 
 echo subst: "${sp[@]}"
 echo keys: "${!sp[@]}"
@@ -1104,6 +1104,8 @@ a3=(1 2 4)
 unset -v 'a3[1]'
 a4=(1 2 3)
 
+shopt -s ysh:upgrade
+
 echo $[a1 === a1]
 echo $[a1 === a2]
 echo $[a1 === a3]
@@ -1150,6 +1152,8 @@ a2=(0)
 a3=(0 1 2)
 a4=(0 0)
 unset -v 'a4[0]'
+
+shopt -s ysh:upgrade
 
 echo $[bool(a1)]
 echo $[bool(a2)]

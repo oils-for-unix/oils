@@ -1,8 +1,8 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import source, loc, command_t
-from _devbuild.gen.value_asdl import value, cmd_frag
+from _devbuild.gen.syntax_asdl import source, loc, command_t, cmd_frag
+from _devbuild.gen.value_asdl import value
 from builtin import hay_ysh
 from core import alloc
 from core import error
@@ -68,7 +68,7 @@ class ParseHay(vm._Callable):
                 node = main_loop.ParseWholeFile(c_parser)
         except error.Parse as e:
             self.errfmt.PrettyPrintError(e)
-            return None
+            raise error.Expr("Failed to parse %r" % path, call_loc)
 
         return value.Command(cmd_frag.Expr(node), self.mem.CurrentFrame(),
                              self.mem.GlobalFrame())

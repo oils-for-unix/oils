@@ -58,12 +58,18 @@ bind() {
   spec/stateful/bind.py $FIRST --oils-failures-allowed 0 --num-lines 24 --num-columns 80 "$@"
 }
 
+history-expand() {
+  spec/stateful/history_expand.py $FIRST --oils-failures-allowed 1 "$@"
+}
+
+
 # Run on just 2 shells
 
 signals-quick() { signals "${QUICK_SHELLS[@]}" "$@"; }
 interactive-quick() { interactive "${QUICK_SHELLS[@]}" "$@"; }
 job-control-quick() { job-control "${QUICK_SHELLS[@]}" "$@"; }
 bind-quick() { bind "${QUICK_SHELLS[@]}" "$@"; }
+history-expand-quick() { history-expand "${QUICK_SHELLS[@]}" --num-retries 1 "$@"; }
 
 # Run on all shells we can
 
@@ -77,6 +83,8 @@ job-control-all() { job-control "${ALL_SHELLS[@]}" dash "$@"; }
 
 # On non-bash shells, bind is either unsupported or the syntax is too different
 bind-all() { bind "${ALL_SHELLS[@]}" "$@"; }
+
+history-expand-all() { history-expand "${ALL_SHELLS[@]}" "$@"; }
 
 
 #
@@ -96,11 +104,12 @@ print-tasks() {
     echo 'interactive'
     echo 'job-control'
     echo 'signals'
+    echo 'history-expand'
   fi
 }
 
 run-file() {
-  ### Run a spec/stateful file, logging output
+  ### Run a spec/stateful file via the "FOO-all" function logging output
 
   local spec_name=$1
 

@@ -798,7 +798,7 @@ mylocal=x
 
 #### Compare shell func vs. proc, $IFS vs. shvarGet('IFS')
 
-shopt --set parse_proc
+shopt --set parse_proc parse_ysh_expr_sub
 
 s='xzx zxz'
 

@@ -398,7 +398,8 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
 ] + _BACKSLASH  # These have to come after RegexMeta
 
 LEXER_DEF[lex_mode_e.DQ] = [
-    _DQ_ESCAPED_CHAR,
+    R(r'\\[$`\\]', Id.Lit_EscapedChar),
+    C('\\"', Id.Lit_BackslashDoubleQuote),
     C('\\\n', Id.Ignored_LineCont),
     C('\\', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
 ] + _LEFT_SUBS + _VARS + [

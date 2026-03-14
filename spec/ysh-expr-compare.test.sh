@@ -147,6 +147,8 @@ pp test_ (floatsEqual(42.0, x + 1))
 ## END
 
 #### Comparison converts from Str -> Int or Float
+shopt --set parse_ysh_expr_sub
+
 echo ' i  i' $[1 < 2]
 echo 'si  i' $['1' < 2]
 echo ' i si' $[1 < '2']
@@ -387,7 +389,7 @@ var unimpl = [
 
 for val in (unimpl) {
   try { = val === val }
-  if (_status !== 3) {
+  if (_error.code !== 3) {
     exit 1
   }
 }

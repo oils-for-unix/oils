@@ -1,6 +1,7 @@
 ## oils_failures_allowed: 1
 
 #### ${#s} and len(s)
+shopt --set parse_ysh_expr_sub
 
 source $REPO_ROOT/spec/testdata/unicode.sh
 

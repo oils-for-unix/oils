@@ -153,6 +153,8 @@ status=2
 
 #### read --raw-line
 
+shopt --set parse_ysh_expr_sub
+
 echo hi | read --raw-line
 echo "reply=$_reply"
 echo len=$[len(_reply)]
@@ -642,6 +644,8 @@ proc
 ## END
 
 #### type(x)
+shopt --set parse_ysh_expr_sub
+
 echo $[type(1234)]
 echo $[type('foo')]
 echo $[type(false)]

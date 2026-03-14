@@ -21,8 +21,9 @@ def _CreateSum(sum_name, variant_names):
     from _devbuild.gen.option_asdl import opt_num
     opt_num.nounset
     """
-    sum_ = ast.SimpleSum([ast.Constructor(name) for name in variant_names],
-                         generate=['integers'])
+    sum_ = ast.SimpleSum(
+        [ast.MakeSimpleVariant(name) for name in variant_names],
+        generate=['integers'])
     typ = ast.TypeDecl(sum_name, sum_)
     return typ
 
@@ -72,14 +73,8 @@ namespace option_asdl {
     elif action == 'mypy':
         from asdl import gen_python
 
-        f = sys.stdout
-
-        f.write("""\
-from asdl import pybase
-
-""")
         # option_i type
-        v = gen_python.GenMyPyVisitor(f, None)
+        v = gen_python.GenMyPyVisitor(sys.stdout)
         v.VisitModule(schema_ast)
 
     else:

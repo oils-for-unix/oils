@@ -3,7 +3,7 @@
 # Manage container images for Soil
 #
 # Usage:
-#   deps/images.sh <function name>
+#   deps/image.sh <function name>
 #
 # Dirs maybe to clear:
 #
@@ -19,8 +19,10 @@
 #
 # (3) Build wedges
 #
-#     build/deps.sh fetch
-#     build/deps.sh boxed-wedges-2025
+#     build/deps.sh fetch                   # tarballs
+#     deps/from-binary.sh download-clang    # needed for soil-clang image
+#     deps/from-tar.sh download-wild        # needed for soil-wild image
+#     build/deps.sh boxed-wedges-2025 soil  # soil wedges, not just contrib
 #
 # (4) Rebuild an image
 #
@@ -38,7 +40,8 @@
 # More
 # ----
 #
-# Images: https://hub.docker.com/u/oilshell
+# Images:    https://github.com/orgs/oils-for-unix/packages
+# formerly:  https://hub.docker.com/u/oilshell
 #
 #    $0 list-tagged      # Show versions of images
 #
@@ -50,11 +53,26 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source deps/podman.sh
+source deps/podman.sh  # do we need this?
 
-DOCKER=${DOCKER:-docker}
+DOCKER=${DOCKER:-podman}
 
-readonly LATEST_TAG='v-2025-10-29'  # full rebuild
+declare -a docker_prefix
+case $DOCKER in 
+  docker)
+    # Do we still need -E to preserve CONTAINERS_REGISTRIES_CONF?
+    docker_prefix=( sudo -E DOCKER_BUILDKIT=1 $DOCKER )
+    ;;
+  podman)
+    # this can be rootless!  Unlike deps/wedge.sh
+    docker_prefix=( podman )
+    ;;
+  *)
+    die "Invalid docker $DOCKER"
+    ;;
+esac
+
+readonly LATEST_TAG='v-2026-01-13'  # rebuild with re2c 4.3.1 and ghcr.io
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'
@@ -102,22 +120,57 @@ list() {
 }
 
 list-tagged() {
-  sudo $DOCKER images 'oilshell/*' #:v-*'
+  "${docker_prefix[@]}" \
+    images 'oils-for-unix/*' #:v-*'
 }
 
 _latest-one() {
   local name=$1
-  $DOCKER images "oilshell/$name" | head -n 3
+  "${docker_prefix[@]}" \
+    images "oils-for-unix/$name" | head -n 3
 }
 
-_list-latest() {
-  # Should rebuild all these
-  # Except I also want to change the Dockerfile to use Debian 12
-  list-images | xargs -n 1 -- $0 _latest-one
+#
+# 2025-12: Migration to ghcr.io
+#
+
+migrate-one() {
+  local name=${1:-soil-wild}
+
+  # Good instructions from Claude!
+
+  # Pull from Docker Hub
+  podman pull docker.io/oilshell/$name:latest
+
+  # Tag for GitHub Container Registry with new name
+  podman tag docker.io/oilshell/$name:latest ghcr.io/oils-for-unix/$name:latest
+
+  # Push to GitHub Container Registry
+  podman push ghcr.io/oils-for-unix/$name:latest
 }
 
-list-latest() {
-  sudo $0 _list-latest
+migrate-all() {
+  list | xargs --verbose -n 1 -- $0 migrate-one
+}
+
+m-tag-one() {
+  ### Add $LATEST_TAG
+  local image=${1:-soil-wild}
+  podman tag ghcr.io/oils-for-unix/$image:latest ghcr.io/oils-for-unix/$image:$LATEST_TAG
+}
+
+m-tag-all() {
+  list | xargs --verbose -n 1 -- $0 m-tag-one
+}
+
+m-push-one() {
+  ### Push $LATEST_TAG
+  local name=${1:-soil-wild}
+  podman push ghcr.io/oils-for-unix/$name:$LATEST_TAG
+}
+
+m-push-all() {
+  list | xargs --verbose -n 1 -- $0 m-push-one
 }
 
 # BUGS in Docker.
@@ -149,7 +202,8 @@ tag-latest() {
   local tag_built_with=${2:-$LATEST_TAG}
 
   set -x  # 'docker tag' is annoyingly silent
-  sudo $DOCKER tag oilshell/$name:{$tag_built_with,latest}
+  "${docker_prefix[@]}" \
+    tag ghcr.io/oils-for-unix/$name:{$tag_built_with,latest}
 }
 
 build() {
@@ -177,47 +231,33 @@ build() {
 
   # can't preserve the entire env: https://github.com/containers/buildah/issues/3887
   #sudo --preserve-env=CONTAINERS_REGISTRIES_CONF --preserve-env=REGISTRY_AUTH_FILE \
-  sudo -E DOCKER_BUILDKIT=1 \
-    $DOCKER build "${flags[@]}" \
-    --tag "oilshell/$name:$LATEST_TAG" \
+  "${docker_prefix[@]}" \
+    build "${flags[@]}" \
+    --tag "ghcr.io/oils-for-unix/$name:$LATEST_TAG" \
     --file deps/Dockerfile.$name .
 
   # Avoid hassle by also tagging it
   tag-latest $name
 }
 
-build-cached() {
-  local name=${1:-soil-dummy}
-  build "$name" T
-}
-
 build-many() {
-  echo 'TODO: use_cache should be automatic - all but 2 images use it'
-}
-
-build-all() {
-  # Should rebuild all these
-  # Except I also want to change the Dockerfile to use Debian 12
-  list-images | egrep -v 'test-image|ovm-tarball|benchmarks|wedge-bootstrap|debian-12'
+  for name in "$@"; do
+    build $name T  # use caching
+  done
 }
 
 push() {
   local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
 
-  # TODO: replace with flags
-  #export-podman
-
-  local image="oilshell/$name:$tag"
+  local image="ghcr.io/oils-for-unix/$name"
 
   set -x
 
-  # -E for export-podman vars
-  sudo -E $DOCKER push $image
-  #sudo -E $DOCKER --log-level=debug push $image
+  "${docker_prefix[@]}" push "$image:$tag"
 
   # Also push the 'latest' tag, to avoid getting out of sync
-  sudo -E $DOCKER push oilshell/$name:latest
+  "${docker_prefix[@]}" push "$image:latest"
 }
 
 push-many() {
@@ -303,16 +343,23 @@ smoke-script-2() {
   cd ~/oil
   . build/dev-shell.sh
 
+  test/ltrace.sh soil-run
+  exit
+
+  # Bug with python2
+  #devtools/types.sh soil-run
+  #test/lossless.sh soil-run
+  #exit
+
   #test/spec-version.sh osh-version-text
 
   echo PATH=$PATH
 
-  exit
+  #which mksh
+  #mksh -c "echo hi from mksh"
 
-  which mksh
-  mksh -c "echo hi from mksh"
-
-  test/spec.sh smoke
+  #test/spec.sh smoke
+  test/spec.sh zsh-assoc
 
   which python2
   python2 -V
@@ -323,6 +370,9 @@ smoke-script-2() {
   echo
 
   exit
+
+  # Bug with python2
+  test/lossless.sh soil-run
 
   python3 -m mypy core/util.py
   echo
@@ -375,35 +425,76 @@ smoke-script-2() {
   '
 }
 
+asan-smoke-script() {
+  echo '
+  cd ~/oil
+  pwd
+  whoami 
+
+  # this failed with ASAN
+  yaks/TEST.sh soil-run
+  exit
+
+  build/py.sh all
+  ./NINJA-config.sh
+  bin=_bin/cxx-asan/mycpp/examples/varargs.mycpp
+  ninja $bin
+  $bin
+
+  exit
+
+  # ls -l
+  #mkdir -p _devbuild/bin
+  out=_devbuild/bin/th.asan 
+
+  build/py.sh time-helper $out -fsanitize=address
+  export ASAN_OPTIONS=detect_leaks=1
+  ldd $out
+  ls -l $out
+  $out 
+  exit
+  '
+}
+
 _smoke() {
   ### Smoke test of container
   local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
   local docker=${3:-$DOCKER}
-  local debug_shell=${4:-}
-
-  #$docker run ${prefix}oilshell/$name:$tag bash -c "$(smoke-script-1)"
+  local script_func=${4:-}  # if empty, then start a debug shell
 
   local repo_root=$PWD
 
   local -a flags argv
-  if test -n "$debug_shell"; then
+  if test -n "$script_func"; then
+    flags=()
+    argv=( bash -c "$("$script_func")" )
+  else
     flags=( -i -t )
     argv=( bash )
-  else
-    flags=()
-    argv=( bash -c "$(smoke-script-2)" )
   fi
+
+  # Stupid podman!
+  case $docker in
+    podman)
+      export-podman
+      # this fixes mount permissions!
+      flags+=( --userns=keep-id )
+      ;;
+  esac
 
   $docker run "${flags[@]}" \
     --mount "type=bind,source=$repo_root,target=/home/uke/oil" \
-    oilshell/$name:$tag "${argv[@]}"
+    oils-for-unix/$name:$tag "${argv[@]}"
 }
 
 smoke() {
   sudo $0 _smoke "$@"
 }
 
+smoke-podman-asan() {
+  _smoke soil-cpp-small latest podman asan-smoke-script
+}
 
 smoke-podman() {
   local name=${1:-dummy}
@@ -417,7 +508,7 @@ smoke-podman() {
 
   local tag='latest'
   local prefix='docker.io/'
-  smoke-test-script | podman run -i ${prefix}oilshell/soil-$name:$tag bash
+  smoke-test-script | podman run -i ${prefix}oils-for-unix/soil-$name:$tag bash
 }
 
 cmd() {
@@ -427,7 +518,7 @@ cmd() {
 
   shift 2
 
-  sudo $DOCKER run oilshell/$name:$tag "$@"
+  sudo $DOCKER run oils-for-unix/$name:$tag "$@"
 }
 
 utf8() {
@@ -448,14 +539,14 @@ mount-test() {
   # mount 'oil' directory as /app.  TODO: Oils
   sudo $DOCKER run \
     --mount "type=bind,source=$PWD,target=/home/uke/oil" \
-    oilshell/$name "${argv[@]}"
+    oils-for-unix/$name "${argv[@]}"
 }
 
 image-history() {
   local image_id=${1:-soil-dummy}
   local tag=${2:-latest}
 
-  local image="oilshell/$image_id"
+  local image="oils-for-unix/$image_id"
 
   sudo $DOCKER history $image:$tag
 }
@@ -464,7 +555,7 @@ save() {
   local image_id=${1:-soil-dummy}
   local tag=${2:-latest}
 
-  local image="oilshell/$image_id"
+  local image="oils-for-unix/$image_id"
 
   mkdir -p _tmp/images
   local out=_tmp/images/$image_id.tar 
@@ -486,7 +577,7 @@ layers() {
   local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
 
-  local image="oilshell/$name:$tag"
+  local image="oils-for-unix/$name:$tag"
 
   # Gah this still prints 237M, not the exact number of bytes!
   # --format ' {{ .Size }} ' 

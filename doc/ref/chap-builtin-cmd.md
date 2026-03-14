@@ -657,9 +657,10 @@ Private builtins are not enabled by default:
                # If the file is -, read from stdin (not the file called -)
     cat        # equivalent to cat -
 
-- Related: [rewrite_extern][]
+- Related: [rewrite_extern][], [ysh_rewrite_extern][]
 
 [rewrite_extern]: chap-option.html#rewrite_extern
+[ysh_rewrite_extern]: chap-option.html#ysh_rewrite_extern
 
 ### rm
 
@@ -935,17 +936,24 @@ issues][].
 ### trap
 
 The `trap` builtin lets you run shell code when events happen.  Events are
-signals or interpreter hooks.
+signals or shell interpreter hooks.
+
+These forms print the current `trap` state:
 
     trap -l          # List all events and their number
     trap -p          # Print the current trap state: events and handlers
-    trap CMD EVENT*  # Register handlers
-    trap - EVENT*    # Remove handlers
+
+These forms modify the `trap` state:
+
+    trap CMD EVENT*  # Register handler for the given events
+    trap -   EVENT*  # Remove handler for the given events (SIG_DFL)
+    trap ''  EVENT*  # Do nothing for the given events (SIG_IGN)
 
 Examples:
 
     trap 'echo hi' EXIT INT   # Register
-    trap - EXIT INT           # Remove
+    trap -  EXIT INT          # Remove
+    trap '' EXIT INT          # Ignore
 
 OSH also support legacy syntax, which is not recommended:
 
@@ -954,27 +962,28 @@ OSH also support legacy syntax, which is not recommended:
     trap 0             # remove exit trap
     trap 0 INT         # remove both
 
-<!--
-    trap '' EVENT*   # TODO Ignore events
--->
-
 Tips:
 
 - Prefer passing the name of a shell function to `trap`.
   - See [ysh-trap](#ysh-trap) for even nicer idioms.
-- See [Chapter: Plugins and Hooks > Traps](chap-plugin.html#Traps) for a list of
-traps, like `trap '' EXIT`.
+- See [Chapter: Plugins and Hooks > Traps](chap-plugin.html#Traps) for a list
+  of traps, like `trap '' EXIT`.
 
 ### ysh-trap
 
-The `trap` builtin lets you run shell code when events happen.  
+The `trap` builtin lets you run shell code when events happen.  YSH improves
+the syntax of the trap builtin, and removes legacy.
 
-YSH improves the syntax of the trap builtin, and removes legacy.
+These forms print the current `trap` state:
 
     trap -l          # List all events and their number
     trap -p          # Print the current trap state: events and handlers
-    trap --add EVENT* BLOCK  # Register handlers
-    trap --remove EVENT*     # Remove handlers
+
+These forms modify the `trap` state:
+
+    trap --add    EVENT* BLOCK  # Register handlers
+    trap --remove EVENT*        # Remove handlers (SIG_DFL)
+    trap --ignore EVENT*        # Remove handlers (SIG_IGN)
 
 Examples:
 
@@ -984,6 +993,7 @@ Examples:
     }
 
     trap --remove EXIT INT
+    trap --ignore EXIT INT
 
 Note: the block argument to `trap --add` doesn't capture variables -- it's not
 a closure.  So YSH behaves like OSH, but the syntax doesn't encourage putting
@@ -1156,15 +1166,103 @@ function.
 
 ### umask
 
-    umask MODE?
-
-Sets the bit mask that determines the permissions for new files and
-directories.  The mask is subtracted from 666 for files and 777 for
+Manage the bit mask that determines the permission metadata on new files and
 directories.
 
-Oils currently supports writing masks in octal.
+    umask FLAG?     # print the current mask
 
-If no MODE, show the current mask.
+    umask OCTAL     # set the mask, e.g. umask 0124
+
+    umask SYMBOLIC  # set the mask, e.g. umask u+w
+
+Flags:
+
+    -p  Print the mask in a form that may be reused as input
+
+#### How Masks Work
+
+Let's walk through an example.  A common `umask` is `0022`.  This is three
+**octal** digits corresponding to:
+
+    0      2      2
+    ^user  ^group ^other
+            write  write
+
+Each octal digit has 3 bits:
+
+    1  execute
+    2  write
+    4  read
+
+For example, 7 is equal to 1 + 2 + 4, so 7 represents the set of 3 bits `r w
+x`.
+
+---
+
+The mask is subtracted from 666 for files:
+
+      666  # rw-rw-rw- (not executable)
+    - 022
+    -----
+      644  # rw-r--r--
+
+And 777 for directories:
+
+      777  # rwxrwxrwx
+    - 022
+    -----
+      755  # rwxr-xr-x
+
+<!--
+Not implemented:
+    -S  print the mask in symbolic form
+-->
+
+#### Symbolic Masks
+
+Rather than specifying an octal mask, you can modify the umask with list of
+comma-separated **symbolic** clauses, like:
+
+    umask ug=rwx,o-r
+
+Each clause is of the form:
+
+    who* (operator permission*)*  # this format is accepted by chmod
+
+**Who** is a set, determining which sections of the mask to modify:
+
+    ugo  user, group, or other
+    a    Modify all bits, equivalent to 'ugo'
+
+**Operator** determines how to apply the permissions:
+
+    +    Entries will be created with the permissions
+    -    Entries will be created without the permission
+    =    Set the umask to (0777 - permissions)
+
+**Permission** is a set, determining what can be done with the entry:
+
+    rwx  Set the read, write, or execute bit respectively
+    X    Set the execute bit iff the umask before this operation has one of its
+         3 execute bits set
+    st   Does nothing, but exists for POSIX compatibility
+    ugo  Set permission equal to the umask's u, g, and o bits before this
+         operation
+
+We can also express the syntax like this:
+
+    [ugoa]*([-+=]([rwxXstugo]*))*
+
+
+#### Examples
+
+    umask              # print the current umask in octal form
+
+    umask u+rwx-x-w-r  # operators can be chained
+
+    umask a=u          # [ugo] after the operator represents the initial umask
+
+    umask =u           # equivalent to 'umask a=u'
 
 ### ulimit
 
@@ -1337,6 +1435,7 @@ Examples:
     kill -l                # List all signals; -l is a synonym for -L
     kill -L USR1 USR2      # prints '10 12'
     kill -L USR1 15        # prints '10 TERM'
+    kill -L 134            # you can also pass exit codes, this prints 'ABRT'
 
 ## External
 
@@ -1415,19 +1514,33 @@ See [ysh-test](#ysh-test) for log flags like `--file` and `--true`.
 
 ### getopts
 
-    getopts SPEC VAR ARG*
+    getopts SPEC VARNAME ARG*
 
 A single iteration of flag parsing.  The SPEC is a sequence of flag characters,
-with a trailing `:` to indicate that the flag takes an argument:
+with an optional `:` to which means that the flag takes an argument:
 
-    ab    # accept  -a and -b
+    ab    # accept -a and -b
     xy:z  # accept -x, -y arg, and -z
+
+A leading : enables silent error reporting:
+
+    :ab   # accept -a and -b in silent mode
 
 The input is `"$@"` by default, unless ARGs are passed.
 
-On each iteration, the flag character is stored in VAR.  If the flag has an
-argument, it's stored in `$OPTARG`.  When an error occurs, VAR is set to `?`
-and `$OPTARG` is unset.
+    getopts 'ab'   myvar         # input is from "$@"
+    getopts 'xy:z' myvar -x foo  # input is --x foo
+
+On each iteration, variables are set
+
+- The flag character is stored in `VARNAME`.
+- If the flag has an argument, it's stored in `$OPTARG`.
+
+There are two methods of error reporting
+
+- Normally, VARNAME is set to `?` and `$OPTARG` is unset.
+- In silent mode, VARNAME is set to :
+  - TODO
 
 Returns 0 if a flag is parsed, or 1 on end of input or another error.
 
@@ -1442,6 +1555,7 @@ Example:
     done
 
 Notes:
+
 - `$OPTIND` is initialized to 1 every time a shell starts, and is used to
   maintain state between invocations of `getopts`.
 - The characters `:` and `?` can't be flags.

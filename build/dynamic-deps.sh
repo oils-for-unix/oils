@@ -9,11 +9,16 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# Note on the cd option, "-P": Resolve symlinks in the current working
-# directory.  This is needed to make `grep $REPO_ROOT...` in `repo-filter
-# (build/dynamic-deps.sh)` work.  Later, `repo-filter` and related parts may be
-# rewritten using AWK to handle it better.
-REPO_ROOT=$(cd -P "$(dirname $0)/.."; pwd)
+source build/py2.sh  # python2 needed below for dynamic_deps.py
+
+# Two fixes:
+# - cd -P: Resolve symlinks in the current working directory.  This is needed
+#   to make `grep $REPO_ROOT...` in `repo-filter (build/dynamic-deps.sh)` work.
+#   Later, `repo-filter` and related parts may be rewritten using AWK to handle
+#   it better.
+# - ${BASH_SOURCE[0]} rather than $0: because this file is sourced by
+#   ./NINJA-config.sh, in which case $0 has one less /
+REPO_ROOT=$(cd -P "$(dirname ${BASH_SOURCE[0]})/.."; pwd)
 
 readonly PY_PATH='.:vendor/'
 
@@ -133,7 +138,10 @@ repo-filter() {
 
   # select what's in the repo; eliminating stdlib stuff
   # eliminate _cache for mycpp running under Python-3.10
-  grep -F -v "$REPO_ROOT/_cache" | grep -F "$REPO_ROOT" | awk '{ print $2 }' 
+  #
+  # 2025-10 fix: trailing slash in $REPO_ROOT/ matters, because otherwise
+  # __future__.py in oils-for-unix/oils.DEPS is included, when we want it excluded
+  grep -F -v "$REPO_ROOT/_cache" | grep -F "$REPO_ROOT/" | awk '{ print $2 }' 
 }
 
 exclude-files() {

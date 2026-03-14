@@ -189,6 +189,7 @@ shopt -s parse_func
 shopt -s parse_paren
 shopt -s parse_proc
 shopt -s parse_triple_quote
+shopt -s parse_ysh_expr_sub
 shopt -s parse_ysh_string
 shopt -s pipefail
 shopt -s process_sub_fail
@@ -197,6 +198,7 @@ shopt -s simple_word_eval
 shopt -s verbose_errexit
 shopt -s verbose_warn
 shopt -s xtrace_rich
+shopt -s ysh_rewrite_extern
 ## END
 
 #### osh -O ysh:upgrade 
@@ -756,4 +758,14 @@ echo ${#assoc[@]}
 
 ## STDOUT:
 2
+## END
+
+#### ysh_rewrite_extern makes the process exit with SIGPIPE
+shopt --set ysh_rewrite_extern
+
+((/usr/bin/cat </dev/zero; echo $? >&7) | true) 7>&1
+((cat </dev/zero; echo $? >&7) | true) 7>&1
+
+## STDOUT:
+141
 ## END

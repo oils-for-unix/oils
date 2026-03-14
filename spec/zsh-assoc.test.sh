@@ -1,4 +1,4 @@
-## compare_shells: zsh
+## compare_shells: zsh-5.9
 ## our_shell: -
 
 # Differences from bash:

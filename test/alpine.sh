@@ -78,7 +78,7 @@ readonly CHROOT_OILS_SPEC=_chroot/alpine-oils-spec
 readonly CHROOT_DISTRO_BUILD=_chroot/alpine-distro-build
 
 download() {
-  wget --no-clobber --directory _tmp $ROOTFS_URL
+  wget --no-clobber --directory-prefix _tmp $ROOTFS_URL
 }
 
 _extract() {

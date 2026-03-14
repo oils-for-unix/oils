@@ -16,7 +16,6 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source test/common.sh  # log
 source benchmarks/common.sh
-source build/dev-shell.sh  # python2
 source test/tsv-lib.sh  # tsv2html
 
 readonly BASE_DIR=_tmp/vm-baseline

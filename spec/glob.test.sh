@@ -384,3 +384,26 @@ argv.py x/*$v*.txt
 ['x/test.ifs.\\.txt']
 ['x/test.ifs.\\.txt']
 ## END
+
+#### pattern starting with . does not return . and ..
+
+echo hi .*
+
+## STDOUT:
+hi .*
+## END
+## BUG dash/ash STDOUT:
+hi . ..
+## END
+
+#### shopt -u globskipdots shows . and ..
+case $SH in dash|ash|mksh) exit ;; esac
+
+shopt -u globskipdots
+echo hi .*
+
+## STDOUT:
+hi . ..
+## END
+## N-I dash/ash/mksh STDOUT:
+## END

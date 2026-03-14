@@ -309,5 +309,3 @@ big-logs-2() {
 }
 
 task-five "$@"
-
-task-five "$@"

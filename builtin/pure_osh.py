@@ -406,7 +406,17 @@ class Hash(vm._Builtin):
 
 def _ParseOptSpec(spec_str):
     # type: (str) -> Dict[str, bool]
+
+    # The spec dict maps {flag_char: arg_required?}
+    # And a special __silent var
     spec = {}  # type: Dict[str, bool]
+
+    # If spec starts with :, then we use a "silent" error reporting mode.
+    spec['__silent'] = False
+    if spec_str.startswith(':'):
+        spec['__silent'] = True
+        spec_str = spec_str[1:]
+
     i = 0
     n = len(spec_str)
     while True:
@@ -425,9 +435,10 @@ def _ParseOptSpec(spec_str):
 
 
 class GetOptsState(object):
-    """State persisted across invocations.
+    """State persisted across invocations of getopt
 
-    This would be simpler in GetOpts.
+    OPTIND
+    flag_pos
     """
 
     def __init__(self, mem, errfmt):
@@ -436,6 +447,14 @@ class GetOptsState(object):
         self.errfmt = errfmt
         self._optind = -1
         self.flag_pos = 1  # position within the arg, public var
+
+    def IncOptInd(self):
+        # type: () -> None
+        """Increment OPTIND."""
+        # Note: bash-completion uses a *local* OPTIND !  Not global.
+        assert self._optind != -1
+        state.BuiltinSetString(self.mem, 'OPTIND', str(self._optind + 1))
+        self.flag_pos = 1
 
     def _OptInd(self):
         # type: () -> int
@@ -448,15 +467,13 @@ class GetOptsState(object):
             result = -1
         return result
 
-    def GetArg(self, argv):
+    def GetCurrentArg(self, argv):
         # type: (List[str]) -> Optional[str]
         """Get the value of argv at OPTIND.
 
         Returns None if it's out of range.
         """
-
         #log('_optind %d flag_pos %d', self._optind, self.flag_pos)
-
         optind = self._OptInd()
         if optind == -1:
             return None
@@ -469,109 +486,129 @@ class GetOptsState(object):
         else:
             return None
 
-    def IncIndex(self):
-        # type: () -> None
-        """Increment OPTIND."""
-        # Note: bash-completion uses a *local* OPTIND !  Not global.
-        assert self._optind != -1
-        state.BuiltinSetString(self.mem, 'OPTIND', str(self._optind + 1))
-        self.flag_pos = 1
-
-    def SetArg(self, optarg):
-        # type: (str) -> None
-        """Set OPTARG."""
-        state.BuiltinSetString(self.mem, 'OPTARG', optarg)
-
-    def Fail(self):
-        # type: () -> None
-        """On failure, reset OPTARG."""
-        state.BuiltinSetString(self.mem, 'OPTARG', '')
-
-
-def _GetOpts(
-        spec,  # type: Dict[str, bool]
-        argv,  # type: List[str]
-        my_state,  # type: GetOptsState
-        errfmt,  # type: ui.ErrorFormatter
-):
-    # type: (...) -> Tuple[int, str]
-    current = my_state.GetArg(argv)
-    #log('current %s', current)
-
-    if current is None:  # out of range, etc.
-        my_state.Fail()
-        return 1, '?'
-
-    if not current.startswith('-') or current == '-':
-        my_state.Fail()
-        return 1, '?'
-
-    flag_char = current[my_state.flag_pos]
-
-    if my_state.flag_pos < len(current) - 1:
-        my_state.flag_pos += 1  # don't move past this arg yet
-        more_chars = True
-    else:
-        my_state.IncIndex()
-        my_state.flag_pos = 1
-        more_chars = False
-
-    if flag_char not in spec:  # Invalid flag
-        return 0, '?'
-
-    if spec[flag_char]:  # does it need an argument?
-        if more_chars:
-            optarg = current[my_state.flag_pos:]
-        else:
-            optarg = my_state.GetArg(argv)
-            if optarg is None:
-                my_state.Fail()
-                # TODO: Add location info
-                errfmt.Print_('getopts: option %r requires an argument.' %
-                              current)
-                tmp = [j8_lite.MaybeShellEncode(a) for a in argv]
-                print_stderr('(getopts argv: %s)' % ' '.join(tmp))
-
-                # Hm doesn't cause status 1?
-                return 0, '?'
-        my_state.IncIndex()
-        my_state.SetArg(optarg)
-    else:
-        my_state.SetArg('')
-
-    return 0, flag_char
-
 
 class GetOpts(vm._Builtin):
-    """
-    Vars used:
-      OPTERR: disable printing of error messages
-    Vars set:
-      The variable named by the second arg
-      OPTIND - initialized to 1 at startup
-      OPTARG - argument
-    """
 
     def __init__(self, mem, errfmt):
         # type: (Mem, ui.ErrorFormatter) -> None
         self.mem = mem
         self.errfmt = errfmt
 
+        # Cache parsing of flag spec
+        self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
+
         # TODO: state could just be in this object
         self.my_state = GetOptsState(mem, errfmt)
-        self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
+
+        # These variables are used by _Fail(), and set before each
+        # _OneIteration() call
+        self._silent = False
+        self._opterr = 0
+
+    def _SetOptArg(self, optarg):
+        # type: (str) -> None
+        state.BuiltinSetString(self.mem, 'OPTARG', optarg)
+
+    def _Fail(self, error_msg, flag_char=''):
+        # type: (str, str) -> None
+        """Handle user flag parsing failures."""
+        if self._silent:  # leading : in SPEC enables silent mode
+            self._SetOptArg(flag_char)
+        else:
+            self._SetOptArg('')
+
+            # Print error message unless OPTERR 0
+            if self._opterr == 0:
+                return
+            if len(error_msg):
+                self.errfmt.Print_(error_msg)
+
+    def _OneIteration(
+            self,
+            spec,  # type: Dict[str, bool]
+            argv,  # type: List[str]
+    ):
+        # type: (...) -> Tuple[int, str]
+        """Returns (int status, character to put in NAME var)
+
+        Vars:
+
+        Returned and set:
+          The NAME var given by the user - the flag itself, ? or :
+        Set here:
+          OPTARG - the argument to the flag, if any
+          OPTIND - initialized to 1 at startup
+        Used:
+          OPTERR: disable printing of error messages
+        """
+        my_state = self.my_state
+
+        current = my_state.GetCurrentArg(argv)
+        #log('current %s', current)
+
+        if current is None:  # out of range, etc.
+            self._Fail('')
+            return 1, '?'
+
+        if not current.startswith('-') or current == '-':
+            self._Fail('')
+            return 1, '?'
+
+        if current == '--':  # special case, stop processing remaining args
+            my_state.IncOptInd()
+            return 1, '?'
+
+        flag_char = current[my_state.flag_pos]
+
+        if my_state.flag_pos < len(current) - 1:
+            my_state.flag_pos += 1  # don't move past this arg yet
+            more_chars = True
+        else:
+            my_state.IncOptInd()
+            my_state.flag_pos = 1
+            more_chars = False
+
+        if flag_char not in spec:  # Invalid flag
+            self._Fail('getopts: invalid flag -%s' % flag_char,
+                       flag_char=flag_char)
+            return 0, '?'
+
+        if spec[flag_char]:  # does it need an argument?
+            if more_chars:
+                optarg = current[my_state.flag_pos:]
+            else:
+                optarg = my_state.GetCurrentArg(argv)
+                if optarg is None:
+                    self._Fail('getopts: flag -%s requires an argument' %
+                               flag_char,
+                               flag_char=flag_char)
+
+                    # quirk of silent mode
+                    error_char = ':' if self._silent else '?'
+
+                    return 0, error_char
+
+            my_state.IncOptInd()
+            self._SetOptArg(optarg)
+        else:
+            self._SetOptArg('')  # no argument
+
+        return 0, flag_char
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()
 
-        # NOTE: If first char is a colon, error reporting is different.  Alpine
-        # might not use that?
         spec_str = arg_r.ReadRequired('requires an argspec')
-
         var_name, var_loc = arg_r.ReadRequired2(
             'requires the name of a variable to set')
+
+        # If OPTERR is 0, then errors are suppressed.  It defaults to 1
+        try:
+            opterr = state.GetInteger(self.mem, 'OPTERR')
+        except error.Runtime:
+            opterr = 1
 
         spec = self.spec_cache.get(spec_str)
         if spec is None:
@@ -579,15 +616,17 @@ class GetOpts(vm._Builtin):
             self.spec_cache[spec_str] = spec
 
         user_argv = self.mem.GetArgv() if arg_r.AtEnd() else arg_r.Rest()
-        #log('user_argv %s', user_argv)
-        status, flag_char = _GetOpts(spec, user_argv, self.my_state,
-                                     self.errfmt)
+
+        # Set members for _Fail() before each _OneIteration()
+        self._silent = spec['__silent']
+        self._opterr = opterr
+        status, flag_char = self._OneIteration(spec, user_argv)
 
         if match.IsValidVarName(var_name):
             state.BuiltinSetString(self.mem, var_name, flag_char)
         else:
-            # NOTE: The builtin has PARTIALLY set state.  This happens in all shells
-            # except mksh.
+            # Note: upon failure, getopts may leave PARTIALLY set state.  This
+            # happens in all shells except mksh.
             raise error.Usage('got invalid variable name %r' % var_name,
                               var_loc)
         return status

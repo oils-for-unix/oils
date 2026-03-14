@@ -1,6 +1,8 @@
 # https://man.sr.ht/builds.sr.ht/compatibility.md
 
 image: alpine/3.19
+# TODO: fix py3-libs /typed_ast failure due to C23, and upgrade.  bloaty cmake failure can be ignored OK
+#image: alpine/3.23
 
 packages:
   - python3
@@ -17,12 +19,12 @@ secrets:
 tasks:
   - dev-setup-alpine: |
       cd oils
-      soil/worker.sh JOB-dev-setup-alpine
+      soil/worker.sh JOB-dev-setup-alpine-fail
 
   - publish-dev-setup-alpine: |
       cd oils
-      soil/sourcehut.sh publish-html-assuming-ssh-key dev-setup-alpine
+      soil/sourcehut.sh publish-html-assuming-ssh-key dev-setup-alpine-fail
 
   - did-all-succeed: |
       cd oils
-      soil/host-shim.sh did-all-succeed dev-setup-alpine
+      soil/host-shim.sh did-all-succeed dev-setup-alpine-fail

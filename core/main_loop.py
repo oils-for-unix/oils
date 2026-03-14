@@ -454,7 +454,7 @@ def EvalFile(
     (Note that bind -x has to eval from a string, like Eval)
 
     Raises:
-      util.UserExit
+      util.HardExit
     Returns:
       ok: whether processing should continue
     """
@@ -478,7 +478,7 @@ def EvalFile(
             with state.ctx_ThisDir(cmd_ev.mem, fs_path):
                 src = source.MainFile(fs_path)
                 with alloc.ctx_SourceCode(cmd_ev.arena, src):
-                    # May raise util.UserExit
+                    # May raise util.HardExit
                     was_parsed, status = Batch2(cmd_ev, c_parser,
                                                 cmd_ev.errfmt)
                     if not was_parsed:

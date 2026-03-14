@@ -29,6 +29,8 @@ ok
 
 
 #### Period requires digit on either side, not 5. or .5
+shopt --set parse_ysh_expr_sub
+
 echo $[0.5]
 echo $[5.0]
 echo $[5.]
@@ -41,6 +43,7 @@ echo $[.5]
 ## END
 
 #### Big float Literals with _
+shopt --set parse_ysh_expr_sub
 
 # C++ issue: we currently print with snprintf %g
 # Pars
@@ -57,6 +60,7 @@ echo $[42_000.000_500e-1]
 ## END
 
 #### Big floats like 1e309 and -1e309 go to Inf / -Inf
+shopt --set parse_ysh_expr_sub
 
 # Notes
 # - Python float() and JS parseFloat() agree with this behavior

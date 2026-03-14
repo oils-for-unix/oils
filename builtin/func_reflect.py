@@ -5,9 +5,9 @@ func_reflect.py - Functions for reflecting on Oils code - OSH or YSH.
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import scope_e
-from _devbuild.gen.syntax_asdl import (Token, CompoundWord, source,
+from _devbuild.gen.syntax_asdl import (Token, CompoundWord, source, cmd_frag,
                                        debug_frame, debug_frame_e)
-from _devbuild.gen.value_asdl import (value, value_e, value_t, cmd_frag)
+from _devbuild.gen.value_asdl import (value, value_e, value_t)
 
 from core import alloc
 from core import error

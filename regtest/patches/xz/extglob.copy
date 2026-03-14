@@ -1,0 +1,12 @@
+--- /usr/bin/autopoint
++++ /usr/bin/autopoint
+@@ -15,7 +15,7 @@
+ while read line
+ do
+   if [ "${line##*AC_CONFIG_AUX_DIR}" != "$line" ]; then
+-    dirprefix="${line##*([}"
++    dirprefix="${line##*'(['}"
+     dirprefix="${dirprefix%%])*}"
+     mkdir -p "${dirprefix}"
+   fi
+

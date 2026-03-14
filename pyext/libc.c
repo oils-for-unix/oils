@@ -13,6 +13,9 @@
 #include <limits.h>
 #include <wchar.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <locale.h>
 #include <fnmatch.h>
@@ -121,7 +124,7 @@ func_glob(PyObject *self, PyObject *args) {
   case 0:  // no error
     break;
   case GLOB_ABORTED:
-    err_str = "read error";
+    err_str = "GLOB_ABORTED";
     break;
   case GLOB_NOMATCH:
     // No error, because not matching isn't necessarily a problem.
@@ -129,10 +132,10 @@ func_glob(PyObject *self, PyObject *args) {
     //err_str = "nothing matched";
     break;
   case GLOB_NOSPACE:
-    err_str = "no dynamic memory";
+    err_str = "GLOB_NOSPACE";
     break;
   default:
-    err_str = "unknown problem";
+    err_str = "<unknown>";
     break;
   }
   if (err_str) {
@@ -379,6 +382,29 @@ func_sleep_until_error(PyObject *self, PyObject *args) {
   return PyInt_FromLong(result);
 }
 
+static PyObject *
+func_strsignal(PyObject *self, PyObject *args) {
+  int sig_num;
+  char *res;
+  
+  if (!PyArg_ParseTuple(args, "i:strsignal", &sig_num)) {
+    return NULL;
+  }
+  
+  if (sig_num < 1 || sig_num >= NSIG) {
+    PyErr_SetString(PyExc_ValueError, "signal number out of range");
+    return NULL;
+  }
+
+  res = strsignal(sig_num);
+
+  if (res == NULL) {
+    Py_RETURN_NONE;
+  }
+
+  return PyString_FromString(res);
+}
+
 static PyMethodDef methods[] = {
   // Return the canonical version of a path with symlinks, or None if there is
   // an error.
@@ -416,6 +442,8 @@ static PyMethodDef methods[] = {
   {"cpython_reset_locale", func_cpython_reset_locale, METH_NOARGS, ""},
 
   {"sleep_until_error", func_sleep_until_error, METH_VARARGS, ""},
+  
+  {"strsignal", func_strsignal, METH_VARARGS, ""},
   {NULL, NULL},
 };
 
@@ -431,6 +459,7 @@ void initlibc(void) {
       // Actual libc values
       PyModule_AddIntConstant(module, "GLOB_PERIOD", GLOB_PERIOD);
       PyModule_AddIntConstant(module, "FNM_CASEFOLD", FNM_CASEFOLD);
+      PyModule_AddIntConstant(module, "FNM_PATHNAME", FNM_PATHNAME);
       PyModule_AddIntConstant(module, "REG_ICASE", REG_ICASE);
       PyModule_AddIntConstant(module, "REG_NEWLINE", REG_NEWLINE);
       PyModule_AddIntConstant(module, "REG_NOTBOL", REG_NOTBOL);

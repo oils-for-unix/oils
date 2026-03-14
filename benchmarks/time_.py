@@ -50,16 +50,20 @@ import time
 THIS_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 time1 = os.path.abspath(os.path.join(THIS_DIR, '../_devbuild/bin/time-helper'))
-# Pre-built one
-time2 = '/wedge/oils-for-unix.org/pkg/time-helper/2023-02-28/time-helper'
+
+# Pre-built ones, for CI images - I guess some of them don't have compilers
+rel_path = 'time-helper/2023-02-28/time-helper'
+time2 = os.path.join(THIS_DIR, '../../oils.DEPS/wedge', rel_path)
+time3 = os.path.join('/wedge/oils-for-unix.org/pkg', rel_path)
 
 if os.path.exists(time1):
     TIME_HELPER = time1
 elif os.path.exists(time2):
     TIME_HELPER = time2
+elif os.path.exists(time3):
+    TIME_HELPER = time3
 else:
     raise AssertionError('time-helper not found')
-
 
 def log(msg, *args):
     if args:

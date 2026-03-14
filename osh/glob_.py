@@ -5,17 +5,22 @@ import libc
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (CompoundWord, Token, word_part_e,
                                        glob_part, glob_part_e, glob_part_t,
-                                       loc_t)
+                                       loc, loc_t)
+from _devbuild.gen.value_asdl import value
 from core import pyos, pyutil, error
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import log, print_stderr
+from mycpp.mylib import log
+from pylib import os_path
 
-from libc import GLOB_PERIOD
+from libc import GLOB_PERIOD, FNM_PATHNAME
+from _devbuild.gen.value_asdl import value_e
+from _devbuild.gen.runtime_asdl import scope_e
 
-from typing import List, Tuple, cast, TYPE_CHECKING
+from typing import Dict, List, Tuple, cast, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from core import optview
+    from core import state
     from frontend.match import SimpleLexer
 
 _ = log
@@ -444,67 +449,168 @@ def GlobToERE(pat):
 # - See 2 calls in osh/word_eval.py
 
 
+def _StringMatchesAnyPattern(s, patterns):
+    # type: (str, List[str]) -> bool
+    """Check if string matches any pattern in the list.
+
+    Returns True if s matches any pattern, or if s is . or ..
+    (which are always filtered when GLOBIGNORE is set).
+    """
+    for pattern in patterns:
+        if libc.fnmatch(pattern, s, FNM_PATHNAME):
+            return True
+
+    return False
+
+
 class Globber(object):
 
-    def __init__(self, exec_opts):
-        # type: (optview.Exec) -> None
+    def __init__(self, exec_opts, mem):
+        # type: (optview.Exec, state.Mem) -> None
         self.exec_opts = exec_opts
+        self.mem = mem
+        # Cache for parsed GLOBIGNORE patterns to avoid re-parsing
+        self._globignore_cache = {}  # type: Dict[str, List[str]]
 
         # Other unimplemented bash options:
         #
-        # dotglob           dotfiles are matched
         # globstar          ** for directories
         # globasciiranges   ascii or unicode char classes (unicode by default)
         # nocaseglob
-        # extglob          the @() !() syntax -- libc helps us with fnmatch(), but
-        #                  not glob().
-        #
-        # NOTE: Bash also respects the GLOBIGNORE variable, but no other shells
-        # do.  Could a default GLOBIGNORE to ignore flags on the file system be
-        # part of the security solution?  It doesn't seem totally sound.
+        # GLOBSORT global variable
 
-    def _Glob(self, arg, out):
-        # type: (str, List[str]) -> int
+    def _GetGlobIgnorePatterns(self):
+        # type: () -> Optional[List[str]]
+        """Get GLOBIGNORE patterns as a list, or None if not set."""
+
+        val = self.mem.GetValue('GLOBIGNORE', scope_e.GlobalOnly)
+        if val.tag() != value_e.Str:
+            return None
+
+        globignore = cast(value.Str, val).s  # type: str
+        if len(globignore) == 0:
+            return None
+
+        if globignore in self._globignore_cache:
+            return self._globignore_cache[globignore]
+
+        # Split by colon to get individual patterns, but don't split colons
+        # inside bracket expressions like [[:alnum:]]
+        patterns = []  # type: List[str]
+        current = []  # type: List[str]
+        in_bracket = False
+
+        for c in globignore:
+            if c == '[':
+                in_bracket = True
+                current.append(c)
+            elif c == ']':
+                in_bracket = False
+                current.append(c)
+            elif c == ':' and not in_bracket:
+                if len(current):
+                    patterns.append(''.join(current))
+                    del current[:]
+            else:
+                current.append(c)
+
+        if len(current):
+            patterns.append(''.join(current))
+
+        self._globignore_cache[globignore] = patterns
+
+        return patterns
+
+    def DoLibcGlob(self, arg, out, blame_loc):
+        # type: (str, List[str], loc_t) -> None
+        """For the io.libcGlob() API"""
         try:
-            flags = 0
-            if self.exec_opts.dotglob():
-                # If HAVE_GLOB_PERIOD is false, then ./configure stubs out
-                # GLOB_PERIOD as 0, a no-op
-                flags |= GLOB_PERIOD
-            results = libc.glob(arg, flags)
+            results = libc.glob(arg, 0)
         except RuntimeError as e:
-            # These errors should be rare: I/O error, out of memory, or unknown
-            # There are no syntax errors.  (But see comment about globerr() in
-            # native/libc.c.)
+            # Rare glob errors, like GLOB_NOSPACE
+            # Note: dash has a fatal sh_error() on GLOB_NOSPACE
+
             # note: MyPy doesn't know RuntimeError has e.message (and e.args)
             msg = e.message  # type: str
-            print_stderr("Error expanding glob %r: %s" % (arg, msg))
-            raise
+            raise error.Structured(error.CODEC_STATUS, msg, blame_loc)
+
+        out.extend(results)
+
+    def DoShellGlob(self, arg, out, blame_loc=loc.Missing):
+        # type: (str, List[str], loc_t) -> int
+        """For word evaluation and the io.glob() API
+
+        Respects these filters:
+        - GLOBIGNORE
+        - dotglob turns into C GLOB_PERIOD
+        - no_dash_glob
+        - globskipdots
+
+        But NOT these; they are done at a higher level
+        - noglob 
+        - failglob
+        - nullglob - ditto
+
+        TODO:
+        - ysh globbing should not respect globals like GLOBIGNORE?
+          - only no_dash_glob by default?
+        - split into two functions:
+          - compatible io.glob()
+          - controlled io.libcGlob()
+        """
+        globignore_patterns = self._GetGlobIgnorePatterns()
+
+        flags = 0
+        # shopt -u dotglob (default): echo * does not return say .gitignore
+        # If GLOBIGNORE is set, then dotglob is NOT respected - we return ..
+        if self.exec_opts.dotglob() or globignore_patterns is not None:
+            # If HAVE_GLOB_PERIOD is false, then ./configure stubs out
+            # GLOB_PERIOD as 0, a no-op
+            flags |= GLOB_PERIOD
+
+        try:
+            results = libc.glob(arg, flags)
+        except RuntimeError as e:
+            # Rare glob errors, like GLOB_NOSPACE
+            # Note: dash has a fatal sh_error() on GLOB_NOSPACE
+
+            # note: MyPy doesn't know RuntimeError has e.message (and e.args)
+            msg = e.message  # type: str
+            raise error.Structured(error.CODEC_STATUS, msg, blame_loc)
         #log('glob %r -> %r', arg, g)
 
-        n = len(results)
-        if n:  # Something matched
-            # Omit files starting with -
-            # no_dash_glob is part of shopt --set ysh:upgrade
+        if len(results) == 0:
+            return 0  # nothing matched
+
+        # Something matched
+
+        if globignore_patterns is not None:  # Handle GLOBIGNORE
+            # When GLOBIGNORE is set, bash doesn't respect shopt -u
+            # globskipdots!  The entries . and .. are skipped, even if they
+            # do NOT match GLOBIGNORE
+            tmp = [
+                s for s in results
+                if not _StringMatchesAnyPattern(s, globignore_patterns) and
+                os_path.basename(s) not in ('.', '..')
+            ]
+            results = tmp  # idiom to work around mycpp limitation
+
+            skipdots = True
+
+        else:  # Do filtering that's NOT GLOBIGNORE
+            # no_dash_glob: Omit files starting with -
+            # (part of shopt --set ysh:upgrade)
             if self.exec_opts.no_dash_glob():
                 tmp = [s for s in results if not s.startswith('-')]
-                results = tmp  # idiom to work around mycpp limitation
-                n = len(results)
+                results = tmp
 
-            # XXX: libc's glob function can return '.' and '..', which
-            # are typically not of interest. Filtering in this manner
-            # is similar (but not identical) to the default bash
-            # setting of 'setopt -s globskipdots'. Supporting that
-            # option fully would require more than simply wrapping
-            # this in an if statement.
-            n = 0
-            for s in results:
-                if s not in ('.', '..'):
-                    out.append(s)
-                    n += 1
-            return n
+            # globskipdots: Remove . and .. entries returned by libc.
+            if self.exec_opts.globskipdots():
+                tmp = [s for s in results if s not in ('.', '..')]
+                results = tmp
 
-        return 0
+        out.extend(results)
+        return len(results)
 
     def Expand(self, arg, out, blame_loc):
         # type: (str, List[str], loc_t) -> int
@@ -522,7 +628,7 @@ class Globber(object):
             # The caller should use the original string
             return -1
 
-        n = self._Glob(arg, out)
+        n = self.DoShellGlob(arg, out)
         if n:
             return n
 
@@ -539,6 +645,10 @@ class Globber(object):
 
     def ExpandExtended(self, glob_pat, fnmatch_pat, out):
         # type: (str, str, List[str]) -> int
+        """
+        Returns:
+          The number of items appended, or -1 when glob expansion did not happen
+        """
         if self.exec_opts.noglob():
             # Return the fnmatch_pat.  Note: this means we turn ,() into @(), and
             # there is extra \ escaping compared with bash and mksh.  OK for now
@@ -546,7 +656,7 @@ class Globber(object):
             return 1
 
         tmp = []  # type: List[str]
-        self._Glob(glob_pat, tmp)
+        self.DoShellGlob(glob_pat, tmp)
         filtered = [s for s in tmp if libc.fnmatch(fnmatch_pat, s)]
         n = len(filtered)
 
@@ -559,7 +669,7 @@ class Globber(object):
 
         if self.exec_opts.nullglob():
             return 0
-        else:
-            # See comment above
-            out.append(GlobUnescape(fnmatch_pat))
-            return 1
+
+        # Expand to fnmatch_pat, as above
+        out.append(GlobUnescape(fnmatch_pat))
+        return 1

@@ -102,7 +102,7 @@ CASE-try() {
 # TODO: Oils could expose strerror() like shpp
 
 try { zzz }
-if (_status === 127) {
+if (_error.code === 127) {
   echo "zzz not installed"
 }
 EOF

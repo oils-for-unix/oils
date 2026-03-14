@@ -47,8 +47,8 @@ def RegexSearch(pat, s):
     return RegexGroupStrings(s, indices)
 
 
-class UserExit(Exception):
-    """For explicit 'exit'."""
+class HardExit(Exception):
+    """For explicit user 'exit', and set-u failures."""
 
     def __init__(self, status):
         # type: (int) -> None

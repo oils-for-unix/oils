@@ -14,7 +14,7 @@ fetch() {
   local dir=$1
   local tar_url=$2
 
-  wget --directory $dir --no-clobber $tar_url
+  wget --directory-prefix $dir --no-clobber $tar_url
 
   pushd $dir
   tar -x -v < $(basename $tar_url)

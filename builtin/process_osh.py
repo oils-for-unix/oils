@@ -1,8 +1,8 @@
 #!/usr/bin/env python2
 """
-builtin_process.py - Builtins that deal with processes or modify process state.
+process_osh.py - Builtins that deal with processes or modify process state.
 
-This is sort of the opposite of builtin_pure.py.
+This is sort of the opposite of pure_osh.py.
 """
 from __future__ import print_function
 
@@ -65,6 +65,9 @@ class Jobs(vm._Builtin):
 
         attrs, arg_r = flag_util.ParseCmdVal('jobs', cmd_val)
         arg = arg_types.jobs(attrs.attrs)
+
+        # osh doesn't support JOBSPEC arg
+        arg_r.Done()
 
         if arg.l:
             style = process.STYLE_LONG
@@ -223,7 +226,8 @@ class Exec(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_util.ParseCmdVal('exec', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('exec_', cmd_val)
+        arg = arg_types.exec_(attrs.attrs)
 
         # Apply redirects in this shell.  # NOTE: Redirects were processed earlier.
         if arg_r.AtEnd():
@@ -242,7 +246,11 @@ class Exec(vm._Builtin):
             e_die_status(127, 'exec: %r not found' % cmd, cmd_val.arg_locs[1])
 
         # shift off 'exec', and remove typed args because they don't apply
-        c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:],
+        c2_argv = cmd_val.argv[i:]
+        if arg.a is not None:
+            c2_argv[0] = arg.a
+
+        c2 = cmd_value.Argv(c2_argv, cmd_val.arg_locs[i:],
                             cmd_val.is_last_cmd, cmd_val.self_obj, None)
 
         self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
@@ -447,43 +455,6 @@ class Wait(vm._Builtin):
                 break
 
         return status
-
-
-class Umask(vm._Builtin):
-
-    def __init__(self):
-        # type: () -> None
-        """Dummy constructor for mycpp."""
-        pass
-
-    def Run(self, cmd_val):
-        # type: (cmd_value.Argv) -> int
-
-        argv = cmd_val.argv[1:]
-        if len(argv) == 0:
-            # umask() has a dumb API: you can't get it without modifying it first!
-            # NOTE: dash disables interrupts around the two umask() calls, but that
-            # shouldn't be a concern for us.  Signal handlers won't call umask().
-            mask = posix.umask(0)
-            posix.umask(mask)  #
-            print('0%03o' % mask)  # octal format
-            return 0
-
-        if len(argv) == 1:
-            a = argv[0]
-            try:
-                new_mask = int(a, 8)
-            except ValueError:
-                # NOTE: This also happens when we have '8' or '9' in the input.
-                print_stderr(
-                    "oils warning: umask with symbolic input isn't implemented"
-                )
-                return 1
-
-            posix.umask(new_mask)
-            return 0
-
-        e_usage('umask: unexpected arguments', loc.Missing)
 
 
 def _LimitString(lim, factor):
@@ -753,23 +724,41 @@ class Kill(vm._Builtin):
                 e_usage("got invalid signal name %r" % sig_str, blame_loc)
         return sig_num
 
+    def _TranslateSignal(self, arg, arg_loc):
+        # type: (str, loc_t) -> str
+        """
+        Convert a signal name to a number and vice versa.
+        Can also be passed an exit code, which will be converted
+        to the name of the signal used to terminate the process.
+        """
+        if arg.isdigit():
+            try:
+                sig_num = int(arg)
+            except ValueError:
+                raise error.Usage("got overflowing integer: %s" % arg,
+                                  arg_loc)
+            if sig_num == 0:
+                return "EXIT" # special case, this is not really a signal
+
+            if sig_num > 128:
+                sig_num -= 128 # convert exit codes to signal numbers
+
+            sig_name = signal_def.GetName(sig_num)
+            if sig_name is None:
+                e_usage("can't translate number %r to a name" % arg, arg_loc)
+            return sig_name[3:] # strip the SIG prefix
+        else:
+            sig_num = _SigNameToNumber(arg)
+            if sig_num == signal_def.NO_SIGNAL:
+                e_usage("can't translate name %r to a number" % arg, arg_loc)
+            return str(sig_num)
+    
     def _TranslateSignals(self, arg_r):
-        # type: (args.Reader) -> int
+        # type: (args.Reader) -> None
         while not arg_r.AtEnd():
             arg, arg_loc = arg_r.Peek2()
-            if arg.isdigit():
-                sig_name = signal_def.GetName(int(arg))
-                if sig_name is None:
-                    e_usage("can't translate number %r to a name" % arg, arg_loc)
-                print(sig_name[3:])
-            else:
-                sig_num = _SigNameToNumber(arg)
-                if sig_num == signal_def.NO_SIGNAL:
-                    e_usage("can't translate name %r to a number" % arg, arg_loc)
-                print(str(sig_num))
-
+            print(self._TranslateSignal(arg, arg_loc))
             arg_r.Next()
-        return 0
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -798,7 +787,8 @@ class Kill(vm._Builtin):
                 return 0
 
             # Otherwise translate each arg
-            return self._TranslateSignals(arg_r)
+            self._TranslateSignals(arg_r)
+            return 0
 
         # -n and -s are synonyms.
         # TODO: it would be nice if the flag parser could expose the location

@@ -2,10 +2,8 @@ from __future__ import print_function
 
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (scope_e, HayNode)
-from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.value_asdl import (value, value_e, value_t, LiteralBlock,
-                                      cmd_frag, cmd_frag_e)
-
+from _devbuild.gen.syntax_asdl import (cmd_frag, cmd_frag_e, loc, LiteralBlock)
+from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from asdl import format as fmt
 from core.error import e_usage, e_die
 from core import num

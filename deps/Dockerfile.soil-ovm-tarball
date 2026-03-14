@@ -1,4 +1,4 @@
-FROM oilshell/soil-debian-12
+FROM ghcr.io/oils-for-unix/soil-debian-12
 
 # Copy again to prevent unsound caching
 COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
@@ -10,12 +10,6 @@ RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=
     deps/from-apt.sh layer-locales && \
     deps/from-apt.sh ovm-tarball
 
-# for building CPython 2.7.13
-RUN deps/from-apt.sh layer-python-symlink
-
-# use this instead of 'source build/dev-shell.sh' for now
-RUN deps/from-apt.sh layer-python2-symlink
-
 USER uke
 
 # Copy pre-built wedges
@@ -25,8 +19,8 @@ COPY --chown=uke \
   /home/uke/oils.DEPS/wedge/cmark/0.29.0
 
 COPY --chown=uke \
-  _build/boxed/wedge/re2c/3.0 \
-  /home/uke/oils.DEPS/wedge/re2c/3.0
+  _build/boxed/wedge/re2c/4.3.1 \
+  /home/uke/oils.DEPS/wedge/re2c/4.3.1
 
 # Shells for spec tests
 
@@ -58,20 +52,15 @@ COPY --chown=uke \
   _build/boxed/wedge/zsh/5.1.1 \
   /home/uke/oils.DEPS/wedge/zsh/5.1.1
 
-# newer bash 5.2  is the default
-# older zsh 5.1.1 is the default
+COPY --chown=uke \
+  _build/boxed/wedge/zsh/5.9 \
+  /home/uke/oils.DEPS/wedge/zsh/5.9
+
+# Make symlinks
+COPY deps/make-bin.sh /home/uke/tmp/deps/make-bin.sh
 RUN mkdir -p /home/uke/oils.DEPS/bin && \
-    ln -s --relative /home/uke/oils.DEPS/wedge/re2c/3.0/bin/re2c /home/uke/oils.DEPS/bin && \
-    ln -s --relative /home/uke/oils.DEPS/wedge/bash/4.4/bin/bash-4.4 /home/uke/oils.DEPS/bin && \
-    ln -s --relative /home/uke/oils.DEPS/wedge/bash/5.2.21/bin/bash /home/uke/oils.DEPS/bin && \
-    ln -s --relative /home/uke/oils.DEPS/wedge/bash/5.2.21/bin/bash-5.2.21 /home/uke/oils.DEPS/bin && \
-    ln -s --relative /home/uke/oils.DEPS/wedge/busybox/1.35.0/busybox /home/uke/oils.DEPS/bin/ash && \
-    ln -s --relative /home/uke/oils.DEPS/wedge/dash/0.5.10.2/bin/dash /home/uke/oils.DEPS/bin && \
-    ln -s --relative /home/uke/oils.DEPS/wedge/mksh/R52c/mksh /home/uke/oils.DEPS/bin && \
-    ln -s --relative /home/uke/oils.DEPS/wedge/yash/2.49/bin/yash /home/uke/oils.DEPS/bin && \
-    ln -s --relative /home/uke/oils.DEPS/wedge/zsh/5.1.1/bin/zsh /home/uke/oils.DEPS/bin && \
-    ln -s --relative /home/uke/oils.DEPS/wedge/zsh/5.1.1/bin/zsh-5.1.1 /home/uke/oils.DEPS/bin && \
-    ln -s --relative /home/uke/oils.DEPS/wedge/zsh/5.9/bin/zsh-5.9 /home/uke/oils.DEPS/bin
+    deps/make-bin.sh re2c /home/uke/oils.DEPS && \
+    deps/make-bin.sh shells /home/uke/oils.DEPS
 
 # Should we use the Python 2.7.18 wedge instead of our own dir?  Probably not,
 # because it's
@@ -86,11 +75,5 @@ COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
 
 # For bootstrapping the OVM build
 RUN deps/from-tar.sh layer-cpython
-
-#COPY devtools/run-task.sh /home/uke/tmp/devtools/run-task.sh
-#COPY test/spec-common.sh /home/uke/tmp/test/spec-common.sh
-#COPY test/spec-bin.sh /home/uke/tmp/test/spec-bin.sh
-
-#RUN test/spec-bin.sh all-steps
 
 CMD ["sh", "-c", "echo 'hello from oilshell/ovm-tarball'"]

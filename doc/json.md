@@ -56,7 +56,7 @@ Use it in a pipeline:
 
 Failure with invalid input data:
 
-    $ echo '[ "incomplete"' | json read (&myvar) < invalid.json
+    $ echo '[ "incomplete"' | json read (&myvar)
     [ "incomplete"
      ^
     json read: premature EOF

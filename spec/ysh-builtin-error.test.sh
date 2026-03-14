@@ -13,7 +13,7 @@ func divide(a, b) {
 
 # errors can be caught with try
 try { = divide(42, 0) }
-echo status=$_status
+echo status=$[_error.code]
 
 = divide(42, 0)
 
@@ -42,7 +42,7 @@ func divide(a, b) {
 }
 
 try { = divide(42, 0) }
-echo status=$_status
+echo status=$[_error.code]
 echo message=$[_error.message]
 
 proc p {
@@ -50,7 +50,7 @@ proc p {
 }
 
 try { p }
-echo status=$_status
+echo status=$[_error.code]
 echo message=$[_error.message]
 
 ## STDOUT:
@@ -160,7 +160,7 @@ error ('error', code=0)
 #### try { error oops }
 
 try { error oops }
-echo status=$_status
+echo status=$[_error.code]
 
 ## STDOUT:
 status=10

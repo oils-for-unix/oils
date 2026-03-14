@@ -11,7 +11,9 @@ echo "status=$? opt=$opt OPTARG=$OPTARG"
 set -- -Z
 getopts 'a:' opt
 echo "status=$? opt=$opt OPTARG=$OPTARG"
-## stdout: status=0 opt=? OPTARG=
+## STDOUT:
+status=0 opt=? OPTARG=
+## END
 
 #### getopts three invocations
 set -- -h -c foo
@@ -36,6 +38,23 @@ echo status=$? opt=$opt OPTARG=$OPTARG
 ## STDOUT:
 status=0 opt=c OPTARG=foo
 status=0 opt=h OPTARG=
+## END
+
+#### OPTARG is empty (not unset) after parsing a flag doesn't take an arg
+
+set -u
+getopts 'ab' name '-a'
+echo name=$name
+echo OPTARG=$OPTARG
+
+## STDOUT:
+name=a
+OPTARG=
+## END
+
+## BUG bash/mksh status: 1
+## BUG bash/mksh STDOUT:
+name=a
 ## END
 
 #### Basic getopts invocation
@@ -388,4 +407,84 @@ opt:c arg:def
 err:?
 err:?
 err:?
+## END
+
+#### getopts silent error reporting - invalid option
+# Leading : in optspec enables silent mode: OPTARG=option char, no error msg
+set -- -Z
+getopts ':a:' opt 2>&1
+echo "status=$? opt=$opt OPTARG=$OPTARG"
+## status: 0
+## stdout: status=0 opt=? OPTARG=Z
+## STDERR:
+## END
+
+#### getopts silent error reporting - missing required argument
+# Silent mode returns ':' and sets OPTARG to option char
+set -- -a
+getopts ':a:' opt 2>&1
+echo "status=$? opt=$opt OPTARG=$OPTARG"
+## status: 0
+## stdout: status=0 opt=: OPTARG=a
+## STDERR:
+## END
+
+#### getopts normal mode - invalid option (compare with silent)
+# Normal mode: OPTARG is empty, prints error message
+set -- -Z
+getopts 'a:' opt 2>/dev/null
+echo "status=$? opt=$opt OPTARG=$OPTARG"
+## status: 0
+## stdout: status=0 opt=? OPTARG=
+
+#### getopts normal mode - missing required argument (compare with silent)
+# Normal mode returns '?', OPTARG is empty
+set -- -a
+getopts 'a:' opt 2>/dev/null
+echo "status=$? opt=$opt OPTARG=$OPTARG"
+## status: 0
+## stdout: status=0 opt=? OPTARG=
+
+#### getopts handles '--' #2579
+set -- "-a" "--"
+while getopts "a" name; do
+        case "$name" in
+                a)
+                        echo "a"
+                        ;;
+                ?)
+                        echo "?"
+                        ;;
+        esac
+done
+echo "name=$name"
+echo "$OPTIND"
+## STDOUT:
+a
+name=?
+3
+## END
+
+#### getopts leaves all args after '--' as operands #2579
+set -- "-a" "--" "-c" "operand"
+while getopts "a" name; do
+    case "$name" in
+        a)
+            echo "a"
+            ;;
+        c)
+            echo "c"
+            ;;
+        ?)
+            echo "?"
+            ;;
+    esac
+done
+shift $((OPTIND - 1))
+echo "$#"
+echo "$@"
+## STDOUT:
+a
+2
+-c operand
 ## END

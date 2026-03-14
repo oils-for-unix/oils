@@ -29,14 +29,16 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     def __init__(self) -> None:
         self.module_path: Optional[str] = None
 
-        self.current_class_name: Optional[util.SymbolPath] = None
-        self.current_method_name: Optional[str] = None
+        # DO NOT USE from classes inheriting SimpleVisitor.
+        # These should be passed into oils_visit_* explicitly
+        self.__current_class_name: Optional[util.SymbolPath] = None
+        self.__current_method_name: Optional[str] = None
+        self.__at_global_scope = True
 
         # So we can report multiple at once
         # module path, line number, message
         self.errors_keep_going: List[Tuple[str, int, str]] = []
 
-        self.at_global_scope = True
         self.indent = 0
         self.f: Optional[TextIO] = None
 
@@ -178,7 +180,9 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(expr)
         self.accept(o.body)
 
-    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
+                            current_class_name: Optional[util.SymbolPath],
+                            current_method_name: Optional[str]) -> None:
         """Only the functions we care about in Oils."""
         for arg in o.arguments:
             if arg.initializer:
@@ -188,20 +192,22 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         # This could be a free function or a method
-        # __init__ __exit__ and other methods call this, with self.current_class_name set
+        # __init__ __exit__ and other methods call this, with self.__current_class_name set
 
         # If an assignment statement is not in a function or method, then it's at global scope
 
-        self.at_global_scope = False
-        self.oils_visit_func_def(o)
-        self.at_global_scope = True
+        self.__at_global_scope = False
+        self.oils_visit_func_def(o, self.__current_class_name,
+                                 self.__current_method_name)
+        self.__at_global_scope = True
 
     #
     # Classes
     #
 
-    def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
-                               base_class_sym: util.SymbolPath) -> None:
+    def oils_visit_constructor(
+            self, o: ClassDef, stmt: FuncDef, base_class_sym: util.SymbolPath,
+            current_class_name: Optional[util.SymbolPath]) -> None:
         self.accept(stmt)
 
     def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
@@ -212,15 +218,17 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                           base_class_sym: util.SymbolPath) -> None:
         self.accept(stmt)
 
-    def oils_visit_class_members(self, o: ClassDef,
-                                 base_class_sym: util.SymbolPath) -> None:
+    def oils_visit_class_members(
+            self, o: ClassDef, base_class_sym: util.SymbolPath,
+            current_class_name: Optional[util.SymbolPath]) -> None:
         """Hook for writing member vars."""
         # Do nothing by default.
         pass
 
     def oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
-            base_class_sym: Optional[util.SymbolPath]) -> None:
+            base_class_sym: Optional[util.SymbolPath],
+            current_class_name: Optional[util.SymbolPath]) -> None:
 
         for stmt in o.defs.body:
             # Skip class docstrings
@@ -240,9 +248,10 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                     continue
 
                 if method_name == '__init__':  # Don't translate
-                    self.current_method_name = stmt.name
-                    self.oils_visit_constructor(o, stmt, base_class_sym)
-                    self.current_method_name = None
+                    self.__current_method_name = stmt.name
+                    self.oils_visit_constructor(o, stmt, base_class_sym,
+                                                current_class_name)
+                    self.__current_method_name = None
                     continue
 
                 if method_name == '__exit__':  # Don't translate
@@ -250,16 +259,16 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                         self.report_error(
                             o,
                             'Class with __exit__ should be named ctx_Foo: %s' %
-                            (self.current_class_name, ))
+                            (current_class_name, ))
 
-                    self.current_method_name = stmt.name
+                    self.__current_method_name = stmt.name
                     self.oils_visit_dunder_exit(o, stmt, base_class_sym)
-                    self.current_method_name = None
+                    self.__current_method_name = None
                     continue
 
-                self.current_method_name = stmt.name
+                self.__current_method_name = stmt.name
                 self.oils_visit_method(o, stmt, base_class_sym)
-                self.current_method_name = None
+                self.__current_method_name = None
                 continue
 
             # if 0: is allowed
@@ -270,7 +279,7 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
             self.report_error(
                 o, 'Classes may only have method definitions, got %s' % stmt)
 
-        self.oils_visit_class_members(o, base_class_sym)
+        self.oils_visit_class_members(o, base_class_sym, current_class_name)
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> None:
         base_class_sym = None  # single inheritance only
@@ -289,14 +298,16 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                 # shouldn't happen
                 raise AssertionError(b)
 
-        self.current_class_name = SplitPyName(o.fullname)
-        self.oils_visit_class_def(o, base_class_sym)
-        self.current_class_name = None
+        self.__current_class_name = SplitPyName(o.fullname)
+        self.oils_visit_class_def(o, base_class_sym, self.__current_class_name)
+        self.__current_class_name = None
 
     # Statements
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
-                                   lval: Expression, rval: Expression) -> None:
+                                   lval: Expression, rval: Expression,
+                                   current_method_name: Optional[str],
+                                   at_global_scope: bool) -> None:
         self.accept(lval)
         self.accept(rval)
 
@@ -324,7 +335,9 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
             # Key reason it needs to be in the virtual pass is that signatures
             # must change to allow an out param.
 
-        self.oils_visit_assignment_stmt(o, lval, o.rvalue)
+        self.oils_visit_assignment_stmt(o, lval, o.rvalue,
+                                        self.__current_method_name,
+                                        self.__at_global_scope)
 
     def visit_operator_assignment_stmt(
             self, o: 'mypy.nodes.OperatorAssignmentStmt') -> None:
@@ -497,7 +510,9 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         for arg in o.args:
             self.accept(arg)
 
-    def oils_visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
+    def oils_visit_call_expr(
+            self, o: 'mypy.nodes.CallExpr',
+            current_class_name: Optional[util.SymbolPath]) -> None:
         self.accept(o.callee)
         for arg in o.args:
             self.accept(arg)
@@ -533,7 +548,7 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                 self.oils_visit_probe_call(o)
                 return
 
-        self.oils_visit_call_expr(o)
+        self.oils_visit_call_expr(o, self.__current_class_name)
 
     #
     # Leaf Statements and Expressions that do nothing
@@ -722,6 +737,19 @@ class TypedVisitor(SimpleVisitor):
         SimpleVisitor.__init__(self)
         self.types = types
 
+    def _GetType(self, expr: Expression) -> Optional[Type]:
+        if expr in self.types:
+            return self.types[expr]
+        else:
+            self.report_error(expr, "Expression is missing a type: statement may be unreachable")
+            return None
+
+    def _GetTypeOptional(self, expr: Expression) -> Optional[Type]:
+        if expr in self.types:
+            return self.types[expr]
+        else:
+            return None
+
     def oils_visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> None:
         self.accept(o.left)
         self.accept(o.right)
@@ -733,7 +761,7 @@ class TypedVisitor(SimpleVisitor):
         self.accept(right)
 
     def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> None:
-        if o.op == '%' and util.IsStr(self.types[o.left]):
+        if o.op == '%' and util.IsStr(self._GetType(o.left)):
             # 'x = %r' % x
             self.oils_visit_format_expr(o.left, o.right)
             return

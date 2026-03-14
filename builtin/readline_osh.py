@@ -8,7 +8,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, scope_e
 from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.value_asdl import value, value_e, value_str
-from core import pyutil, state, vm
+from core import pyutil, state, vm, optview
 from core.error import e_usage
 from frontend import flag_util, location
 from mycpp import mops
@@ -364,8 +364,7 @@ class History(vm._Builtin):
             start_index = max(1, num_items + 1 - num_to_show)
 
         arg_r.Next()
-        if not arg_r.AtEnd():
-            e_usage('got too many arguments', loc.Missing)
+        arg_r.Done()
 
         # TODO:
         # - Exclude lines that don't parse from the history!  bash and zsh don't do
@@ -383,10 +382,12 @@ class Fc(vm._Builtin):
 
     def __init__(
             self,
+            exec_opts,  # type: optview.Exec
             readline,  # type: Optional[Readline]
             f,  # type: mylib.Writer
     ):
         # type: (...) -> None
+        self.exec_opts = exec_opts
         self.readline = readline
         self.f = f  # this hook is for unit testing only
 
@@ -421,20 +422,19 @@ class Fc(vm._Builtin):
         arg_r.Next()
 
         last_arg, last_arg_loc = arg_r.Peek2()
-        if last_arg is None:
-            last_index = num_items - 1
-        else:
+        last_index = num_items - 1
+        if last_arg is not None:
             try:
                 # TODO: Support string arg
-                last_index = int(last_arg)
+                last_index = min(int(last_arg), last_index)
             except ValueError:
                 e_usage('got invalid argument %r' % last_arg, last_arg_loc)
         if last_index < 0:
             last_index += num_items
         arg_r.Next()
 
-        if not arg_r.AtEnd():
-            e_usage('got too many arguments', loc.Missing)
+        if self.exec_opts.strict_arg_parse():
+            arg_r.Done()
 
         if arg.l:
             is_reversed = first_index > last_index
@@ -455,6 +455,10 @@ class Fc(vm._Builtin):
                 step = 1
 
             i = first_index
+
+            if limit < -1:
+                return 0
+
             while i != limit:
                 item = readline.get_history_item(i)
                 if arg.n:

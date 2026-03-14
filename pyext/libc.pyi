@@ -6,6 +6,7 @@ HAVE_FNM_EXTMATCH: int
 
 # libc values
 FNM_CASEFOLD: int
+FNM_PATHNAME: int
 GLOB_PERIOD: int
 REG_ICASE: int
 REG_NEWLINE: int
@@ -24,3 +25,5 @@ def realpath(path: str) -> str: ...
 def cpython_reset_locale() -> None: ...
 
 def sleep_until_error(seconds: float) -> int: ...
+
+def strsignal(sig_num: int) -> Optional[str]: ...

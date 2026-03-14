@@ -37,7 +37,7 @@ readonly URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.tar.gz"
 # nicer.
 
 download-old-pygments() {
-  wget --directory _tmp --no-clobber \
+  wget --directory-prefix _tmp --no-clobber \
     'https://files.pythonhosted.org/packages/be/39/32da3184734730c0e4d3fa3b2b5872104668ad6dc1b5a73d8e477e5fe967/Pygments-2.5.2-py2.py3-none-any.whl'
 }
 

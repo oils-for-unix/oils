@@ -19,18 +19,28 @@ module arith {
 
   | PrimitiveList(List[int] ints)
 
+  cflow2 = Break | Continue | Return(int status)
+
   source_location = (string path, int line, int col, int length)
 
   word = (string value)
 
+  Token = (string s, bool b)
+
+  word_part = 
+    Literal %Token
+  | BoolSub(bool_expr b)
+
+  word2 =
+    Operator %Token
+  | Compound(List[word_part] parts)
+
   bool_expr =
-    Binary(word left, word right)
+    WordTest(word2 child)  # Test recursion
   | Unary(word child)
+  | Binary(word left, word right)
   | LogicalNot(bool_expr b)
   | LogicalBinary(op_id op, bool_expr left, bool_expr right)
-
-  Token = (string s, bool b)
-  cflow2 = Break | Continue | Return(int status)
 
   Dicts = (
     Dict[string, string] ss,

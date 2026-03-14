@@ -48,7 +48,8 @@ The first step is in `regtest/aports-setup.sh`:
 
 This usually happens on the **build server**, e.g. `he.oils.pub`.
 
-    $ regtest/aports-setup.sh unpack-distfiles  # optional: requires _chroot/distfiles.tar
+    # optional: requires _chroot/distfiles-{main,community}.tar
+    $ regtest/aports-setup.sh unpack-distfiles main
 
 The file `_chroot/distfiles.tar` may contain ~6 GB of
 `$CHROOT_DIR/var/cache/distfiles`.  Keeping the tarball saves the ~30 minutes
@@ -60,34 +61,23 @@ If you didn't unpack `_chroot/distfiles.tar`, run:
 
     $ regtest/aports-run.sh fetch-packages '.*'
 
-I do this separately, because contacting hundreds of servers is inherently reliable.
+This fetches package source tarballs from hundreds of servers, which is
+inherently **unreliable**.  That's why it's a separate step.
 
-The results are not that consistent, so we divide the ~1640 `APKBUILD` files
-into 17 *shards*.  You can run two shards like this:
+To avoid this step next time, do
+
+    $ regtest/aports-setup.sh make-distfiles-tar main
+
+Currently we divide the ~1600 `APKBUILD` files into 16 *shards*.  You can run
+two shards like this:
 
     $ export APORTS_EPOCH=2025-08-07-fix   # directory name, and .wwz name
 
     $ regtest/aports-run.sh build-many-shards-overlayfs shard5 shard6
 
-This is the normal way to run all 17 shards (using bash brace expansion):
+This is the normal way to run all 16 shards (using bash brace expansion):
 
-    $ regtest/aports-run.sh build-many-shards-overlayfs shard{0..16}
-
-But this is how I run it right now, due to flakiness:
-
-      # weird order!
-    $ regtest/aports-run.sh build-many-shards-overlayfs shard{10..16} shard{0..5}
-
-      # Now BLOW AWAY CHROOT, to work around errors
-    $ regtest/aports-setup.sh remove-chroot
-    $ regtest/aports-setup.sh prepare-chroot
-    $ regtest/aports-setup.sh unpack-distfiles
-
-      # Run remaining shards
-    $ regtest/aports-run.sh build-many-shards-overlayfs shard{6..9}
-
-(This was discovered empirically; we should remove this workaround eventually.)
-
+    $ regtest/aports-run.sh build-many-shards-overlayfs shard{0..15}
 
 ## Make Reports with Tables
 

@@ -119,7 +119,7 @@ status=2
 
 
 #### runproc typed args
-shopt --set parse_brace parse_proc
+shopt --set parse_brace parse_proc parse_ysh_expr_sub
 
 proc p {
   echo 'hi from p'

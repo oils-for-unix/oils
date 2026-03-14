@@ -33,7 +33,7 @@ status=0
 ## END
 
 #### More shvar PATH=''
-shopt --set parse_brace command_sub_errexit parse_proc
+shopt --set parse_brace command_sub_errexit parse_proc parse_ysh_expr_sub
 
 shvar PATH='' {
   ( cp -v file /tmp >&2 )
@@ -47,7 +47,7 @@ shvar PATH='' {
   try {
     true $(cp -v file /tmp >&2)
   }
-  echo _status $_status
+  echo _status $[_error.code]
 }
 
 ## STDOUT:
@@ -58,7 +58,7 @@ _status 127
 
 
 #### builtins and externals not available in hay eval
-shopt --set parse_brace
+shopt --set parse_brace parse_ysh_expr_sub
 shopt --unset errexit
 
 hay define Package
@@ -70,14 +70,14 @@ try {
     }
   }
 }
-echo "status $_status"
+echo "status $[_error.code]"
 
 try {
   hay eval :result {
     cd /tmp
   }
 }
-echo "status $_status"
+echo "status $[_error.code]"
 
 ## STDOUT:
 status 127
@@ -85,7 +85,7 @@ status 127
 ## END
 
 #### procs in hay eval
-shopt --set parse_brace parse_at parse_proc
+shopt --set parse_brace parse_at parse_proc parse_ysh_expr_sub
 
 hay define Package
 

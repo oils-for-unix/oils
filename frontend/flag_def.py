@@ -191,7 +191,8 @@ FC_SPEC.ShortFlag('-r')
 # osh/builtin_process.py
 #
 
-EXEC_SPEC = FlagSpec('exec')
+EXEC_SPEC = FlagSpec('exec_')
+EXEC_SPEC.ShortFlag('-a', args.String)
 
 WAIT_SPEC = FlagSpec('wait')
 WAIT_SPEC.ShortFlag('-n')
@@ -203,6 +204,7 @@ TRAP_SPEC.ShortFlag('-p')
 TRAP_SPEC.ShortFlag('-l')
 TRAP_SPEC.LongFlag('--add')
 TRAP_SPEC.LongFlag('--remove')
+TRAP_SPEC.LongFlag('--ignore')  # YSH: ignore signals (same as trap '')
 
 KILL_SPEC = FlagSpec('kill')
 KILL_SPEC.ShortFlag('-l', args.Bool)
@@ -235,6 +237,11 @@ _ULIMIT_RESOURCES = [
 for u_flag in _ULIMIT_RESOURCES:
     ULIMIT_SPEC.ShortFlag(u_flag)
 
+UMASK_SPEC = FlagSpec('umask')
+
+UMASK_SPEC.ShortFlag('-p')
+UMASK_SPEC.ShortFlag('-S')
+
 #
 # FlagSpecAndMore
 #
@@ -264,8 +271,10 @@ MAIN_SPEC = FlagSpecAndMore('main')
 # Special case: Define --eval and --eval-pure
 MAIN_SPEC.EvalFlags()
 
-MAIN_SPEC.ShortFlag('-c', args.String,
-                    quit_parsing_flags=True)  # command string
+# sh -c takes an arg, but the logic to parse it is a special case ParseMore()
+# sh -c -x 'echo hi' sets the -x flag!
+MAIN_SPEC.ShortFlag('-c', args.String)  # command string
+
 MAIN_SPEC.LongFlag('--help')
 MAIN_SPEC.LongFlag('--version')
 
@@ -276,17 +285,24 @@ MAIN_SPEC.LongFlag('--version')
 #   undefined-vars - a static analysis pass
 #   parse-glob - to debug parsing
 #   parse-printf
-MAIN_SPEC.LongFlag('--tool', [
-    'tokens',
-    'lossless-cat',
-    'syntax-tree',
-    'fmt',
-    'test',
-    'ysh-ify',
-    'deps',
-    'cat-em',
-    'find-lhs-array',
-])
+MAIN_SPEC.LongFlag(
+    '--tool',
+    [
+        # Debug printing
+        'tokens',
+        'syntax-tree',
+        'cat-em',
+        # Tree-walking tools
+        'fmt',
+        'lint',
+        'ysh-ify',
+        'deps',
+        # Not sure
+        'test',
+        # Private
+        'find-lhs-array',
+        'lossless-cat',
+    ])
 
 MAIN_SPEC.ShortFlag('-i')  # interactive
 MAIN_SPEC.ShortFlag('-l')  # login - currently no-op

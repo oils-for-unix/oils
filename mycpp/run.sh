@@ -12,8 +12,6 @@ set -o errexit
 readonly THIS_DIR=$(dirname $(readlink -f $0))
 readonly REPO_ROOT=$THIS_DIR/..
 
-source build/dev-shell.sh
-
 #
 # Utilities
 #

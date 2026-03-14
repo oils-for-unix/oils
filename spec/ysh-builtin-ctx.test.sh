@@ -84,7 +84,7 @@ try {
     error "Error from inside a context" (code=100)
   }
 }
-echo status=$_status
+echo status=$[_error.code]
 exit 0
 ## STDOUT:
 status=100
@@ -92,14 +92,14 @@ status=100
 
 #### no context, set
 ctx set (bad=true)
-echo status=$_status
+echo status=$[_error.code]
 ## status: 3
 ## STDOUT:
 ## END
 
 #### no context, emit
 ctx emit bad (true)
-echo status=$_status
+echo status=$[_error.code]
 ## status: 3
 ## STDOUT:
 ## END

@@ -62,8 +62,8 @@ def Parse(spec_name, arg_r):
     return args.Parse(spec, arg_r)
 
 
-def ParseMore(spec_name, arg_r):
-    # type: (str, args.Reader) -> args._Attributes
+def ParseMore(spec_name, arg_r, sh_dash_c=False):
+    # type: (str, args.Reader, bool) -> args._Attributes
     """Parse argv using a given FlagSpecAndMore."""
     spec = LookupFlagSpec2(spec_name)
-    return args.ParseMore(spec, arg_r)
+    return args.ParseMore(spec, arg_r, sh_dash_c=sh_dash_c)

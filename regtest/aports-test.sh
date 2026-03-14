@@ -72,7 +72,7 @@ test-timeout() {
 # - All APKG packages are 6.9 GB, according to APKINDEX
 
 download-apk-index() {
-  wget --no-clobber --directory _tmp \
+  wget --no-clobber --directory-prefix _tmp \
     http://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/APKINDEX.tar.gz
 }
 

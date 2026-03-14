@@ -38,17 +38,32 @@ These are from bash:
 
 These options are from POSIX shell:
 
-    noglob -f
+    noglob -f     # don't perform globbing
 
 From bash:
 
-    nullglob   failglob   dotglob
+    nullglob      # if the glob matches nothing, it expands to no args
+    failglob      # if the glob matches nothing, it's a fatal error
+    dotglob       # include files starting with . like .gitignore
+    globskipdots  # by default, omit . and .. (even if pattern starts with .)
 
 From Oils:
 
-    dashglob
+    no_dash_glob
 
 Some details:
+
+### dotglob
+
+Does glob expansion return files that start with a period?
+
+    # By default, we don't return say .gitignore    
+    $ echo *  # foo
+
+    $ shopt -s dotglob  # set this option
+    $ echo *  # => .gitignore foo
+
+This option is on by default in OSH and YSH.
 
 ### nullglob
 
@@ -65,7 +80,10 @@ Without this option, the glob string itself is returned:
 
 (This option is from GNU bash.)
 
-### dashglob
+YSH doesn't use this option, but its [Simple Word
+Evaluation](../simple-word-eval.html) algorithm behaves similarly.
+
+### no_dash_glob
 
 Do globs return results that start with `-`?  It's on by default in `bin/osh`,
 but off when YSH is enabled.
@@ -78,9 +96,11 @@ called `-rf`.
     $ echo *
     -rf myfile
 
-    $ shopt -u dashglob
+    $ shopt -s no_dash_glob
     $ echo *
     myfile
+
+This option is off in OSH, and on in YSH.
 
 ## Other Option
 
@@ -156,7 +176,7 @@ This option can be useful for "getting past" errors while testing.
 
 ### rewrite_extern
 
-This options enables a transparent rewriting of external commands to
+This option enables a transparent rewriting of external commands to
 **builtins**.
 
 Currently, these commands **may** be rewritten, depending on their `argv`:
@@ -165,7 +185,7 @@ Currently, these commands **may** be rewritten, depending on their `argv`:
 - [rm][]
 
 These optimizations are *sound* - they should not affect the behavior of
-programs on POSIX system.
+programs on a POSIX system.
 
 ---
 
@@ -175,6 +195,17 @@ rewritten, regardless of the value of `rewrite_extern`.
 
 [cat]: chap-builtin-cmd.html#cat
 [rm]: chap-builtin-cmd.html#rm
+
+### ysh_rewrite_extern
+
+This option transparently avoids compatibility workarounds when rewriting
+external commands to **builtins**, providing a performance improvement.
+It might affect the behavior of programs on a POSIX system.
+
+Currently, this only affects [cat][], which otherwise runs in a separate
+process (so that its errors do not crash the main process).
+
+[cat]: chap-builtin-cmd.html#cat
 
 ## Groups
 
@@ -224,26 +255,28 @@ simply quote it like `'@literal'` to fix the problem.
 
 Details on each option:
 
-      parse_at                echo @array @[arrayfunc(x, y)]
-      parse_brace             if true { ... }; cd ~/src { ... }
-      parse_equals            x = 'val' in Caps { } config blocks
-      parse_paren             if (x > 0) ...
-      parse_proc              proc p { ... }
-      parse_triple_quote      """$x"""  '''x''' (command mode)
-      parse_ysh_string        echo r'\' u'\\' b'\\' (command mode)
-      command_sub_errexit     Synchronous errexit check
-      process_sub_fail        Analogous to pipefail for process subs
-      sigpipe_status_ok       status 141 -> 0 in pipelines
-      simple_word_eval        No splitting, static globbing
-      xtrace_rich             Hierarchical and process tracing
-      no_xtrace_osh           Disable OSH tracing with +
-      no_dash_glob            Avoid globbing files like -rf
-      env_obj                 Init ENV Obj at startup; use it when starting
-                              child processes
-      init_ysh_globals        Init ARGV List at startup
-      for_loop_frames         YSH can create closures from loop vars
-      verbose_errexit         Whether to print detailed errors
-      verbose_warn            Print various warnings to stderr
+      parse_at                   echo @array @[arrayfunc(x, y)]
+      parse_brace                if true { ... }; cd ~/src { ... }
+      parse_equals               x = 'val' in Caps { } config blocks
+      parse_paren                if (x > 0) ...
+      parse_proc                 proc p { ... }
+      parse_triple_quote         """$x"""  '''x''' (command mode)
+      parse_ysh_string           echo r'\' u'\\' b'\\' (command mode)
+      parse_ysh_expr_sub         $[] is YSH expression sub, not synonym for $(( ))
+      command_sub_errexit        Synchronous errexit check
+      process_sub_fail           Analogous to pipefail for process subs
+      sigpipe_status_ok          status 141 -> 0 in pipelines
+      simple_word_eval           No splitting, static globbing
+      xtrace_rich                Hierarchical and process tracing
+      no_xtrace_osh              Disable OSH tracing with +
+      no_dash_glob               Avoid globbing files like -rf
+      env_obj                    Init ENV Obj at startup; use it when starting
+                                 child processes
+      init_ysh_globals           Init ARGV List at startup
+      for_loop_frames            YSH can create closures from loop vars
+      verbose_errexit            Whether to print detailed errors
+      verbose_warn               Print various warnings to stderr
+      ysh_rewrite_extern         Avoids compatibility workarounds for builtins
 
 <h3 id="ysh:all">ysh:all</h3>
 

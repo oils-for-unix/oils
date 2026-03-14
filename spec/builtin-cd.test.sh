@@ -507,3 +507,17 @@ pwd
 ## N-I bash STDOUT:
 fail
 ## END
+
+#### arguments to pwd
+pwd /
+## status: 0
+## OK zsh/mksh status: 1
+
+#### pwd errors out on args with strict_arg_parse
+shopt -s strict_arg_parse || true
+pwd / >/dev/null || echo 'too many args!'
+## N-I bash/dash/ash STDOUT:
+## END
+## STDOUT:
+too many args!
+## END

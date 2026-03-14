@@ -11,5 +11,8 @@ def run_tests():
     # MyPy catches this: too many args
     s = '%s %%' % ('x', 42)
 
+    # MyPy catches this: %c requires int or char
+    s = '%c' % 'xx'
+
     # Too few args
     s = '%s %d' % 'x'

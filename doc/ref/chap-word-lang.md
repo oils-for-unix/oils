@@ -25,25 +25,42 @@ strings, or arrays of strings.
 
 ### osh-glob
 
-Glob expansion in OSH respects `LC_COLLATE` (like bash and zsh):
+Expand a [glob pattern][glob-pat] into arguments.
+
+    echo *_test.py  # => foo_test.py bar_test.py
+
+Expansion respects these global settings:
+
+- [Globbing options][globbing-options] like `dotglob nullglob no_dash_glob`
+- [GLOBIGNORE][]
+- The `libc` `LC_COLLATE` var (like bash and zsh)
+  - Related: [osh-locale][]
+
+Example of collation:
 
     $ touch foo-bar foo_bar
     $ echo foo*   # foo_bar MAY come first
 
-Related: [osh-locale][]
-
+[glob-pat]: chap-mini-lang.html#glob-pat
+[GLOBIGNORE]: chap-special-var.html#GLOBIGNORE
+[globbing-options]: chap-option.html#Globbing
 [osh-locale]: chap-special-var.html#osh-locale
 
 ### ysh-glob
 
-Glob expansion in YSH is always done with the default libc collation:
+Expand a [glob pattern][glob-pat] into arguments.
+
+    echo *_test.py  # => foo_test.py bar_test.py
+
+In YSH, glob expansion is always done with the default `libc` collation:
 
     ysh$ touch foo-bar foo_bar
     ysh$ echo foo*   # foo-bar always comes first
 
-Related: [ysh-locale][]
+Related: [ysh-locale][], the [glob()][glob] function
 
 [ysh-locale]: chap-special-var.html#ysh-locale
+[glob]: chap-builtin-func.html#glob
 
 <h2 id="expression">Expressions to Words</h2>
 

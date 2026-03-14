@@ -571,7 +571,7 @@ def DumpControlFlowGraphs(cfgs: Dict[SymbolPath, ControlFlowGraph],
 
 
 def ComputeMinimalStackRoots(cfgs: Dict[SymbolPath, ControlFlowGraph],
-                             souffle_dir) -> StackRoots:
+                             souffle_dir: str) -> StackRoots:
     """
     Run the the souffle stack roots solver and translate its output in a format
     that can be queried by cppgen_pass.

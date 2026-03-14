@@ -37,8 +37,10 @@ oil-python-sources() {
 
   # mycpp: exclude Python 3 sources
   # devtools/services: also exclude Python 3
+  # 2025-11: added _build to remove _build/{boxed,deps-source/wedge}
   find $repo_root \
     -name _tmp -a -prune -o \
+    -name _build -a -prune -o \
     -name _cache -a -prune -o \
     -name _chroot -a -prune -o \
     -name _clone -a -prune -o \

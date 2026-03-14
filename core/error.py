@@ -12,6 +12,16 @@ from typing import Dict, Union, NoReturn, TYPE_CHECKING
 if TYPE_CHECKING:
     IOError_OSError = Union[IOError, OSError]
 
+EXPR_STATUS = 3
+
+# status code 4 is special, for encode/decode errors.
+CODEC_STATUS = 4
+
+# rare errors like GLOB_NOSPACE
+GLOB_STATUS = 5
+
+BUILTIN_DEFAULT_STATUS = 10  # for the error builtin
+
 
 def _ValType(val):
     # type: (value_t) -> str
@@ -168,6 +178,19 @@ class ErrExit(FatalRuntime):
         self.show_code = show_code
 
 
+class NoUnset(FatalRuntime):
+    """For set -u.
+
+    Is raised in WordEvaluator then caught in CommandEvaluator.
+    """
+
+    def __init__(self, msg, location):
+        # type: (str, loc_t) -> None
+
+        # exit status is always 1
+        FatalRuntime.__init__(self, 1, msg, location)
+
+
 class Expr(FatalRuntime):
     """e.g. KeyError, IndexError, ZeroDivisionError."""
 
@@ -179,7 +202,7 @@ class Expr(FatalRuntime):
         #
         # Caught: try sets _status register to 3
         # Uncaught: shell exits with status 3
-        FatalRuntime.__init__(self, 3, msg, location)
+        FatalRuntime.__init__(self, EXPR_STATUS, msg, location)
 
 
 class Structured(FatalRuntime):

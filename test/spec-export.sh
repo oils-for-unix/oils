@@ -12,7 +12,7 @@ source build/dev-shell.sh
 download-yq() {
   local dir=_tmp/yq
   mkdir -p $dir
-  wget --no-clobber --directory "$dir" \
+  wget --no-clobber --directory-prefix "$dir" \
     https://github.com/mikefarah/yq/releases/download/v4.45.4/yq_linux_amd64.tar.gz
 }
 
