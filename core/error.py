@@ -32,7 +32,7 @@ def _ValType(val):
 class _ErrorWithLocation(Exception):
     """A parse error that can be formatted.
 
-    Formatting is in ui.PrintError.
+    Formatting is in ui.PrettyPrintError.
     """
 
     def __init__(self, msg, location):

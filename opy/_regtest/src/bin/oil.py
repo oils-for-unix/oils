@@ -121,7 +121,7 @@ def InteractiveLoop(opts, ex, c_parser, w_parser, line_reader):
       # could do that in the first position?
       # ParseSimpleCommand fails with '\n' token?
       if not node:
-        # TODO: PrintError here
+        # TODO: PrettyPrintError here
         raise RuntimeError('failed parse: %s' % c_parser.Error())
 
       if ast_f:
@@ -620,4 +620,3 @@ if __name__ == '__main__':
     callgraph.Walk(main, sys.modules)
   else:
     main(sys.argv)
-

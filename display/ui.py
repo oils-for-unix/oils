@@ -118,7 +118,7 @@ def _PrintCodeExcerpt(line, col, length, f):
     #   ^col 80  ^~~~~ error
 
     buf.write('  ')  # indent
-    buf.write(line.rstrip())
+    buf.write(sanitizeLineOfCode(line.rstrip()))
 
     buf.write('\n  ')  # indent
     PrintCaretLine(line, col, length, buf)
@@ -613,3 +613,17 @@ def PrintShFunction(proc_val):
         print(proc_val.code_str)
     else:
         print('%s() { : "function body not available"; }' % proc_val.name)
+
+def sanitizeLineOfCode(s):
+    # type: (str) -> str
+    """
+    replaces characters in a string so that it is compatible with PrintCaretLine
+    all characters must take up one column width when printed, except tab which is handled specially
+    """
+    printable = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t'
+    # mycpp can't handle this list comprehension
+    # return "".join([c if c in printable else "\ufffd" for c in s])
+    output = [] # type: List[str]
+    for c in s:
+        output.append(c if c in printable else ".")
+    return "".join(output)
