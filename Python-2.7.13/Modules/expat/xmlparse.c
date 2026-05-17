@@ -4630,7 +4630,7 @@ doProlog(XML_Parser parser,
       if (dtd->in_eldecl) {
         ELEMENT_TYPE *el;
         const XML_Char *name;
-        int nameLen;
+        size_t nameLen;
         const char *nxt = (quant == XML_CQUANT_NONE
                            ? next
                            : next - enc->minBytesPerChar);
@@ -4646,7 +4646,12 @@ doProlog(XML_Parser parser,
         dtd->scaffold[myindex].name = name;
         nameLen = 0;
         for (; name[nameLen++]; );
-        dtd->contentStringLen +=  nameLen;
+
+        /* Detect and prevent integer overflow */
+        if (nameLen > UINT_MAX - dtd->contentStringLen)
+          return XML_ERROR_NO_MEMORY;
+  
+        dtd->contentStringLen += (unsigned)nameLen;
         if (elementDeclHandler)
           handleDefault = XML_FALSE;
       }
