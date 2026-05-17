@@ -2,6 +2,13 @@
 #
 # Usage:
 #   devtools/release-history.sh <function name>
+#
+# Examples:
+#   $0 wwz-tsv - release metadata
+#   $0 spec-tsv - specific numbers
+#
+# This is actually similar to the "parallel process table pattern"
+# I guess it's just the "process table pattern", since it's serial
 
 set -o nounset
 set -o pipefail
@@ -9,8 +16,21 @@ set -o errexit
 
 source build/dev-shell.sh  # R_LIBS_USER
 
-readonly ROOT=../oilshell.org__deploy
+# PROBLEM: we need to use ggplot2.  Should I update the wedge?  That would be
+# the right thing to do.  Then I have to update all containers and all that.
+# Maybe I need another wedge with ggplot2
+
+#readonly ROOT=../../oilshell/oilshell.org__deploy
+# A version I synced
+readonly ROOT=../../oilshell/oilshell.org-2025-12-16/
+
 readonly BASE_DIR=_tmp/release-history
+
+# Python file has
+# HEADER=('date', 'version', 'spec_wwz', 'survey_path', 'cpp_summary_path')
+#
+# parses release-date.txt for the date
+# So I need to unify oils.pub and oilshell.org
 
 wwz-tsv() {
   mkdir -p $BASE_DIR
@@ -108,10 +128,9 @@ osh-py-passing() {
   # Older ones: total is in footer
   #hxselect -s $'\n' -c 'tfoot td:nth-child(3)' < $path.xml
 
-  log "path = $path"
+  #log "path = $path"
   local name
   name=$(basename $path)
-
 
   # TODO:
   # - Extract tfoot cells 3 and 5
@@ -203,5 +222,9 @@ test-parsing() {
   echo 'CPP'
   osh-cc-passing _tmp/osh-summary.html 
 }
+
+# 2026 TODO
+# Have to get the oilshell.org__deploy .wwz files - sync from the server I guess
+
 
 "$@"
