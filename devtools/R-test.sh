@@ -19,7 +19,12 @@ show-r() {
 test-r-packages() {
   # tidyr and stringr don't print anything
 
-  Rscript -e 'library(dplyr); library(tidyr); library(stringr); library("RUnit"); print("OK")'
+  # similar to deps/source.medo/R-libs/WEDGE
+
+  which Rscript
+
+  # TODO: note: ggplot2 is also there
+  Rscript -e 'library(dplyr); library(tidyr); library(stringr); library("RUnit"); search(); print("OK")'
 }
 
 soil-run() {

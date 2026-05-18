@@ -49,7 +49,7 @@ wedge-install() {
   # Also consider adding ggplot.
   if true; then
     INSTALL_DEST=$install_dir Rscript -e \
-      'install.packages(c("rlang", "dplyr", "tidyr", "stringr", "RUnit"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
+      'install.packages(c("rlang", "dplyr", "tidyr", "stringr", "RUnit", "ggplot2"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
   fi
 }
 
@@ -57,5 +57,5 @@ wedge-smoke-test() {
   local install_dir=$1
 
   R_LIBS_USER=$install_dir Rscript -e \
-    'library(rlang); library(dplyr); library(tidyr); library(stringr); library("RUnit"); print("OK")'
+    'library(rlang); library(dplyr); library(tidyr); library(stringr); library("RUnit"); library("ggplot2"); print("OK")'
 }

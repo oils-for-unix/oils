@@ -7,13 +7,15 @@
 #   build/deps.sh <function name>
 #
 # Examples:
-#   build/deps.sh fetch
+#   build/deps.sh fetch                # NOTE: do this whenever you update WEDGE
 #   build/deps.sh install-wedges       # contributor wedges, to build both Python and C++
 #   build/deps.sh install-wedges-soil  # more wedges for Soil CI container, on host
 #   build/deps.sh boxed-wedges-2025    # build for copying inside OCI container
 #
 # More:
 #   build/deps.sh print-wedge-list     # print manifest
+#                                      # install specific wedges:
+#   build/deps.sh install-wedges-parallel extra-only unboxed
 #
 # Note: could be build/deps.sh unboxed-wedges versus boxed-wedges, and then
 # install-wedges as an ALIAS
@@ -1221,11 +1223,6 @@ install-wedges-parallel() {
   write-task-report $WEDGE_LOG_DIR
 
   check-for-failure $WEDGE_LOG_DIR/tasks.tsv "$allowed_failures"
-}
-
-install-wedges-OLD() {
-  # the /wedge and ~/wedge stuff we got rid of
-  install-wedges-parallel contrib legacy
 }
 
 install-wedges-contrib-unboxed() {
