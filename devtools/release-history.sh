@@ -26,6 +26,11 @@ readonly ROOT=../../oilshell/oilshell.org-2025-12-16/
 
 readonly BASE_DIR=_tmp/release-history
 
+die() {
+  echo "FATAL: $@" >& 2
+  exit 1
+}
+
 # Python file has
 # HEADER=('date', 'version', 'spec_wwz', 'survey_path', 'cpp_summary_path')
 #
@@ -102,6 +107,14 @@ extract-totals() {
 
     popd > /dev/null
 
+    if test -z "$osh_py_passing"; then
+      die "FAIL: osh_py_passing not extracted from $survey_path - $version $release_date"
+    fi
+
+    if test -z "$osh_cpp_passing"; then
+      die "FAIL: osh_cpp_passing not extracted from $cpp_summary_path - $version $release_date"
+    fi
+
     print-row "$release_date" "$version" "$osh_py_passing" "$osh_cpp_passing"
 
     #argv "${row[@]}"
@@ -132,10 +145,7 @@ osh-py-passing() {
   local name
   name=$(basename $path)
 
-  # TODO:
-  # - Extract tfoot cells 3 and 5
-  # - Extract head cells 3 and 5 -- description
-  # - And then in R, select the right one for osh_py_passing
+  # Heuristics for either index.html or osh.html
 
   if test "$name" = 'index.html'; then
     # It might be 3 or 5 -- I moved the columns around
@@ -143,7 +153,7 @@ osh-py-passing() {
 
     count=$(hxselect -s $'\n' -c 'tfoot td:nth-child(5)' < $path.xml)
 
-    # Differing format
+    # Heuristic for differing format
     if test "$count" -lt 100; then
       count=$(hxselect -s $'\n' -c 'tfoot td:nth-child(3)' < $path.xml)
     fi
@@ -160,8 +170,11 @@ osh-cc-passing() {
   local path=$1
   normalize $path
 
-  # Change 1,137 -> 1137
-  < $path.xml hxselect -s $'\n' -c '#summary thead tr:nth-child(2) td:nth-child(5)' | sed 's/,//'
+  #echo "PATH $path"
+
+  # Select the 2nd to last cell - this is more robust to format changes
+  < $path.xml hxselect -s $'\n' -c '#summary thead tr:nth-child(2) td:nth-last-child(2)' \
+    | sed 's/,//' # Change 1,137 -> 1137
 }
 
 spec-tsv() {
@@ -194,37 +207,39 @@ deps-apt() {
 
 # MEH these tools have bad error messages.
 test-parsing() {
-  unzip -l $ROOT/release/0.9.8/test/spec.wwz || echo status=$?
+  local test_dir=$BASE_DIR/test-parsing
+  mkdir -p $test_dir
 
-  unzip -p $ROOT/release/0.9.8/test/spec.wwz 'cpp/osh-summary.html' > _tmp/osh-summary.html
-
-  local tmp=_tmp
+  # Show that's there
+  #unzip -l $ROOT/release/0.9.8/test/spec.wwz || echo status=$?
 
   # hxnormalize makes it XML.
   # NOTE: syntax error on "<tr class=>", but it correctly ignores it
   echo
   echo 'NEW PYTHON'
   # Annoying syntax for this command
-  unzip -p $ROOT/release/0.9.8/test/spec.wwz 'survey/osh.html'  > _tmp/osh.html
-  osh-py-passing _tmp/osh.html
+  unzip -p $ROOT/release/0.9.8/test/spec.wwz 'survey/osh.html'  > $test_dir/osh.html
+  osh-py-passing $test_dir/osh.html
 
   echo
   echo 'OLD PYTHON 0.7.pre3'
-  unzip -p $ROOT/release/0.7.pre3/test/spec.wwz 'index.html' > _tmp/index.html
-  osh-py-passing _tmp/index.html
+  unzip -p $ROOT/release/0.7.pre3/test/spec.wwz 'index.html' > $test_dir/index.html
+  osh-py-passing $test_dir/index.html
 
   echo
   echo 'OLD PYTHON 0.2.0'
-  unzip -p $ROOT/release/0.2.0/test/spec.wwz 'index.html' > _tmp/index.html
-  osh-py-passing _tmp/index.html
+  unzip -p $ROOT/release/0.2.0/test/spec.wwz 'index.html' > $test_dir/index.html
+  osh-py-passing $test_dir/index.html
 
   echo
   echo 'CPP'
-  osh-cc-passing _tmp/osh-summary.html 
+  unzip -p $ROOT/release/0.9.8/test/spec.wwz 'cpp/osh-summary.html' > $test_dir/osh-summary.html
+  osh-cc-passing $test_dir/osh-summary.html 
+
+  # May 2026: updating the 2022 graph
+  echo 'CPP NEW'
+  unzip -p $ROOT/release/0.19.0/test/spec.wwz 'osh-cpp/compare.html' > $test_dir/compare.html
+  osh-cc-passing $test_dir/compare.html
 }
-
-# 2026 TODO
-# Have to get the oilshell.org__deploy .wwz files - sync from the server I guess
-
 
 "$@"

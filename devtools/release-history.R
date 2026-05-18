@@ -28,6 +28,11 @@ LoadAll = function(in_dir, ctx) {
 
   Log('Summary: %d releases over %.1f days (%.1f years)', nrow(wwz), duration,
       duration / 365)
+
+  first_date = min(wwz$date)
+  last_date = max(wwz$date)
+  Log('From %s to %s', first_date, last_date)
+
   Log('Average interval: %.1f days ', duration / nrow(wwz))
 
   n1 = nrow(wwz %>% filter(spec_wwz != '-'))

@@ -52,7 +52,7 @@ def main(argv):
         pass
 
       if survey_path == '-':
-        p2 = 'osh.html'
+        p2 = 'osh-py/index.html'
         try:
           z.getinfo(p2)
           survey_path = p2
@@ -60,18 +60,40 @@ def main(argv):
           pass
 
       if survey_path == '-':
-        p3 = 'index.html'
+        p3 = 'osh.html'
         try:
           z.getinfo(p3)
           survey_path = p3
         except KeyError:
           pass
 
-      cpp_summary_path = 'cpp/osh-summary.html'
+      if survey_path == '-':
+        p4 = 'index.html'
+        try:
+          z.getinfo(p4)
+          survey_path = p4
+        except KeyError:
+          pass
+
+      cpp_summary_path = '-'
+
+      # 2023 Example: # https://www.oilshell.org/release/0.14.0/test/spec.wwz/cpp/osh-summary.html
+      c1 = 'cpp/osh-summary.html'
       try:
-        h2 = z.getinfo(cpp_summary_path)
+        z.getinfo(c1)
+        cpp_summary_path = c1
       except KeyError:
-        cpp_summary_path = '-'
+        pass
+
+      # 2023 Example: https://www.oilshell.org/release/0.19.0/test/spec.wwz/osh-cpp/compare.html
+      # TODO: the format changed
+      if cpp_summary_path == '-':
+        c2 = 'osh-cpp/compare.html'
+        try:
+          z.getinfo(c2)
+          cpp_summary_path = c2
+        except KeyError:
+          pass
 
     print('\t'.join([date, version, spec_wwz, survey_path, cpp_summary_path]))
 
