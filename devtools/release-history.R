@@ -38,11 +38,11 @@ LoadAll = function(in_dir, ctx) {
   n1 = nrow(wwz %>% filter(spec_wwz != '-'))
   Log('Number of spec.wwz: %d', n1)
 
-  n2 = nrow(wwz %>% filter(survey_path != '-'))
-  Log('Number of survey_path: %d', n2)
+  n2 = nrow(wwz %>% filter(osh_py_path != '-'))
+  Log('Number of osh_py_path: %d', n2)
 
-  n3 = nrow(wwz %>% filter(cpp_summary_path != '-'))
-  Log('Number of cpp_summary_path: %d', n3)
+  n3 = nrow(wwz %>% filter(osh_cc_path != '-'))
+  Log('Number of osh_cc_path: %d', n3)
 
   ctx$wwz = wwz
 
@@ -59,8 +59,8 @@ LoadAll = function(in_dir, ctx) {
   n1 = nrow(spec %>% filter(!is.na(osh_py_passing)))
   Log('Number of osh_py_passing: %d', n1)
 
-  n2 = nrow(spec %>% filter(!is.na(osh_cc_passing)))
-  Log('Number of osh_cc_passing: %d', n2)
+  n2 = nrow(spec %>% filter(!is.na(osh_cpp_passing)))
+  Log('Number of osh_cpp_passing: %d', n2)
 
 
   # Version errata:
@@ -78,12 +78,12 @@ LoadAll = function(in_dir, ctx) {
 
 ProcessAll = function(ctx) {
 
-  long = gather(ctx$spec, implementation, num_passing, c('osh_py_passing', 'osh_cc_passing'))
+  long = gather(ctx$spec, implementation, num_passing, c('osh_py_passing', 'osh_cpp_passing'))
 
   print(head(long))
 
   blueIndexLeft = which(long$version == '0.2.0' & long$implementation == 'osh_py_passing')
-  redIndexLeft = which(long$version == '0.8.pre5' & long$implementation == 'osh_cc_passing')
+  redIndexLeft = which(long$version == '0.8.pre5' & long$implementation == 'osh_cpp_passing')
   #indexRight = which(long$version == '0.9.9')
 
   Log('blueIndexLeft %d', blueIndexLeft)

@@ -12,7 +12,7 @@ def log(msg, *args):
     print('\t' + msg, file=sys.stderr)
 
 VERSION_RE = re.compile('0\.(\d+)\.(\w+)')
-HEADER=('date', 'version', 'spec_wwz', 'survey_path', 'cpp_summary_path')
+HEADER=('date', 'version', 'spec_wwz', 'osh_py_path', 'osh_cc_path', 'ysh_py_path', 'ysh_cc_path')
 
 def main(argv):
 
@@ -36,66 +36,98 @@ def main(argv):
     spec_wwz = os.path.join(release_dir, 'test/spec.wwz')
     if not os.path.exists(spec_wwz):
       log('No spec.wwz; skipping %s %s', date, version)
-      print('\t'.join([date, version, '-', '-', '-']))
+      print('\t'.join([date, version, '-', '-', '-', '-', '-']))
       continue
 
     with open(spec_wwz) as f:
       z = zipfile.ZipFile(f)
 
-      survey_path = '-'
+      osh_py_path = '-'
 
       p1 = 'survey/osh.html'
       try:
         z.getinfo(p1)
-        survey_path = p1
+        osh_py_path = p1
       except KeyError:
         pass
 
-      if survey_path == '-':
+      if osh_py_path == '-':
         p2 = 'osh-py/index.html'
         try:
           z.getinfo(p2)
-          survey_path = p2
+          osh_py_path = p2
         except KeyError:
           pass
 
-      if survey_path == '-':
+      if osh_py_path == '-':
         p3 = 'osh.html'
         try:
           z.getinfo(p3)
-          survey_path = p3
+          osh_py_path = p3
         except KeyError:
           pass
 
-      if survey_path == '-':
+      if osh_py_path == '-':
         p4 = 'index.html'
         try:
           z.getinfo(p4)
-          survey_path = p4
+          osh_py_path = p4
         except KeyError:
           pass
 
-      cpp_summary_path = '-'
+      osh_cc_path = '-'
 
       # 2023 Example: # https://www.oilshell.org/release/0.14.0/test/spec.wwz/cpp/osh-summary.html
       c1 = 'cpp/osh-summary.html'
       try:
         z.getinfo(c1)
-        cpp_summary_path = c1
+        osh_cc_path = c1
       except KeyError:
         pass
 
       # 2023 Example: https://www.oilshell.org/release/0.19.0/test/spec.wwz/osh-cpp/compare.html
       # TODO: the format changed
-      if cpp_summary_path == '-':
+      if osh_cc_path == '-':
         c2 = 'osh-cpp/compare.html'
         try:
           z.getinfo(c2)
-          cpp_summary_path = c2
+          osh_cc_path = c2
         except KeyError:
           pass
 
-    print('\t'.join([date, version, spec_wwz, survey_path, cpp_summary_path]))
+      #
+      # YSH Python (formerly Oil)
+      #
+      ysh_py_path = '-'
+
+      p1 = 'oil-language/oil.html'
+      try:
+        z.getinfo(p1)
+        ysh_py_path = p1
+      except KeyError:
+        pass
+
+      if ysh_py_path == '-':
+        p2 = 'ysh-py/index.html'
+        try:
+          z.getinfo(p2)
+          ysh_py_path = p2
+        except KeyError:
+          pass
+
+      #
+      # YSH C++
+      #
+      ysh_cc_path = '-'
+
+      c1 = 'ysh-cpp/compare.html'
+      try:
+        z.getinfo(p1)
+        ysh_cc_path = c1
+      except KeyError:
+        pass
+
+    print('\t'.join([date, version, spec_wwz, osh_py_path, osh_cc_path, ysh_py_path, ysh_cc_path]))
 
 
 if __name__ == '__main__':

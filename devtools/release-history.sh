@@ -4,8 +4,10 @@
 #   devtools/release-history.sh <function name>
 #
 # Examples:
+#   $0 do-all 
 #   $0 wwz-tsv - release metadata
 #   $0 spec-tsv - specific numbers
+#   $0 make-plot
 #
 # This is actually similar to the "parallel process table pattern"
 # I guess it's just the "process table pattern", since it's serial
@@ -37,7 +39,7 @@ release-dirs() {
 }
 
 # Python file has
-# HEADER=('date', 'version', 'spec_wwz', 'survey_path', 'cpp_summary_path')
+# HEADER=('date', 'version', 'spec_wwz', 'osh_py_path', 'osh_cpp_path')
 #
 # parses release-date.txt for the date
 # So I need to unify oils.pub and oilshell.org
@@ -76,14 +78,16 @@ extract-totals() {
   IFS=$'\t' read -a header
   #argv "${header[@]}"
 
-  print-row release_date version osh_py_passing osh_cc_passing
+  print-row release_date version osh_py_passing osh_cpp_passing ysh_py_passing ysh_cpp_passing
 
   while IFS=$'\t' read -a row; do
     local release_date=${row[0]}
     local version=${row[1]}
     local spec_wwz=${row[2]}
-    local survey_path=${row[3]}
-    local cpp_summary_path=${row[4]}
+    local osh_py_path=${row[3]}
+    local osh_cpp_path=${row[4]}
+    local ysh_py_path=${row[5]}
+    local ysh_cpp_path=${row[6]}
 
     if test $spec_wwz = '-'; then
       continue
@@ -99,25 +103,25 @@ extract-totals() {
     # -o: overwrite without prompting
 
     local osh_py_passing='NA'
-    if test $survey_path != '-'; then
-      unzip -q -o $spec_wwz $survey_path
-      osh_py_passing=$(osh-py-passing $survey_path)  # strip trailing newline
+    if test $osh_py_path != '-'; then
+      unzip -q -o $spec_wwz $osh_py_path
+      osh_py_passing=$(osh-py-passing $osh_py_path)  # strip trailing newline
     fi
 
     local osh_cpp_passing='NA'
-    if test $cpp_summary_path != '-'; then
-      unzip -q -o $spec_wwz $cpp_summary_path
-      osh_cpp_passing=$(osh-cc-passing $cpp_summary_path)
+    if test $osh_cpp_path != '-'; then
+      unzip -q -o $spec_wwz $osh_cpp_path
+      osh_cpp_passing=$(osh-cpp-passing $osh_cpp_path)
     fi
 
     popd > /dev/null
 
     if test -z "$osh_py_passing"; then
-      die "FAIL: osh_py_passing not extracted from $survey_path - $version $release_date"
+      die "FAIL: osh_py_passing not extracted from $osh_py_path - $version $release_date"
     fi
 
     if test -z "$osh_cpp_passing"; then
-      die "FAIL: osh_cpp_passing not extracted from $cpp_summary_path - $version $release_date"
+      die "FAIL: osh_cpp_passing not extracted from $osh_cpp_path - $version $release_date"
     fi
 
     print-row "$release_date" "$version" "$osh_py_passing" "$osh_cpp_passing"
@@ -171,7 +175,7 @@ osh-py-passing() {
   fi
 }
 
-osh-cc-passing() {
+osh-cpp-passing() {
   ### Given a file, print the C++ total to stdout
 
   local path=$1
@@ -192,6 +196,30 @@ osh-cc-passing() {
   echo "$cell" | sed 's/,//'
 }
 
+ysh-py-passing() {
+  ### Given a file, print the Python total to stdout
+
+  local path=$1
+
+  normalize $path
+
+  local name
+  name=$(basename $path)
+
+  local count
+
+  count=$(hxselect -s $'\n' -c 'tfoot td:nth-child(3)' < $path.xml)
+  echo $count
+}
+
+ysh-cpp-passing() {
+  ### Given a file, print the C++ total to stdout
+
+  local path=$1
+  # Same logic?
+  osh-cpp-passing $path
+}
+
 spec-tsv() {
   rm -r -f -v $BASE_DIR/tmp  # extract-totals writes to this dir
 
@@ -207,7 +235,7 @@ tsv-preview() {
   cat $BASE_DIR/spec.tsv | pretty-tsv
 }
 
-report() {
+make-plot() {
   devtools/release-history.R $BASE_DIR $BASE_DIR
 }
 
@@ -221,7 +249,7 @@ deps-apt() {
 }
 
 # MEH these tools have bad error messages.
-test-py-parsing() {
+test-osh-py() {
   local test_dir=$BASE_DIR/test-parsing
   mkdir -p $test_dir
 
@@ -252,23 +280,54 @@ test-py-parsing() {
   osh-py-passing $test_dir/index.html
 }
 
-test-cc-parsing() {
+test-osh-cpp() {
   local test_dir=$BASE_DIR/test-parsing
   mkdir -p $test_dir
 
   echo
   echo 'CPP 0.9.8'
   unzip -p $ROOT/release/0.9.8/test/spec.wwz 'cpp/osh-summary.html' > $test_dir/osh-summary.html
-  osh-cc-passing $test_dir/osh-summary.html 
+  osh-cpp-passing $test_dir/osh-summary.html 
 
   # May 2026: updating the 2022 graph
   echo 'CPP 0.19.0'
   unzip -p $ROOT/release/0.19.0/test/spec.wwz 'osh-cpp/compare.html' > $test_dir/compare.html
-  osh-cc-passing $test_dir/compare.html
+  osh-cpp-passing $test_dir/compare.html
 
   echo 'CPP 0.30.0'
   unzip -p $ROOT_OILS/release/0.30.0/test/spec.wwz 'osh-cpp/compare.html' > $test_dir/compare.html
-  osh-cc-passing $test_dir/compare.html
+  osh-cpp-passing $test_dir/compare.html
+}
+
+test-ysh-py() {
+  local test_dir=$BASE_DIR/test-parsing
+  mkdir -p $test_dir
+
+  echo
+  echo 'YSH PY 0.9.8'
+  unzip -p $ROOT/release/0.9.8/test/spec.wwz 'oil-language/oil.html' > $test_dir/oil.html
+  ysh-py-passing $test_dir/oil.html 
+
+  echo
+  echo 'YSH PY 0.30.0'
+  unzip -p $ROOT_OILS/release/0.30.0/test/spec.wwz 'ysh-py/index.html' > $test_dir/index.html
+  ysh-py-passing $test_dir/index.html
+}
+
+test-ysh-cc() {
+  local test_dir=$BASE_DIR/test-parsing
+  mkdir -p $test_dir
+
+  echo
+  echo 'YSH CC 0.30.0'
+  unzip -p $ROOT_OILS/release/0.30.0/test/spec.wwz 'ysh-cpp/compare.html' > $test_dir/compare.html
+  ysh-cpp-passing $test_dir/compare.html
+}
+
+do-all() {
+  wwz-tsv
+  spec-tsv
+  make-plot
 }
 
 "$@"
