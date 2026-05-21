@@ -22,13 +22,18 @@ source build/dev-shell.sh  # R_LIBS_USER
 
 #readonly ROOT=../../oilshell/oilshell.org__deploy
 # A version I synced
-readonly ROOT=../../oilshell/oilshell.org-2025-12-16/
+readonly ROOT=../../oilshell/oilshell.org-2025-12-16
+readonly ROOT_OILS=../oils.pub__deploy
 
 readonly BASE_DIR=_tmp/release-history
 
 die() {
   echo "FATAL: $@" >& 2
   exit 1
+}
+
+release-dirs() {
+  find $ROOT/release/ $ROOT_OILS/release/ -mindepth 1 -maxdepth 1 -type d
 }
 
 # Python file has
@@ -40,7 +45,7 @@ die() {
 wwz-tsv() {
   mkdir -p $BASE_DIR
 
-  find $ROOT/release/ -mindepth 1 -maxdepth 1 -type d \
+  release-dirs \
     | sort \
     | devtools/release_history.py > $BASE_DIR/wwz.tsv
 
@@ -154,12 +159,14 @@ osh-py-passing() {
     count=$(hxselect -s $'\n' -c 'tfoot td:nth-child(5)' < $path.xml)
 
     # Heuristic for differing format
-    if test "$count" -lt 100; then
+    # TODO: This is bad.  Come up with something better.
+    if test "$count" -lt 200; then
       count=$(hxselect -s $'\n' -c 'tfoot td:nth-child(3)' < $path.xml)
     fi
     echo "$count"
 
   else
+    # survey/osh.html
     hxselect -s $'\n' -c '.totals:nth-child(1) td:nth-child(3)' < $path.xml | head -n 1
   fi
 }
@@ -173,8 +180,16 @@ osh-cc-passing() {
   #echo "PATH $path"
 
   # Select the 2nd to last cell - this is more robust to format changes
-  < $path.xml hxselect -s $'\n' -c '#summary thead tr:nth-child(2) td:nth-last-child(2)' \
-    | sed 's/,//' # Change 1,137 -> 1137
+  local cell
+  cell=$(hxselect -s $'\n' -c '#summary thead tr:nth-child(2) td:nth-last-child(2)' < $path.xml)
+
+  if test -z "$cell"; then
+    # Oils 0.30.0 - changed to SUMMARY
+    cell=$(hxselect -s $'\n' -c '#SUMMARY thead tr:nth-child(2) td:nth-last-child(2)' < $path.xml)
+  fi
+
+  # Change 1,137 -> 1137
+  echo "$cell" | sed 's/,//'
 }
 
 spec-tsv() {
@@ -206,39 +221,53 @@ deps-apt() {
 }
 
 # MEH these tools have bad error messages.
-test-parsing() {
+test-py-parsing() {
   local test_dir=$BASE_DIR/test-parsing
   mkdir -p $test_dir
 
   # Show that's there
   #unzip -l $ROOT/release/0.9.8/test/spec.wwz || echo status=$?
 
+  echo
+  echo 'PYTHON 0.2.0'
+  unzip -p $ROOT/release/0.2.0/test/spec.wwz 'index.html' > $test_dir/index.html
+  osh-py-passing $test_dir/index.html
+
+  echo
+  echo 'PYTHON 0.7.pre3'
+  unzip -p $ROOT/release/0.7.pre3/test/spec.wwz 'index.html' > $test_dir/index.html
+  osh-py-passing $test_dir/index.html
+
   # hxnormalize makes it XML.
   # NOTE: syntax error on "<tr class=>", but it correctly ignores it
   echo
-  echo 'NEW PYTHON'
+  echo 'PYTHON 0.9.8'
   # Annoying syntax for this command
   unzip -p $ROOT/release/0.9.8/test/spec.wwz 'survey/osh.html'  > $test_dir/osh.html
   osh-py-passing $test_dir/osh.html
 
   echo
-  echo 'OLD PYTHON 0.7.pre3'
-  unzip -p $ROOT/release/0.7.pre3/test/spec.wwz 'index.html' > $test_dir/index.html
+  echo 'PYTHON 0.30.0'
+  unzip -p $ROOT_OILS/release/0.30.0/test/spec.wwz 'osh-py/index.html' > $test_dir/index.html
   osh-py-passing $test_dir/index.html
+}
+
+test-cc-parsing() {
+  local test_dir=$BASE_DIR/test-parsing
+  mkdir -p $test_dir
 
   echo
-  echo 'OLD PYTHON 0.2.0'
-  unzip -p $ROOT/release/0.2.0/test/spec.wwz 'index.html' > $test_dir/index.html
-  osh-py-passing $test_dir/index.html
-
-  echo
-  echo 'CPP'
+  echo 'CPP 0.9.8'
   unzip -p $ROOT/release/0.9.8/test/spec.wwz 'cpp/osh-summary.html' > $test_dir/osh-summary.html
   osh-cc-passing $test_dir/osh-summary.html 
 
   # May 2026: updating the 2022 graph
-  echo 'CPP NEW'
+  echo 'CPP 0.19.0'
   unzip -p $ROOT/release/0.19.0/test/spec.wwz 'osh-cpp/compare.html' > $test_dir/compare.html
+  osh-cc-passing $test_dir/compare.html
+
+  echo 'CPP 0.30.0'
+  unzip -p $ROOT_OILS/release/0.30.0/test/spec.wwz 'osh-cpp/compare.html' > $test_dir/compare.html
   osh-cc-passing $test_dir/compare.html
 }
 
