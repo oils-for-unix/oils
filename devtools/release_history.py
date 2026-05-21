@@ -12,7 +12,7 @@ def log(msg, *args):
     print('\t' + msg, file=sys.stderr)
 
 VERSION_RE = re.compile('0\.(\d+)\.(\w+)')
-HEADER=('date', 'version', 'spec_wwz', 'osh_py_path', 'osh_cc_path', 'ysh_py_path', 'ysh_cc_path')
+HEADER=('date', 'version', 'spec_wwz', 'osh_py_path', 'osh_cpp_path', 'ysh_py_path', 'ysh_cpp_path')
 
 def main(argv):
 
@@ -75,23 +75,23 @@ def main(argv):
         except KeyError:
           pass
 
-      osh_cc_path = '-'
+      osh_cpp_path = '-'
 
       # 2023 Example: # https://www.oilshell.org/release/0.14.0/test/spec.wwz/cpp/osh-summary.html
       c1 = 'cpp/osh-summary.html'
       try:
         z.getinfo(c1)
-        osh_cc_path = c1
+        osh_cpp_path = c1
       except KeyError:
         pass
 
       # 2023 Example: https://www.oilshell.org/release/0.19.0/test/spec.wwz/osh-cpp/compare.html
       # TODO: the format changed
-      if osh_cc_path == '-':
+      if osh_cpp_path == '-':
         c2 = 'osh-cpp/compare.html'
         try:
           z.getinfo(c2)
-          osh_cc_path = c2
+          osh_cpp_path = c2
         except KeyError:
           pass
 
@@ -118,16 +118,16 @@ def main(argv):
       #
       # YSH C++
       #
-      ysh_cc_path = '-'
+      ysh_cpp_path = '-'
 
       c1 = 'ysh-cpp/compare.html'
       try:
-        z.getinfo(p1)
-        ysh_cc_path = c1
+        z.getinfo(c1)
+        ysh_cpp_path = c1
       except KeyError:
         pass
 
-    print('\t'.join([date, version, spec_wwz, osh_py_path, osh_cc_path, ysh_py_path, ysh_cc_path]))
+    print('\t'.join([date, version, spec_wwz, osh_py_path, osh_cpp_path, ysh_py_path, ysh_cpp_path]))
 
 
 if __name__ == '__main__':

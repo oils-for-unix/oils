@@ -78,7 +78,9 @@ extract-totals() {
   IFS=$'\t' read -a header
   #argv "${header[@]}"
 
-  print-row release_date version osh_py_passing osh_cpp_passing ysh_py_passing ysh_cpp_passing
+  print-row \
+    release_date version \
+    osh_py_passing osh_cpp_passing ysh_py_passing ysh_cpp_passing
 
   while IFS=$'\t' read -a row; do
     local release_date=${row[0]}
@@ -105,7 +107,10 @@ extract-totals() {
     local osh_py_passing='NA'
     if test $osh_py_path != '-'; then
       unzip -q -o $spec_wwz $osh_py_path
-      osh_py_passing=$(osh-py-passing $osh_py_path)  # strip trailing newline
+      osh_py_passing=$(osh-py-passing $osh_py_path)
+    fi
+    if test -z "$osh_py_passing"; then
+      die "FAIL: osh_py_passing not extracted from $osh_py_path - $version $release_date"
     fi
 
     local osh_cpp_passing='NA'
@@ -113,18 +118,33 @@ extract-totals() {
       unzip -q -o $spec_wwz $osh_cpp_path
       osh_cpp_passing=$(osh-cpp-passing $osh_cpp_path)
     fi
-
-    popd > /dev/null
-
-    if test -z "$osh_py_passing"; then
-      die "FAIL: osh_py_passing not extracted from $osh_py_path - $version $release_date"
-    fi
-
     if test -z "$osh_cpp_passing"; then
       die "FAIL: osh_cpp_passing not extracted from $osh_cpp_path - $version $release_date"
     fi
 
-    print-row "$release_date" "$version" "$osh_py_passing" "$osh_cpp_passing"
+    local ysh_py_passing='NA'
+    if test $ysh_py_path != '-'; then
+      unzip -q -o $spec_wwz $ysh_py_path
+      ysh_py_passing=$(ysh-py-passing $ysh_py_path)
+    fi
+    if test -z "$ysh_py_passing"; then
+      die "FAIL: ysh_py_passing not extracted from $ysh_py_path - $version $release_date"
+    fi
+
+    local ysh_cpp_passing='NA'
+    if test $ysh_cpp_path != '-'; then
+      unzip -q -o $spec_wwz $ysh_cpp_path
+      ysh_cpp_passing=$(ysh-cpp-passing $ysh_cpp_path)
+    fi
+    if test -z "$ysh_cpp_passing"; then
+      die "FAIL: ysh_cpp_passing not extracted from $ysh_cpp_path - $version $release_date"
+    fi
+
+    popd > /dev/null
+
+    print-row \
+      "$release_date" "$version" \
+      "$osh_py_passing" "$osh_cpp_passing" "$ysh_py_passing" "$ysh_cpp_passing"
 
     #argv "${row[@]}"
   done

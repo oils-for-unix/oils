@@ -41,8 +41,8 @@ LoadAll = function(in_dir, ctx) {
   n2 = nrow(wwz %>% filter(osh_py_path != '-'))
   Log('Number of osh_py_path: %d', n2)
 
-  n3 = nrow(wwz %>% filter(osh_cc_path != '-'))
-  Log('Number of osh_cc_path: %d', n3)
+  n3 = nrow(wwz %>% filter(osh_cpp_path != '-'))
+  Log('Number of osh_cpp_path: %d', n3)
 
   ctx$wwz = wwz
 
@@ -78,9 +78,14 @@ LoadAll = function(in_dir, ctx) {
 
 ProcessAll = function(ctx) {
 
-  long = gather(ctx$spec, implementation, num_passing, c('osh_py_passing', 'osh_cpp_passing'))
+  long = gather(ctx$spec, implementation, num_passing,
+                c('osh_py_passing', 'osh_cpp_passing', 'ysh_py_passing', 'ysh_cpp_passing'))
 
   print(head(long))
+  print(tail(long))
+  print(summary(long))
+
+  #return()
 
   blueIndexLeft = which(long$version == '0.2.0' & long$implementation == 'osh_py_passing')
   redIndexLeft = which(long$version == '0.8.pre5' & long$implementation == 'osh_cpp_passing')
