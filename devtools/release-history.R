@@ -76,17 +76,13 @@ LoadAll = function(in_dir, ctx) {
 
 }
 
-ProcessAll = function(ctx) {
+PlotOne = function(ctx, long, shell) {
 
-  long = gather(ctx$spec, implementation, num_passing,
-                c('osh_py_passing', 'osh_cpp_passing', 'ysh_py_passing', 'ysh_cpp_passing'))
-
-  print(head(long))
-  print(tail(long))
+  #print(head(long))
+  #print(tail(long))
   print(summary(long))
 
-  #return()
-
+  # no equivalent for YSH?
   blueIndexLeft = which(long$version == '0.2.0' & long$implementation == 'osh_py_passing')
   redIndexLeft = which(long$version == '0.8.pre5' & long$implementation == 'osh_cpp_passing')
   #indexRight = which(long$version == '0.9.9')
@@ -119,35 +115,66 @@ ProcessAll = function(ctx) {
     ylim(0, NA) +
     theme(legend.position = 'bottom') +
     # lower luminance to make it darker
-    scale_color_hue(labels = c('Fast Generated C++', 'Python Source (executable spec)'), l = 40) +
-    ggtitle('Middle-Out Progress on https://oilshell.org',
-            subtitle = "Weissman score: 99") +
+    scale_color_hue(labels = c('C++', 'Python (executable spec)'), l = 40) +
     geom_line() +
     geom_point()
 
   g = g + geom_text(aes(label = label),
                     vjust = 2, hjust = 'inward', size = 5)
 
-  # Fallow Period
-  g = g + annotate("rect",
-                   xmin = as.POSIXct('2020-08-01'),
-                   xmax = as.POSIXct('2021-07-01'),
-                   ymin = 600,
-                   ymax = 1200,
-                   alpha = 0.2)
+  if (FALSE) {
+    # Fallow Period
+    g = g + annotate("rect",
+                     xmin = as.POSIXct('2020-08-01'),
+                     xmax = as.POSIXct('2021-07-01'),
+                     ymin = 600,
+                     ymax = 1200,
+                     alpha = 0.2)
+  }
 
-  ctx$plot = g
+  # Date that NLnet funding started
+  nlnet_date <- as.Date("2022-06-19")
+
+  # Vertical line and text annotation
+  g = g +
+      geom_vline(xintercept = nlnet_date,
+                 linetype   = "dashed",
+                 linewidth  = 0.8) +
+      annotate("text",
+               x = nlnet_date,
+               # top of the plot area.  (Bug fix: remove NA values)
+               y = max(long$num_passing, na.rm = TRUE) + 100,
+               label = "Funding started June 2022",
+               # nudge right of the line
+               hjust = -0.05)
 
   g
 }
 
-WriteAll = function(ctx, out_dir) {
-  png_path = file.path(out_dir, 'spec-test-history-2.png')
+ProcessAll = function(ctx) {
+  osh_spec = gather(ctx$spec, implementation, num_passing, c('osh_py_passing', 'osh_cpp_passing'))
+  ysh_spec = gather(ctx$spec, implementation, num_passing, c('ysh_py_passing', 'ysh_cpp_passing'))
 
-  png(png_path, width=700, height=600)
-  print(ctx$plot)
+  plot = PlotOne(ctx, osh_spec, 'osh')
+  ctx$osh_progress = plot + ggtitle('Progress on OSH with Funding')
+
+  plot = PlotOne(ctx, ysh_spec, 'ysh')
+  ctx$ysh_progress = plot + ggtitle('Progress on YSH with Funding')
+}
+
+WriteAll = function(ctx, out_dir) {
+  osh_path = file.path(out_dir, 'osh-progress.png')
+
+  png(osh_path, width=700, height=600)
+  print(ctx$osh_progress)
   dev.off()
-  Log('Wrote %s', png_path)
+
+  ysh_path = file.path(out_dir, 'ysh-progress.png')
+  png(ysh_path, width=700, height=600)
+  print(ctx$ysh_progress)
+  dev.off()
+
+  Log('Wrote %s and %s', osh_path, ysh_path)
 }
 
 main = function(argv) {
