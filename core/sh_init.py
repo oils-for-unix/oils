@@ -47,6 +47,9 @@ class EnvConfig(object):
         self.mem = mem
         self.exec_opts = mem.exec_opts
         self.defaults = defaults
+        # -1: not yet captured, 0: False (OSH), 1: True (YSH)
+        # Lazy because exec_opts is None when Mem.__init__ creates EnvConfig
+        self._env_obj_at_startup = -1  # type: int
 
     def GetVal(self, var_name):
         # type: (str) -> value_t
@@ -54,7 +57,16 @@ class EnvConfig(object):
         YSH: Look at ENV.PATH, and then __defaults__.PATH
         OSH: Look at $PATH
         """
-        if self.mem.exec_opts.env_obj():  # e.g. $[ENV.PATH]
+        if self._env_obj_at_startup == -1:
+            self._env_obj_at_startup = 1 if self.mem.exec_opts.env_obj() else 0
+
+        use_env_obj = self.mem.exec_opts.env_obj()
+        # Prompt variables use startup value to fix #2367: prompt shouldn't
+        # disappear when 'shopt --unset ysh:all' or 'shopt --set ysh:all'
+        if var_name in ('PS1', 'PS2', 'PS3', 'PS4'):
+            use_env_obj = bool(self._env_obj_at_startup)
+
+        if use_env_obj:  # e.g. $[ENV.PATH]
 
             val = self.mem.env_dict.get(var_name)
             if val is None:
