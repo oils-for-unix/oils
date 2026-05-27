@@ -287,7 +287,7 @@ class Trap(vm._Builtin):
           A node, or None if the code is invalid.
         """
         line_reader = reader.StringLineReader(code_str, self.arena)
-        c_parser = self.parse_ctx.MakeOshParser(line_reader)
+        c_parser = self.parse_ctx.MakeOshParser(line_reader, False)
 
         # TODO: the SPID should be passed through argv.
         src = source.Dynamic('trap arg', loc.Missing)

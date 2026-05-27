@@ -101,7 +101,7 @@ def main(argv):
 
     arena.PushSource(src)
 
-    c_parser = parse_ctx.MakeOshParser(line_reader)
+    c_parser = parse_ctx.MakeOshParser(line_reader, False)
 
     try:
         #node = main_loop.ParseWholeFile(c_parser)

@@ -119,12 +119,6 @@ def _MatchPS1Token_Fast(line, start_pos):
     return tok_type, end_pos
 
 
-def _MatchHistoryToken_Fast(line, start_pos):
-    # type: (str, int) -> Tuple[Id_t, int]
-    tok_type, end_pos = fastlex.MatchHistoryToken(line, start_pos)
-    return tok_type, end_pos
-
-
 def _MatchBraceRangeToken_Fast(line, start_pos):
     # type: (str, int) -> Tuple[Id_t, int]
     tok_type, end_pos = fastlex.MatchBraceRangeToken(line, start_pos)
@@ -167,7 +161,6 @@ if fastlex:
     PRINTF_B_MATCHER = _MatchPrintfBToken_Fast
     GLOB_MATCHER = _MatchGlobToken_Fast
     PS1_MATCHER = _MatchPS1Token_Fast
-    HISTORY_MATCHER = _MatchHistoryToken_Fast
     BRACE_RANGE_MATCHER = _MatchBraceRangeToken_Fast
 
     MatchJ8Token = _MatchJ8Token_Fast
@@ -188,7 +181,6 @@ else:
     PRINTF_B_MATCHER = _MatchTokenSlow(lexer_def.PRINTF_B_DEF)
     GLOB_MATCHER = _MatchTokenSlow(lexer_def.GLOB_DEF)
     PS1_MATCHER = _MatchTokenSlow(lexer_def.PS1_DEF)
-    HISTORY_MATCHER = _MatchTokenSlow(lexer_def.HISTORY_DEF)
     BRACE_RANGE_MATCHER = _MatchTokenSlow(lexer_def.BRACE_RANGE_DEF)
 
     MatchJ8Token = _MatchTokenSlow(lexer_def.J8_DEF)
@@ -294,12 +286,6 @@ def GlobLexer(s):
 
 
 # These tokens are "slurped"
-
-
-def HistoryTokens(s):
-    # type: (str) -> List[Tuple[Id_t, str]]
-    lex = SimpleLexer(HISTORY_MATCHER, s)
-    return lex.Tokens()
 
 
 def Ps1Tokens(s):

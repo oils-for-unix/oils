@@ -284,7 +284,13 @@ def AddKinds(spec):
             'CompDummy',  # A fake Lit_* token to get partial words during
             # completion
             'Number',
-            'RedirVarName'  # "{myvar}", as in {myvar}>out.txt (and on its own)
+            'RedirVarName',  # "{myvar}", as in {myvar}>out.txt (and on its own)
+            'HistoryOp_PrevEntry',
+            'HistoryOp_WordRest',
+            'HistoryOp_First',
+            'HistoryOp_Last',
+            'HistoryNum',
+            'HistorySearch',
         ])
 
     # For recognizing \` and \" and \\ within backticks.  There's an extra layer

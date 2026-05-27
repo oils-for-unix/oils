@@ -235,15 +235,15 @@ class ParseContext(object):
         line_lexer = lexer.LineLexer(line_reader.arena)
         return lexer.Lexer(line_lexer, line_reader)
 
-    def MakeOshParser(self, line_reader, emit_comp_dummy=False):
-        # type: (_Reader, bool) -> CommandParser
+    def MakeOshParser(self, line_reader, interactive, emit_comp_dummy=False):
+        # type: (_Reader, bool, bool) -> CommandParser
         lx = self.MakeLexer(line_reader)
         if emit_comp_dummy:
             lx.EmitCompDummy()  # A special token before EOF!
 
         w_parser = word_parse.WordParser(self, lx, line_reader)
         c_parser = cmd_parse.CommandParser(self, self.parse_opts, w_parser, lx,
-                                           line_reader)
+                                           line_reader, interactive)
         return c_parser
 
     def MakeConfigParser(self, line_reader):
@@ -252,7 +252,7 @@ class ParseContext(object):
         parse_opts = state.MakeYshParseOpts()
         w_parser = word_parse.WordParser(self, lx, line_reader)
         c_parser = cmd_parse.CommandParser(self, parse_opts, w_parser, lx,
-                                           line_reader)
+                                           line_reader, False)
         return c_parser
 
     def MakeWordParserForHereDoc(self, line_reader):
@@ -287,7 +287,8 @@ class ParseContext(object):
                                            w_parser,
                                            lexer,
                                            line_reader,
-                                           eof_id=eof_id)
+                                           eof_id=eof_id,
+                                           interactive=False)
         return c_parser
 
     def MakeWordParserForPlugin(self, code_str):

@@ -352,7 +352,7 @@ class UserPlugin(object):
         node = self.parse_cache.get(prompt_cmd)
         if node is None:
             line_reader = reader.StringLineReader(prompt_cmd, self.arena)
-            c_parser = self.parse_ctx.MakeOshParser(line_reader)
+            c_parser = self.parse_ctx.MakeOshParser(line_reader, False)
 
             # NOTE: This is similar to CommandEvaluator.ParseTrapCode().
             src = source.Variable(PROMPT_COMMAND, loc.Missing)

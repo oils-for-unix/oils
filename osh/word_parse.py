@@ -1297,7 +1297,7 @@ class WordParser(WordEmitter):
             # TODO: arena.PushSource()?
 
             line_reader = reader.StringLineReader(code_str, arena)
-            c_parser = self.parse_ctx.MakeOshParser(line_reader)
+            c_parser = self.parse_ctx.MakeOshParser(line_reader, False)
             src = source.Reparsed('backticks', left_token, right_token)
             with alloc.ctx_SourceCode(arena, src):
                 node = c_parser.ParseCommandSub()
