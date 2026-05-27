@@ -203,6 +203,8 @@ _BASH_STUBS = [
     # Complete host names with '@'.
     # Not implemented, but stubbed out for bash-completion.
     'hostcomplete',
+
+   'cdable_vars',
 ]
 
 # No-ops for bash compatibility
@@ -215,7 +217,7 @@ _BASH_UNIMPLEMENTED = [
     # except 'compat*' because they were deemed too ugly
     'assoc_expand_once',
     'autocd',
-    'cdable_vars',
+   
     'cdspell',
     'checkhash',
     'checkjobs',
