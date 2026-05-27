@@ -332,4 +332,13 @@ StatResult* stat(BigStr* filename) {
   return st;
 }
 
+int rand(int max_value) {
+    return ::rand() % (max_value + 1);
+}
+
+void srand(int seed_value) {
+    ::srand(seed_value);
+    return;
+}
+
 }  // namespace mylib
