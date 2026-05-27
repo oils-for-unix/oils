@@ -2346,6 +2346,16 @@ class Impl(_Shared):
         self.indent -= 1
         self.write_ind('}\n')
 
+    def oils_visit_switch(self, expr: CallExpr, o: 'mypy.nodes.WithStmt',
+                          switch_type: str) -> None:
+        """Write C++ code for switch statements."""
+        if switch_type == 'switch':
+            self._WriteSwitch(expr, o)
+        elif switch_type == 'str_switch':
+            self._WriteStrSwitch(expr, o)
+        elif switch_type == 'tagswitch':
+            self._WriteTagSwitch(expr, o)
+
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> None:
         """
         Translate only blocks of this form:
@@ -2394,34 +2404,33 @@ class Impl(_Shared):
         # But we have with alloc.ctx_SourceCode
         #assert isinstance(expr.callee, NameExpr), expr.callee
 
-        callee_name = expr.callee.name
-        if callee_name == 'switch':
-            self._WriteSwitch(expr, o)
-        elif callee_name == 'str_switch':
-            self._WriteStrSwitch(expr, o)
-        elif callee_name == 'tagswitch':
-            self._WriteTagSwitch(expr, o)
-        else:
-            assert isinstance(expr, CallExpr), expr
-            self.write_ind('{  // with\n')
-            self.indent += 1
+        if isinstance(expr.callee, NameExpr):
+            callee_name = expr.callee.name
+            if callee_name in ('switch', 'str_switch', 'tagswitch'):
+                self.oils_visit_switch(expr, o, callee_name)
+                return
 
-            self.write_ind('')
-            self.accept(expr.callee)
+        # Regular context manager
+        assert isinstance(expr, CallExpr), expr
+        self.write_ind('{  // with\n')
+        self.indent += 1
 
-            # FIX: Use braced initialization to avoid most-vexing parse when
-            # there are 0 args!
-            self.write(' ctx{')
-            for i, arg in enumerate(expr.args):
-                if i != 0:
-                    self.write(', ')
-                self.accept(arg)
-            self.write('};\n\n')
+        self.write_ind('')
+        self.accept(expr.callee)
 
-            self._WriteBody(o.body.body)
+        # FIX: Use braced initialization to avoid most-vexing parse when
+        # there are 0 args!
+        self.write(' ctx{')
+        for i, arg in enumerate(expr.args):
+            if i != 0:
+                self.write(', ')
+            self.accept(arg)
+        self.write('};\n\n')
 
-            self.indent -= 1
-            self.write_ind('}\n')
+        self._WriteBody(o.body.body)
+
+        self.indent -= 1
+        self.write_ind('}\n')
 
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> None:
 
