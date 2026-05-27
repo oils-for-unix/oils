@@ -98,11 +98,17 @@ test/ysh-parse-errors.sh ysh_c_strings (this may move)
          ^
 [ -c flag ]:1: Invalid char escape in C-style string literal (OILS-ERR-11)
 ```
+(Option parse_backslash: no verbatim `\`)
+- The `$''`-, `u''`- and `b''`-strings can only contain valid escapes (e.g. `\n` newline, `\t` tab).
+- Backslashes must be escaped.
 
-- Did you mean `$'\\z'`?  Backslashes must be escaped in `$''` and `u''` and
-  `b''` strings.
-- Did you mean something like `$'\n'`?  Only valid escapes are accepted in YSH.
-
+Do you want to?:
+- Denote a single `\` with `\\`?
+- Denote a valid escape like `$'\n'`?
+- (osh) 'Chain'"different"$'string types \t together' ?
+- (ysh) Concatenate quotes: "double" ++ u'single with \t escape' ?
+- (ysh) Use: "expression substitution $[\t] within double quotes" ?
+- 
 Related help topics:
 
 - [osh-string](ref/chap-word-lang.html#osh-string) (word language)
@@ -120,10 +126,17 @@ test/ysh-parse-errors.sh ysh_dq_strings (this may move)
         ^
 [ -c flag ]:1: Invalid char escape in double quoted string (OILS-ERR-12)
 ```
+(Option parse_backslash: no verbatim `\`)
+* The only valid escapes are: `\"`, `\$`, and `\\` to denote `"`, `$`, and `\`
+* Backslashes must be escaped.
 
-- Did you mean `"\\z"`?  Backslashes must be escaped in double-quoted strings.
-- Did you mean something like `"\$"`?  Only valid escapes are accepted in YSH.
-- Did you to use single quotes, like `u'\n'` rather than `u"\n"`?
+Do you want to?:
+- Denote a single `\` with `\\`?  
+- Denote a valid escape: `"\$"` or `"\""`?
+- Instead, use C-style `$'`-, `u'`-, or `b'`-single quotes, rather than `u"\n"`?
+- (osh) 'Chain'"different"$'string types \t together' ?
+- (ysh) Concatenate quotes: "double" ++ u'single with \t escape' ?
+- (ysh) Use: "expression substitution $[\t] within double quotes" ?
 
 Related help topics:
 
@@ -142,10 +155,19 @@ test/ysh-parse-errors.sh ysh_bare_words (this may move)
        ^~
 [ -c flag ]:1: Invalid char escape in unquoted word (OILS-ERR-13)
 ```
+(Option parse_backslash: no verbatim `\`, no `\`-quoting)
+- Only valid syntax operators can be escaped, e.g. `$`.
+- Backslashes must be escaped.
 
-- Did you mean `\\z`?  Backslashes must be escaped in unquoted words.
-- Did you mean something like `\$`?  Only valid escapes are accepted in YSH.
-
+Do you want to?:
+- Escape something like `\$`?
+- Remove an unecessary `\` ?
+- Denote a single `\` with `\\`?
+- (osh) Use a *raw* '-string-literal ?
+- (osh) Use an *interpreted* $'-string-literal ?
+- (ysh) Use a *raw* r'-string-literal ?
+- (ysh) Use an *interpreted* u'- or b'-string-literal ?
+ 
 ### OILS-ERR-14
 
 <!--
