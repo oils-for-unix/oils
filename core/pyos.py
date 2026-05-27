@@ -324,3 +324,16 @@ def Unlink(path):
     except (IOError, OSError) as e:
         return e.errno
     return 0
+
+
+def GetTerminalSize():
+    # type: () -> Tuple[int, int]
+    """Get terminal size (rows, cols) via ioctl(TIOCGWINSZ).
+
+    Returns (rows, cols), or (-1, -1) on failure.
+    """
+    import libc  # avoid circular import at top level
+    try:
+        return libc.get_terminal_size()
+    except (IOError, OSError):
+        return (-1, -1)
