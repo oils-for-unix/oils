@@ -168,6 +168,20 @@ status=0
 ## N-I bash/dash/mksh/zsh STDOUT:
 ## END
 
+#### eval'd fd is moved out of the way when requested by the script
+case $SH in bash|dash|mksh|zsh) exit ;; esac
+cat > $TMP/out.osh <<EOF
+exec 10>out
+echo hello>&10
+cat out
+EOF
+$SH --eval $TMP/out.osh
+## STDOUT:
+hello
+## END
+## N-I bash/dash/mksh/zsh STDOUT:
+## END
+
 #### Set LC_ALL LC_CTYPE LC_COLLATE LANG - affects glob ?
 
 # note: test/spec-common.sh sets LC_ALL

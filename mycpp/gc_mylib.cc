@@ -113,6 +113,14 @@ LineReader* open(BigStr* path) {
   return reinterpret_cast<LineReader*>(Alloc<CFile>(f));
 }
 
+void CFile::seek(int offset) {
+  fseek(f_, offset, SEEK_SET);
+}
+
+int CFile::tell() {
+  return ftell(f_);
+}
+
 BigStr* CFile::readline() {
   char* line = nullptr;
   size_t allocated_size = 0;  // unused

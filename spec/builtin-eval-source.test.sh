@@ -348,6 +348,19 @@ echo status=$?
 ## stdout: status=1
 ## OK dash/zsh/mksh stdout: status=0
 
+#### source'd fd should be shifted when requested by the script
+cd $TMP
+cat >out.osh <<EOF
+exec 10>out
+echo hello>&10
+cat out
+EOF
+. ./out.osh
+## stdout: hello
+## N-I dash/zsh status: 127
+## N-I dash/zsh STDOUT:
+## END
+
 #### sourcing along PATH should ignore directories
 
 mkdir -p _tmp/shell

@@ -459,13 +459,16 @@ def EvalFile(
       ok: whether processing should continue
     """
     try:
-        f = fd_state.Open(fs_path)
+        f, fd = fd_state.Open(fs_path, persistent=True)
     except (IOError, OSError) as e:
         print_stderr("%s: Couldn't open %r for --eval: %s" %
                      (lang, fs_path, posix.strerror(e.errno)))
         return False, -1
 
-    line_reader = reader.FileLineReader(f, cmd_ev.arena)
+    file_line_reader = reader.FileLineReader(f, cmd_ev.arena)
+    line_reader = file_line_reader
+    fd_state.SetCallback(fd, file_line_reader)
+
     c_parser = parse_ctx.MakeOshParser(line_reader)
 
     # TODO:
