@@ -14,12 +14,18 @@ Log = function(fmt, ...) {
 }
 
 LoadAll = function(in_dir, ctx) {
-  wwz = read.delim(file.path(in_dir, 'wwz.tsv'))
+  Log('aports-disagree.tsv')
+  disagree = read.delim(file.path(in_dir, 'aports-disagree.tsv'))
+  disagree$date = as.POSIXct(disagree$date)
+  print(summary(disagree))
+  Log('')
+  ctx$aports_disagree_df = disagree
+
   Log('wwz.tsv')
+  wwz = read.delim(file.path(in_dir, 'wwz.tsv'))
+  wwz$date = as.POSIXct(wwz$date)
   print(summary(wwz))
   Log('')
-
-  wwz$date = as.POSIXct(wwz$date)
 
   wwz %>% arrange(date) -> wwz
   earliest = wwz$date[1]
@@ -151,6 +157,22 @@ PlotOne = function(ctx, long, shell) {
   g
 }
 
+PlotDisagree = function(df) {
+  g = ggplot(df, aes(date, num_disagree)) +
+    xlab('date') +
+    ylab('disagreements when OSH builds Alpine packages (main)') +
+    # Start from 0 spec tests
+    ylim(0, NA) +
+    theme(legend.position = 'bottom') +
+    # lower luminance to make it darker
+    scale_color_hue(labels = c('C++', 'Python (executable spec)'), l = 40) +
+    geom_line() +
+    geom_point() + 
+    ggtitle('Progress on regtest/aports - 4th NLnet Grant')
+
+  g
+}
+
 ProcessAll = function(ctx) {
   osh_spec = gather(ctx$spec, implementation, num_passing, c('osh_py_passing', 'osh_cpp_passing'))
   ysh_spec = gather(ctx$spec, implementation, num_passing, c('ysh_py_passing', 'ysh_cpp_passing'))
@@ -160,6 +182,9 @@ ProcessAll = function(ctx) {
 
   plot = PlotOne(ctx, ysh_spec, 'ysh')
   ctx$ysh_progress = plot + ggtitle('Progress on YSH with Funding')
+
+  g = PlotDisagree(ctx$aports_disagree_df)
+  ctx$aports_disagree = g
 }
 
 WriteAll = function(ctx, out_dir) {
@@ -172,6 +197,11 @@ WriteAll = function(ctx, out_dir) {
   ysh_path = file.path(out_dir, 'ysh-progress.png')
   png(ysh_path, width=700, height=600)
   print(ctx$ysh_progress)
+  dev.off()
+
+  disagree_path = file.path(out_dir, 'aports-disagree.png')
+  png(disagree_path, width=700, height=600)
+  print(ctx$aports_disagree)
   dev.off()
 
   Log('Wrote %s and %s', osh_path, ysh_path)
