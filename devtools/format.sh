@@ -109,6 +109,7 @@ readonly -a CPP_FILES=(
   demo/*.c
   doctools/*.{h,cc}
   yaks/*.h
+  build/detect-*.c
 
   # Could add pyext, but they have sort of a Python style
   # pyext/fanos.c
