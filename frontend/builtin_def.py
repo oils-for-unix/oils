@@ -32,6 +32,8 @@ _NORMAL_BUILTINS = [
 
     'umask', 'ulimit', 'wait', 'jobs', 'fg', 'bg', 'kill',
 
+    'let',  # arithmetic builtin: let expr [expr ...], equivalent to (( expr ))
+
     'shopt',
     'complete', 'compgen', 'compopt', 'compadjust', 'compexport',
 

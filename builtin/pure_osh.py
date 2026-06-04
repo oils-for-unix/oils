@@ -29,6 +29,8 @@ from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import print_stderr, log
 
+from mycpp import mops
+
 from typing import List, Dict, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
@@ -36,6 +38,7 @@ if TYPE_CHECKING:
     from core.state import MutableOpts, Mem
     from core import executor
     from osh.cmd_eval import CommandEvaluator
+    from osh import sh_expr_eval
 
 _ = log
 
@@ -402,6 +405,46 @@ class Hash(vm._Builtin):
                 print(cmd)
 
         return status
+
+
+class Let(vm._Builtin):
+    """The let builtin evaluates arithmetic expressions.
+
+    let expr [expr ...]
+
+    Each argument is an arithmetic expression, like those used in (( )).
+    The exit status is 0 (true) if the last expression is non-zero,
+    and 1 (false) if it evaluates to zero — matching bash behaviour.
+
+    Example:
+        let x=5          # assigns 5 to x
+        let "y = x + 3"  # assigns 8 to y; spaces require quoting
+        let x++          # increment x
+        let a=1 b=2      # multiple expressions, all evaluated
+    """
+
+    def __init__(self, arith_ev):
+        # type: (sh_expr_eval.ArithEvaluator) -> None
+        self.arith_ev = arith_ev
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        argv = cmd_val.argv[1:]  # drop 'let' itself
+        if len(argv) == 0:
+            e_usage('requires at least one argument', loc.Missing)
+
+        result = mops.ZERO  # will be overwritten; makes the type checker happy
+        for arg in argv:
+            a_parser = self.arith_ev.parse_ctx.MakeArithParser(arg)
+            try:
+                anode = a_parser.Parse()
+            except error.Parse as e:
+                self.arith_ev.errfmt.PrettyPrintError(e)
+                return 1  # parse failure is a runtime error, not fatal
+            result = self.arith_ev.EvalToBigInt(anode)
+
+        # Mirrors the (( )) compound command: non-zero result -> status 0 (true)
+        return 1 if mops.Equal(result, mops.ZERO) else 0
 
 
 def _ParseOptSpec(spec_str):
