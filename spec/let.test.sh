@@ -1,5 +1,4 @@
 ## compare_shells: bash mksh zsh
-## our_shell: -
 
 #### let
 # NOTE: no spaces are allowed.  How is this tokenized?

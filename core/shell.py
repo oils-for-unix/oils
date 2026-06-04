@@ -652,6 +652,7 @@ def Main(
                                         environ)
 
     b[builtin_i.hash] = pure_osh.Hash(search_path)  # not really pure
+    b[builtin_i.let] = pure_osh.Let(arith_ev)
     b[builtin_i.trap] = trap_osh.Trap(trap_state, parse_ctx, exec_opts, tracer,
                                       errfmt)
 
