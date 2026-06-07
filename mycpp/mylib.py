@@ -152,6 +152,18 @@ class LineReader:
         # type: () -> bool
         raise NotImplementedError()
 
+    def tell(self):
+        # type: () -> int
+        raise NotImplementedError()
+
+    def seek(self, offset):
+        # type: (int) -> None
+        raise NotImplementedError()
+
+    def fileno(self):
+        # type: () -> int
+        raise NotImplementedError()
+
 
 if TYPE_CHECKING:
 
