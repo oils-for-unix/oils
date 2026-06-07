@@ -16,6 +16,7 @@ from _devbuild.gen.syntax_asdl import (command, command_t, parse_result,
 from core import alloc
 from core import error
 from core import process
+from core import pyos
 from core import state
 from core import util
 from display import ui
@@ -192,6 +193,24 @@ class Headless(object):
         return 0
 
 
+def _UpdateTerminalSize(mem, readline):
+    # type: (state.Mem, Any) -> None
+    """Query the terminal for its current size and update COLUMNS, LINES,
+    and readline's internal screen width.
+
+    Analogous to bash's sh_set_lines_and_columns().
+    """
+    rows, cols = pyos.GetTerminalSize()
+    if cols > 0:
+        state.SetGlobalString(mem, 'COLUMNS', str(cols))
+    if rows > 0:
+        state.SetGlobalString(mem, 'LINES', str(rows))
+    # Also update readline's internal idea of the terminal size so that
+    # line editing / wrapping works correctly.
+    if readline is not None:
+        readline.resize_terminal()
+
+
 def Interactive(
         flag,  # type: arg_types.main
         cmd_ev,  # type: cmd_eval.CommandEvaluator 
@@ -200,12 +219,18 @@ def Interactive(
         prompt_plugin,  # type: UserPlugin
         waiter,  # type: process.Waiter
         errfmt,  # type: ui.ErrorFormatter
+        readline=None,  # type: Any
 ):
     # type: (...) -> int
     status = 0
     done = False
     while not done:
         mylib.MaybeCollect()  # manual GC point
+
+        # Update COLUMNS and LINES from the terminal every iteration.
+        # This keeps $COLUMNS/$LINES in sync after SIGWINCH, analogous to
+        # bash's sh_set_lines_and_columns() and checkwinsize.
+        _UpdateTerminalSize(cmd_ev.mem, readline)
 
         # - This loop has a an odd structure because we want to do cleanup
         #   after every 'break'.  (The ones without 'done = True' were
