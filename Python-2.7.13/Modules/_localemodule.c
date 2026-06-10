@@ -76,7 +76,6 @@ copy_grouping(char* s)
         if (!val)
             break;
         if (PyList_SetItem(result, i, val)) {
-            Py_DECREF(val);
             val = NULL;
             break;
         }
