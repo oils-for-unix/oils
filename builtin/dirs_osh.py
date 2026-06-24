@@ -12,6 +12,9 @@ from frontend import flag_util
 from frontend import typed_args
 from mycpp.mylib import log
 from pylib import os_path
+from pylib import path_stat
+from _devbuild.gen.value_asdl import value, value_e
+from typing import cast
 
 import libc
 import posix_ as posix
@@ -121,6 +124,16 @@ class Cd(vm._Builtin):
         arg_r.Next()
         if self.mem.exec_opts.strict_arg_parse():
             arg_r.Done()
+
+	# shopt -s cdable_vars allows you to type cd my_dir_var instead of cd $my_dir_var
+        if self.mem.exec_opts.cdable_vars() and dest_dir != '-':
+            if not path_stat.isdir(dest_dir):
+                val = self.mem.GetValue(dest_dir)
+                if val and val.tag() == value_e.Str:
+                    val_str = cast(value.Str, val)
+                    dest_dir = val_str.s
+                    # Bash echoes the resolved path to stdout
+                    self.errfmt.Print_(dest_dir)
 
         if dest_dir == '-':
             # Note: $OLDPWD isn't an env var; it's a global
