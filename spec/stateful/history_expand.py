@@ -43,6 +43,21 @@ def history_bangbang(sh):
     sh.expect('!!')
 
 
+@register()
+def history_bangbang(sh):
+    """ Test that an expanded command gets added to history """
+    expect_prompt(sh)
+
+    sh.sendline('echo 22')
+    sh.expect('22')
+
+    sh.sendline('echo !!')
+    sh.expect('echo 22')
+
+    sh.sendline('!!')
+    sh.expect('echo 22')
+
+
 if __name__ == '__main__':
     try:
         sys.exit(harness.main(sys.argv))

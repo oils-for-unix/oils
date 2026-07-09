@@ -86,7 +86,7 @@ class Eval(vm._Builtin):
             eval_loc = cmd_val.arg_locs[0]
 
         line_reader = reader.StringLineReader(code_str, self.arena)
-        c_parser = self.parse_ctx.MakeOshParser(line_reader)
+        c_parser = self.parse_ctx.MakeOshParser(line_reader, False)
 
         src = source.Dynamic('eval arg', eval_loc)
         with dev.ctx_Tracer(self.tracer, 'eval', None):
@@ -188,7 +188,7 @@ class ShellFile(vm._Builtin):
             return None, None  # error
 
         line_reader = reader.StringLineReader(contents, self.arena)
-        c_parser = self.parse_ctx.MakeOshParser(line_reader)
+        c_parser = self.parse_ctx.MakeOshParser(line_reader, False)
         return load_path, c_parser
 
     def _LoadDiskFile(self, fs_path, blame_loc):
@@ -204,7 +204,7 @@ class ShellFile(vm._Builtin):
             return None, None
 
         line_reader = reader.FileLineReader(f, self.arena)
-        c_parser = self.parse_ctx.MakeOshParser(line_reader)
+        c_parser = self.parse_ctx.MakeOshParser(line_reader, False)
         return f, c_parser
 
     def _SourceExec(self, cmd_val, arg_r, path, c_parser):

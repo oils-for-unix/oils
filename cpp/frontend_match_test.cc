@@ -63,7 +63,6 @@ TEST func_test() {
 TEST for_test_coverage() {
   (void)match::GlobLexer(kEmptyString);
   (void)match::EchoLexer(kEmptyString);
-  (void)match::HistoryTokens(kEmptyString);
   (void)match::Ps1Tokens(kEmptyString);
 
   PASS();

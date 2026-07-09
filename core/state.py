@@ -454,6 +454,13 @@ class MutableOpts(object):
         # type: () -> None
         self._Set(option_i.interactive, True)
 
+    def get_interactive(self):
+        # type: () -> bool
+        ret = self.Get(option_i.interactive)
+        if not ret:
+            return False
+        return ret
+
     def set_redefine_const(self):
         # type: () -> None
         """For interactive shells."""

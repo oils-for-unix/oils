@@ -382,7 +382,8 @@ class OtherLexerTest(unittest.TestCase):
         # No history operator with \ escape
         tokens = list(match.HistoryTokens(r'echo \!!'))
         print(tokens)
-        self.assert_(Id.History_Op not in [tok_type for tok_type, _ in tokens])
+        self.assert_(Id.Lit_HistoryOp_PrevEntry not in
+                     [tok_type for tok_type, _ in tokens])
 
         print(list(match.HistoryTokens(r'echo !3...')))
         print(list(match.HistoryTokens(r'echo !-5...')))
@@ -393,18 +394,21 @@ class OtherLexerTest(unittest.TestCase):
         # No history operator in single quotes
         tokens = list(match.HistoryTokens(r"echo '!!' $'!!' "))
         print(tokens)
-        self.assert_(Id.History_Op not in [tok_type for tok_type, _ in tokens])
+        self.assert_(Id.Lit_HistoryOp_PrevEntry not in
+                     [tok_type for tok_type, _ in tokens])
 
         # No history operator in incomplete single quotes
         tokens = list(match.HistoryTokens(r"echo '!! "))
         print(tokens)
-        self.assert_(Id.History_Op not in [tok_type for tok_type, _ in tokens])
+        self.assert_(Id.Lit_HistoryOp_PrevEntry not in
+                     [tok_type for tok_type, _ in tokens])
 
         # Quoted single quote, and then a History operator
         tokens = list(match.HistoryTokens(r"echo \' !! "))
         print(tokens)
         # YES operator
-        self.assert_(Id.History_Op in [tok_type for tok_type, _ in tokens])
+        self.assert_(
+            Id.Lit_HistoryOp_PrevEntry in [tok_type for tok_type, _ in tokens])
 
     def testHistoryDoesNotConflict(self):
         # https://github.com/oilshell/oil/issues/264
@@ -433,7 +437,7 @@ class OtherLexerTest(unittest.TestCase):
             print(tokens)
             actual_types = [id_ for id_, val in tokens]
 
-            self.assert_(Id.History_Search not in actual_types, tokens)
+            self.assert_(Id.Lit_HistorySearch not in actual_types, tokens)
 
             self.assertEqual(expected_types, actual_types)
 

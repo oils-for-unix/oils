@@ -125,7 +125,7 @@ class Headless(object):
         # expansion.  It would be nice if there was a way for the client to use
         # that.
         line_reader = reader.StringLineReader(arg, self.parse_ctx.arena)
-        c_parser = self.parse_ctx.MakeOshParser(line_reader)
+        c_parser = self.parse_ctx.MakeOshParser(line_reader, False)
 
         # Status is unused; $_ can be queried by the headless client
         unused_status = Batch(self.cmd_ev, c_parser, self.errfmt, 0)
@@ -466,7 +466,7 @@ def EvalFile(
         return False, -1
 
     line_reader = reader.FileLineReader(f, cmd_ev.arena)
-    c_parser = parse_ctx.MakeOshParser(line_reader)
+    c_parser = parse_ctx.MakeOshParser(line_reader, False)
 
     # TODO:
     # - Improve error locations
