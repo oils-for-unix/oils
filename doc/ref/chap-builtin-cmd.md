@@ -444,19 +444,20 @@ recommended:
 
 ---
 
-This flag replaces shell's `IFS= read -r` idiom, reading one byte a time in an
-unbuffered fashion:
+This flag still reads one byte a time in an unbuffered fashion, like shell's
+`IFS= read -r` idiom, but does not error upon input- or file-ending (EOF):
 
     read --raw-line             # unbuffered read of line, omitting trailing \n
     read --raw-line (&x)        # fills $x
 
-    read --raw-line --with-eol  # include the trailing \n
+    read --raw-line --with-eol  # include trailing \n if present
 
 A loop over [io.stdin][] allows buffered reading of lines, which is faster.
 
 [io.stdin]: chap-type-method.html#stdin
 
-You may want to use `fromJson8()` or `fromJson()` after reading a line.
+You may want to use `fromJson8()` or `fromJson()` after reading a line, or a
+command splice `@(...)` to read and assign an entire list of Json-lines.
 
 ---
 
