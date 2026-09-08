@@ -263,6 +263,10 @@ copy() {
   cp -v $BASE_DIR/spec-test-history-2.png ../oilshell.org__deploy/blog/2022/03
 }
 
+copy-2026() {
+  cp -v $BASE_DIR/*-progress.png $BASE_DIR/aports-*.png ../oils.pub__deploy/blog/2026/06
+}
+
 deps-apt() { 
   # https://superuser.com/questions/528709/command-line-css-selector-tool
   sudo apt-get install html-xml-utils
@@ -344,9 +348,38 @@ test-ysh-cc() {
   ysh-cpp-passing $test_dir/compare.html
 }
 
+fetch() {
+  wget --directory-prefix=$BASE_DIR \
+    https://op.oils.pub/aports-build/published.html
+  ls -l $BASE_DIR/published.html
+}
+
+hacky-tsv() {
+  gawk '
+  BEGIN {
+    printf("%s\t%s\n", "date", "num_disagree");
+  }
+  {
+    regex = "([0-9]{4}-[0-9]{2}-[0-9]{2}).*?<strong>([0-9]+)</strong>";
+    if (match($0, regex, arr)) {
+      date = arr[1]
+      disagree = arr[2]
+      printf("%s\t%s\n", date, disagree)
+      if (disagree == 12) {
+        exit
+      }
+    }
+  }
+  ' $BASE_DIR/published.html | tee $BASE_DIR/aports-disagree.tsv
+}
+
 do-all() {
   wwz-tsv
   spec-tsv
+
+  # aports disagreements
+  hacky-tsv
+
   make-plot
 }
 
