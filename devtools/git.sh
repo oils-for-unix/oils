@@ -74,4 +74,13 @@ error-if-untracked() {
   return 0
 }
 
+fetch-branch() {
+  local branch=${1:-fix-esrch-run-process}
+
+  git fetch https://github.com/lifeiscontent/oils.git $branch:$branch
+
+  # put it in our repo
+  git push origin $branch
+}
+
 "$@"
