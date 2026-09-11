@@ -105,12 +105,33 @@ def Header(meta, f, draft_warning=False):
     </p>
 ''')
 
+    f.write('''\
+      <div id="search"></div>
+      <hr />
+''')
+
 
 def Footer(meta, f):
     f.write('''\
     <div id="build-timestamp">
       <i>Generated on %(build_timestamp)s</i>
     </div>
+
+    <script>
+      const parts = window.location.pathname.split('/');
+      const docIndex = parts.indexOf('doc');
+      if (docIndex === -1) {
+        window.basePath = '.'; // If not found, assume we are at the root
+      } else {
+        window.basePath = parts.slice(0, docIndex).join('/');
+      }
+
+      // Load scripts irrespective of our location in the doc-tree
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.src = `${window.basePath}/web/search.js`;
+      document.body.appendChild(script);
+    </script>
   </body>
 </html>
 ''' % meta)

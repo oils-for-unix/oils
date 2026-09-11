@@ -392,6 +392,7 @@ gold              test/gold.sh soil-run                  -
 tools-deps        test/tools-deps.sh soil-run            -
 ninja-config      soil/worker.sh ninja-config            -
 docs              build/doc.sh soil-run                  _release/VERSION/index.html
+web-tests         web/TEST.sh soil-run                   -
 doc-metrics       echo no-op                             _release/VERSION/doc/metrics.txt
 check-docs        data_lang/htm8-test.sh soil-run        -
 EOF

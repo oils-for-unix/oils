@@ -1,7 +1,7 @@
 ---
 title: Data Notation Table of Contents
 all_docs_url: ..
-css_files: ../../web/base.css ../../web/manual.css ../../web/ref-index.css
+css_files: ../../web/base.css ../../web/manual.css ../../web/ref-index.css ../../web/search.css
 preserve_anchor_case: yes
 ---
 
