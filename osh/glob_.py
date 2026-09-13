@@ -1,7 +1,5 @@
 """Glob_.py."""
 
-import libc
-
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (CompoundWord, Token, word_part_e,
                                        glob_part, glob_part_e, glob_part_t,
@@ -13,7 +11,18 @@ from mycpp import mylib
 from mycpp.mylib import log
 from pylib import os_path
 
-from libc import GLOB_PERIOD, FNM_PATHNAME
+try:
+    import libc
+except ImportError:
+    libc = None
+
+try:
+    from libc import GLOB_PERIOD, FNM_PATHNAME
+except ImportError:
+    # Hack for Python 3
+    GLOB_PERIOD = -999
+    FNM_PATHNAME = -998
+
 from _devbuild.gen.value_asdl import value_e
 from _devbuild.gen.runtime_asdl import scope_e
 

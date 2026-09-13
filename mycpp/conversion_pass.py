@@ -235,14 +235,13 @@ class Pass(visitor.TypedVisitor):
         # Are we assuming we never do mylib.MaybeCollect() inside a
         # constructor?  We can check that too.
 
-        if current_method_name != '__init__':
-            # Add function params as locals, to be rooted
-            arg_types = o.type.arg_types
-            arg_names = [arg.variable.name for arg in o.arguments]
-            for name, typ in zip(arg_names, arg_types):
-                if name == 'self':
-                    continue
-                self.current_local_vars.append((name, typ))
+        # Add function params as locals, to be rooted
+        arg_types = o.type.arg_types
+        arg_names = [arg.variable.name for arg in o.arguments]
+        for name, typ in zip(arg_names, arg_types):
+            if name == 'self':
+                continue
+            self.current_local_vars.append((name, typ))
 
         # Traverse to collect member variables
         super().oils_visit_func_def(o, current_class_name, current_method_name)
@@ -255,11 +254,20 @@ class Pass(visitor.TypedVisitor):
         if c_iter_list_type is not None:
             self.yield_out_params[o] = ('YIELD', c_iter_list_type)
 
+    def oils_visit_constructor(
+            self, o: ClassDef, stmt: FuncDef, base_class_sym: util.SymbolPath,
+            current_class_name: Optional[util.SymbolPath]) -> None:
+        self.current_local_vars = []
+        super().oils_visit_constructor(o, stmt, base_class_sym, current_class_name)
+        self.all_local_vars[stmt] = self.current_local_vars
+
     def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
                                base_class_sym: util.SymbolPath) -> None:
+        self.current_local_vars = []
         self.inside_dunder_exit = o
         super().oils_visit_dunder_exit(o, stmt, base_class_sym)
         self.inside_dunder_exit = None
+        self.all_local_vars[stmt] = self.current_local_vars
 
     def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> None:
         # Mark special destructors

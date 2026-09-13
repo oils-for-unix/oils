@@ -16,7 +16,12 @@ from mycpp import mops
 from mycpp.mylib import log, tagswitch, iteritems, isinf_, isnan_
 from typing import cast, List, Dict
 
-import libc
+try:
+    import libc
+except ImportError:
+    # Hack for Python 3
+    # We don't need libc.wcswidth()
+    libc = None
 
 _ = log
 

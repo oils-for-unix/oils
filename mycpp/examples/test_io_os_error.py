@@ -76,7 +76,11 @@ class ctx_TerminalControl(object):
     def __init__(self):
         # type: () -> None
 
-        log('TerminalControl init')
+        # Test local variable logic
+        mylocal_constructor = 99
+        x = mylocal_constructor
+
+        log('TerminalControl init %d', x)
 
     def __enter__(self):
         # type: () -> None
@@ -84,7 +88,12 @@ class ctx_TerminalControl(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        log('TerminalControl exit')
+
+        # Test local variable logic
+        mylocal_destructor = 88
+        x = mylocal_destructor
+
+        log('TerminalControl exit %d', x)
 
         TestRethrow()
 
@@ -95,6 +104,12 @@ class ctx_TerminalControl(object):
         # double-exception situation or "throwing from destructor during stack
         # unwinding." Let's illustrate it with an example.
         log('Throw and Catch within destructor seems OK')
+
+        # Bug fix: make sure this is preserved
+        try:
+            log('try')
+        except ValueError:
+            log('ValueError')
 
 
 def TestDestructor():

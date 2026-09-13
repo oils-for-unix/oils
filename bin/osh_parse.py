@@ -92,12 +92,13 @@ def main(argv):
             src = source.MainFile(path)
             # This is like --ast-format none, which benchmarks/osh-helper.sh passes.
             pretty_print = False
+            #pretty_print = True
 
         else:
-            raise AssertionError()
+            raise AssertionError('len(argv) == 3')
 
     else:
-        raise AssertionError()
+        raise AssertionError('len(argv)')
 
     arena.PushSource(src)
 
@@ -120,7 +121,9 @@ def main(argv):
 
 if __name__ == '__main__':
     try:
-        main(sys.argv)
+        sys.exit(main(sys.argv))
     except RuntimeError as e:
+        # Uncomment to debug crashes
+        #raise
         print('FATAL: %s' % e, file=sys.stderr)
         sys.exit(1)

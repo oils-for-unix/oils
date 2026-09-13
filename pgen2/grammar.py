@@ -254,7 +254,7 @@ namespace grammar {
 }  // namespace grammar
 """)
 
-      MARSHAL_HEADER = 'PGEN2\n'  # arbitrary header
+      MARSHAL_HEADER = b'PGEN2\n'  # arbitrary header.  b'' added for Python 3
 
       def loads(self, s):
           # type: (str) -> None

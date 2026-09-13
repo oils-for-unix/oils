@@ -12,7 +12,11 @@ from display import ansi
 from core import pyutil
 from mycpp import mylib
 
-import libc
+try:
+    import libc
+except ImportError:
+    # Hack for Python 3
+    libc = None
 
 from typing import List, Optional
 

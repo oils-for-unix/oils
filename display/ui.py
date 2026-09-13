@@ -28,7 +28,13 @@ from frontend import lexer
 from frontend import location
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch, log
-import libc
+
+try:
+    import libc
+except ImportError:
+    # Hack for Python 3
+    # We don't need libc.wcswidth() ?
+    libc = None
 
 from typing import List, Tuple, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:

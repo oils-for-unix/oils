@@ -432,7 +432,7 @@ class Build(visitor.TypedVisitor):
         if o.expr:
             self.accept(o.expr)
 
-    def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> None:
+    def oils_visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> None:
         cfg = self.current_cfg()
         with pass_state.CfgBranchContext(cfg,
                                          self.current_statement_id) as try_ctx:

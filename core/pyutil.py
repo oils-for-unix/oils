@@ -8,7 +8,11 @@ from mycpp import mylib
 from pgen2 import grammar
 from pylib import os_path
 
-import posix_ as posix
+try:
+    import posix_ as posix
+except ImportError:
+    # Hack for Python 3
+    posix = None
 
 from typing import List, Union
 
@@ -102,7 +106,9 @@ class _FileResourceLoader(_ResourceLoader):
 
     def Get(self, rel_path):
         # type: (str) -> str
-        with open(os_path.join(self.root_dir, rel_path)) as f:
+
+        # grammar.marshal file is binary, so be explicit with 'rb' for Python 3
+        with open(os_path.join(self.root_dir, rel_path), 'rb') as f:
             contents = f.read()
         return contents
 
@@ -125,8 +131,15 @@ def IsAppBundle():
 
     As opposed to a "stock" Python interpreter.
     """
+    try:
+        environ = posix.environ
+    except AttributeError:
+        # Hack for Python 3
+        import os
+        environ = os.environ  # type: ignore
+
     # Ovm_Main in main.c sets this.
-    return posix.environ.get('_OVM_IS_BUNDLE') == '1'
+    return environ.get('_OVM_IS_BUNDLE') == '1'
 
 
 _loader = None  # type: _ResourceLoader
@@ -138,17 +151,24 @@ def GetResourceLoader():
     if _loader:
         return _loader
 
+    try:
+        environ = posix.environ
+    except AttributeError:
+        # Hack for Python 3
+        import os
+        environ = os.environ  # type: ignore
+
     if IsAppBundle():
-        ovm_path = posix.environ.get('_OVM_PATH')
+        ovm_path = environ.get('_OVM_PATH')
         _loader = _ZipResourceLoader(ovm_path)
 
         # Now clear them so we don't pollute the environment.  In Python, this
         # calls unsetenv().
-        del posix.environ['_OVM_IS_BUNDLE']
-        del posix.environ['_OVM_PATH']
+        del environ['_OVM_IS_BUNDLE']
+        del environ['_OVM_PATH']
 
-    elif posix.environ.get('_OVM_RESOURCE_ROOT'):  # Unit tests set this
-        root_dir = posix.environ.get('_OVM_RESOURCE_ROOT')
+    elif environ.get('_OVM_RESOURCE_ROOT'):  # Unit tests set this
+        root_dir = environ.get('_OVM_RESOURCE_ROOT')
         _loader = _FileResourceLoader(root_dir)
 
     else:

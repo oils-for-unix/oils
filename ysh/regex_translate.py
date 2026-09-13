@@ -29,7 +29,12 @@ from typing import List, Optional, TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import re_t
 
-from libc import REG_ICASE, REG_NEWLINE
+try:
+    from libc import REG_ICASE, REG_NEWLINE
+except ImportError:
+    # Hack for Python 3
+    REG_ICASE = -99
+    WUNTRACED = -98
 
 _ = log
 

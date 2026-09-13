@@ -601,9 +601,7 @@ class Decl(_Shared):
                                    current_method_name: Optional[str],
                                    at_global_scope: bool) -> None:
         # Declare constant strings.  They have to be at the top level.
-
-        # TODO: at_global_scope doesn't work for context managers and so forth
-        if self.indent == 0:
+        if at_global_scope:
             # Top level can't have foo.bar = baz
             assert isinstance(lval, NameExpr), lval
             if not util.SkipAssignment(lval.name):
@@ -841,9 +839,8 @@ class Impl(_Shared):
         self._WriteFuncParams(o, write_defaults=False)
 
         self.write(') ')
+
         arg_names = [arg.variable.name for arg in o.arguments]
-        #log('arg_names %s', arg_names)
-        #log('local_vars %s', self.local_vars[o])
         local_var_list: List[LocalVar] = []
         for (lval_name, lval_type) in self.local_vars[o]:
             local_var_list.append((lval_name, lval_type, lval_name
@@ -1673,7 +1670,7 @@ class Impl(_Shared):
                                    at_global_scope: bool) -> None:
 
         # GLOBAL CONSTANTS - Avoid Alloc<T>, since that can't be done until main().
-        if self.indent == 0:
+        if at_global_scope:
             assert isinstance(lval, NameExpr), lval
             if util.SkipAssignment(lval.name):
                 return
@@ -1744,12 +1741,6 @@ class Impl(_Shared):
             if callee_name == 'NewDict':
                 self.write_ind('')
 
-                # Hack for non-members - why does this work?
-                # Tests cases in mycpp/examples/containers.py
-                if (not isinstance(lval, MemberExpr) and
-                        self.current_func_node is None):
-                    self.write('auto* ')
-
                 self.accept(lval)
                 self.write(' = ')
                 self._AssignNewDictImpl(lval)  # uses lval, not rval
@@ -1768,7 +1759,6 @@ class Impl(_Shared):
 
         if isinstance(lval, NameExpr):
             lval_type = self._GetType(lval)
-            #c_type = GetCType(lval_type, local=self.indent != 0)
             c_type = GetCType(lval_type)
 
             if at_global_scope:
@@ -2452,6 +2442,12 @@ class Impl(_Shared):
         self._WriteFuncParams(stmt, write_defaults=False)
         self.write(')')
 
+        arg_names = [arg.variable.name for arg in stmt.arguments]
+        local_var_list: List[LocalVar] = []
+        for (lval_name, lval_type) in self.local_vars[stmt]:
+            local_var_list.append((lval_name, lval_type, lval_name
+                                   in arg_names))
+
         first_index = 0
 
         # Skip docstring
@@ -2503,6 +2499,9 @@ class Impl(_Shared):
                         'gHeap.PushRoot(reinterpret_cast<RawObject**>(&(this->%s)));\n'
                         % name)
 
+        # no roots?
+        self._WriteLocals(local_var_list, write_roots=False)
+
         for node in stmt.body.body[first_index:]:
             self.accept(node)
         self.indent -= 1
@@ -2522,12 +2521,20 @@ class Impl(_Shared):
                                base_class_sym: util.SymbolPath) -> None:
         self.write('\n')
 
+        arg_names = [arg.variable.name for arg in stmt.arguments]
+        local_var_list: List[LocalVar] = []
+        for (lval_name, lval_type) in self.local_vars[stmt]:
+            if lval_name in arg_names:
+                continue  # skip (type, value, traceback)
+            local_var_list.append((lval_name, lval_type, False))
+
         member_vars = self.all_member_vars[o]
 
         if o in self.dunder_exit_special:  # EARLY RETURN from destructor
             # Write ctx_exit()
             self.write_ind('void %s::ctx_EXIT() {\n', o.name)
             self.indent += 1
+            self._WriteLocals(local_var_list, write_roots=False)
             for node in stmt.body.body:
                 self.accept(node)
             self.indent -= 1
@@ -2546,6 +2553,7 @@ class Impl(_Shared):
             self.write_ind('%s::~%s() {\n', o.name, o.name)
 
             self.indent += 1
+            self._WriteLocals(local_var_list, write_roots=False)
             for node in stmt.body.body:
                 self.accept(node)
             self._WritePopRoots(member_vars)
@@ -2638,7 +2646,9 @@ class Impl(_Shared):
 
     # Statements
 
-    def _WriteLocals(self, local_var_list: List[LocalVar]) -> None:
+    def _WriteLocals(self,
+                     local_var_list: List[LocalVar],
+                     write_roots: bool = True) -> None:
         # TODO: put the pointers first, and then register a single StackRoots
         # record.
 
@@ -2688,7 +2698,7 @@ class Impl(_Shared):
 
         #self.log('roots %s', roots)
 
-        if len(roots):
+        if write_roots and len(roots):
             if (self.stack_roots_warn and len(roots) > self.stack_roots_warn):
                 log('WARNING: %s() has %d stack roots. Consider refactoring this function.'
                     % (self.current_func_node.fullname, len(roots)))
@@ -2837,7 +2847,7 @@ class Impl(_Shared):
             # raise without arg
             self.write_ind('throw;\n')
 
-    def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> None:
+    def oils_visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> None:
         self.write_ind('try ')
         self.accept(o.body)
         caught = False
