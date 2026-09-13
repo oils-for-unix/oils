@@ -3,7 +3,10 @@
 For ASDL circular dep involving prebuilt/
 """
 
-import fastfunc  # Skip pyj8 and fastlex
+try:
+    import fastfunc  # Skip pyj8 and fastlex
+except ImportError:
+    from pyext import py3_fastfunc as fastfunc
 
 
 def EncodeString(s, unquoted_ok=False):

@@ -4,7 +4,10 @@ from __future__ import print_function
 from mycpp import mylib
 from mycpp.mylib import log
 
-import fastfunc
+try:
+    import fastfunc
+except ImportError:
+    from pyext import py3_fastfunc as fastfunc
 
 _ = log
 

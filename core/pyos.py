@@ -16,8 +16,13 @@ from mycpp import iolib
 from mycpp import mops
 from mycpp.mylib import log
 
-import posix_ as posix
-from posix_ import WUNTRACED
+try:
+    import posix_ as posix
+    from posix_ import WUNTRACED
+except ImportError:
+    # Hack for Python 3
+    posix = None
+    WUNTRACED = -9999
 
 from typing import Optional, Tuple, List, Dict, cast, Any, TYPE_CHECKING
 if TYPE_CHECKING:

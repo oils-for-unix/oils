@@ -109,7 +109,11 @@ from osh import word_
 from osh import word_compile
 from mycpp.mylib import tagswitch
 
-from libc import HAVE_FNM_EXTMATCH
+try:
+    from libc import HAVE_FNM_EXTMATCH
+except ImportError:
+    # Hack for Python 3
+    HAVE_FNM_EXTMATCH = -98
 
 from typing import List, Optional, Tuple, cast
 from typing import TYPE_CHECKING

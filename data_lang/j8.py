@@ -37,7 +37,10 @@ from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, NewDict, log, isinf_, isnan_
 
-import fastfunc
+try:
+    import fastfunc
+except ImportError:
+    from pyext import py3_fastfunc as fastfunc
 
 _ = log
 

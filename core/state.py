@@ -35,8 +35,13 @@ from mycpp.mylib import (log, print_stderr, str_switch, tagswitch, iteritems,
                          NewDict)
 from pylib import os_path
 
-from libc import HAVE_GLOB_PERIOD
-import posix_ as posix
+try:
+    from libc import HAVE_GLOB_PERIOD
+    import posix_ as posix
+except ImportError:
+    # Hack for Python 3
+    HAVE_GLOB_PERIOD = -99
+    posix = None
 
 from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 

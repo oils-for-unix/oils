@@ -2,7 +2,12 @@
 os_path.py - Copy of code from Python's posixpath.py and genericpath.py.
 """
 
-import posix_ as posix
+try:
+    import posix_ as posix
+except ImportError:
+    # Hack for Python 3
+    # os_path.abspath() isn't pure - it calls getcwd()
+    posix = None
 
 from mycpp import mylib
 from typing import Tuple, List
