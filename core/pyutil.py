@@ -106,7 +106,9 @@ class _FileResourceLoader(_ResourceLoader):
 
     def Get(self, rel_path):
         # type: (str) -> str
-        with open(os_path.join(self.root_dir, rel_path)) as f:
+
+        # grammar.marshal file is binary, so be explicit with 'rb' for Python 3
+        with open(os_path.join(self.root_dir, rel_path), 'rb') as f:
             contents = f.read()
         return contents
 
