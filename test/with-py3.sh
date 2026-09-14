@@ -29,7 +29,7 @@ osh-parse-py3() {
 
 smoke() {
   #osh-py3 -n -c 'echo hi'
-  osh-parse-py3 -n -c 'echo hi'
+  osh-parse-py3 -c 'echo hi'
 }
  
 task-five "$@"
