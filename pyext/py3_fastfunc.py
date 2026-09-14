@@ -8,7 +8,8 @@ from typing import Tuple
 
 def J8EncodeString(s, j8_fallback): 
     # type: (str, int) -> str
-    raise NotImplementedError()
+    import json  # hacky stub
+    return json.dumps(s)
 
 def ShellEncodeString(s, ysh_fallback):
     # type: (str, int) -> str
@@ -24,4 +25,4 @@ def Utf8DecodeOne(s, start):
 
 def CanOmitQuotes(s):
     # type: (str) -> bool
-    raise NotImplementedError()
+    return False  # stub, everything quoted now?
