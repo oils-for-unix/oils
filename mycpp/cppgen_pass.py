@@ -819,6 +819,22 @@ class Impl(_Shared):
         # abstract method
         return 'define'
 
+    def _WriteLocalsAndBody(self, local_var_list: List[LocalVar], body):
+        """
+        Called by
+          oils_visit_func_def
+          oils_visit_constructor
+          oils_visit_dunder_exit
+        """
+        self.write('{\n')
+
+        self.indent += 1
+        self._WriteLocals(local_var_list)
+        self._WriteBody(body)
+        self.indent -= 1
+
+        self.write('}\n')
+
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
                             current_class_name: Optional[util.SymbolPath],
                             current_method_name: Optional[str]) -> None:
@@ -842,6 +858,7 @@ class Impl(_Shared):
         self._WriteFuncParams(o, write_defaults=False)
 
         self.write(') ')
+
         arg_names = [arg.variable.name for arg in o.arguments]
         #log('arg_names %s', arg_names)
         #log('local_vars %s', self.local_vars[o])
@@ -850,15 +867,7 @@ class Impl(_Shared):
             local_var_list.append((lval_name, lval_type, lval_name
                                    in arg_names))
 
-        self.write('{\n')
-
-        self.indent += 1
-        self._WriteLocals(local_var_list)
-        self._WriteBody(o.body.body)
-        self.indent -= 1
-
-        self.write('}\n')
-
+        self._WriteLocalsAndBody(local_var_list, o.body.body)
         self.current_func_node = None
 
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
@@ -1674,7 +1683,8 @@ class Impl(_Shared):
                                    at_global_scope: bool) -> None:
 
         # GLOBAL CONSTANTS - Avoid Alloc<T>, since that can't be done until main().
-        if self.indent == 0:
+        #if self.indent == 0:
+        if at_global_scope:
             assert isinstance(lval, NameExpr), lval
             if util.SkipAssignment(lval.name):
                 return
@@ -1747,9 +1757,9 @@ class Impl(_Shared):
 
                 # Hack for non-members - why does this work?
                 # Tests cases in mycpp/examples/containers.py
-                if (not isinstance(lval, MemberExpr) and
-                        self.current_func_node is None):
-                    self.write('auto* ')
+                #if (not isinstance(lval, MemberExpr) and
+                #        self.current_func_node is None):
+                #    self.write('auto* ')
 
                 self.accept(lval)
                 self.write(' = ')
@@ -2453,6 +2463,12 @@ class Impl(_Shared):
         self._WriteFuncParams(stmt, write_defaults=False)
         self.write(')')
 
+        arg_names = [arg.variable.name for arg in stmt.arguments]
+        local_var_list: List[LocalVar] = []
+        for (lval_name, lval_type) in self.local_vars[stmt]:
+            local_var_list.append((lval_name, lval_type, lval_name
+                                   in arg_names))
+
         first_index = 0
 
         # Skip docstring
@@ -2504,6 +2520,9 @@ class Impl(_Shared):
                         'gHeap.PushRoot(reinterpret_cast<RawObject**>(&(this->%s)));\n'
                         % name)
 
+        # no roots?
+        self._WriteLocals(local_var_list, write_roots=False)
+
         for node in stmt.body.body[first_index:]:
             self.accept(node)
         self.indent -= 1
@@ -2523,12 +2542,20 @@ class Impl(_Shared):
                                base_class_sym: util.SymbolPath) -> None:
         self.write('\n')
 
+        arg_names = [arg.variable.name for arg in stmt.arguments]
+        local_var_list: List[LocalVar] = []
+        for (lval_name, lval_type) in self.local_vars[stmt]:
+            if lval_name in arg_names:
+                continue  # skip (type, value, traceback)
+            local_var_list.append((lval_name, lval_type, False))
+
         member_vars = self.all_member_vars[o]
 
         if o in self.dunder_exit_special:  # EARLY RETURN from destructor
             # Write ctx_exit()
             self.write_ind('void %s::ctx_EXIT() {\n', o.name)
             self.indent += 1
+            self._WriteLocals(local_var_list, write_roots=False)
             for node in stmt.body.body:
                 self.accept(node)
             self.indent -= 1
@@ -2547,6 +2574,7 @@ class Impl(_Shared):
             self.write_ind('%s::~%s() {\n', o.name, o.name)
 
             self.indent += 1
+            self._WriteLocals(local_var_list, write_roots=False)
             for node in stmt.body.body:
                 self.accept(node)
             self._WritePopRoots(member_vars)
@@ -2639,7 +2667,7 @@ class Impl(_Shared):
 
     # Statements
 
-    def _WriteLocals(self, local_var_list: List[LocalVar]) -> None:
+    def _WriteLocals(self, local_var_list: List[LocalVar], write_roots=True) -> None:
         # TODO: put the pointers first, and then register a single StackRoots
         # record.
 
@@ -2689,7 +2717,7 @@ class Impl(_Shared):
 
         #self.log('roots %s', roots)
 
-        if len(roots):
+        if write_roots and len(roots):
             if (self.stack_roots_warn and len(roots) > self.stack_roots_warn):
                 log('WARNING: %s() has %d stack roots. Consider refactoring this function.'
                     % (self.current_func_node.fullname, len(roots)))

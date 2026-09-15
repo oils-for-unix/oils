@@ -298,11 +298,11 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                 # shouldn't happen
                 raise AssertionError(b)
 
-        #self.__at_global_scope = False
+        self.__at_global_scope = False
         self.__current_class_name = SplitPyName(o.fullname)
         self.oils_visit_class_def(o, base_class_sym, self.__current_class_name)
         self.__current_class_name = None
-        #self.__at_global_scope = True
+        self.__at_global_scope = True
 
     # Statements
 
@@ -323,7 +323,7 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
             if lval.name == '__all__':
                 return
 
-            # Special case for
+            # Special case: x = [y for y in z]
             if isinstance(o.rvalue, ListComprehension):
                 self.visit_assign_to_listcomp(o, lval)
                 return
