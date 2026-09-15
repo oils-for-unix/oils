@@ -601,9 +601,6 @@ class Decl(_Shared):
                                    current_method_name: Optional[str],
                                    at_global_scope: bool) -> None:
         # Declare constant strings.  They have to be at the top level.
-
-        # TODO: at_global_scope doesn't work for context managers and so forth
-        #if self.indent == 0:
         if at_global_scope:
             # Top level can't have foo.bar = baz
             assert isinstance(lval, NameExpr), lval
@@ -819,22 +816,6 @@ class Impl(_Shared):
         # abstract method
         return 'define'
 
-    def _WriteLocalsAndBody(self, local_var_list: List[LocalVar], body):
-        """
-        Called by
-          oils_visit_func_def
-          oils_visit_constructor
-          oils_visit_dunder_exit
-        """
-        self.write('{\n')
-
-        self.indent += 1
-        self._WriteLocals(local_var_list)
-        self._WriteBody(body)
-        self.indent -= 1
-
-        self.write('}\n')
-
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef',
                             current_class_name: Optional[util.SymbolPath],
                             current_method_name: Optional[str]) -> None:
@@ -860,14 +841,20 @@ class Impl(_Shared):
         self.write(') ')
 
         arg_names = [arg.variable.name for arg in o.arguments]
-        #log('arg_names %s', arg_names)
-        #log('local_vars %s', self.local_vars[o])
         local_var_list: List[LocalVar] = []
         for (lval_name, lval_type) in self.local_vars[o]:
             local_var_list.append((lval_name, lval_type, lval_name
                                    in arg_names))
 
-        self._WriteLocalsAndBody(local_var_list, o.body.body)
+        self.write('{\n')
+
+        self.indent += 1
+        self._WriteLocals(local_var_list)
+        self._WriteBody(o.body.body)
+        self.indent -= 1
+
+        self.write('}\n')
+
         self.current_func_node = None
 
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
@@ -1683,7 +1670,6 @@ class Impl(_Shared):
                                    at_global_scope: bool) -> None:
 
         # GLOBAL CONSTANTS - Avoid Alloc<T>, since that can't be done until main().
-        #if self.indent == 0:
         if at_global_scope:
             assert isinstance(lval, NameExpr), lval
             if util.SkipAssignment(lval.name):
@@ -1755,12 +1741,6 @@ class Impl(_Shared):
             if callee_name == 'NewDict':
                 self.write_ind('')
 
-                # Hack for non-members - why does this work?
-                # Tests cases in mycpp/examples/containers.py
-                #if (not isinstance(lval, MemberExpr) and
-                #        self.current_func_node is None):
-                #    self.write('auto* ')
-
                 self.accept(lval)
                 self.write(' = ')
                 self._AssignNewDictImpl(lval)  # uses lval, not rval
@@ -1779,7 +1759,6 @@ class Impl(_Shared):
 
         if isinstance(lval, NameExpr):
             lval_type = self._GetType(lval)
-            #c_type = GetCType(lval_type, local=self.indent != 0)
             c_type = GetCType(lval_type)
 
             if at_global_scope:
