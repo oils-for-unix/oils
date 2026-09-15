@@ -6,7 +6,7 @@ For ASDL circular dep involving prebuilt/
 try:
     import fastfunc  # Skip pyj8 and fastlex
 except ImportError:
-    from pyext import py3_fastfunc as fastfunc  # type: ignore
+    from pyext import fastfunc_py3 as fastfunc  # type: ignore
 
 
 def EncodeString(s, unquoted_ok=False):

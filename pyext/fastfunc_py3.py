@@ -1,5 +1,5 @@
 """
-py3_fastfunc.py
+fastfunc_py3.py
 
 Python 3 stub - based on fastfunc.pyi
 """

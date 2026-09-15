@@ -7,7 +7,7 @@ from mycpp.mylib import log
 try:
     import fastfunc
 except ImportError:
-    from pyext import py3_fastfunc as fastfunc
+    from pyext import fastfunc_py3 as fastfunc  # type: ignore
 
 _ = log
 
