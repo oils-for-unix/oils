@@ -136,7 +136,7 @@ def IsAppBundle():
     except AttributeError:
         # Hack for Python 3
         import os
-        environ = os.environ
+        environ = os.environ  # type: ignore
 
     # Ovm_Main in main.c sets this.
     return environ.get('_OVM_IS_BUNDLE') == '1'
@@ -156,7 +156,7 @@ def GetResourceLoader():
     except AttributeError:
         # Hack for Python 3
         import os
-        environ = os.environ
+        environ = os.environ  # type: ignore
 
     if IsAppBundle():
         ovm_path = environ.get('_OVM_PATH')
