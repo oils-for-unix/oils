@@ -2646,7 +2646,9 @@ class Impl(_Shared):
 
     # Statements
 
-    def _WriteLocals(self, local_var_list: List[LocalVar], write_roots=True) -> None:
+    def _WriteLocals(self,
+                     local_var_list: List[LocalVar],
+                     write_roots=True) -> None:
         # TODO: put the pointers first, and then register a single StackRoots
         # record.
 
