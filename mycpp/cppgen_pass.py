@@ -603,7 +603,8 @@ class Decl(_Shared):
         # Declare constant strings.  They have to be at the top level.
 
         # TODO: at_global_scope doesn't work for context managers and so forth
-        if self.indent == 0:
+        #if self.indent == 0:
+        if at_global_scope:
             # Top level can't have foo.bar = baz
             assert isinstance(lval, NameExpr), lval
             if not util.SkipAssignment(lval.name):
@@ -2837,7 +2838,7 @@ class Impl(_Shared):
             # raise without arg
             self.write_ind('throw;\n')
 
-    def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> None:
+    def oils_visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> None:
         self.write_ind('try ')
         self.accept(o.body)
         caught = False

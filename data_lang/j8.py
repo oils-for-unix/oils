@@ -40,7 +40,7 @@ from mycpp.mylib import tagswitch, iteritems, NewDict, log, isinf_, isnan_
 try:
     import fastfunc
 except ImportError:
-    from pyext import py3_fastfunc as fastfunc
+    from pyext import py3_fastfunc as fastfunc  # type: ignore
 
 _ = log
 

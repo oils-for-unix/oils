@@ -96,6 +96,12 @@ class ctx_TerminalControl(object):
         # unwinding." Let's illustrate it with an example.
         log('Throw and Catch within destructor seems OK')
 
+        # Bug fix: make sure this is preserved
+        try:
+            log('try')
+        except ValueError:
+            log('ValueError')
+
 
 def TestDestructor():
     # type: () -> None
