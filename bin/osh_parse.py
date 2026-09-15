@@ -121,7 +121,7 @@ def main(argv):
 
 if __name__ == '__main__':
     try:
-        main(sys.argv)
+        sys.exit(main(sys.argv))
     except RuntimeError as e:
         # Uncomment to debug crashes
         #raise

@@ -145,6 +145,7 @@ asdl-compiler       devtools/types.sh check-asdl-compiler        -
 asdl-py-output      asdl/TEST.sh check-py-output                 -
 mycpp-compiler      devtools/types.sh assert-mycpp               -
 unit                test/unit.sh minimal                         _test/py-unit/
+with-py3            test/with-py3.sh soil-run                    -
 lossless            test/lossless.sh soil-run                    -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh soil-run-py           -
