@@ -223,7 +223,6 @@ readonly HAVE_ROOT=1
 readonly -a MORE_TESTS=(
   process-table
   gold 
-  ysh-ify
   parse-errors runtime-errors
   ysh-runtime-errors
   ysh-parse-errors
@@ -261,9 +260,13 @@ EOF
     test/$name.sh run-for-release
   done
 
+  # Tests in different dirs
+
   ysh/run.sh run-for-release
 
   data_lang/j8-errors.sh run-for-release
+
+  tools/ysh-ify-test.sh run-for-release
 }
 
 _spec-sanity-check() {
