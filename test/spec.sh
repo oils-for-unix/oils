@@ -342,6 +342,10 @@ here-doc() {
   test/spec-py.sh run-file here-doc "$@"
 }
 
+history-expand() {
+  test/spec-py.sh run-file history-expand "$@"
+}
+
 if_() {
   test/spec-py.sh run-file if_ "$@"
 }

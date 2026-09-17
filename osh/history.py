@@ -12,6 +12,7 @@ from core import util
 from frontend import location
 from frontend import match
 from frontend import reader
+from mycpp import mylib
 
 from typing import List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -188,6 +189,6 @@ class Evaluator(object):
             parts.append(out)
 
         line = ''.join(parts)
-        # show what we expanded to
-        print('! %s' % line)
+        # Show what was expanded
+        mylib.print_stderr('! %s' % line)
         return line
