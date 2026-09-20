@@ -20,7 +20,6 @@ namespace py_readline {
 
 static Readline* gReadline = nullptr;
 
-// Assuming readline 4.0+
 #if HAVE_READLINE
 
 static char* do_complete(const char* text, int state) {
@@ -42,7 +41,9 @@ static char* do_complete(const char* text, int state) {
 
 static char** completion_handler(const char* text, int start, int end) {
   rl_completion_append_character = '\0';
+  #if HAVE_READLINE_COMPLETION_SUPPRESS_APPEND
   rl_completion_suppress_append = 0;
+  #endif
   gReadline->begidx_ = start;
   gReadline->endidx_ = end;
   return rl_completion_matches(text,
@@ -64,6 +65,24 @@ static void display_matches_hook(char** matches, int num_matches,
                                   max_length);
 }
 
+static void free_history_entry_portable(HIST_ENTRY* entry) {
+  // See also: https://github.com/python/cpython/issues/53695
+  #if HAVE_READLINE_FREE_HISTORY_ENTRY
+  // GNU Readline 5.0+
+  histdata_t data = free_history_entry(entry);
+  free(data);
+  #else
+  // libedit or older Readline
+  if (entry->line) {
+    free((void*)entry->line);
+  }
+  if (entry->data) {
+    free(entry->data);
+  }
+  free(entry);
+  #endif
+}
+
 #endif
 
 Readline::Readline()
@@ -82,9 +101,13 @@ Readline::Readline()
   rl_bind_key_in_map('\t', rl_complete, emacs_meta_keymap);
   rl_bind_key_in_map('\033', rl_complete, emacs_meta_keymap);
   rl_attempted_completion_function = completion_handler;
+  #if HAVE_READLINE_COMPLETION_DISPLAY_MATCHES_HOOK
   rl_completion_display_matches_hook = display_matches_hook;
+  #endif
+  #if HAVE_READLINE_CATCH
   rl_catch_signals = 0;
   rl_catch_sigwinch = 0;
+  #endif
   rl_initialize();
 #else
   assert(0);  // not implemented
@@ -121,7 +144,9 @@ BigStr* readline(BigStr* prompt) {
       if (errno == EINTR && iolib::gSignalSafe->PollSigInt()) {
         // User is trying to cancel. Abort and cleanup readline state.
         rl_free_line_state();
+  #if HAVE_READLINE_CALLBACK_SIGCLEANUP
         rl_callback_sigcleanup();
+  #endif
         rl_cleanup_after_signal();
         rl_callback_handler_remove();
         throw Alloc<KeyboardInterrupt>();
@@ -234,6 +259,10 @@ void Readline::set_completer_delims(BigStr* delims) {
 #if HAVE_READLINE
   completer_delims_ = StrFromC(delims->data(), len(delims));
   rl_completer_word_break_characters = completer_delims_->data();
+
+  // for compatibility with libedit, see
+  // https://github.com/python/cpython/issues/112105
+  rl_basic_word_break_characters = completer_delims_->data();
 #else
   assert(0);  // not implemented
 #endif
@@ -274,7 +303,7 @@ int Readline::get_endidx() {
 
 void Readline::clear_history() {
 #if HAVE_READLINE
-  rl_clear_history();
+  ::clear_history();
 #else
   assert(0);  // not implemented
 #endif
@@ -286,8 +315,7 @@ void Readline::remove_history_item(int pos) {
   if (!entry) {
     throw Alloc<ValueError>(StrFormat("No history item at position %d", pos));
   }
-  histdata_t data = free_history_entry(entry);
-  free(data);
+  free_history_entry_portable(entry);
 #else
   assert(0);  // not implemented
 #endif
@@ -317,7 +345,7 @@ int Readline::get_current_history_length() {
 }
 
 void Readline::resize_terminal() {
-#if HAVE_READLINE
+#if HAVE_READLINE && HAVE_READLINE_RESIZE_TERMINAL
   rl_resize_terminal();
 #else
   assert(0);  // not implemented
@@ -326,7 +354,7 @@ void Readline::resize_terminal() {
 
 // bind fns
 void Readline::list_funmap_names() {
-#if HAVE_READLINE
+#if HAVE_READLINE && HAVE_READLINE_LIST_FUNMAP_NAMES
   rl_list_funmap_names();
 #else
   assert(0);  // not implemented

@@ -1,3 +1,7 @@
+/* line_input.c is an internal oils-for-unix fork of Python-2.7.13/Modules/readline.c.
+ * It is only used by pure-Python oils-ref. For C++ implementation, see cpp/frontend_pyreadline.cc.
+ */
+
 /* This module makes GNU readline available to Python.  It has ideas
  * contributed by Lee Busby, LLNL, and William Magro, Cornell Theory
  * Center.  The completer interface was inspired by Lele Gaifax.  More
