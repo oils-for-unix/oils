@@ -47,13 +47,15 @@ class ParseHay(vm._Callable):
 
         # TODO: need to close the file!
         try:
-            f = self.fd_state.Open(path)
+            f, fd = self.fd_state.Open(path, persistent=True)
         except (IOError, OSError) as e:
             msg = posix.strerror(e.errno)
             raise error.Expr("Couldn't open %r: %s" % (path, msg), call_loc)
 
         arena = self.parse_ctx.arena
-        line_reader = reader.FileLineReader(f, arena)
+        file_line_reader = reader.FileLineReader(f, arena)
+        line_reader = file_line_reader
+        self.fd_state.SetCallback(fd, file_line_reader)
 
         parse_opts = state.MakeYshParseOpts()
         # Note: runtime needs these options and totally different memory
