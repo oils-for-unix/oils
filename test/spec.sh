@@ -194,6 +194,10 @@ builtin-read() {
   test/spec-py.sh run-file builtin-read "$@"
 }
 
+builtin-random() {
+  test/spec-py.sh run-file builtin-random "$@"
+}
+
 builtin-set() {
   test/spec-py.sh run-file builtin-set "$@"
 }
