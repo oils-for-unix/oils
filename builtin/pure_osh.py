@@ -382,6 +382,16 @@ class Hash(vm._Builtin):
         arg = arg_types.hash(attrs.attrs)
 
         rest = arg_r.Rest()
+        if '-p' in attrs.attrs:
+            if len(rest) != 2:
+                e_usage('hash -p requires exactly two arguments', loc.Missing)
+            path, cmd = rest
+            import os
+            if not os.path.isfile(path):
+                print_stderr('hash: %r does not exist' % path)
+                return 1
+            self.search_path._cache[cmd] = path
+            return 0
         if arg.r:
             if len(rest):
                 e_usage('got extra arguments after -r', loc.Missing)

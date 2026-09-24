@@ -91,6 +91,7 @@ SHOPT_SPEC.ShortFlag('-q')  # query option settings
 
 HASH_SPEC = FlagSpec('hash')
 HASH_SPEC.ShortFlag('-r')
+HASH_SPEC.ShortFlag('-p', args.String)
 
 ECHO_SPEC = FlagSpec('echo')
 ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
