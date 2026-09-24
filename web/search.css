@@ -1,0 +1,15 @@
+#search > ul {
+  margin-top: 8px;
+  width: 100%;
+}
+
+#search input {
+  padding-right: 4px;
+  width: 100%;
+  border: 1px solid #EEE;
+
+  padding: 4px 8px;
+
+  background-color: #EEE;
+  color: #444;
+}

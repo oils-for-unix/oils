@@ -995,7 +995,7 @@ Then the output will look like:
     ^~~~~~~~~~~
 ``` 
 
-### io
+## io
 
 ### stdin
 

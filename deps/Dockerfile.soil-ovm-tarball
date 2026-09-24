@@ -72,8 +72,12 @@ COPY --chown=uke \
 
 COPY build/common.sh /home/uke/tmp/build/common.sh
 COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
+COPY deps/from-binary.sh /home/uke/tmp/deps/from-binary.sh
 
 # For bootstrapping the OVM build
 RUN deps/from-tar.sh layer-cpython
+
+# For doc tests
+RUN deps/from-binary.sh layer-nodejs
 
 CMD ["sh", "-c", "echo 'hello from oilshell/ovm-tarball'"]
