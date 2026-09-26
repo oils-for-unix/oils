@@ -10,7 +10,6 @@
 #   $0 write-all-reports
 #   $0 make-wwz _tmp/aports-report/2025-08-03
 #   $0 deploy-wwz-op _tmp/aports-report/2025-08-03.wwz   # deploy to op.oils.pub
-set -x
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
@@ -612,6 +611,20 @@ db-to-tsv() {
   " | sqlite-tabs-headers $db >$table_name.schema.tsv
 }
 
+merge-diffs() {
+  local epoch_dir=${1:-_tmp/aports-report/2025-10-15-main}
+  local do_disagree=${2:-}
+
+  local -a shards
+  if test -n "$do_disagree"; then
+    shards=( $epoch_dir/disagree-2* )  # Usually 1 shard
+  else
+    shards=( $epoch_dir/shard* )
+  fi
+
+  merge-diffs-shards "$epoch_dir" "${shards[@]}"
+}
+
 merge-diffs-sql() {
   local -a SHARDS=( "$@" )
 
@@ -657,25 +670,16 @@ merge-diffs-sql() {
   cat regtest/aports/merge.sql
 }
 
-merge-diffs() {
-  local epoch_dir=${1:-_tmp/aports-report/2025-10-15-main}
-  local do_disagree=${2:-}
+merge-diffs-shards() {
+  local epoch_dir=$1
+  shift
+  local -a shards=( "$@" )
 
   local db=$PWD/$epoch_dir/diff_merged.db
   rm -f $db
 
-  local -a shards
-  if test -n "$do_disagree"; then
-    # Hack: distinguish disagree-2025 from disagree-packages.txt
-    shards=( $epoch_dir/disagree-2* )  # Usually 1 shard
-  else
-    shards=( $epoch_dir/shard* )
-  fi
-
-  echo SHARDS "${shards[@]}"
-
   merge-diffs-sql "${shards[@]}" | sqlite3 $db
-  #echo $db
+  echo $db
 
   # copied from above
   pushd $epoch_dir > /dev/null
@@ -747,7 +751,8 @@ write-debian-reports() {
   local epoch_dir=${1:-_tmp/debian-build/2026-03-17}
   write-shard-reports "$epoch_dir"
 
-  merge-diffs "$epoch_dir"
+  # treat root dirs as "shards", since debian doesnt really have shards yet
+  merge-diffs-shards "$epoch_dir" "$epoch_dir"
 }
 
 write-all-reports() {
