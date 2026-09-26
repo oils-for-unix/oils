@@ -12,28 +12,29 @@
 
 . regtest/debian-common.ysh
 
-proc create-package-layer(package) {
-    mkdir -p $DEBIAN_ROOT/package-overlays
-    var package_layer_dir = "$DEBIAN_ROOT/package-overlays/$package.overlay"
-    rm -rf $package_layer_dir
+proc create-package-layer(package, config) {
+    mkdir -p $DEBIAN_ROOT/package-overlays/$config
+    var package_layer_dir = "$DEBIAN_ROOT/package-overlays/$config/$package.overlay"
+    sudo umount -R $package_layer_dir/merged || true
+    sudo rm -rf $package_layer_dir
     mkdir -v -p $package_layer_dir/{merged,work,layer}
 }
 
-proc remove-package-layer(package) {
-    var dir=DEBIAN_ROOT ++ '/package-overlays/' ++ package ++ '.overlay'
+proc remove-package-layer(package, config) {
+    var dir="$DEBIAN_ROOT/package-overlays/$config/$package.overlay"
     sudo umount $dir/merged || true
     sudo rm -rf $dir
 }
 
-proc setup-package-layer(package, base) {
-    var package_dir = "$DEBIAN_ROOT/package-overlays/$package.overlay"
+proc setup-package-layer(package, config) {
+    var package_dir = "$DEBIAN_ROOT/package-overlays/$config/$package.overlay"
     var lower_dir = ''
-    if(base === 'baseline') {
+    if(config === 'baseline') {
         setvar lower_dir = CHROOT_DIR
-    } elif (base === 'osh-as-sh') {
+    } elif (config === 'osh-as-sh') {
         setvar lower_dir=DEBIAN_ROOT ++ '/osh-as-sh.overlay/merged'
     } else {
-        echo "Error: $base is not a valid option"
+        echo "Error: $config is not a valid option"
         return 1
     }
     # -o index=off fixes this error: fsconfig() failed: Stale file handle
@@ -46,39 +47,41 @@ proc setup-package-layer(package, base) {
       $package_dir/merged
 }
 
-proc enter-package-layer(package, cmd) {
-  sudo chroot $DEBIAN_ROOT/package-overlays/$package.overlay/merged /bin/bash -l -c $cmd   
+proc enter-package-layer(package, config, cmd) {
+  sudo chroot "$DEBIAN_ROOT/package-overlays/$config/$package.overlay/merged" /bin/bash -l -c $cmd
 }
 
-proc build-package(package) {
+proc build-package(package, config) {
     var cd='cd /home/udu;'
-    enter-package-layer $package "apt-get update"
-    enter-package-layer $package "$cd apt-get source $package"
-    enter-package-layer $package "$cd cd $package-*; apt-get build-dep -y $package; dpkg-buildpackage -us -uc -b"
+    # enter-package-layer $package "apt-get update"
+    # enter-package-layer $package "$cd apt-get source $package"
+    # enter-package-layer $package "$cd cd $package-*; apt-get build-dep -y $package; dpkg-buildpackage -us -uc -b"
+    enter-package-layer $package $config "$cd ./aports-guest.sh build-one-package $package" 
 }
 
 proc osh-package-build(package) {
     try {
         remove-package-layer $package
     }
-    create-package-layer $package
+    create-package-layer $package osh-as-sh
     setup-package-layer $package osh-as-sh
-    build-package $package
+    build-package $package osh-as-sh
 }
 
 proc baseline-package-build(package) {
     try {
         remove-package-layer $package
     }
-    create-package-layer $package
+    create-package-layer $package baseline
     setup-package-layer $package baseline
-    build-package $package
+    build-package $package baseline
 }
-
 
 proc build-many() {
     # jq, vim baseline failed
     # 'neofetch', not available
+    #
+    # nmap installing deps fails, after giving errors about /proc and /sys not being mounted
     var packages = [
       # 'hello', 'cowsay', 'fortune-mod', 'figlet', 'htop',
       # 'tree', 'jq',
@@ -88,7 +91,8 @@ proc build-many() {
       # 'file', 'zip', 'unzip', 'rsync', 'ncdu',
       # 'sl', 'lolcat',
       # 'bsdmainutils', 'dnsutils',
-      'net-tools', 'iputils-ping', 'traceroute', 'nmap', 'telnet',
+      # 'net-tools', 'iputils', 'traceroute',
+      'inetutils',
       'ftp', 'sqlite3', 'redis-tools', 'git', 'make',
       'patch', 'diffutils', 'coreutils', 'sed', 'gawk',
       'grep', 'findutils', 'tar', 'gzip', 'bzip2',
@@ -96,11 +100,92 @@ proc build-many() {
     ]
 
     for package in (packages) {
-        baseline-package-build $package
-        echo "baseline for $package succesful"
-        osh-package-build $package
-        echo "osh-as-sh for $package succesful"
+        try {
+            baseline-package-build $package
+            save-package-files $package baseline
+            echo "baseline for $package succesful"
+            osh-package-build $package
+            save-package-files $package osh-as-sh
+            echo "osh-as-sh for $package succesful"
+            remove-package-layer $package baseline
+            remove-package-layer $package osh-as-sh
+        }
     }
+}
+
+proc save-package-files(package, config) {
+  ### Copy some files from _regtest/debian-build/package-layers/ -> _tmp/debian-build
+  # TODO: distinguish between baseline and osh-as-sh?
+  var layer_dir = "_regtest/debian-build/package-overlays/$config/$package.overlay/merged"
+  var dest_dir = "$BASE_DIR/$(date -I)/$config"
+
+  mkdir -p $dest_dir/{deb,layer,task,log,test-suite}
+
+  cp $layer_dir/home/udu/_tmp/aports-guest/$package.task.tsv \
+     $dest_dir/task/
+
+  abridge-logs $layer_dir/home/udu $dest_dir
+
+  # in aports the md5sum of the .apk file was reported.
+  # but here in debian many .deb files get generated from a package and it will be
+  # difficult to determine what the "main" .deb file is, so for now i skip
+  # reporting the md5sumuntil there is a clear need
+  # try {
+    # md5sum $layer_dir/home/udu/*.deb > $dest_dir/deb/$package.deb.txt 2> /dev/null
+  # }
+
+  var tombstone = $(find $layer_dir -printf '%s %P\n' 2> /dev/null | head -n 1000)
+  echo $tombstone > $dest_dir/layer/$package.tombstone.txt
+  echo "save done"
+}
+
+proc abridge-logs(src_dir, dest_dir) {
+    var log_dest_dir = "$dest_dir/log"
+    mkdir -p $log_dest_dir
+    var test_suite_dest_dir = "$dest_dir/test-suite"
+
+    var logs = $(find $src_dir -type f -name '*.log.txt' -a -printf '%s\t%P\n' 2> /dev/null || true)
+    if test -n $logs {
+        echo $logs | while read -r size path {
+          var src = "$src_dir/$path"
+          var filename = ${path##*/}
+          var dest = "$log_dest_dir/$filename"
+          abridge-one-log $src $dest
+        }
+    }
+
+    # This assumes a package is built in /home/udu.
+    # Log files will be at /home/udu/_tmp/aports-guest/hello.log.txt
+    # and at /home/udu/hello-2.10/test-suite.log
+    # And potentially other places?
+    # if you pass *package_overlay*/merged/home/udu as $src_dir everything should be fine
+    setvar logs = $(find $src_dir -name 'test-suite.log' -a -printf '%P\n' 2> /dev/null || true)
+    if test -n $logs {
+        echo $logs | while read -r path {
+          setvar src = "$src_dir/$path"
+          # There is probably a more YSH way to do this with a regex:
+          var package_name=${path%%/*}                 # hello-2.10
+          setvar package_name=${package_name%-[0-9]*}  # hello
+
+          setvar dest= "$test_suite_dest_dir/$package_name/test-suite.log.txt"
+
+          mkdir -p "$(dirname $dest)"
+          cp -v --no-target-directory $src $dest
+        }
+    }
+
+    # TODO: does debian generate more interesting files to look for? F.e. Testing/ for CMake tests?
+}
+
+proc abridge-one-log(src, dest) {
+  var log_size = $(stat --format '%s' $src)
+  if test $log_size -lt $LOG_SIZE_THRESHOLD {
+    cp $src $dest
+  } else {
+    echo "*** This log is abridged to its last $LOG_SIZE_THRESHOLD bytes" > $dest
+    echo "" >> $dest
+    tail --bytes $LOG_SIZE_THRESHOLD $src >> $dest
+  }
 }
 
 runproc @ARGV

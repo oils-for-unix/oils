@@ -64,6 +64,7 @@ proc oils-in-chroot() {
   # test-time-tsv
   copy-oils
   build-oils
+  copy-osh-deps
 }
 
 proc copy-oils() {
@@ -75,6 +76,14 @@ proc copy-oils() {
   popd
 
   change-perms "$dest/oils-for-unix-0.37.0"
+}
+
+proc copy-osh-deps() {
+  build/py.sh time-helper
+  cp -r devtools $CHROOT_HOME_DIR/
+  cp -r benchmarks $CHROOT_HOME_DIR/
+  cp -r _devbuild $CHROOT_HOME_DIR/
+  cp regtest/aports-guest.sh $CHROOT_HOME_DIR/  
 }
 
 proc build-oils() {
@@ -207,7 +216,10 @@ proc add-build-deps() {
 }
 
 proc mount-host-dirs() {
-  sudo mount --bind /proc $CHROOT_DIR/proc
+  sudo mount --bind /proc     $CHROOT_DIR/proc
+  sudo mount --bind /sys      $CHROOT_DIR/sys
+  sudo mount --bind /dev      $CHROOT_DIR/dev
+  sudo mount --bind /dev/pts  $CHROOT_DIR/dev/pts
 }
 
 proc config-chroot() {

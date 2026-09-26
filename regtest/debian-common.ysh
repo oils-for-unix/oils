@@ -5,8 +5,10 @@ const CHROOT_DIR = DEBIAN_ROOT ++ '/chroot'
 
 const CHROOT_HOME_DIR= CHROOT_DIR ++ '/home/udu'
 
+const LOG_SIZE_THRESHOLD=500 * 1000
+
 # For he.oils.pub
-# readonly BASE_DIR=_tmp/aports-build
+const BASE_DIR='_tmp/debian-build'
 
 # For localhost
 # readonly REPORT_DIR=_tmp/aports-report
