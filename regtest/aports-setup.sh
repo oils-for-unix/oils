@@ -120,7 +120,7 @@ patch-aports() {
 }
 
 # 2025-11-16: fresh run
-readonly TARBALL_ID='10856'
+readonly TARBALL_ID='11175'
 
 download-oils() {
   local tarball_id=${1:-$TARBALL_ID}

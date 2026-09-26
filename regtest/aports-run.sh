@@ -621,7 +621,7 @@ make-shard-tree() {
   local a_repo=${2:-main}
   local epoch=${3:-$APORTS_EPOCH}
 
-  local shard_dir=_chroot/$shard_name
+  # local shard_dir=_chroot/$shard_name
 
   for config in baseline osh-as-sh; do
     local dest_dir=$BASE_DIR/$epoch/$shard_name/$config
@@ -649,13 +649,13 @@ make-shard-tree() {
     # We want to
 
     time python3 devtools/tsv_concat.py \
-      $shard_dir/$config/*/home/udu/oils/_tmp/aports-guest/*.task.tsv > $dest_dir/tasks.tsv
+      _tmp/debian-build/2026-03-17/$config/**/*.task.tsv > _tmp/debian-build/2026-03-17/$config/tasks.tsv
 
     # Allowed to fail if zero .apk are built
-    time md5sum $shard_dir/$config/*/home/udu/packages/$a_repo/x86_64/*.apk \
-      > $dest_dir/apk.txt 2> /dev/null || true
+    # time md5sum $shard_dir/$config/*/home/udu/packages/$a_repo/x86_64/*.apk \
+    #   > $dest_dir/apk.txt 2> /dev/null || true
 
-    abridge-logs $shard_dir/$config $dest_dir
+    # abridge-logs $shard_dir/$config $dest_dir
 
   done
 }

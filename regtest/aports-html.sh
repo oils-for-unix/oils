@@ -10,7 +10,7 @@
 #   $0 write-all-reports
 #   $0 make-wwz _tmp/aports-report/2025-08-03
 #   $0 deploy-wwz-op _tmp/aports-report/2025-08-03.wwz   # deploy to op.oils.pub
-
+set -x
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
@@ -294,6 +294,7 @@ EOF
 EOF
 
   table-sort-end "$id"  # ID for sorting
+  log "Make packages end"
 }
 
 published-html() {
@@ -436,7 +437,7 @@ make-package-table() {
 
   typed-tsv-to-sql $base_dir/$config/tasks.tsv | sqlite-tabs-headers $db
 
-  sqlite3 -cmd '.mode columns' $db < regtest/aports/tasks.sql
+  sqlite3 -cmd '.mode column' $db < regtest/aports/tasks.sql
 
   pushd $base_dir/$config > /dev/null
 
@@ -457,8 +458,8 @@ make-package-table() {
   # But that's a bunch of overhead
 
   local num_apk
-  num_apk=$(cat apk.txt | wc -l)
-
+  num_apk=$(tree | grep task.tsv | wc -l)
+  log "num_apk done: $num_apk"
   sqlite3 $db >metrics.txt <<EOF
 update metrics
 set num_apk = $num_apk
@@ -474,6 +475,8 @@ EOF
 }
 
 tasks-schema() {
+  log "tasks-schema()"
+
   here-schema-tsv-4col <<EOF
 column_name   type      precision strftime
 status        integer   0         -
@@ -490,25 +493,32 @@ EOF
 }
 
 write-tables-for-config() {
+  log "write-tables-for-config()"
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
   local config=${2:-baseline}
 
   local tasks_tsv=$base_dir/$config/tasks.tsv
   mkdir -p $base_dir/$config
 
+  log "write-tables-for-config() -> tasks-schema"
   tasks-schema >$base_dir/$config/tasks.schema.tsv
+  log "write-tables-for-config() -> tasks-schema done"
 
   local out=$base_dir/$config/tasks.html
+  log "write-tables-for-config() -> tasks-html($out)"
   tasks-html $tasks_tsv "tasks: $config" > $out
+  log "write-tables-for-config() -> tasks-html done"
   log "Wrote $out"
 
+  log "write-tables-for-config() -> make-package-table"
   make-package-table "$base_dir" "$config"
-
+  log "made-package-table"
   local packages_tsv=$base_dir/$config/packages.tsv
 
   local out=$base_dir/$config/packages.html
   tasks-html $packages_tsv "packages: $config" > $out
   log "Wrote $out"
+  log "write-tables-for-config() done"
 }
 
 make-diff-db() {
@@ -709,16 +719,21 @@ EOF
 }
 
 write-shard-reports() {
+  log "write-shard-reports()"
   local base_dir=$1  # e.g. _tmp/aports-report/2025-08-02/shard3
 
   index-html > $base_dir/index.html
 
   for config in baseline osh-as-sh; do
+    log "for config loop: $config"
+
     # Incomplete shard
     if ! test -d "$base_dir/$config"; then
       return
     fi
+    log "write-tables-for-config: $base_dir $config"
     write-tables-for-config "$base_dir" "$config"
+    log "loop $config done"
   done
 
   local name=diff_baseline
@@ -726,6 +741,13 @@ write-shard-reports() {
   make-diff-db $base_dir
   table-page-html $base_dir $name '' "$title" > $base_dir/$name.html
   echo "Wrote $base_dir/$name.html"
+}
+
+write-debian-reports() {
+  local epoch_dir=${1:-_tmp/debian-build/2026-03-17}
+  write-shard-reports "$epoch_dir"
+
+  merge-diffs "$epoch_dir"
 }
 
 write-all-reports() {
@@ -779,6 +801,19 @@ remove-apk() {
   # temporary
 
   find $base_dir -name '*.apk' -o -name 'APKINDEX*' | xargs -d $'\n' --verbose -- rm -v
+}
+
+make-debian-wwz() {
+  local epoch_dir=${1:-_tmp/debian-build/2026-03-17}
+  # must not end with slash
+  base_dir=${base_dir%'/'}
+
+  local wwz=$base_dir.wwz
+  rm -f -v $wwz
+
+  zip -r $wwz $base_dir web/
+
+  echo "Wrote $wwz"
 }
 
 make-wwz() {

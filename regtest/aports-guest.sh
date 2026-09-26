@@ -66,10 +66,13 @@ build-one-package() {
 
   # DISABLE rootbld for now - bwrap doesn't work inside chroot, because user
   # namespaces don't compose with chroots
-  local -a cmd=( abuild -f -r -C ~/aports/$a_repo/$pkg $more_abuild_flags )
+  # local -a cmd=( abuild -f -r -C ~/aports/$a_repo/$pkg $more_abuild_flags )
+  # local -a cmd=(apt-get update; cd /home/udu; apt-get source $pkg; cd $pkg-* ; apt-get build-dep -y $pkg; dpkg-buildpackage -us -uc -b)
+  local cmd="apt-get update; cd /home/udu; apt-get source $pkg; cd ${pkg}-*; apt-get build-dep -y $pkg; dpkg-buildpackage -us -uc -b"
+  echo $cmd
 
   # Give it 1 second to respond to SIGTERM, then SIGKILL
-  local -a timeout_cmd=( timeout -k 1 $timeout_secs "${cmd[@]}" )
+  local -a timeout_cmd=( timeout -k 1 $timeout_secs /bin/bash -c "$cmd" )
 
   #set -x
   # NOTE: log/foo.log.txt is the relative path after copy-results; sync-results
@@ -81,7 +84,7 @@ build-one-package() {
     --append \
     --output $task_file \
     -- \
-    "${timeout_cmd[@]}" >$log_file 2>&1
+    "${timeout_cmd[@]}" </dev/null >$log_file 2>&1
   local status=$?
   set -o errexit
 
