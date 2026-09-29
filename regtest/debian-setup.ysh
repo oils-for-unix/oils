@@ -216,10 +216,15 @@ proc add-build-deps() {
 }
 
 proc mount-host-dirs() {
+  set -x
   sudo mount --bind /proc     $CHROOT_DIR/proc
   sudo mount --bind /sys      $CHROOT_DIR/sys
   sudo mount --bind /dev      $CHROOT_DIR/dev
-  sudo mount --bind /dev/pts  $CHROOT_DIR/dev/pts
+
+  # Create a new devpts pool for the chroot so the pool is not shared with the host and more exhausted
+  var tty_gid = $(getent group tty | cut -d: -f3)
+  echo "tty_gid: $tty_gid"
+  sudo mount -t devpts devpts -o newinstance,ptmxmode=0660,gid=$tty_gid,mode=620 $CHROOT_DIR/dev/pts
 }
 
 proc config-chroot() {
