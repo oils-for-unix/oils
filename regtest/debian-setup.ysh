@@ -215,19 +215,15 @@ proc add-build-deps() {
   exec-chroot "apt-get update; apt-get install doas dpkg-dev build-essential devscripts fakeroot apt-utils -y" 
 }
 
-proc mount-host-dirs() {
-  set -x
-  sudo mount --bind /proc     $CHROOT_DIR/proc
-  sudo mount --bind /sys      $CHROOT_DIR/sys
-  sudo mount --bind /dev      $CHROOT_DIR/dev
-
-  # Create a new devpts pool for the chroot so the pool is not shared with the host and more exhausted
-  var tty_gid = $(getent group tty | cut -d: -f3)
-  echo "tty_gid: $tty_gid"
-  sudo mount -t devpts devpts -o newinstance,ptmxmode=0660,gid=$tty_gid,mode=620 $CHROOT_DIR/dev/pts
+proc unmount-host-dirs() {
+  sudo umount -l $CHROOT_DIR/dev/pts
+  sudo umount -l $CHROOT_DIR/dev
+  sudo umount -l $CHROOT_DIR/sys
+  sudo umount -l $CHROOT_DIR/proc
 }
 
 proc config-chroot() {
+  mount-host-dirs $CHROOT_DIR
   exec-chroot 'echo "deb-src http://deb.debian.org/debian stable main" >> /etc/apt/sources.list'
   exec-chroot 'apt-get update' # else apt still doesnt know we added the deb-src line
 
@@ -242,7 +238,8 @@ proc config-chroot() {
 
   make-user
   setup-doas
-  mount-host-dirs
+
+  unmount-host-dirs
 }
 
 proc fetch-all() {

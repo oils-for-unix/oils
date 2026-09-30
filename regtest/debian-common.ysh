@@ -29,6 +29,23 @@ const INTERACTIVE="${INTERACTIVE:-}"
 #   enter-rootfs -u udu "$@"
 # }
 
+proc mount-host-dirs(base_dir) {
+  set -x
+  sudo mount --bind  /proc $base_dir/proc
+  sudo mount --make-rslave $base_dir/proc
+
+  sudo mount --bind  /sys  $base_dir/sys
+  sudo mount --make-rslave $base_dir/sys
+
+  sudo mount --rbind /dev  $base_dir/dev
+  sudo mount --make-rslave $base_dir/dev   # must come BEFORE the devpts mount
+
+  var tty_gid = $(getent group tty | cut -d: -f3)
+  sudo mount -t devpts devpts \
+    -o newinstance,ptmxmode=0666,gid=$tty_gid,mode=620 \
+    $base_dir/dev/pts
+}
+
 proc exec-chroot(cmd) {
   sudo chroot $CHROOT_DIR /bin/bash -l -c $cmd
 }

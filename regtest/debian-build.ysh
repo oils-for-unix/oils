@@ -12,6 +12,14 @@
 
 . regtest/debian-common.ysh
 
+proc unmount-host-dirs(base_dir) {
+  sudo umount -l $base_dir/dev/pts || true
+  sudo umount -l $base_dir/dev || true
+  sudo umount -l $base_dir/sys || true
+  sudo umount -l $base_dir/proc || true
+}
+
+
 proc create-package-layer(package, config) {
     mkdir -p $DEBIAN_ROOT/package-overlays/$config
     var package_layer_dir = "$DEBIAN_ROOT/package-overlays/$config/$package.overlay"
@@ -22,6 +30,7 @@ proc create-package-layer(package, config) {
 
 proc remove-package-layer(package, config) {
     var dir="$DEBIAN_ROOT/package-overlays/$config/$package.overlay"
+    unmount-host-dirs $package_layer_dir/merged
     sudo umount $dir/merged || true
     sudo rm -rf $dir
 }
@@ -41,10 +50,11 @@ proc setup-package-layer(package, config) {
     # See also https://oilshell.zulipchat.com/#narrow/channel/522730-distros/topic/setting.20up.20regtest.2Faports-setup.2Esh/with/544318771
     sudo mount \
       -t overlay \
-      "$package-layer" \
+      "$package_dir" \
       -o index=off \
       -o "lowerdir=$lower_dir,upperdir=$package_dir/layer,workdir=$package_dir/work" \
       $package_dir/merged
+    mount-host-dirs $package_dir/merged
 }
 
 proc enter-package-layer(package, config, cmd) {
