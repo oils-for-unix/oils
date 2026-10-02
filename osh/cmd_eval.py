@@ -1799,6 +1799,9 @@ class CommandEvaluator(object):
         # type: (command.Redirect, CommandStatus) -> int
         status = self._EvalAndPushRedirects(node.redirects)
         if status != 0:
+            # set -e affects redirect error, like mksh and bash 5.2, but unlike
+            # dash/ash
+            cmd_st.check_errexit = True
             return status
 
         # If we applied redirects successfully, run the command_t, and pop
@@ -1808,6 +1811,10 @@ class CommandEvaluator(object):
         # destructor ~vm::ctx_Redirect, which means they must be signaled
         # by out params, not exceptions.
         io_errors = []  # type: List[int]
+        # Don't set check_errexit for the child's status.  _Execute() already
+        # checked it, and it may come from a context where errexit is
+        # disabled, e.g. the last command of
+        #   while read x; do test "$x" = y && echo yes; done < file
         with vm.ctx_Redirect(self.shell_ex, len(node.redirects), io_errors):
             status = self._Execute(node.child)
         if len(io_errors):
@@ -2059,9 +2066,7 @@ class CommandEvaluator(object):
             elif case(command_e.Redirect):
                 node = cast(command.Redirect, UP_node)
 
-                # set -e affects redirect error, like mksh and bash 5.2, but unlike
-                # dash/ash
-                cmd_st.check_errexit = True
+                # _DoRedirect() sets check_errexit if a redirect fails
                 status = self._DoRedirect(node, cmd_st)
 
             elif case(command_e.Pipeline):
