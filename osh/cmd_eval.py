@@ -2479,6 +2479,10 @@ class CommandEvaluator(object):
             # }
             # doesn't capture x.  This is documented in doc/ref/
 
+            # $? in the handler is the status the shell is exiting with, e.g.
+            # trap 'echo $?' EXIT; exit 42
+            self.mem.SetLastStatus(mut_status.i)
+
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
                 try:
                     is_return, is_fatal = self.ExecuteAndCatch(node, 0)
