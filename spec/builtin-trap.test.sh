@@ -403,6 +403,28 @@ IN TRAP
 FOO
 ## END
 
+#### trap EXIT sees exit status in $?
+trap 'echo status=$?' EXIT
+exit 42
+## status: 42
+## STDOUT:
+status=42
+## END
+
+#### trap EXIT saves $?, clears trap, runs a command, then exits with it
+trap 'st=$?; trap - EXIT; true; exit $st' EXIT
+exit 7
+## status: 7
+## stdout-json: ""
+
+#### trap EXIT sees $? of the last command, with sh -c
+$SH -c 'trap "echo status=\$?" EXIT; ( exit 5 )'
+echo outer=$?
+## STDOUT:
+status=5
+outer=5
+## END
+
 #### trap EXIT with command sub / subshell / pipeline
 trap 'echo EXIT TRAP' EXIT 
 
