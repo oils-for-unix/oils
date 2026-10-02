@@ -122,6 +122,23 @@ class ctx_ErrTrap(object):
         self.mem.running_err_trap = False
 
 
+class ctx_ExitTrap(object):
+    """For trap EXIT."""
+
+    def __init__(self, mem, status):
+        # type: (Mem, int) -> None
+        mem.exit_trap_status = status
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.exit_trap_status = -1
+
+
 class ctx_Option(object):
     """Shopt --unset errexit { false }"""
 
@@ -1371,6 +1388,9 @@ class Mem(object):
 
         self.running_debug_trap = False  # set by ctx_DebugTrap()
         self.running_err_trap = False  # set by ctx_ErrTrap
+        # Status the shell was exiting with when the EXIT trap started, or -1.
+        # Set by ctx_ExitTrap
+        self.exit_trap_status = -1
         self.is_main = True  # we start out in main
 
         # For the ctx builtin
