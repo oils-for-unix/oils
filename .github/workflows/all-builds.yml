@@ -40,6 +40,12 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
 
+      - name: download-cpp-tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: oils-for-unix-tar
+          path: _release
+
       - name: raw-vm
         run: |
           soil/worker.sh JOB-raw-vm
@@ -179,6 +185,12 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
 
+      - name: download-cpp-tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: oils-for-unix-tar
+          path: _release
+
       - name: app-tests
         run: |
           soil/github-actions.sh run-job app-tests podman
@@ -228,6 +240,12 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
 
+      - name: download-cpp-tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: oils-for-unix-tar
+          path: _release
+
       - name: bloaty
         run: |
           soil/github-actions.sh run-job bloaty podman
@@ -244,6 +262,12 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
+
+      - name: download-cpp-tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: oils-for-unix-tar
+          path: _release
 
       - name: benchmarks2
         run: |
@@ -312,8 +336,19 @@ jobs:
         run: |
           soil/github-actions.sh run-job cpp-tarball podman
 
+      # Jobs that need the tarball download it from this run, so they also
+      # work for pull requests from forks
+      - name: upload-cpp-tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: oils-for-unix-tar
+          path: _release/oils-for-unix.tar
+          retention-days: 1
+
       # can't be done inside container
+      # Secrets aren't available to pull requests from forks
       - name: publish-cpp-tarball
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         env:
           # auth for web server
           OILS_GITHUB_SSH_KEY: ${{ secrets.OILS_GITHUB_SSH_KEY }}
@@ -354,6 +389,12 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
+
+      - name: download-cpp-tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: oils-for-unix-tar
+          path: _release
 
       - name: wild
         run: |

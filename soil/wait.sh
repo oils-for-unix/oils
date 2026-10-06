@@ -115,6 +115,12 @@ for-cpp-tarball()  {
 
   local url="$git_commit_url/oils-for-unix.tar"
 
+  # Github Actions downloads the tarball from the cpp-tarball job beforehand
+  if test -f _release/oils-for-unix.tar; then
+    echo 'Using _release/oils-for-unix.tar'
+    return
+  fi
+
   set -x
   sleep $sleep_secs
 
