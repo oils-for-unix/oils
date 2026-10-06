@@ -44,7 +44,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: oils-for-unix-tar
-          path: _release
+          path: _tmp/cpp-tarball-artifact
 
       - name: raw-vm
         run: |
@@ -189,7 +189,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: oils-for-unix-tar
-          path: _release
+          path: _tmp/cpp-tarball-artifact
 
       - name: app-tests
         run: |
@@ -244,7 +244,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: oils-for-unix-tar
-          path: _release
+          path: _tmp/cpp-tarball-artifact
 
       - name: bloaty
         run: |
@@ -267,7 +267,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: oils-for-unix-tar
-          path: _release
+          path: _tmp/cpp-tarball-artifact
 
       - name: benchmarks2
         run: |
@@ -394,7 +394,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: oils-for-unix-tar
-          path: _release
+          path: _tmp/cpp-tarball-artifact
 
       - name: wild
         run: |

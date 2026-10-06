@@ -115,9 +115,12 @@ for-cpp-tarball()  {
 
   local url="$git_commit_url/oils-for-unix.tar"
 
-  # Github Actions downloads the tarball from the cpp-tarball job beforehand
-  if test -f _release/oils-for-unix.tar; then
-    echo 'Using _release/oils-for-unix.tar'
+  # Github Actions downloads the tarball from the cpp-tarball job beforehand.
+  # It uses a separate dir, so a stale _release/oils-for-unix.tar isn't used.
+  local artifact=_tmp/cpp-tarball-artifact/oils-for-unix.tar
+  if test -f $artifact; then
+    mkdir -p _release
+    mv -v $artifact _release/oils-for-unix.tar
     return
   fi
 
