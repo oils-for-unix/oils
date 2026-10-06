@@ -336,8 +336,9 @@ jobs:
         run: |
           soil/github-actions.sh run-job cpp-tarball podman
 
-      # Jobs that need the tarball download it from this run, so they also
-      # work for pull requests from forks
+      # Always upload the tarball as an artifact of this run.  The jobs that
+      # need it download it from here, so they also work for pull requests
+      # from forks.
       - name: upload-cpp-tarball
         uses: actions/upload-artifact@v4
         with:
@@ -346,7 +347,10 @@ jobs:
           retention-days: 1
 
       # can't be done inside container
-      # Secrets aren't available to pull requests from forks
+      #
+      # Also publish the tarball to the server, which needs
+      # OILS_GITHUB_SSH_KEY.  Pull requests from forks don't get secrets, so
+      # the 'if' skips this step for them instead of failing the job.
       - name: publish-cpp-tarball
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         env:
