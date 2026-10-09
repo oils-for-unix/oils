@@ -378,7 +378,13 @@ class ControlFlowBuiltin(vm._Builtin):
                     # but it does NOT cause an error.
 
         else:
-            if keyword_id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
+            if (keyword_id == Id.ControlFlow_Exit and
+                    self.mem.exit_trap_status >= 0):
+                # POSIX: a bare 'exit' in a trap action uses the status from
+                # before the trap ran, not the status of the last command in
+                # the trap.  bash and dash agree on this for the EXIT trap.
+                arg_int = self.mem.exit_trap_status
+            elif keyword_id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
                 arg_int = self.mem.LastStatus()
             else:
                 arg_int = 1  # break or continue 1 level by default
@@ -2481,7 +2487,8 @@ class CommandEvaluator(object):
 
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
                 try:
-                    is_return, is_fatal = self.ExecuteAndCatch(node, 0)
+                    with state.ctx_ExitTrap(self.mem, mut_status.i):
+                        is_return, is_fatal = self.ExecuteAndCatch(node, 0)
                 except util.HardExit as e:  # explicit exit
                     mut_status.i = e.status
                     return
