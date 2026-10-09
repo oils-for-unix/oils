@@ -2460,6 +2460,8 @@ class CommandEvaluator(object):
         # type: (IntParamBox) -> None
         """If an EXIT trap handler exists, run it.
 
+        The handler sees the exit status in $?, e.g. trap 'echo $?' EXIT; exit 42
+
         It only mutates the status if 'return' or 'exit'.  This is odd
         behavior, but bash/dash/mksh seem to agree on it.  See test cases in
         builtin-trap.test.sh.
@@ -2478,6 +2480,8 @@ class CommandEvaluator(object):
             #   trap --add { echo $x }
             # }
             # doesn't capture x.  This is documented in doc/ref/
+
+            self.mem.SetLastStatus(mut_status.i)
 
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
                 try:
