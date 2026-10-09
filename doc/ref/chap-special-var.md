@@ -421,6 +421,16 @@ In YSH, it's `ENV.PATH`.
 
 ## Other Special
 
+### BASH
+
+The absolute path of the running shell, like [`$BASH` in bash][bash-var].
+
+OSH sets it only when `argv[0]` is `bash`, for example when it runs through a
+`bash` symlink.  Like bash, it replaces a `$BASH` from the environment.  When
+OSH runs as `osh` or `sh`, `$BASH` isn't set.
+
+[bash-var]: https://www.gnu.org/software/bash/manual/bash.html#index-BASH
+
 ### BASH_REMATCH
 
 Result of regex evaluation `[[ $x =~ $pat ]]`.

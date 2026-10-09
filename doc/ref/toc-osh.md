@@ -212,7 +212,7 @@ X [Unsupported]   enable
   [Shell Vars]    IFS             X LANG       X GLOBIGNORE
   [Shell Options] SHELLOPTS       X BASHOPTS
   [Other Env]     HOME              PATH
-  [Other Special] BASH_REMATCH     @PIPESTATUS
+  [Other Special] BASH              BASH_REMATCH @PIPESTATUS
   [Platform]      HOSTNAME          OSTYPE
   [Call Stack]    @BASH_SOURCE     @FUNCNAME    @BASH_LINENO   
                 X @BASH_ARGV     X @BASH_ARGC
