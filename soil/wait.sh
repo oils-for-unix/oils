@@ -115,6 +115,18 @@ for-cpp-tarball()  {
 
   local url="$git_commit_url/oils-for-unix.tar"
 
+  # The CI service can put the tarball here before the job runs, instead of
+  # us polling the server.  Github Actions always does this: the cpp-tarball
+  # job uploads it as an artifact, and the jobs that wait for it download it
+  # here first.  Other runs (e.g. sourcehut) poll the server below.  The
+  # separate dir means a stale _release/oils-for-unix.tar is never used.
+  local provided=_tmp/soil-input/oils-for-unix.tar
+  if test -f $provided; then
+    mkdir -p _release
+    mv -v $provided _release/oils-for-unix.tar
+    return
+  fi
+
   set -x
   sleep $sleep_secs
 
