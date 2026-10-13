@@ -252,6 +252,32 @@ test-bash-version-emulation() {
   nq-assert 0 -eq $status
   nq-assert "BASH=$PWD/bash" = "$stdout"
 
+  # Searched for in $PATH when argv[0] has no slash
+  nq-capture status stdout \
+    env PATH="$PWD:$PATH" bash -c "$code"
+  nq-assert 0 -eq $status
+  nq-assert "BASH=$PWD/bash" = "$stdout"
+
+  # A relative path is joined to $PWD, but not normalized, like bash
+  local base
+  base=$(basename "$PWD")
+  nq-capture status stdout \
+    ../$base/bash -c "$code"
+  nq-assert 0 -eq $status
+  nq-assert "BASH=$PWD/../$base/bash" = "$stdout"
+
+  # It uses $PWD at startup, not after cd
+  nq-capture status stdout \
+    ./bash -c "cd /; $code"
+  nq-assert 0 -eq $status
+  nq-assert "BASH=$PWD/bash" = "$stdout"
+
+  # Unlike bash, assignment has no effect, like BASH_REMATCH
+  nq-capture status stdout \
+    ./bash -c "BASH=foo; $code"
+  nq-assert 0 -eq $status
+  nq-assert "BASH=$PWD/bash" = "$stdout"
+
   popd
 }
 

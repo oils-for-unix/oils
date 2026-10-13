@@ -231,34 +231,6 @@ def InitAssignmentBuiltins(
     return assign_b
 
 
-def _BashPath(argv0, mem):
-    # type: (str, state.Mem) -> str
-    """Return the full path of the shell, for $BASH.
-
-    Like bash's get_bash_name(): use argv[0] if it's absolute, else search
-    $PATH if it has no slash, else make it absolute with $PWD.
-    """
-    name = argv0
-    if name.startswith('-'):  # login shell
-        name = name[1:]
-
-    if '/' not in name:
-        path_dirs = []  # type: List[str]
-        s = mem.env_config.Get('PATH')
-        if s is not None:
-            path_dirs = s.split(':')
-        resolved = executor.LookupExecutable(name, path_dirs)
-        if resolved is not None:
-            name = resolved
-
-    if os_path.isabs(name):
-        return name
-
-    # Relative to the logical working dir, which InitVarsAfterEnv() set
-    assert mem.pwd is not None
-    return os_path.normpath(os_path.join(mem.pwd, name))
-
-
 def Main(
         lang,  # type: str
         arg_r,  # type: args.Reader
@@ -373,9 +345,8 @@ def Main(
     sh_init.InitVarsAfterEnv(mem, mutable_opts)
 
     if bash_compat:
-        # Like bash, this ignores any $BASH in the environment.  It's set after
-        # InitVarsAfterEnv() because it may search $PATH.
-        state.SetGlobalString(mem, 'BASH', _BashPath(arg_r.argv[0], mem))
+        # After InitVarsAfterEnv(), because $BASH depends on $PATH and $PWD
+        mem.InitBashVar(arg_r.argv[0])
 
     if attrs.show_options:  # special case: sh -o
         pure_osh.ShowOptions(mutable_opts, [])
