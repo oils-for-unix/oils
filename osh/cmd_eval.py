@@ -1802,6 +1802,13 @@ class CommandEvaluator(object):
             # set -e affects redirect error, like mksh and bash 5.2, but unlike
             # dash/ash
             cmd_st.check_errexit = True
+            #
+            # Only a failed redirect sets check_errexit here.  check_errexit is
+            # for leaf commands like 'ls /', [[ and ((, but both leaf and
+            # compound commands can have redirects.  The child's status was
+            # already handled by _Execute(), so checking it again breaks
+            # compound commands like
+            #   while read x; do test "$x" = y && echo yes; done < file
             return status
 
         # If we applied redirects successfully, run the command_t, and pop
@@ -1811,10 +1818,6 @@ class CommandEvaluator(object):
         # destructor ~vm::ctx_Redirect, which means they must be signaled
         # by out params, not exceptions.
         io_errors = []  # type: List[int]
-        # Don't set check_errexit for the child's status.  _Execute() already
-        # checked it, and it may come from a context where errexit is
-        # disabled, e.g. the last command of
-        #   while read x; do test "$x" = y && echo yes; done < file
         with vm.ctx_Redirect(self.shell_ex, len(node.redirects), io_errors):
             status = self._Execute(node.child)
         if len(io_errors):
