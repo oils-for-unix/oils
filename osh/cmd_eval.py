@@ -400,7 +400,7 @@ class ControlFlowBuiltin(vm._Builtin):
 
         if keyword_id == Id.ControlFlow_Exit:
             # handled differently than other control flow
-            raise util.HardExit(arg_int)
+            raise util.HardExit(arg_int, arg_str is not None)
         else:
             raise vm.IntControlFlow(keyword_id, keyword_str, keyword_loc,
                                     arg_int)
@@ -2490,8 +2490,11 @@ class CommandEvaluator(object):
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
                 try:
                     is_return, is_fatal = self.ExecuteAndCatch(node, 0)
-                except util.HardExit as e:  # explicit exit
-                    mut_status.i = e.status
+                except util.HardExit as e:
+                    # POSIX: a bare 'exit' in a trap uses the status from
+                    # before the trap ran.  bash and dash agree for EXIT.
+                    if e.has_explicit_arg:
+                        mut_status.i = e.status
                     return
                 if is_return:  # explicit 'return' in the trap handler!
                     mut_status.i = self.LastStatus()
