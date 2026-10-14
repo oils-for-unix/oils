@@ -733,6 +733,41 @@ def _DumpVarFrame(frame):
     return vars_json
 
 
+def _BashPath(argv0, path_str, pwd):
+    # type: (str, Optional[str], str) -> str
+    """For $BASH.  Like bash's get_bash_name() in shell.c.
+
+    - an absolute argv[0] is used as is
+    - a name without a slash is searched for in $PATH
+    - a relative path is made absolute with $PWD.  bash doesn't normalize it,
+      except that it drops the leading . of ./bash.  For example, if $PWD is
+      /tmp/dir, then ./bash gives /tmp/dir/bash, and ../dir/bash gives
+      /tmp/dir/../dir/bash.
+    """
+    # executor depends on state, so import it here
+    from core import executor
+
+    name = argv0
+    if name.startswith('-'):  # login shell
+        name = name[1:]
+
+    if '/' not in name:
+        path_dirs = []  # type: List[str]
+        if path_str is not None:
+            path_dirs = path_str.split(':')
+        resolved = executor.LookupExecutable(name, path_dirs)
+        if resolved is not None:
+            name = resolved
+
+    if os_path.isabs(name):
+        return name
+
+    if name.startswith('./'):
+        return pwd + name[1:]
+
+    return os_path.join(pwd, name)
+
+
 def _LineNumber(tok):
     # type: (Optional[Token]) -> str
     """ For $BASH_LINENO """
@@ -1342,6 +1377,13 @@ class Mem(object):
         self.pwd = None  # type: Optional[str]
         self.seconds_start = time_.time()
 
+        # For $BASH.  argv[0] is None unless OSH runs as bash.  The value is
+        # computed lazily, because a $PATH search does I/O.
+        self.bash_argv0 = None  # type: Optional[str]
+        self.bash_path_str = None  # type: Optional[str]  # $PATH at startup
+        self.bash_pwd = ''  # $PWD at startup
+        self.bash_val = None  # type: Optional[value.Str]
+
         self.token_for_line = None  # type: Optional[Token]
         self.loc_for_expr = loc.Missing  # type: loc_t
 
@@ -1409,6 +1451,20 @@ class Mem(object):
         # type: (str) -> None
         """Used by builtins."""
         self.pwd = pwd
+
+    def InitBashVar(self, argv0):
+        # type: (str) -> None
+        """Make $BASH available, when OSH runs as bash.
+
+        Call it after $PATH and $PWD are initialized.  Like bash, we ignore
+        $BASH in the environment.
+        """
+        self.Unset(location.LName('BASH'), scope_e.GlobalOnly)
+
+        self.bash_argv0 = argv0
+        self.bash_path_str = self.env_config.Get('PATH')
+        assert self.pwd is not None
+        self.bash_pwd = self.pwd
 
     def Dump(self):
         # type: () -> Tuple[List[value_t], List[value_t], List[value_t]]
@@ -2299,6 +2355,18 @@ class Mem(object):
                         groups = util.RegexGroupStrings(m.s, m.indices)
                 return value.InternalStringArray(groups)
 
+            elif case('BASH'):
+                # Unlike bash, $BASH is computed lazily, like the other special
+                # vars here.  So assigning to it has no effect, as with
+                # BASH_REMATCH.
+                if self.bash_argv0 is not None:
+                    if self.bash_val is None:
+                        self.bash_val = value.Str(
+                            _BashPath(self.bash_argv0, self.bash_path_str,
+                                      self.bash_pwd))
+                    return self.bash_val
+                return self._GetUserValue(name, which_scopes)
+
             # Do lookup of system globals before looking at user variables.  Note: we
             # could optimize this at compile-time like $?.  That would break
             # ${!varref}, but it's already broken for $?.
@@ -2413,21 +2481,26 @@ class Mem(object):
                 return value.Int(big_int)
 
             else:
-                # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
-                # fix this:
-                # 1. Call self.unsafe_arith.ParseVarRef() -> BracedVarSub
-                # 2. Call self.unsafe_arith.GetNameref(bvs_part), and get a value_t
-                #    We still need a ref_trail to detect cycles.
-                cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
-                if cell:
-                    return cell.val
+                return self._GetUserValue(name, which_scopes)
 
-                builtin_val = self.builtins.get(name)
-                if builtin_val:
-                    return builtin_val
+    def _GetUserValue(self, name, which_scopes):
+        # type: (str, scope_t) -> value_t
+        """Look up a variable that isn't special."""
+        # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
+        # fix this:
+        # 1. Call self.unsafe_arith.ParseVarRef() -> BracedVarSub
+        # 2. Call self.unsafe_arith.GetNameref(bvs_part), and get a value_t
+        #    We still need a ref_trail to detect cycles.
+        cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
+        if cell:
+            return cell.val
 
-                # TODO: Can look in the builtins module, which is a value.Obj
-                return value.Undef
+        builtin_val = self.builtins.get(name)
+        if builtin_val:
+            return builtin_val
+
+        # TODO: Can look in the builtins module, which is a value.Obj
+        return value.Undef
 
     def GetCell(self, name, which_scopes=scope_e.Shopt):
         # type: (str, scope_t) -> Cell
