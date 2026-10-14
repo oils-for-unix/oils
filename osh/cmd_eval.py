@@ -1799,6 +1799,16 @@ class CommandEvaluator(object):
         # type: (command.Redirect, CommandStatus) -> int
         status = self._EvalAndPushRedirects(node.redirects)
         if status != 0:
+            # set -e affects redirect error, like mksh and bash 5.2, but unlike
+            # dash/ash
+            cmd_st.check_errexit = True
+            #
+            # Only a failed redirect sets check_errexit here.  check_errexit is
+            # for leaf commands like 'ls /', [[ and ((, but both leaf and
+            # compound commands can have redirects.  The child's status was
+            # already handled by _Execute(), so checking it again breaks
+            # compound commands like
+            #   while read x; do test "$x" = y && echo yes; done < file
             return status
 
         # If we applied redirects successfully, run the command_t, and pop
@@ -2059,9 +2069,7 @@ class CommandEvaluator(object):
             elif case(command_e.Redirect):
                 node = cast(command.Redirect, UP_node)
 
-                # set -e affects redirect error, like mksh and bash 5.2, but unlike
-                # dash/ash
-                cmd_st.check_errexit = True
+                # _DoRedirect() sets check_errexit if a redirect fails
                 status = self._DoRedirect(node, cmd_st)
 
             elif case(command_e.Pipeline):

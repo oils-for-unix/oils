@@ -465,6 +465,50 @@ should not get here
 ## END
 
 
+#### errexit and compound command with redirect, ending with && (regression)
+set -o errexit
+
+found=0
+while read -r line; do
+  test "$line" = key && found=1
+done <<EOF
+key
+other
+EOF
+echo while found=$found
+
+for x in a b; do
+  test "$x" = a && echo "for $x"
+done > /dev/null
+echo for status=$?
+
+{ test no = yes && echo hi; } < /dev/null
+echo brace status=$?
+
+if true; then
+  test no = yes && echo hi
+fi > /dev/null
+echo if status=$?
+
+case x in
+  x) test no = yes && echo hi ;;
+esac < /dev/null
+echo case status=$?
+
+# A failure that is not exempt still exits
+{ echo one; false; echo two; } < /dev/null
+echo bad
+
+## status: 1
+## STDOUT:
+while found=1
+for status=1
+brace status=1
+if status=1
+case status=1
+one
+## END
+
 #### set -e enabled in function (regression)
 foo() {
   set -e
