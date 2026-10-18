@@ -54,9 +54,11 @@ def RegexSearch(pat, s):
 class HardExit(Exception):
     """For explicit user 'exit', and set-u failures."""
 
-    def __init__(self, status):
-        # type: (int) -> None
+    def __init__(self, status, has_explicit_arg=True):
+        # type: (int, bool) -> None
         self.status = status
+        # False for a bare 'exit', which uses $?
+        self.has_explicit_arg = has_explicit_arg
 
 
 class HistoryError(Exception):
