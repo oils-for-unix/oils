@@ -2479,15 +2479,10 @@ class CommandEvaluator(object):
 
             new_status = -1  # invalid status
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
-                # The handler sees the last status in $?
+                # ctx_Registers pushes a new frame, and COPIES $?
+                # That is, thje handler sees the last status in $?:
+                #
                 #   trap 'echo status=$?' EXIT; exit 42  # => status=42
-
-                # First set the status in the current frame.
-                self.mem.SetLastStatus(last_status)
-
-                # Push a new frame with ctx_Registers, creating a new copy of
-                # registers like $?
-                # It also copies the last status into the new $?
                 with state.ctx_Registers(self.mem):
                     try:
                         is_return, _ = self.ExecuteAndCatch(node, 0)

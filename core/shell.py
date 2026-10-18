@@ -1151,8 +1151,8 @@ def Main(
             status = e.status
 
         # Same logic as interactive shell
+        mem.SetLastStatus(status)
         cmd_ev.RunTrapsOnExit(status)
-
         return mem.LastStatus()
 
     # Note: headless mode above doesn't use c_parser
@@ -1214,6 +1214,7 @@ def Main(
             except util.HardExit as e:
                 status = e.status
 
+            mem.SetLastStatus(status)
             cmd_ev.RunTrapsOnExit(status)
 
         if readline:
@@ -1312,6 +1313,7 @@ def Main(
             # The interactive shell handles this in main_loop.Interactive
             status = 130  # 128 + 2
 
+    mem.SetLastStatus(status)
     cmd_ev.RunTrapsOnExit(status)
 
     multi_trace.WriteDumps()
