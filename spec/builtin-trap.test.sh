@@ -423,6 +423,7 @@ echo outer=$?
 ## STDOUT:
 status=5
 outer=5
+## END
 
 #### bare exit in trap EXIT uses the status from before the trap
 trap 'true; exit' EXIT
