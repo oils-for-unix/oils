@@ -1152,7 +1152,7 @@ def Main(
 
         # Same logic as interactive shell
         mem.SetLastStatus(status)
-        cmd_ev.RunTrapsOnExit(status)
+        cmd_ev.RunTrapsOnExit()  # may or may not mutate last status
         return mem.LastStatus()
 
     # Note: headless mode above doesn't use c_parser
@@ -1215,7 +1215,7 @@ def Main(
                 status = e.status
 
             mem.SetLastStatus(status)
-            cmd_ev.RunTrapsOnExit(status)
+            cmd_ev.RunTrapsOnExit()  # may or may not mutate last status
 
         if readline:
             hist_file = sh_files.HistoryFile()
@@ -1314,7 +1314,7 @@ def Main(
             status = 130  # 128 + 2
 
     mem.SetLastStatus(status)
-    cmd_ev.RunTrapsOnExit(status)
+    cmd_ev.RunTrapsOnExit()  # may or may not mutate last status
 
     multi_trace.WriteDumps()
 

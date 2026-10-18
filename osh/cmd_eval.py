@@ -2458,10 +2458,12 @@ class CommandEvaluator(object):
                                          cmd.module_frame):
                 return self.EvalCommandFrag(frag)
 
-    def RunTrapsOnExit(self, last_status):
-        # type: (int) -> None
-        """If an EXIT trap handler exists, run it."""
+    def RunTrapsOnExit(self):
+        # type: () -> None
+        """If an EXIT trap handler exists, run it.
 
+        This method may or may not mutate mem.LastStatus().
+        """
         # This does not raise, even on 'exit', etc.
         self.RunPendingTrapsAndCatch()
 
