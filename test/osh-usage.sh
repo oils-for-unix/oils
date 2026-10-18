@@ -186,7 +186,7 @@ test-version() {
   nq-assert $? -eq 0
 }
 
-test-bash-version-emulation() {
+test-bash-vars-emulation() {
   local dir=_tmp/bash-version
 
   local target=_bin/cxx-asan/osh
