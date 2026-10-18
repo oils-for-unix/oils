@@ -15,7 +15,6 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.syntax_asdl import (
-    IntParamBox,
     loc,
     loc_t,
     loc_e,
@@ -2459,16 +2458,10 @@ class CommandEvaluator(object):
                                          cmd.module_frame):
                 return self.EvalCommandFrag(frag)
 
-    def RunTrapsOnExit(self, mut_status):
-        # type: (IntParamBox) -> None
-        """If an EXIT trap handler exists, run it.
+    def RunTrapsOnExit(self, last_status):
+        # type: (int) -> None
+        """If an EXIT trap handler exists, run it."""
 
-        The handler sees the exit status in $?, e.g. trap 'echo $?' EXIT; exit 42
-
-        It only mutates the status if 'return' or 'exit'.  This is odd
-        behavior, but bash/dash/mksh seem to agree on it.  See test cases in
-        builtin-trap.test.sh.
-        """
         # This does not raise, even on 'exit', etc.
         self.RunPendingTrapsAndCatch()
 
@@ -2484,19 +2477,34 @@ class CommandEvaluator(object):
             # }
             # doesn't capture x.  This is documented in doc/ref/
 
-            self.mem.SetLastStatus(mut_status.i)
-
+            new_status = -1  # invalid status
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
-                try:
-                    is_return, is_fatal = self.ExecuteAndCatch(node, 0)
-                except util.HardExit as e:
-                    # POSIX: a bare 'exit' in a trap uses the status from
-                    # before the trap ran.  bash and dash agree for EXIT.
-                    if e.has_explicit_arg:
-                        mut_status.i = e.status
-                    return
-                if is_return:  # explicit 'return' in the trap handler!
-                    mut_status.i = self.mem.LastStatus()
+                # The handler sees the last status in $?
+                #   trap 'echo status=$?' EXIT; exit 42  # => status=42
+
+                # First set the status in the current frame.
+                self.mem.SetLastStatus(last_status)
+
+                # Push a new frame with ctx_Registers, creating a new copy of
+                # registers like $?
+                # It also copies the last status into the new $?
+                with state.ctx_Registers(self.mem):
+                    try:
+                        is_return, _ = self.ExecuteAndCatch(node, 0)
+                        if is_return:  # explicit 'return' in the trap handler!
+                            # Inside ctx_Registers()
+                            new_status = self.mem.LastStatus()
+                    except util.HardExit as e:
+                        # POSIX: a bare 'exit' in a trap uses the status from
+                        # before the trap ran.  bash and dash agree for EXIT.
+                        if e.has_explicit_arg:
+                            new_status = e.status
+
+            # Mutates the status ONLY if 'return' or 'exit' inside the EXIT
+            # trap.  This is odd behavior, but bash/dash/mksh seem to agree on
+            # it.  See test cases in builtin-trap.test.sh.
+            if new_status != -1:
+                self.mem.SetLastStatus(new_status)
 
     def _MaybeRunDebugTrap(self):
         # type: () -> None
