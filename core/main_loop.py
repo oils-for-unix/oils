@@ -289,7 +289,7 @@ def Interactive(
                 cmd_ev.mem.SetLastStatus(status)
                 break
 
-            status = cmd_ev.LastStatus()
+            status = cmd_ev.mem.LastStatus()
 
             waiter.PollForEvents()
 
@@ -399,7 +399,7 @@ def Batch2(
         probe('main_loop', 'Batch_execute_enter')
         # can't optimize this because we haven't seen the end yet
         is_return, is_fatal = cmd_ev.ExecuteAndCatch(node, cmd_flags)
-        status = cmd_ev.LastStatus()
+        status = cmd_ev.mem.LastStatus()
         # e.g. 'return' in middle of script, or divide by zero
         if is_return or is_fatal:
             break

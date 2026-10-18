@@ -2249,11 +2249,6 @@ class CommandEvaluator(object):
             status = self._Execute(child)
         return status
 
-    def LastStatus(self):
-        # type: () -> int
-        """For main_loop.py to determine the exit code of the shell itself."""
-        return self.mem.LastStatus()
-
     def _MarkLastCommands(self, node):
         # type: (command_t) -> None
 
@@ -2501,7 +2496,7 @@ class CommandEvaluator(object):
                         mut_status.i = e.status
                     return
                 if is_return:  # explicit 'return' in the trap handler!
-                    mut_status.i = self.LastStatus()
+                    mut_status.i = self.mem.LastStatus()
 
     def _MaybeRunDebugTrap(self):
         # type: () -> None
