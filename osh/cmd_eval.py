@@ -2458,10 +2458,14 @@ class CommandEvaluator(object):
                                          cmd.module_frame):
                 return self.EvalCommandFrag(frag)
 
-    def RunTrapsOnExit(self, last_status):
-        # type: (int) -> None
-        """If an EXIT trap handler exists, run it."""
+    def RunTrapsOnExit(self):
+        # type: () -> None
+        """If an EXIT trap handler exists, run it.
 
+        This method may or may not mutate mem.LastStatus().  See comments on
+        'return' and 'exit' below, and see the test cases in
+        builtin-trap.test.sh.
+        """
         # This does not raise, even on 'exit', etc.
         self.RunPendingTrapsAndCatch()
 
@@ -2479,30 +2483,25 @@ class CommandEvaluator(object):
 
             new_status = -1  # invalid status
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
-                # The handler sees the last status in $?
+                # ctx_Registers pushes a new frame, and COPIES $?
+                # That is, the EXIT handler sees the status in $? as follows:
+                #
                 #   trap 'echo status=$?' EXIT; exit 42  # => status=42
-
-                # First set the status in the current frame.
-                self.mem.SetLastStatus(last_status)
-
-                # Push a new frame with ctx_Registers, creating a new copy of
-                # registers like $?
-                # It also copies the last status into the new $?
                 with state.ctx_Registers(self.mem):
                     try:
                         is_return, _ = self.ExecuteAndCatch(node, 0)
-                        if is_return:  # explicit 'return' in the trap handler!
-                            # Inside ctx_Registers()
+                        # If there's an explicit 'return' in the trap handler,
+                        # the status visible outside the handler.
+                        if is_return:
                             new_status = self.mem.LastStatus()
                     except util.HardExit as e:
-                        # POSIX: a bare 'exit' in a trap uses the status from
-                        # before the trap ran.  bash and dash agree for EXIT.
+                        # 'exit 33' is visible outside the handler.
                         if e.has_explicit_arg:
                             new_status = e.status
+                        # else:
+                        #   POSIX: bare 'exit' uses the status from before the
+                        #   trap ran.  bash and dash agree for EXIT.
 
-            # Mutates the status ONLY if 'return' or 'exit' inside the EXIT
-            # trap.  This is odd behavior, but bash/dash/mksh seem to agree on
-            # it.  See test cases in builtin-trap.test.sh.
             if new_status != -1:
                 self.mem.SetLastStatus(new_status)
 
