@@ -423,6 +423,24 @@ echo outer=$?
 ## STDOUT:
 status=5
 outer=5
+
+#### bare exit in trap EXIT uses the status from before the trap
+trap 'true; exit' EXIT
+exit 3
+## status: 3
+## stdout-json: ""
+
+#### bare exit in a function called from trap EXIT
+cleanup() {
+  echo cleanup
+  true
+  exit
+}
+trap cleanup EXIT
+false
+## status: 1
+## STDOUT:
+cleanup
 ## END
 
 #### trap EXIT with command sub / subshell / pipeline
