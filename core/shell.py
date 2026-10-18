@@ -6,8 +6,8 @@ import time as time_
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
-from _devbuild.gen.syntax_asdl import (loc, source, source_t, IntParamBox,
-                                       debug_frame, debug_frame_t)
+from _devbuild.gen.syntax_asdl import (loc, source, source_t, debug_frame,
+                                       debug_frame_t)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 from core import alloc
 from core import comp_ui
@@ -1155,11 +1155,9 @@ def Main(
             status = e.status
 
         # Same logic as interactive shell
-        mut_status = IntParamBox(status)
-        cmd_ev.RunTrapsOnExit(mut_status)
-        status = mut_status.i
-
-        return status
+        mem.SetLastStatus(status)
+        cmd_ev.RunTrapsOnExit()  # may or may not mutate last status
+        return mem.LastStatus()
 
     # Note: headless mode above doesn't use c_parser
     assert line_reader is not None
@@ -1220,9 +1218,8 @@ def Main(
             except util.HardExit as e:
                 status = e.status
 
-            mut_status = IntParamBox(status)
-            cmd_ev.RunTrapsOnExit(mut_status)
-            status = mut_status.i
+            mem.SetLastStatus(status)
+            cmd_ev.RunTrapsOnExit()  # may or may not mutate last status
 
         if readline:
             hist_file = sh_files.HistoryFile()
@@ -1232,7 +1229,7 @@ def Main(
                 except (IOError, OSError):
                     pass
 
-        return status
+        return mem.LastStatus()
 
     if flag.rcfile is not None:  # bash doesn't have this warning, but it's useful
         print_stderr('%s warning: --rcfile ignored in non-interactive shell' %
@@ -1319,10 +1316,11 @@ def Main(
         except KeyboardInterrupt:
             # The interactive shell handles this in main_loop.Interactive
             status = 130  # 128 + 2
-    mut_status = IntParamBox(status)
-    cmd_ev.RunTrapsOnExit(mut_status)
+
+    mem.SetLastStatus(status)
+    cmd_ev.RunTrapsOnExit()  # may or may not mutate last status
 
     multi_trace.WriteDumps()
 
     # NOTE: We haven't closed the file opened with fd_state.Open
-    return mut_status.i
+    return mem.LastStatus()

@@ -15,7 +15,6 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.syntax_asdl import (
-    IntParamBox,
     loc,
     loc_t,
     loc_e,
@@ -400,7 +399,7 @@ class ControlFlowBuiltin(vm._Builtin):
 
         if keyword_id == Id.ControlFlow_Exit:
             # handled differently than other control flow
-            raise util.HardExit(arg_int)
+            raise util.HardExit(arg_int, arg_str is not None)
         else:
             raise vm.IntControlFlow(keyword_id, keyword_str, keyword_loc,
                                     arg_int)
@@ -1799,6 +1798,16 @@ class CommandEvaluator(object):
         # type: (command.Redirect, CommandStatus) -> int
         status = self._EvalAndPushRedirects(node.redirects)
         if status != 0:
+            # set -e affects redirect error, like mksh and bash 5.2, but unlike
+            # dash/ash
+            cmd_st.check_errexit = True
+            #
+            # Only a failed redirect sets check_errexit here.  check_errexit is
+            # for leaf commands like 'ls /', [[ and ((, but both leaf and
+            # compound commands can have redirects.  The child's status was
+            # already handled by _Execute(), so checking it again breaks
+            # compound commands like
+            #   while read x; do test "$x" = y && echo yes; done < file
             return status
 
         # If we applied redirects successfully, run the command_t, and pop
@@ -2059,9 +2068,7 @@ class CommandEvaluator(object):
             elif case(command_e.Redirect):
                 node = cast(command.Redirect, UP_node)
 
-                # set -e affects redirect error, like mksh and bash 5.2, but unlike
-                # dash/ash
-                cmd_st.check_errexit = True
+                # _DoRedirect() sets check_errexit if a redirect fails
                 status = self._DoRedirect(node, cmd_st)
 
             elif case(command_e.Pipeline):
@@ -2240,11 +2247,6 @@ class CommandEvaluator(object):
             # last status wins
             status = self._Execute(child)
         return status
-
-    def LastStatus(self):
-        # type: () -> int
-        """For main_loop.py to determine the exit code of the shell itself."""
-        return self.mem.LastStatus()
 
     def _MarkLastCommands(self, node):
         # type: (command_t) -> None
@@ -2456,12 +2458,12 @@ class CommandEvaluator(object):
                                          cmd.module_frame):
                 return self.EvalCommandFrag(frag)
 
-    def RunTrapsOnExit(self, mut_status):
-        # type: (IntParamBox) -> None
+    def RunTrapsOnExit(self):
+        # type: () -> None
         """If an EXIT trap handler exists, run it.
 
-        It only mutates the status if 'return' or 'exit'.  This is odd
-        behavior, but bash/dash/mksh seem to agree on it.  See test cases in
+        This method may or may not mutate mem.LastStatus().  See comments on
+        'return' and 'exit' below, and see the test cases in
         builtin-trap.test.sh.
         """
         # This does not raise, even on 'exit', etc.
@@ -2479,14 +2481,29 @@ class CommandEvaluator(object):
             # }
             # doesn't capture x.  This is documented in doc/ref/
 
+            new_status = -1  # invalid status
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
-                try:
-                    is_return, is_fatal = self.ExecuteAndCatch(node, 0)
-                except util.HardExit as e:  # explicit exit
-                    mut_status.i = e.status
-                    return
-                if is_return:  # explicit 'return' in the trap handler!
-                    mut_status.i = self.LastStatus()
+                # ctx_Registers pushes a new frame, and COPIES $?
+                # That is, the EXIT handler sees the status in $? as follows:
+                #
+                #   trap 'echo status=$?' EXIT; exit 42  # => status=42
+                with state.ctx_Registers(self.mem):
+                    try:
+                        is_return, _ = self.ExecuteAndCatch(node, 0)
+                        # If there's an explicit 'return' in the trap handler,
+                        # the status visible outside the handler.
+                        if is_return:
+                            new_status = self.mem.LastStatus()
+                    except util.HardExit as e:
+                        # 'exit 33' is visible outside the handler.
+                        if e.has_explicit_arg:
+                            new_status = e.status
+                        # else:
+                        #   POSIX: bare 'exit' uses the status from before the
+                        #   trap ran.  bash and dash agree for EXIT.
+
+            if new_status != -1:
+                self.mem.SetLastStatus(new_status)
 
     def _MaybeRunDebugTrap(self):
         # type: () -> None

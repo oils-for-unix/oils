@@ -937,7 +937,7 @@ class SubProgramThunk(Thunk):
             self.cmd_ev.ExecuteAndCatch(
                 self.node,
                 cmd_eval.OptimizeSubshells | cmd_eval.MarkLastCommands)
-            status = self.cmd_ev.LastStatus()
+            status = self.cmd_ev.mem.LastStatus()
             # NOTE: We ignore the is_fatal return value.  The user should set -o
             # errexit so failures in subprocesses cause failures in the parent.
         except util.HardExit as e:
@@ -1597,7 +1597,7 @@ class Pipeline(Job):
         # /dev/urandom | sleep 1' will never get SIGPIPE.
         posix.close(r)
 
-        self.pipe_status[-1] = cmd_ev.LastStatus()
+        self.pipe_status[-1] = cmd_ev.mem.LastStatus()
         if self.AllExited():
             self.state = job_state_e.Exited
 
