@@ -314,6 +314,16 @@ func_get_terminal_width(PyObject *self, PyObject *unused) {
 }
 
 static PyObject *
+func_get_terminal_size(PyObject *self, PyObject *unused) {
+  struct winsize w;
+  int res;
+  res = ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+  if (res < 0)
+    return PyErr_SetFromErrno(errno_error);
+  return Py_BuildValue("(ii)", w.ws_row, w.ws_col);
+}
+
+static PyObject *
 func_wcswidth(PyObject *self, PyObject *args){
     char *string;
     if (!PyArg_ParseTuple(args, "s", &string)) {
@@ -433,6 +443,7 @@ static PyMethodDef methods[] = {
 
   // ioctl() to get the terminal width.
   {"get_terminal_width", func_get_terminal_width, METH_NOARGS, ""},
+  {"get_terminal_size", func_get_terminal_size, METH_NOARGS, ""},
 
   // Get the display width of a string. Throw an exception if the string is invalid UTF8.
   {"wcswidth", func_wcswidth, METH_VARARGS, ""},
