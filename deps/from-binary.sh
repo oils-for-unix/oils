@@ -21,14 +21,23 @@ readonly DEPS_DIR=$REPO_ROOT/../oil_DEPS
 
 # TODO: Make Clang into a wedge?
 
+ARCHITECTURE="$(uname -m)"
 if false; then
   # This version if 7.6 GB, ugh
   LLVM_VERSION=18.1.8
-  CLANG_URL='https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz'
+  if test "$ARCHITECTURE" = "aarch64"; then
+    CLANG_URL='https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-aarch64-linux-gnu.tar.xz'
+  else
+    CLANG_URL='https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz'
+  fi
 else
   # This version was 4.7 GB
   LLVM_VERSION=14.0.0
-  CLANG_URL='https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.0/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz'
+  if test "$ARCHITECTURE" = "aarch64"; then
+    CLANG_URL='https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.0/clang+llvm-14.0.0-aarch64-linux-gnu.tar.xz'
+  else
+    CLANG_URL='https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.0/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz'
+  fi
 fi
 
 download-clang() {

@@ -1,4 +1,4 @@
-#include <pwd.h>   // passwd
+#include <pwd.h>  // passwd
 
 int main(void) {
   setpwent();
