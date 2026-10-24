@@ -60,4 +60,19 @@ test-clang() {
   $CLANGXX --version
 }
 
+NODEJS_URL='https://nodejs.org/dist/v24.13.1/node-v24.13.1-linux-x64.tar.xz'
+NODEJS_SHASUM='30215f90ea3cd04dfbc06e762c021393fa173a1d392974298bbc871a8e461089 node-v24.13.1-linux-x64.tar.xz'
+
+layer-nodejs() {
+  ### We need a newer version of Node.js than is available in Debian
+  ### Used in web/search.test.js
+
+  pushd $DEPS_DIR
+  wget --no-clobber $NODEJS_URL
+  sha256sum --check <(echo "$NODEJS_SHASUM")
+  time tar -x --xz <node-*-linux-x64.tar.xz
+  ln -s --relative --verbose ./node-*-linux-x64/bin/node "$REPO_ROOT/../oils.DEPS/bin"
+  popd
+}
+
 "$@"

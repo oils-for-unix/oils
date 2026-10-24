@@ -47,6 +47,7 @@ oil-python-sources() {
     -name _deps -a -prune -o \
     -name _regtest -a -prune -o \
     -name mycpp -a -prune -o \
+    -name search_index_test.py -a -prune -o \
     -name pea -a -prune -o \
     -name yaks -a -prune -o \
     -name testdata -a -prune -o \
