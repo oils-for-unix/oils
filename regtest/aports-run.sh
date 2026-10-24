@@ -267,7 +267,7 @@ build-package-overlayfs() {
   mkdir -p $merged $work $layer_dir
 
   local overlay_opts
-  case $config in 
+  case $config in
     baseline)
       overlay_opts="lowerdir=$CHROOT_DIR,upperdir=$layer_dir,workdir=$work"
       ;;
@@ -288,6 +288,22 @@ build-package-overlayfs() {
     -o "$overlay_opts" \
     -o index=off \
     $merged
+
+  # mount over the overlay, onto the merged
+  # https://man7.org/linux/man-pages/man5/procfs.5.html
+  sudo mount \
+    -t proc \
+    "_chroot_proc_${xargs_slot}" $merged/proc
+
+  # https://man7.org/linux/man-pages/man5/sysfs.5.html
+  sudo mount \
+    -t sysfs \
+    "_chroot_sysfs_${xargs_slot}" $merged/sys
+
+  # https://lwn.net/Articles/330985/
+  sudo mount \
+    -t devtmpfs \
+    "_chroot_devtmpfs_${xargs_slot}" $merged/dev
 
   local -a prefix
   if test -n "${XARGS_SLOT:-}"; then
@@ -325,6 +341,9 @@ build-package-overlayfs() {
     set -o errexit
   fi
 
+  unmount-loop $merged/proc
+  unmount-loop $merged/sys
+  unmount-loop $merged/dev
   unmount-loop $merged
 }
 

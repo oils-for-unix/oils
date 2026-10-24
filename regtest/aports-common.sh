@@ -50,10 +50,24 @@ enter-overlayfs-user() {
     -o "lowerdir=$CHROOT_DIR,upperdir=$upper,workdir=$work" \
     "$merged"
 
+  sudo mount \
+    -t proc \
+    "my_chroot_proc" $merged/proc
+
+  sudo mount \
+    -t sysfs \
+    "my_chroot_sysfs" $merged/sys
+
+  sudo mount \
+    -t devtmpfs \
+    "my_chroot_devtmpfs" $merged/dev
+
   $merged/enter-chroot -u udu "$@"
 
+  unmount-loop $merged/proc
+  unmount-loop $merged/sys
+  unmount-loop $merged/dev
   unmount-loop $merged
-
 }
 
 unmount-loop() {
