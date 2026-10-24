@@ -310,6 +310,10 @@ func-parsing() {
   test/spec-py.sh run-file func-parsing "$@"
 }
 
+gemini() {
+  test/spec-py.sh run-file gemini "$@"
+}
+
 glob-bash() {
   test/spec-py.sh run-file glob-bash "$@"
 }
