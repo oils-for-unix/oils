@@ -31,7 +31,7 @@ Buffer = cStringIO.StringIO  # used by asdl/format.py
 class _ErrorWithLocation(Exception):
   """A parse error that can be formatted.
 
-  Formatting is in ui.PrintError.
+  Formatting is in ui.PrettyPrintError.
   """
   def __init__(self, msg, *args, **kwargs):
     Exception.__init__(self)
@@ -261,5 +261,3 @@ def ShowAppVersion(app_name):
   print('Interpreter: %s' % platform.python_implementation())
   print('Interpreter version: %s' % platform.python_version())
   print('Bytecode: %s' % pyc_version)
-
-
