@@ -423,11 +423,13 @@ In YSH, it's `ENV.PATH`.
 
 ### BASH
 
-The absolute path of the running shell, like [`$BASH` in bash][bash-var].
+An absolute path that runs the shell, like [`$BASH` in bash][bash-var].  It
+may not be byte-for-byte the same as bash's value.
 
 OSH sets it only when `argv[0]` is `bash`, for example when it runs through a
 `bash` symlink.  This variable is not inherited from the environment.  When OSH
-runs as `osh` or `sh`, `$BASH` isn't set.
+runs as `osh` or `sh`, `$BASH` isn't set.  It also isn't set when `argv[0]` is
+`bash` but there's no `bash` in `$PATH`.
 
 [bash-var]: https://www.gnu.org/software/bash/manual/bash.html#index-BASH
 

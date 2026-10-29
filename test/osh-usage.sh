@@ -246,11 +246,25 @@ test-bash-version-emulation() {
   nq-assert 0 -eq $status
   nq-assert 'BASH=' = "$stdout"
 
-  # Absolute path of the shell when called as bash, even if it's in the env
+  # The contract: $BASH is an absolute path that runs this shell.  We don't
+  # match bash byte for byte.  OSH says BASH_VERSION=5.3.
+  local runs_osh='case $BASH in
+    /*) "$BASH" -c "echo BASH_VERSION=\$BASH_VERSION" ;;
+    *)  echo "not absolute: BASH=$BASH" ;;
+  esac'
+
+  # A relative path, even if $BASH is in the env
   nq-capture status stdout \
-    env BASH=/from/env ./bash -c "$code"
+    env BASH=/from/env ./bash -c "$runs_osh"
   nq-assert 0 -eq $status
-  nq-assert "BASH=$PWD/bash" = "$stdout"
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
+
+  local base
+  base=$(basename "$PWD")
+  nq-capture status stdout \
+    ../$base/bash -c "$runs_osh"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
 
   # Searched for in $PATH when argv[0] has no slash
   nq-capture status stdout \
@@ -258,25 +272,29 @@ test-bash-version-emulation() {
   nq-assert 0 -eq $status
   nq-assert "BASH=$PWD/bash" = "$stdout"
 
-  # A relative path is joined to $PWD, but not normalized, like bash
-  local base
-  base=$(basename "$PWD")
+  # A relative $PATH entry
   nq-capture status stdout \
-    ../$base/bash -c "$code"
+    env PATH=. bash -c "$runs_osh"
   nq-assert 0 -eq $status
-  nq-assert "BASH=$PWD/../$base/bash" = "$stdout"
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
 
   # It uses $PWD at startup, not after cd
   nq-capture status stdout \
-    ./bash -c "cd /; $code"
+    ./bash -c "cd /; $runs_osh"
   nq-assert 0 -eq $status
-  nq-assert "BASH=$PWD/bash" = "$stdout"
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
+
+  # Unset if argv[0] is bash, but it's not in $PATH
+  nq-capture status stdout \
+    env PATH=/nonexistent ./osh -c "exec -a bash ./bash -c '$code'"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH=' = "$stdout"
 
   # Unlike bash, assignment has no effect, like BASH_REMATCH
   nq-capture status stdout \
-    ./bash -c "BASH=foo; $code"
+    ./bash -c "BASH=foo; $runs_osh"
   nq-assert 0 -eq $status
-  nq-assert "BASH=$PWD/bash" = "$stdout"
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
 
   popd
 }

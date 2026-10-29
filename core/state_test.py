@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 import unittest
 import os.path
+import shutil
+import tempfile
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import scope_e
@@ -347,6 +349,51 @@ class MemTest(unittest.TestCase):
 
         mem.SetArgv(['i', 'j', 'k'])
         self.assertEqual(['i', 'j', 'k'], mem.GetArgv())
+
+
+class BashPathTest(unittest.TestCase):
+
+    def setUp(self):
+        # A dir with an executable named bash, to search for in $PATH
+        self.tmp = tempfile.mkdtemp()
+        bash = os.path.join(self.tmp, 'bash')
+        with open(bash, 'w') as f:
+            f.write('')
+        os.chmod(bash, 0o755)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp)
+
+    def _Get(self, argv0, path_str, pwd='/start'):
+        val = state.BashPath(argv0, path_str, pwd).Get()
+        if val.tag() == value_e.Undef:
+            return None
+        return val.s
+
+    def testBashPath(self):
+        bash = os.path.join(self.tmp, 'bash')
+
+        # An absolute argv[0] is used as is
+        self.assertEqual('/usr/bin/bash', self._Get('/usr/bin/bash', None))
+
+        # A relative argv[0] is relative to $PWD at startup
+        self.assertEqual('/start/../dir/bash', self._Get('../dir/bash', None))
+
+        # A name without a slash is searched for in $PATH
+        self.assertEqual(bash, self._Get('bash', '/nonexistent:' + self.tmp))
+
+        # A login shell has a leading -
+        self.assertEqual(bash, self._Get('-bash', self.tmp))
+
+        # A relative $PATH entry is relative to $PWD at startup
+        rel_dir = os.path.basename(self.tmp)
+        pwd = os.path.dirname(self.tmp)
+        self.assertEqual(os.path.join(pwd, rel_dir, 'bash'),
+                         self._Get('bash', rel_dir, pwd=pwd))
+
+        # Unset if it's not in $PATH, or there's no $PATH
+        self.assertEqual(None, self._Get('bash', '/nonexistent'))
+        self.assertEqual(None, self._Get('bash', None))
 
 
 if __name__ == '__main__':

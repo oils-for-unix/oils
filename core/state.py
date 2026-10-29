@@ -733,39 +733,70 @@ def _DumpVarFrame(frame):
     return vars_json
 
 
-def _BashPath(argv0, path_str, pwd):
-    # type: (str, Optional[str], str) -> str
-    """For $BASH.  Like bash's get_bash_name() in shell.c.
+class BashPath(object):
+    """For $BASH, when OSH runs as bash.
 
-    - an absolute argv[0] is used as is
-    - a name without a slash is searched for in $PATH
-    - a relative path is made absolute with $PWD.  bash doesn't normalize it,
-      except that it drops the leading . of ./bash.  For example, if $PWD is
-      /tmp/dir, then ./bash gives /tmp/dir/bash, and ../dir/bash gives
-      /tmp/dir/../dir/bash.
+    The contract: $BASH is an absolute path that runs this shell, or it's
+    unset if we can't find one.  We don't try to match bash's
+    get_bash_name() byte for byte.
+
+    The path is computed lazily, because a $PATH search does I/O.
     """
-    # executor depends on state, so import it here
-    from core import executor
 
-    name = argv0
-    if name.startswith('-'):  # login shell
-        name = name[1:]
+    def __init__(self, argv0, path_str, pwd):
+        # type: (str, Optional[str], str) -> None
+        """
+        Args:
+          argv0: argv[0] of the shell
+          path_str: $PATH at startup
+          pwd: $PWD at startup
+        """
+        self.argv0 = argv0
+        self.path_str = path_str
+        self.pwd = pwd
 
-    if '/' not in name:
-        path_dirs = []  # type: List[str]
-        if path_str is not None:
-            path_dirs = path_str.split(':')
-        resolved = executor.LookupExecutable(name, path_dirs)
-        if resolved is not None:
+        self.computed = False
+        self.val = value.Undef  # type: value_t
+
+    def Get(self):
+        # type: () -> value_t
+        if not self.computed:
+            self.val = self._Compute()
+            self.computed = True
+        return self.val
+
+    def _Compute(self):
+        # type: () -> value_t
+
+        # executor depends on state, so import it here
+        from core import executor
+
+        name = self.argv0
+        if name.startswith('-'):  # login shell
+            name = name[1:]
+
+        if '/' not in name:
+            # The search is lazy, so it may run after a cd.  Make relative
+            # $PATH entries like bin relative to $PWD at startup.
+            path_dirs = []  # type: List[str]
+            if self.path_str is not None:
+                for d in self.path_str.split(':'):
+                    if os_path.isabs(d):
+                        path_dirs.append(d)
+                    else:
+                        path_dirs.append(os_path.join(self.pwd, d))
+            resolved = executor.LookupExecutable(name, path_dirs)
+            if resolved is None:
+                # bash falls back to $PWD/bash here, but that path usually
+                # doesn't exist
+                return value.Undef
             name = resolved
 
-    if os_path.isabs(name):
-        return name
+        # A relative argv[0] like ../dir/bash is relative to $PWD at startup
+        if not os_path.isabs(name):
+            name = os_path.join(self.pwd, name)
 
-    if name.startswith('./'):
-        return pwd + name[1:]
-
-    return os_path.join(pwd, name)
+        return value.Str(name)
 
 
 def _LineNumber(tok):
@@ -1377,12 +1408,8 @@ class Mem(object):
         self.pwd = None  # type: Optional[str]
         self.seconds_start = time_.time()
 
-        # For $BASH.  argv[0] is None unless OSH runs as bash.  The value is
-        # computed lazily, because a $PATH search does I/O.
-        self.bash_argv0 = None  # type: Optional[str]
-        self.bash_path_str = None  # type: Optional[str]  # $PATH at startup
-        self.bash_pwd = ''  # $PWD at startup
-        self.bash_val = None  # type: Optional[value.Str]
+        # For $BASH.  None unless OSH runs as bash.
+        self.bash_path = None  # type: Optional[BashPath]
 
         self.token_for_line = None  # type: Optional[Token]
         self.loc_for_expr = loc.Missing  # type: loc_t
@@ -1461,10 +1488,8 @@ class Mem(object):
         """
         self.Unset(location.LName('BASH'), scope_e.GlobalOnly)
 
-        self.bash_argv0 = argv0
-        self.bash_path_str = self.env_config.Get('PATH')
         assert self.pwd is not None
-        self.bash_pwd = self.pwd
+        self.bash_path = BashPath(argv0, self.env_config.Get('PATH'), self.pwd)
 
     def Dump(self):
         # type: () -> Tuple[List[value_t], List[value_t], List[value_t]]
@@ -2359,12 +2384,8 @@ class Mem(object):
                 # Unlike bash, $BASH is computed lazily, like the other special
                 # vars here.  So assigning to it has no effect, as with
                 # BASH_REMATCH.
-                if self.bash_argv0 is not None:
-                    if self.bash_val is None:
-                        self.bash_val = value.Str(
-                            _BashPath(self.bash_argv0, self.bash_path_str,
-                                      self.bash_pwd))
-                    return self.bash_val
+                if self.bash_path is not None:
+                    return self.bash_path.Get()
                 return self._GetUserValue(name, which_scopes)
 
             # Do lookup of system globals before looking at user variables.  Note: we
