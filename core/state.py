@@ -733,6 +733,72 @@ def _DumpVarFrame(frame):
     return vars_json
 
 
+class BashPath(object):
+    """For $BASH, when OSH runs as bash.
+
+    The contract: $BASH is an absolute path that runs this shell, or it's
+    unset if we can't find one.  We don't try to match bash's
+    get_bash_name() byte for byte.
+
+    The path is computed lazily, because a $PATH search does I/O.
+    """
+
+    def __init__(self, argv0, path_str, pwd):
+        # type: (str, Optional[str], str) -> None
+        """
+        Args:
+          argv0: argv[0] of the shell
+          path_str: $PATH at startup
+          pwd: $PWD at startup
+        """
+        self.argv0 = argv0
+        self.path_str = path_str
+        self.pwd = pwd
+
+        self.computed = False
+        self.val = value.Undef  # type: value_t
+
+    def Get(self):
+        # type: () -> value_t
+        if not self.computed:
+            self.val = self._Compute()
+            self.computed = True
+        return self.val
+
+    def _Compute(self):
+        # type: () -> value_t
+
+        # executor depends on state, so import it here
+        from core import executor
+
+        name = self.argv0
+        if name.startswith('-'):  # login shell
+            name = name[1:]
+
+        if '/' not in name:
+            # The search is lazy, so it may run after a cd.  Make relative
+            # $PATH entries like bin relative to $PWD at startup.
+            path_dirs = []  # type: List[str]
+            if self.path_str is not None:
+                for d in self.path_str.split(':'):
+                    if os_path.isabs(d):
+                        path_dirs.append(d)
+                    else:
+                        path_dirs.append(os_path.join(self.pwd, d))
+            resolved = executor.LookupExecutable(name, path_dirs)
+            if resolved is None:
+                # bash falls back to $PWD/bash here, but that path usually
+                # doesn't exist
+                return value.Undef
+            name = resolved
+
+        # A relative argv[0] like ../dir/bash is relative to $PWD at startup
+        if not os_path.isabs(name):
+            name = os_path.join(self.pwd, name)
+
+        return value.Str(name)
+
+
 def _LineNumber(tok):
     # type: (Optional[Token]) -> str
     """ For $BASH_LINENO """
@@ -1342,6 +1408,9 @@ class Mem(object):
         self.pwd = None  # type: Optional[str]
         self.seconds_start = time_.time()
 
+        # For $BASH.  None unless OSH runs as bash.
+        self.bash_path = None  # type: Optional[BashPath]
+
         self.token_for_line = None  # type: Optional[Token]
         self.loc_for_expr = loc.Missing  # type: loc_t
 
@@ -1409,6 +1478,16 @@ class Mem(object):
         # type: (str) -> None
         """Used by builtins."""
         self.pwd = pwd
+
+    def InitBashVar(self, argv0):
+        # type: (str) -> None
+        """Make $BASH available, when OSH runs as bash.
+
+        Call it after $PATH and $PWD are initialized.  Like bash, we ignore
+        $BASH in the environment.
+        """
+        assert self.pwd is not None
+        self.bash_path = BashPath(argv0, self.env_config.Get('PATH'), self.pwd)
 
     def Dump(self):
         # type: () -> Tuple[List[value_t], List[value_t], List[value_t]]
@@ -2299,6 +2378,14 @@ class Mem(object):
                         groups = util.RegexGroupStrings(m.s, m.indices)
                 return value.InternalStringArray(groups)
 
+            elif case('BASH'):
+                # Unlike bash, $BASH is computed lazily, like the other special
+                # vars here.  So assigning to it has no effect, as with
+                # BASH_REMATCH.
+                if self.bash_path is not None:
+                    return self.bash_path.Get()
+                return self._GetUserValue(name, which_scopes)
+
             # Do lookup of system globals before looking at user variables.  Note: we
             # could optimize this at compile-time like $?.  That would break
             # ${!varref}, but it's already broken for $?.
@@ -2413,21 +2500,26 @@ class Mem(object):
                 return value.Int(big_int)
 
             else:
-                # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
-                # fix this:
-                # 1. Call self.unsafe_arith.ParseVarRef() -> BracedVarSub
-                # 2. Call self.unsafe_arith.GetNameref(bvs_part), and get a value_t
-                #    We still need a ref_trail to detect cycles.
-                cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
-                if cell:
-                    return cell.val
+                return self._GetUserValue(name, which_scopes)
 
-                builtin_val = self.builtins.get(name)
-                if builtin_val:
-                    return builtin_val
+    def _GetUserValue(self, name, which_scopes):
+        # type: (str, scope_t) -> value_t
+        """Look up a variable that isn't special."""
+        # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
+        # fix this:
+        # 1. Call self.unsafe_arith.ParseVarRef() -> BracedVarSub
+        # 2. Call self.unsafe_arith.GetNameref(bvs_part), and get a value_t
+        #    We still need a ref_trail to detect cycles.
+        cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
+        if cell:
+            return cell.val
 
-                # TODO: Can look in the builtins module, which is a value.Obj
-                return value.Undef
+        builtin_val = self.builtins.get(name)
+        if builtin_val:
+            return builtin_val
+
+        # TODO: Can look in the builtins module, which is a value.Obj
+        return value.Undef
 
     def GetCell(self, name, which_scopes=scope_e.Shopt):
         # type: (str, scope_t) -> Cell

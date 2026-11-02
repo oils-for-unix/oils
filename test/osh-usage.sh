@@ -199,6 +199,7 @@ test-bash-version-emulation() {
 
   ln -s -f $osh bash
   ln -s -f $osh osh
+  ln -s -f $osh oils-for-unix
 
   #
   # Test $BASH_VERSION
@@ -234,6 +235,73 @@ test-bash-version-emulation() {
     ./bash -c "$code"
   nq-assert 0 -eq $status
   nq-assert 'BASH_VERSINFO=5 3 0 0 release unknown' = "$stdout"
+
+  #
+  # Test $BASH
+  #
+  code='echo BASH=$BASH'
+
+  # Unset when called as osh
+  nq-capture status stdout \
+    ./osh -c "$code"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH=' = "$stdout"
+
+  # The contract: $BASH is an absolute path that runs this shell.  We don't
+  # match bash byte for byte.  OSH says BASH_VERSION=5.3.
+  local runs_osh='case $BASH in
+    /*) "$BASH" -c "echo BASH_VERSION=\$BASH_VERSION" ;;
+    *)  echo "not absolute: BASH=$BASH" ;;
+  esac'
+
+  # A relative path, even if $BASH is in the env
+  nq-capture status stdout \
+    env BASH=/from/env ./bash -c "$runs_osh"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
+
+  local base
+  base=$(basename "$PWD")
+  nq-capture status stdout \
+    ../$base/bash -c "$runs_osh"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
+
+  # Searched for in $PATH when argv[0] has no slash
+  nq-capture status stdout \
+    env PATH="$PWD:$PATH" bash -c "$code"
+  nq-assert 0 -eq $status
+  nq-assert "BASH=$PWD/bash" = "$stdout"
+
+  # The bash applet can also be invoked without a bash symlink
+  nq-capture status stdout \
+    env PATH="$PWD:$PATH" ./oils-for-unix bash -c "$runs_osh"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
+
+  # A relative $PATH entry
+  nq-capture status stdout \
+    env PATH=. bash -c "$runs_osh"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
+
+  # It uses $PWD at startup, not after cd
+  nq-capture status stdout \
+    ./bash -c "cd /; $runs_osh"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
+
+  # Unset if argv[0] is bash, but it's not in $PATH
+  nq-capture status stdout \
+    env PATH=/nonexistent ./osh -c "exec -a bash ./bash -c '$code'"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH=' = "$stdout"
+
+  # Unlike bash, assignment has no effect, like BASH_REMATCH
+  nq-capture status stdout \
+    ./bash -c "BASH=foo; $runs_osh"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
 
   popd
 }
