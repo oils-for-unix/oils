@@ -1486,8 +1486,6 @@ class Mem(object):
         Call it after $PATH and $PWD are initialized.  Like bash, we ignore
         $BASH in the environment.
         """
-        self.Unset(location.LName('BASH'), scope_e.GlobalOnly)
-
         assert self.pwd is not None
         self.bash_path = BashPath(argv0, self.env_config.Get('PATH'), self.pwd)
 

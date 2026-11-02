@@ -199,6 +199,7 @@ test-bash-version-emulation() {
 
   ln -s -f $osh bash
   ln -s -f $osh osh
+  ln -s -f $osh oils-for-unix
 
   #
   # Test $BASH_VERSION
@@ -271,6 +272,12 @@ test-bash-version-emulation() {
     env PATH="$PWD:$PATH" bash -c "$code"
   nq-assert 0 -eq $status
   nq-assert "BASH=$PWD/bash" = "$stdout"
+
+  # The bash applet can also be invoked without a bash symlink
+  nq-capture status stdout \
+    env PATH="$PWD:$PATH" ./oils-for-unix bash -c "$runs_osh"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
 
   # A relative $PATH entry
   nq-capture status stdout \

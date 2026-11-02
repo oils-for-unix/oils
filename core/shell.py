@@ -346,7 +346,7 @@ def Main(
 
     if bash_compat:
         # After InitVarsAfterEnv(), because $BASH depends on $PATH and $PWD
-        mem.InitBashVar(arg_r.argv[0])
+        mem.InitBashVar(argv0)
 
     if attrs.show_options:  # special case: sh -o
         pure_osh.ShowOptions(mutable_opts, [])
